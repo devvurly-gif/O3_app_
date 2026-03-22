@@ -1,0 +1,33 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    paths:
+        - app
+
+    # Start at level 5 (good balance between strictness and noise)
+    level: 5
+
+    reportUnmatchedIgnoredErrors: false
+
+    # Ignore common patterns that are false positives in this project
+    ignoreErrors:
+        # str_pad with int (works in PHP, strict typing mismatch)
+        - '#Parameter \#1 \$string of function str_pad expects string, int given#'
+        # Eloquent dynamic properties from raw queries (selectRaw with aliases)
+        - '#Access to an undefined property .+::\$(month|total|total_stock|template|nextTrick|di_model|unreadNotifications)#'
+        # Scout builder vs Eloquent builder in exports
+        - '#Method .+::query\(\) has invalid return type Laravel\\Scout\\Builder#'
+        # Properties injected via constructor but used via $this in parent
+        - '#Property .+ is never read, only written#'
+        # Sanctum token interface limitations
+        - '#Call to an undefined method Laravel\\Sanctum\\Contracts\\HasAbilities::delete#'
+        # DocumentConversionService works with generic Model but returns DocumentHeader
+        - '#should return App\\Models\\DocumentHeader but returns Illuminate\\Database\\Eloquent\\Model#'
+        - '#Call to an undefined method Illuminate\\Database\\Eloquent\\Model::(lignes|footer)\(\)#'
+        # DocumentHeader enum doesn't include 'applied' (stock-specific status)
+        - '#Strict comparison using === between .+ and .applied. will always evaluate to false#'
+
+    excludePaths:
+        - app/Console/Kernel.php
+        - app/Exceptions/Handler.php

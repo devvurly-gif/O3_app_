@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dev",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "npm", "run", "dev", "--", "--port", "5173", "--strictPort"],
+      "port": 5173
+    },
+    {
+      "name": "laravel",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "php", "artisan", "serve", "--port=8000"],
+      "port": 8000
+    },
+    {
+      "name": "apache",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "echo", "Apache already running on port 80"],
+      "port": 80
+    }
+  ]
+}
