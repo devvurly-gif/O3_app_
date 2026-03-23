@@ -272,6 +272,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::post('settings',   [SettingController::class, 'upsert']);
         Route::delete('settings', [SettingController::class, 'destroy']);
+        Route::post('settings/test-email',    [SettingController::class, 'testEmail']);
+        Route::post('settings/test-whatsapp', [SettingController::class, 'testWhatsapp']);
 
         Route::post('cache/flush', function () {
             Cache::flush();

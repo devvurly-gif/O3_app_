@@ -8,15 +8,6 @@
       </div>
       <div class="flex items-center gap-2">
         <button
-          class="flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-          @click="openImport"
-        >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-          </svg>
-          Import
-        </button>
-        <button
           class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition"
           @click="openCreate"
         >
@@ -170,50 +161,6 @@
       </template>
     </BaseModal>
 
-    <!-- Import Modal -->
-    <BaseModal v-model="showImportModal" :title="$t('categories.importTitle')" size="md">
-      <div class="space-y-4">
-        <p class="text-sm text-gray-600 dark:text-gray-400">
-          {{ $t('categories.importDesc') }}
-          <span class="font-mono text-xs">nom, code</span>.
-        </p>
-        <input
-          ref="importFileInput"
-          type="file"
-          accept=".xlsx,.xls,.csv"
-          :disabled="importing"
-          class="block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-          @change="onImportFile"
-        />
-        <div v-if="importing" class="flex items-center gap-2 text-sm text-blue-600">
-          <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-          </svg>
-          {{ $t('categories.importing') }}
-        </div>
-        <div v-if="importResult" class="rounded-lg bg-green-50 border border-green-200 p-3 text-sm text-green-800">
-          {{ importResult.message }} &mdash; {{ importResult.created }} {{ $t('categories.importCreated') }}, {{ importResult.updated }} {{ $t('categories.importUpdated') }}.
-        </div>
-        <div v-if="importErrors" class="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700 space-y-1">
-          <p class="font-semibold">{{ importErrors.message }}</p>
-          <ul v-if="importErrors.failures" class="list-disc pl-4 space-y-0.5 text-xs">
-            <li v-for="(f, i) in importErrors.failures" :key="i">
-              Ligne {{ f.row }} — {{ f.attribute }} : {{ f.errors.join(', ') }}
-            </li>
-          </ul>
-        </div>
-      </div>
-      <template #footer>
-        <button
-          class="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition"
-          @click="showImportModal = false"
-        >
-          {{ $t('common.cancel') }}
-        </button>
-      </template>
-    </BaseModal>
-
     <BaseNotification ref="toast" />
   </div>
 </template>
@@ -223,7 +170,6 @@ import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useCategoryStore } from '@/stores/category'
-import { useExcelImport } from '@/composables/useExcelImport'
 import BaseTable from '@/components/BaseTable.vue'
 import BasePagination from '@/components/BasePagination.vue'
 import BaseModal from '@/components/BaseModal.vue'
@@ -248,26 +194,6 @@ const editTarget = ref(null)
 const deleteTarget = ref(null)
 
 const form = reactive({ ctg_title: '', ctg_status: true })
-
-// ── Import ────────────────────────────────────────────────────────────────
-const { importing, importResult, importErrors, importExcel, resetImport } = useExcelImport()
-const showImportModal = ref(false)
-const importFileInput = ref(null)
-
-function openImport() {
-  resetImport()
-  showImportModal.value = true
-}
-
-async function onImportFile(e: Event) {
-  const file = (e.target as HTMLInputElement).files?.[0]
-  if (!file) return
-  await importExcel('/import/categories', file)
-  if (importResult.value) {
-    store.fetchAll()
-  }
-  if (importFileInput.value) (importFileInput.value as HTMLInputElement).value = ''
-}
 
 const columns = computed(() => [
   { key: 'ctg_code', label: t('common.code') },

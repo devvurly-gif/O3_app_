@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Setting;
 use Illuminate\Support\Facades\Log;
 use Twilio\Rest\Client;
 
@@ -15,8 +16,15 @@ class WhatsAppService
             return $this->client;
         }
 
-        $sid   = config('twilio.sid');
-        $token = config('twilio.auth_token');
+        // Read from DB settings first, fallback to config/env
+        $sid   = Setting::get('whatsapp', 'twilio_sid') ?: config('twilio.sid');
+        $token = Setting::get('whatsapp', 'twilio_auth_token') ?: config('twilio.auth_token');
+        $enabled = Setting::get('whatsapp', 'whatsapp_enabled', 'true');
+
+        if ($enabled === 'false') {
+            Log::info('WhatsApp: disabled in settings.');
+            return null;
+        }
 
         if (!$sid || !$token || $sid === 'your_account_sid') {
             return null;
@@ -30,80 +38,48 @@ class WhatsAppService
     /**
      * Send a WhatsApp message via Twilio.
      */
-    // public function send(string $to, string $message): bool
-    // {
-    //     $client = $this->getClient();
-    //     if (!$client) {
-    //         Log::info('WhatsApp: Twilio not configured, skipping message.');
-    //         return false;
-    //     }
+    public function send(string $to, string $message): bool
+    {
+        $client = $this->getClient();
+        if (!$client) return false;
 
-    //     $from = config('twilio.whatsapp_from', 'whatsapp:0014155238886');
-    //     $to   = $this->formatWhatsAppNumber($to);
+        // Read from DB settings first, fallback to config
+        $from = Setting::get('whatsapp', 'twilio_whatsapp_from') ?: config('twilio.whatsapp_from');
+        if (!str_starts_with($from, 'whatsapp:')) {
+            $from = "whatsapp:" . $from;
+        }
 
-    //     try {
-    //         $client->messages->create($to, [
-    //             'from' => $from,
-    //             'body' => $message,
-    //         ]);
+        $toClean = $this->formatWhatsAppNumber($to);
+        $toWhatsApp = str_starts_with($toClean, 'whatsapp:') ? $toClean : "whatsapp:" . $toClean;
 
-    //         Log::info("WhatsApp message sent to {$to}");
-    //         return true;
-    //     } catch (\Throwable $e) {
-    //         Log::warning("WhatsApp send failed to {$to}: {$e->getMessage()}");
-    //         return false;
-    //     }
-    // }
-
- public function send(string $to, string $message): bool 
-{ 
-    $client = $this->getClient(); 
-    if (!$client) return false;
-
-    // 1. Récupérer l'expéditeur et forcer le préfixe
-    $from = config('twilio.whatsapp_from');
-    if (!str_starts_with($from, 'whatsapp:')) {
-        $from = "whatsapp:" . $from;
+        try {
+            $client->messages->create($toWhatsApp, [
+                'from' => $from,
+                'body' => $message,
+            ]);
+            Log::info("WhatsApp message sent to {$toWhatsApp}");
+            return true;
+        } catch (\Throwable $e) {
+            Log::error("Twilio Error: " . $e->getMessage());
+            return false;
+        }
     }
-
-    // 2. Formater le destinataire (ex: +33612345678)
-    $toClean = $this->formatWhatsAppNumber($to);
-    
-    // 3. Forcer le préfixe 'whatsapp:' pour le destinataire
-    $toWhatsApp = str_starts_with($toClean, 'whatsapp:') ? $toClean : "whatsapp:" . $toClean;
-
-    try { 
-        $client->messages->create($toWhatsApp, [ 
-            'from' => $from, 
-            'body' => $message, 
-        ]); 
-        return true; 
-    } catch (\Throwable $e) { 
-        Log::error("Twilio Error: " . $e->getMessage());
-        return false; 
-    } 
-}
-
 
     /**
      * Format phone number for WhatsApp (whatsapp:+212XXXXXXXXX).
      */
     private function formatWhatsAppNumber(string $phone): string
     {
-        // Already formatted
         if (str_starts_with($phone, 'whatsapp:')) {
             return $phone;
         }
 
-        // Remove spaces, dashes, dots
         $phone = preg_replace('/[\s\-\.]/', '', $phone);
 
-        // If starts with 0, assume Morocco (+212)
         if (str_starts_with($phone, '0')) {
             $phone = '+212' . substr($phone, 1);
         }
 
-        // Ensure + prefix
         if (!str_starts_with($phone, '+')) {
             $phone = '+' . $phone;
         }

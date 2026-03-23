@@ -22,19 +22,6 @@
           {{ exporting ? 'Export...' : 'Export' }}
         </button>
         <button
-          class="flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-          @click="openImport"
-        >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
-            />
-          </svg>
-          Import
-        </button>
-        <button
           class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition"
           @click="openCreate"
         >
@@ -1291,52 +1278,6 @@
       </template>
     </BaseModal>
 
-    <!-- Import Modal -->
-    <BaseModal v-model="showImportModal" title="Import clients" size="md">
-      <div class="space-y-4">
-        <p class="text-sm text-gray-600 dark:text-gray-400">
-          Fichier Excel (.xlsx) ou CSV avec colonnes :
-          <span class="font-mono text-xs"
-            >nom, role, ice, rc, patente, if, telephone, email, adresse, ville, seuil_credit</span
-          >.
-        </p>
-        <input
-          ref="importFileInput"
-          type="file"
-          accept=".xlsx,.xls,.csv"
-          :disabled="importing"
-          class="block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-          @change="onImportFile"
-        />
-        <div v-if="importing" class="flex items-center gap-2 text-sm text-blue-600">
-          <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-          </svg>
-          Import en cours...
-        </div>
-        <div v-if="importResult" class="rounded-lg bg-green-50 border border-green-200 p-3 text-sm text-green-800">
-          {{ importResult.message }} &mdash; {{ importResult.created }} créé(s), {{ importResult.updated }} mis à jour.
-        </div>
-        <div v-if="importErrors" class="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700 space-y-1">
-          <p class="font-semibold">{{ importErrors.message }}</p>
-          <ul v-if="importErrors.failures" class="list-disc pl-4 space-y-0.5 text-xs">
-            <li v-for="(f, i) in importErrors.failures" :key="i">
-              Ligne {{ f.row }} — {{ f.attribute }} : {{ f.errors.join(', ') }}
-            </li>
-          </ul>
-        </div>
-      </div>
-      <template #footer>
-        <button
-          class="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition"
-          @click="showImportModal = false"
-        >
-          Fermer
-        </button>
-      </template>
-    </BaseModal>
-
     <BaseNotification ref="toast" />
   </div>
 </template>
@@ -1347,7 +1288,6 @@ import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useThirdPartnerStore } from '@/stores/thirdPartner'
 import { useExcelExport } from '@/composables/useExcelExport'
-import { useExcelImport } from '@/composables/useExcelImport'
 import http from '@/services/http'
 import BaseTable from '@/components/BaseTable.vue'
 import BasePagination from '@/components/BasePagination.vue'
@@ -1359,26 +1299,9 @@ const store = useThirdPartnerStore()
 const { items } = storeToRefs(store)
 
 const { exporting, exportExcel } = useExcelExport()
-const { importing, importResult, importErrors, importExcel, resetImport } = useExcelImport()
-
-const showImportModal = ref(false)
-const importFileInput = ref(null)
 
 function onExport() {
   exportExcel('/export/third-partners', { ...buildParams(), tp_Role: 'customer' })
-}
-
-function openImport() {
-  resetImport()
-  showImportModal.value = true
-}
-
-async function onImportFile(e: Event) {
-  const file = (e.target as HTMLInputElement).files?.[0]
-  if (!file) return
-  await importExcel('/import/third-partners', file)
-  if (importResult.value) loadPage(1)
-  if (importFileInput.value) (importFileInput.value as any).value = ''
 }
 
 // ── Tab icons (render functions) ─────────────────────────────────────────
