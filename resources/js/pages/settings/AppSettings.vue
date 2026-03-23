@@ -218,6 +218,12 @@
             </div>
           </div>
 
+          <!-- WhatsApp Test Result -->
+          <div v-if="whatsappTestResult" class="rounded-lg p-3 text-sm" :class="whatsappTestResult.success ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-300' : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300'">
+            <p class="font-semibold">{{ whatsappTestResult.success ? 'Success' : 'Error' }}</p>
+            <p class="mt-1 text-xs break-all">{{ whatsappTestResult.message }}</p>
+          </div>
+
           <div class="flex justify-between items-center">
             <button
               @click="testWhatsapp"
@@ -300,6 +306,12 @@
             </div>
           </div>
 
+          <!-- Email Test Result -->
+          <div v-if="emailTestResult" class="rounded-lg p-3 text-sm" :class="emailTestResult.success ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-300' : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300'">
+            <p class="font-semibold">{{ emailTestResult.success ? 'Success' : 'Error' }}</p>
+            <p class="mt-1 text-xs break-all">{{ emailTestResult.message }}</p>
+          </div>
+
           <div class="flex justify-between items-center">
             <button
               @click="testEmail"
@@ -350,6 +362,8 @@ const showWhatsappToken = ref(false)
 const showEmailPassword = ref(false)
 const testingWhatsapp = ref(false)
 const testingEmail = ref(false)
+const whatsappTestResult = ref<{ success: boolean; message: string } | null>(null)
+const emailTestResult = ref<{ success: boolean; message: string } | null>(null)
 
 const company = reactive({ name: '', phone: '', email: '', ice: '', rc: '', if: '', address: '' })
 const locale = reactive({ currency: '', currency_symbol: '', timezone: '', date_format: '', language: 'en' })
@@ -404,11 +418,15 @@ async function saveSection(domain: string, values: Record<string, string>) {
 
 async function testWhatsapp() {
   testingWhatsapp.value = true
+  whatsappTestResult.value = null
   try {
     const { data } = await http.post('/settings/test-whatsapp')
+    whatsappTestResult.value = { success: data.success, message: data.message }
     toast.value?.notify(data.message || 'WhatsApp test sent!', data.success ? 'success' : 'error')
   } catch (e: any) {
-    toast.value?.notify(e.response?.data?.message || 'WhatsApp test failed', 'error')
+    const msg = e.response?.data?.message || e.message || 'WhatsApp test failed'
+    whatsappTestResult.value = { success: false, message: msg }
+    toast.value?.notify('WhatsApp test failed', 'error')
   } finally {
     testingWhatsapp.value = false
   }
@@ -416,11 +434,15 @@ async function testWhatsapp() {
 
 async function testEmail() {
   testingEmail.value = true
+  emailTestResult.value = null
   try {
     const { data } = await http.post('/settings/test-email')
+    emailTestResult.value = { success: data.success, message: data.message }
     toast.value?.notify(data.message || 'Email test sent!', data.success ? 'success' : 'error')
   } catch (e: any) {
-    toast.value?.notify(e.response?.data?.message || 'Email test failed', 'error')
+    const msg = e.response?.data?.message || e.message || 'Email test failed'
+    emailTestResult.value = { success: false, message: msg }
+    toast.value?.notify('Email test failed', 'error')
   } finally {
     testingEmail.value = false
   }
