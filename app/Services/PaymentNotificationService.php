@@ -44,11 +44,21 @@ class PaymentNotificationService
         $encoursActuel = (float) ($partner->encours_actuel ?? 0);
         $seuilCredit   = (float) ($partner->seuil_credit ?? 0);
 
-        // Send email
-        $this->sendEmail($partner, $totalPaid, $method, $reference, $affectedInvoices, $totalDueRemaining, $encoursActuel, $seuilCredit);
+        // Send email only if enabled in settings
+        $emailEnabled = Setting::get('mail', 'enabled', '0');
+        if ($emailEnabled === '1' || $emailEnabled === 'true' || $emailEnabled === true) {
+            $this->sendEmail($partner, $totalPaid, $method, $reference, $affectedInvoices, $totalDueRemaining, $encoursActuel, $seuilCredit);
+        } else {
+            Log::info("PaymentNotification: Email disabled in settings, skipping.");
+        }
 
-        // Send WhatsApp
-        $this->sendWhatsApp($partner, $totalPaid, $method, $reference, $affectedInvoices, $totalDueRemaining, $encoursActuel, $seuilCredit);
+        // Send WhatsApp only if enabled in settings
+        $whatsappEnabled = Setting::get('whatsapp', 'enabled', '0');
+        if ($whatsappEnabled === '1' || $whatsappEnabled === 'true' || $whatsappEnabled === true) {
+            $this->sendWhatsApp($partner, $totalPaid, $method, $reference, $affectedInvoices, $totalDueRemaining, $encoursActuel, $seuilCredit);
+        } else {
+            Log::info("PaymentNotification: WhatsApp disabled in settings, skipping.");
+        }
     }
 
     private function sendEmail(

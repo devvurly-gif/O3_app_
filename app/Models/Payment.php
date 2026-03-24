@@ -81,41 +81,45 @@ class Payment extends Model
                 }
             }
 
-            // Send notification (email + WhatsApp) for individual payments
-            if (!static::$skipNotification && $partner) {
-                try {
-                    $footer = $payment->document->footer->fresh();
-
-                    app(PaymentNotificationService::class)->send(
-                        partner: $partner,
-                        totalPaid: (float) $payment->amount,
-                        method: $payment->method,
-                        reference: $payment->reference,
-                        affectedInvoices: [[
-                            'reference'      => $payment->document->reference,
-                            'amount_applied' => (float) $payment->amount,
-                            'amount_due'     => (float) $footer->amount_due,
-                            'is_paid'        => $footer->isPaid(),
-                        ]],
-                    );
-                } catch (\Throwable $e) {
-                    Log::warning("Payment notification failed: {$e->getMessage()}");
-                }
-            }
-
-            // In-app notification for admin/manager users
+            // Dispatch notifications asynchronously (non-blocking)
             if (!static::$skipNotification) {
-                try {
-                    $recipients = User::whereHas('role', fn ($q) => $q->whereIn('name', ['admin', 'manager']))
-                        ->where('is_active', true)
-                        ->get();
+                $paymentId = $payment->id;
+                dispatch(function () use ($paymentId) {
+                    try {
+                        $payment = Payment::with(['document.footer', 'document.thirdPartner'])->find($paymentId);
+                        if (!$payment) return;
 
-                    foreach ($recipients as $recipient) {
-                        $recipient->notify(new PaymentReceived($payment));
+                        $partner = $payment->document->thirdPartner;
+                        $footer = $payment->document->footer;
+
+                        // Send email + WhatsApp notification to partner
+                        if ($partner) {
+                            app(PaymentNotificationService::class)->send(
+                                partner: $partner,
+                                totalPaid: (float) $payment->amount,
+                                method: $payment->method,
+                                reference: $payment->reference,
+                                affectedInvoices: [[
+                                    'reference'      => $payment->document->reference,
+                                    'amount_applied' => (float) $payment->amount,
+                                    'amount_due'     => (float) ($footer->amount_due ?? 0),
+                                    'is_paid'        => $footer ? $footer->isPaid() : false,
+                                ]],
+                            );
+                        }
+
+                        // In-app notification for admin/manager users
+                        $recipients = User::whereHas('role', fn ($q) => $q->whereIn('name', ['admin', 'manager']))
+                            ->where('is_active', true)
+                            ->get();
+
+                        foreach ($recipients as $recipient) {
+                            $recipient->notify(new PaymentReceived($payment));
+                        }
+                    } catch (\Throwable $e) {
+                        Log::warning("Payment notification failed: {$e->getMessage()}");
                     }
-                } catch (\Throwable $e) {
-                    Log::warning("PaymentReceived in-app notification failed: {$e->getMessage()}");
-                }
+                })->afterResponse();
             }
         });
 
