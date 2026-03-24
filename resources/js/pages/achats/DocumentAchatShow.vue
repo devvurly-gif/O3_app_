@@ -108,6 +108,10 @@ async function confirmGenerateInvoice() {
   try {
     const result = await store.confirmerFacture(doc.value.id, invoicePaymentMethod.value)
     if (result.success && result.facture) {
+      // Refresh current document to show updated status
+      doc.value = await store.fetchOne(doc.value.id)
+      flash('Facture Achat ' + result.facture.reference + ' créée avec succès.')
+      // Navigate to the new invoice
       router.push(`/achats/documents/${result.facture.id}`)
       return
     }

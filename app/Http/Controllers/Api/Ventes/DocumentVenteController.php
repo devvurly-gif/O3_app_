@@ -130,10 +130,14 @@ class DocumentVenteController extends Controller
 
         $paymentMethod = $request->input('payment_method', 'credit');
 
+        // Eager-load relations upfront to avoid N+1 queries
+        $bl->loadMissing(['lignes', 'footer', 'payments']);
+
         $facture = DB::transaction(function () use ($bl, $paymentMethod) {
             $bl->update(['status' => 'delivered']);
 
             $reference = $this->generateReference('InvoiceSale');
+            $now = now();
 
             $facture = DocumentHeader::create([
                 'document_incrementor_id' => $bl->document_incrementor_id,
@@ -146,25 +150,30 @@ class DocumentVenteController extends Controller
                 'warehouse_id'            => $bl->warehouse_id,
                 'user_id'                 => auth()->id(),
                 'status'                  => 'pending',
-                'issued_at'               => now(),
-                'due_at'                  => now()->addDays(60),
+                'issued_at'               => $now,
+                'due_at'                  => $now->copy()->addDays(60),
                 'notes'                   => $bl->notes,
             ]);
 
-            // Copy lines from BL to Invoice
-            foreach ($bl->lignes as $ligne) {
-                $facture->lignes()->create([
-                    'product_id'       => $ligne->product_id,
-                    'sort_order'       => $ligne->sort_order,
-                    'line_type'        => $ligne->line_type,
-                    'designation'      => $ligne->designation,
-                    'reference'        => $ligne->reference,
-                    'quantity'         => $ligne->quantity,
-                    'unit'             => $ligne->unit,
-                    'unit_price'       => $ligne->unit_price,
-                    'discount_percent' => $ligne->discount_percent,
-                    'tax_percent'      => $ligne->tax_percent,
-                ]);
+            // Bulk insert lines from BL to Invoice
+            $lignesData = $bl->lignes->map(fn ($ligne) => [
+                'document_header_id' => $facture->id,
+                'product_id'         => $ligne->product_id,
+                'sort_order'         => $ligne->sort_order,
+                'line_type'          => $ligne->line_type,
+                'designation'        => $ligne->designation,
+                'reference'          => $ligne->reference,
+                'quantity'           => $ligne->quantity,
+                'unit'               => $ligne->unit,
+                'unit_price'         => $ligne->unit_price,
+                'discount_percent'   => $ligne->discount_percent,
+                'tax_percent'        => $ligne->tax_percent,
+                'created_at'         => $now,
+                'updated_at'         => $now,
+            ])->toArray();
+
+            if (!empty($lignesData)) {
+                \App\Models\DocumentLine::insert($lignesData);
             }
 
             if ($bl->footer) {
@@ -185,22 +194,20 @@ class DocumentVenteController extends Controller
                 }
             }
 
-            // Transfer existing BL payments to the new invoice (paiement_sur_bl flow)
-            $existingPayments = $bl->payments()->get();
-            if ($existingPayments->isNotEmpty()) {
+            // Transfer existing BL payments to the new invoice in bulk
+            if ($bl->payments->isNotEmpty()) {
                 Payment::$skipNotification = true;
                 try {
-                    foreach ($existingPayments as $payment) {
-                        $payment->update(['document_header_id' => $facture->id]);
-                    }
+                    Payment::whereIn('id', $bl->payments->pluck('id'))
+                        ->update(['document_header_id' => $facture->id]);
                 } finally {
                     Payment::$skipNotification = false;
                 }
 
                 // Recalculate invoice footer after payment transfer
+                $totalPaid = $bl->payments->sum('amount');
                 $facture->loadMissing('footer');
                 if ($facture->footer) {
-                    $totalPaid = $facture->payments()->sum('amount');
                     $facture->footer->update([
                         'amount_paid' => $totalPaid,
                         'amount_due'  => max(0, $facture->footer->total_ttc - $totalPaid),
