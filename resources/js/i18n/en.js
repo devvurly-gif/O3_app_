@@ -247,6 +247,7 @@ export default {
     namePlaceholder: 'Supplier name',
     currentBalance: 'Current Balance',
     currentBalancePlaceholder: '0.00',
+    balanceAutoCalculated: 'Automatically calculated from invoices and payments',
     creditLimit: 'Credit Limit',
     creditLimitPlaceholder: '0.00',
   },

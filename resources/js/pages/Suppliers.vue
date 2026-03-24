@@ -367,18 +367,16 @@
                     $t('suppliers.currentBalance')
                   }}</label>
                   <div class="relative">
-                    <input
-                      v-model.number="form.encours_actuel"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      placeholder="0.00"
-                      class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-12"
-                    />
+                    <div
+                      class="w-full px-3.5 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm font-mono pr-12 text-gray-700 dark:text-gray-300"
+                    >
+                      {{ formatNumber(form.encours_actuel ?? 0) }}
+                    </div>
                     <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 dark:text-gray-500 font-medium"
                       >DH</span
                     >
                   </div>
+                  <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{ $t('suppliers.balanceAutoCalculated') }}</p>
                 </div>
                 <div>
                   <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('suppliers.creditLimit') }}</label>
@@ -1738,10 +1736,12 @@ async function submit() {
   saving.value = true
   try {
     if (editTarget.value) {
-      await store.update(editTarget.value.id, form)
+      const { encours_actuel, ...updateData } = form
+      await store.update(editTarget.value.id, updateData)
       ;(toast.value as any)?.notify(t('suppliers.updated'), 'success')
     } else {
-      await store.create(form)
+      const { encours_actuel, ...createData } = form
+      await store.create(createData)
       ;(toast.value as any)?.notify(t('suppliers.created'), 'success')
     }
     showModal.value = false

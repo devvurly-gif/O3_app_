@@ -52,11 +52,13 @@ class ThirdPartnerController extends Controller
             'tp_email'          => ['nullable', 'email', 'max:255'],
             'tp_address'        => ['nullable', 'string'],
             'tp_city'           => ['nullable', 'string', 'max:100'],
-            'encours_actuel'           => ['nullable', 'numeric', 'min:0'],
             'seuil_credit'             => ['nullable', 'numeric', 'min:0'],
             'type_compte'              => ['nullable', 'in:normal,en_compte'],
             'frequence_facturation'    => ['nullable', 'required_if:type_compte,en_compte', 'in:mensuelle,trimestrielle,semestrielle'],
         ]);
+
+        // Force encours_actuel to 0 on creation — it's calculated from invoices/payments
+        $data['encours_actuel'] = 0;
 
         $partner = $this->partners->create($data);
         CacheService::flushPartners();
@@ -89,11 +91,13 @@ class ThirdPartnerController extends Controller
             'tp_email'          => ['nullable', 'email', 'max:255'],
             'tp_address'        => ['nullable', 'string'],
             'tp_city'           => ['nullable', 'string', 'max:100'],
-            'encours_actuel'           => ['nullable', 'numeric', 'min:0'],
             'seuil_credit'             => ['nullable', 'numeric', 'min:0'],
             'type_compte'              => ['nullable', 'in:normal,en_compte'],
             'frequence_facturation'    => ['nullable', 'required_if:type_compte,en_compte', 'in:mensuelle,trimestrielle,semestrielle'],
         ]);
+
+        // Never allow manual encours_actuel update — it's calculated from invoices/payments
+        unset($data['encours_actuel']);
 
         $this->partners->update($thirdPartner, $data);
         CacheService::flushPartners();
