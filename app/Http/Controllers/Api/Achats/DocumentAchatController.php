@@ -48,8 +48,12 @@ class DocumentAchatController extends Controller
             ], 422);
         }
 
+        // Eager-load to avoid N+1
+        $commande->loadMissing(['lignes', 'footer']);
+
         $br = DB::transaction(function () use ($commande) {
             $reference = $this->generateReference('ReceiptNotePurchase');
+            $now = now();
 
             $br = DocumentHeader::create([
                 'document_incrementor_id' => $commande->document_incrementor_id,
@@ -62,23 +66,29 @@ class DocumentAchatController extends Controller
                 'warehouse_id'            => $commande->warehouse_id,
                 'user_id'                 => auth()->id(),
                 'status'                  => 'confirmed',
-                'issued_at'               => now(),
+                'issued_at'               => $now,
                 'notes'                   => $commande->notes,
             ]);
 
-            foreach ($commande->lignes as $ligne) {
-                $br->lignes()->create([
-                    'product_id'       => $ligne->product_id,
-                    'sort_order'       => $ligne->sort_order,
-                    'line_type'        => $ligne->line_type,
-                    'designation'      => $ligne->designation,
-                    'reference'        => $ligne->reference,
-                    'quantity'         => $ligne->quantity,
-                    'unit'             => $ligne->unit,
-                    'unit_price'       => $ligne->unit_price,
-                    'discount_percent' => $ligne->discount_percent,
-                    'tax_percent'      => $ligne->tax_percent,
-                ]);
+            // Bulk insert lines
+            $lignesData = $commande->lignes->map(fn ($ligne) => [
+                'document_header_id' => $br->id,
+                'product_id'         => $ligne->product_id,
+                'sort_order'         => $ligne->sort_order,
+                'line_type'          => $ligne->line_type,
+                'designation'        => $ligne->designation,
+                'reference'          => $ligne->reference,
+                'quantity'           => $ligne->quantity,
+                'unit'               => $ligne->unit,
+                'unit_price'         => $ligne->unit_price,
+                'discount_percent'   => $ligne->discount_percent,
+                'tax_percent'        => $ligne->tax_percent,
+                'created_at'         => $now,
+                'updated_at'         => $now,
+            ])->toArray();
+
+            if (!empty($lignesData)) {
+                \App\Models\DocumentLine::insert($lignesData);
             }
 
             if ($commande->footer) {
@@ -94,6 +104,8 @@ class DocumentAchatController extends Controller
 
             $commande->update(['status' => 'converted']);
 
+            // Reload lignes from DB for stock processing
+            $br->load('lignes');
             $this->stockService->processDocument($br);
 
             return $br;

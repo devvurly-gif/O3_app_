@@ -49,8 +49,12 @@ class DocumentVenteController extends Controller
             ], 422);
         }
 
+        // Eager-load to avoid N+1
+        $devis->loadMissing(['lignes', 'footer']);
+
         $bl = DB::transaction(function () use ($devis) {
             $reference = $this->generateReference('DeliveryNote');
+            $now = now();
 
             $bl = DocumentHeader::create([
                 'document_incrementor_id' => $devis->document_incrementor_id,
@@ -63,23 +67,29 @@ class DocumentVenteController extends Controller
                 'warehouse_id'            => $devis->warehouse_id,
                 'user_id'                 => auth()->id(),
                 'status'                  => 'confirmed',
-                'issued_at'               => now(),
+                'issued_at'               => $now,
                 'notes'                   => $devis->notes,
             ]);
 
-            foreach ($devis->lignes as $ligne) {
-                $bl->lignes()->create([
-                    'product_id'       => $ligne->product_id,
-                    'sort_order'       => $ligne->sort_order,
-                    'line_type'        => $ligne->line_type,
-                    'designation'      => $ligne->designation,
-                    'reference'        => $ligne->reference,
-                    'quantity'         => $ligne->quantity,
-                    'unit'             => $ligne->unit,
-                    'unit_price'       => $ligne->unit_price,
-                    'discount_percent' => $ligne->discount_percent,
-                    'tax_percent'      => $ligne->tax_percent,
-                ]);
+            // Bulk insert lines
+            $lignesData = $devis->lignes->map(fn ($ligne) => [
+                'document_header_id' => $bl->id,
+                'product_id'         => $ligne->product_id,
+                'sort_order'         => $ligne->sort_order,
+                'line_type'          => $ligne->line_type,
+                'designation'        => $ligne->designation,
+                'reference'          => $ligne->reference,
+                'quantity'           => $ligne->quantity,
+                'unit'               => $ligne->unit,
+                'unit_price'         => $ligne->unit_price,
+                'discount_percent'   => $ligne->discount_percent,
+                'tax_percent'        => $ligne->tax_percent,
+                'created_at'         => $now,
+                'updated_at'         => $now,
+            ])->toArray();
+
+            if (!empty($lignesData)) {
+                \App\Models\DocumentLine::insert($lignesData);
             }
 
             if ($devis->footer) {
@@ -95,6 +105,8 @@ class DocumentVenteController extends Controller
 
             $devis->update(['status' => 'converted']);
 
+            // Reload lignes from DB for stock processing (bulk insert doesn't hydrate relations)
+            $bl->load('lignes');
             $this->stockService->processDocument($bl);
 
             return $bl;
