@@ -22,8 +22,10 @@ class RoleController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $request->merge(['name' => strtolower($request->input('name', ''))]);
+
         $data = $request->validate([
-            'name'         => ['required', 'string', 'max:50', 'unique:roles,name', 'regex:/^[a-z_]+$/'],
+            'name'         => ['required', 'string', 'max:50', 'unique:roles,name', 'regex:/^[a-z][a-z0-9_]*$/'],
             'display_name' => ['required', 'string', 'max:100'],
             'description'  => ['nullable', 'string', 'max:255'],
             'permissions'  => ['array'],
@@ -42,8 +44,12 @@ class RoleController extends Controller
 
     public function update(Request $request, Role $role): JsonResponse
     {
+        if ($request->has('name')) {
+            $request->merge(['name' => strtolower($request->input('name'))]);
+        }
+
         $data = $request->validate([
-            'name'         => ['sometimes', 'string', 'max:50', Rule::unique('roles', 'name')->ignore($role->id), 'regex:/^[a-z_]+$/'],
+            'name'         => ['sometimes', 'string', 'max:50', Rule::unique('roles', 'name')->ignore($role->id), 'regex:/^[a-z][a-z0-9_]*$/'],
             'display_name' => ['sometimes', 'string', 'max:100'],
             'description'  => ['nullable', 'string', 'max:255'],
             'permissions'  => ['array'],
