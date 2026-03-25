@@ -14,7 +14,7 @@ class StoreDocumentVenteRequest extends FormRequest
 
     public function rules(): array
     {
-        if ($this->route()->getActionMethod() === 'generer_bl') {
+        if (in_array($this->route()->getActionMethod(), ['generer_bc', 'generer_bl'])) {
             return [];
         }
 
@@ -39,16 +39,16 @@ class StoreDocumentVenteRequest extends FormRequest
                 return;
             }
 
-            /** @var \App\Models\DocumentHeader|null $devis */
-            $devis = $this->route('devis');
-            if (!$devis) return;
+            /** @var \App\Models\DocumentHeader|null $source */
+            $source = $this->route('bc') ?? $this->route('source');
+            if (!$source) return;
 
-            $client = ThirdPartner::find($devis->thirdPartner_id);
+            $client = ThirdPartner::find($source->thirdPartner_id);
             if (!$client) return;
 
             if ($client->seuil_credit <= 0) return;
 
-            $montantBL = $devis->footer?->total_ttc ?? 0;
+            $montantBL = $source->footer?->total_ttc ?? 0;
 
             $totalApres = $client->encours_actuel + $montantBL;
 

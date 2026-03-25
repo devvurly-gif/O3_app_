@@ -23,17 +23,13 @@ class DocumentVenteController extends Controller
     }
 
     /**
-     * Convert an accepted Quote into a Delivery Note (BL).
+     * Convert a confirmed Quote into a Customer Order (BC Client).
      *
-     * POST /api/ventes/documents/{devis}/generer-bl
+     * POST /api/ventes/documents/{devis}/generer-bc
      *
-     * Steps:
-     * 1. Verify the quote status is 'confirmed' (accepté)
-     * 2. Credit check happens in StoreDocumentVenteRequest
-     * 3. Create BL in a DB transaction with lines copied from quote
-     * 4. DocumentVenteObserver fires automatically → stock exit + encours++
+     * Devis (confirmé) → BC Client (confirmé) — NO stock impact
      */
-    public function generer_bl(
+    public function generer_bc(
         DocumentHeader $devis,
         StoreDocumentVenteRequest $request
     ): JsonResponse {
@@ -49,18 +45,17 @@ class DocumentVenteController extends Controller
             ], 422);
         }
 
-        // Eager-load to avoid N+1
         $devis->loadMissing(['lignes', 'footer']);
 
-        $bl = DB::transaction(function () use ($devis) {
-            $reference = $this->generateReference('DeliveryNote');
+        $bc = DB::transaction(function () use ($devis) {
+            $reference = $this->generateReference('CustomerOrder');
             $now = now();
 
-            $bl = DocumentHeader::create([
+            $bc = DocumentHeader::create([
                 'document_incrementor_id' => $devis->document_incrementor_id,
                 'reference'               => $reference,
-                'document_type'           => 'DeliveryNote',
-                'document_title'          => 'Bon de Livraison',
+                'document_type'           => 'CustomerOrder',
+                'document_title'          => 'Bon de Commande Client',
                 'parent_id'               => $devis->id,
                 'thirdPartner_id'         => $devis->thirdPartner_id,
                 'company_role'            => $devis->company_role,
@@ -71,41 +66,69 @@ class DocumentVenteController extends Controller
                 'notes'                   => $devis->notes,
             ]);
 
-            // Bulk insert lines
-            $lignesData = $devis->lignes->map(fn ($ligne) => [
-                'document_header_id' => $bl->id,
-                'product_id'         => $ligne->product_id,
-                'sort_order'         => $ligne->sort_order,
-                'line_type'          => $ligne->line_type,
-                'designation'        => $ligne->designation,
-                'reference'          => $ligne->reference,
-                'quantity'           => $ligne->quantity,
-                'unit'               => $ligne->unit,
-                'unit_price'         => $ligne->unit_price,
-                'discount_percent'   => $ligne->discount_percent,
-                'tax_percent'        => $ligne->tax_percent,
-                'created_at'         => $now,
-                'updated_at'         => $now,
-            ])->toArray();
-
-            if (!empty($lignesData)) {
-                \App\Models\DocumentLine::insert($lignesData);
-            }
-
-            if ($devis->footer) {
-                $bl->footer()->create([
-                    'total_ht'       => $devis->footer->total_ht,
-                    'total_discount' => $devis->footer->total_discount,
-                    'total_tax'      => $devis->footer->total_tax,
-                    'total_ttc'      => $devis->footer->total_ttc,
-                    'amount_paid'    => 0,
-                    'amount_due'     => $devis->footer->total_ttc,
-                ]);
-            }
+            $this->bulkCopyLines($devis, $bc, $now);
+            $this->copyFooter($devis, $bc);
 
             $devis->update(['status' => 'converted']);
 
-            // Reload lignes from DB for stock processing (bulk insert doesn't hydrate relations)
+            return $bc;
+        });
+
+        return response()->json([
+            'message' => 'Bon de Commande Client créé avec succès.',
+            'data'    => $bc->load(['thirdPartner', 'lignes.product', 'footer', 'user', 'warehouse']),
+        ], 201);
+    }
+
+    /**
+     * Convert a confirmed Customer Order into a Delivery Note (BL).
+     *
+     * POST /api/ventes/documents/{bc}/generer-bl
+     *
+     * BC Client (confirmé) → BL (confirmé) — stock exit happens here
+     */
+    public function generer_bl(
+        DocumentHeader $bc,
+        StoreDocumentVenteRequest $request
+    ): JsonResponse {
+        if (!$bc->isCustomerOrder()) {
+            return response()->json([
+                'message' => 'Ce document n\'est pas un Bon de Commande Client.',
+            ], 422);
+        }
+
+        if ($bc->status !== 'confirmed') {
+            return response()->json([
+                'message' => 'Ce BC ne peut pas être converti. Statut actuel : ' . $bc->status,
+            ], 422);
+        }
+
+        $bc->loadMissing(['lignes', 'footer']);
+
+        $bl = DB::transaction(function () use ($bc) {
+            $reference = $this->generateReference('DeliveryNote');
+            $now = now();
+
+            $bl = DocumentHeader::create([
+                'document_incrementor_id' => $bc->document_incrementor_id,
+                'reference'               => $reference,
+                'document_type'           => 'DeliveryNote',
+                'document_title'          => 'Bon de Livraison',
+                'parent_id'               => $bc->id,
+                'thirdPartner_id'         => $bc->thirdPartner_id,
+                'company_role'            => $bc->company_role,
+                'warehouse_id'            => $bc->warehouse_id,
+                'user_id'                 => auth()->id(),
+                'status'                  => 'confirmed',
+                'issued_at'               => $now,
+                'notes'                   => $bc->notes,
+            ]);
+
+            $this->bulkCopyLines($bc, $bl, $now);
+            $this->copyFooter($bc, $bl);
+
+            $bc->update(['status' => 'converted']);
+
             $bl->load('lignes');
             $this->stockService->processDocument($bl);
 
@@ -185,7 +208,7 @@ class DocumentVenteController extends Controller
             ])->toArray();
 
             if (!empty($lignesData)) {
-                \App\Models\DocumentLine::insert($lignesData);
+                \App\Models\DocumentLigne::insert($lignesData);
             }
 
             if ($bl->footer) {
@@ -242,6 +265,49 @@ class DocumentVenteController extends Controller
         ], 201);
     }
 
+    /**
+     * Bulk copy lines from source document to target document.
+     */
+    private function bulkCopyLines(DocumentHeader $source, DocumentHeader $target, $now): void
+    {
+        $lignesData = $source->lignes->map(fn ($ligne) => [
+            'document_header_id' => $target->id,
+            'product_id'         => $ligne->product_id,
+            'sort_order'         => $ligne->sort_order,
+            'line_type'          => $ligne->line_type,
+            'designation'        => $ligne->designation,
+            'reference'          => $ligne->reference,
+            'quantity'           => $ligne->quantity,
+            'unit'               => $ligne->unit,
+            'unit_price'         => $ligne->unit_price,
+            'discount_percent'   => $ligne->discount_percent,
+            'tax_percent'        => $ligne->tax_percent,
+            'created_at'         => $now,
+            'updated_at'         => $now,
+        ])->toArray();
+
+        if (!empty($lignesData)) {
+            \App\Models\DocumentLigne::insert($lignesData);
+        }
+    }
+
+    /**
+     * Copy footer from source document to target document.
+     */
+    private function copyFooter(DocumentHeader $source, DocumentHeader $target): void
+    {
+        if ($source->footer) {
+            $target->footer()->create([
+                'total_ht'       => $source->footer->total_ht,
+                'total_discount' => $source->footer->total_discount,
+                'total_tax'      => $source->footer->total_tax,
+                'total_ttc'      => $source->footer->total_ttc,
+                'amount_paid'    => 0,
+                'amount_due'     => $source->footer->total_ttc,
+            ]);
+        }
+    }
+
     private function generateReference(string $documentType): string
     {
         $incrementor = $this->incrementors
@@ -250,9 +316,10 @@ class DocumentVenteController extends Controller
 
         if (!$incrementor) {
             $prefix = match ($documentType) {
-                'DeliveryNote' => 'BL',
-                'InvoiceSale'  => 'FAC',
-                default        => 'DOC',
+                'CustomerOrder' => 'BC',
+                'DeliveryNote'  => 'BL',
+                'InvoiceSale'   => 'FAC',
+                default         => 'DOC',
             };
             return sprintf('%s-%d-%04d', $prefix, now()->year, rand(1, 9999));
         }

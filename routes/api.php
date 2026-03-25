@@ -195,7 +195,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('document-incrementors/{documentIncrementor}/confirm', [DocumentIncrementorController::class, 'confirmNext']);
 
         // ── Sales workflow (Ventes) ───────────────────────────────────
-        Route::post('ventes/documents/{devis}/generer-bl',  [DocumentVenteController::class, 'generer_bl']);
+        Route::post('ventes/documents/{devis}/generer-bc',  [DocumentVenteController::class, 'generer_bc']);
+        Route::post('ventes/documents/{bc}/generer-bl',     [DocumentVenteController::class, 'generer_bl']);
         Route::put('ventes/documents/{bl}/confirmer',       [DocumentVenteController::class, 'confirmer_reception']);
 
         // ── Purchase workflow (Achats) ───────────────────────────────

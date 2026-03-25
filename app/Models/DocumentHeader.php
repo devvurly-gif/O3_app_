@@ -147,7 +147,8 @@ class DocumentHeader extends Model
     public function canConvertTo(string $targetType): bool
     {
         $allowed = [
-            'QuoteSale'            => ['InvoiceSale', 'DeliveryNote'],
+            'QuoteSale'            => ['CustomerOrder'],
+            'CustomerOrder'        => ['DeliveryNote'],
             'DeliveryNote'         => ['InvoiceSale'],
             'InvoiceSale'          => ['CreditNoteSale'],
             'PurchaseOrder'        => ['ReceiptNotePurchase'],

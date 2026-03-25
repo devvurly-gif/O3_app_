@@ -68,12 +68,29 @@ export const useDocumentVenteStore = defineStore('documentVente', () => {
    * Convert a Quote into a Delivery Note (BL).
    * If credit is exceeded, the server returns 422 with a credit error.
    */
-  async function genererBL(devisId: number): Promise<{ success: boolean; bl?: DocumentHeader; creditError?: string }> {
+  async function genererBC(devisId: number): Promise<{ success: boolean; bc?: DocumentHeader; error?: string }> {
+    loading.value = true
+    try {
+      const { data } = await http.post<{ data: DocumentHeader }>(`/ventes/documents/${devisId}/generer-bc`)
+      return { success: true, bc: data.data }
+    } catch (e: unknown) {
+      const err = e as { response?: { status?: number; data?: { message?: string } } }
+      if (err.response?.status === 422) {
+        return { success: false, error: err.response.data?.message ?? 'Erreur de conversion.' }
+      }
+      error.value = 'Erreur serveur. Veuillez réessayer.'
+      throw e
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function genererBL(bcId: number): Promise<{ success: boolean; bl?: DocumentHeader; creditError?: string }> {
     creditError.value = null
     loading.value = true
 
     try {
-      const { data } = await http.post<{ data: DocumentHeader }>(`/ventes/documents/${devisId}/generer-bl`)
+      const { data } = await http.post<{ data: DocumentHeader }>(`/ventes/documents/${bcId}/generer-bl`)
       return { success: true, bl: data.data }
     } catch (e: unknown) {
       const err = e as { response?: { status?: number; data?: { message?: string; errors?: { credit?: string[] } } } }
@@ -200,6 +217,7 @@ export const useDocumentVenteStore = defineStore('documentVente', () => {
     updateStatus,
     remove,
     addPayment,
+    genererBC,
     genererBL,
     confirmerReception,
   }

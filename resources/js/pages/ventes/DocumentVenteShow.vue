@@ -41,6 +41,7 @@ const canConfirm = computed(() => doc.value?.status === 'draft')
 const canConvert = computed(() => {
   if (!doc.value) return false
   if (doc.value.document_type === 'QuoteSale' && doc.value.status === 'confirmed') return true
+  if (doc.value.document_type === 'CustomerOrder' && doc.value.status === 'confirmed') return true
   if (doc.value.document_type === 'DeliveryNote' && doc.value.status === 'confirmed') return true
   return false
 })
@@ -59,7 +60,8 @@ const canCancel = computed(
 const canDelete = computed(() => doc.value?.status === 'draft')
 
 const convertLabel = computed(() => {
-  if (doc.value?.document_type === 'QuoteSale') return 'Transformer en BL'
+  if (doc.value?.document_type === 'QuoteSale') return 'Transformer en BC'
+  if (doc.value?.document_type === 'CustomerOrder') return 'Transformer en BL'
   if (doc.value?.document_type === 'DeliveryNote') return 'Générer Facture'
   return 'Convertir'
 })
@@ -90,8 +92,17 @@ async function convertDocument() {
   actionLoading.value = true
   try {
     if (doc.value.document_type === 'QuoteSale') {
+      const result = await store.genererBC(doc.value.id)
+      if (result.success && result.bc) {
+        flash('Bon de Commande Client créé avec succès.')
+        router.push(`/ventes/documents/${result.bc.id}`)
+        return
+      }
+      if (result.error) flashError(result.error)
+    } else if (doc.value.document_type === 'CustomerOrder') {
       const result = await store.genererBL(doc.value.id)
       if (result.success && result.bl) {
+        flash('Bon de Livraison créé avec succès.')
         router.push(`/ventes/documents/${result.bl.id}`)
         return
       }
