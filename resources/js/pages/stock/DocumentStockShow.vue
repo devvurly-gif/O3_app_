@@ -2,11 +2,10 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDocumentStockStore } from '@/stores/stock/useDocumentStockStore'
-import FlashMessages from '@/components/FlashMessages.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
 import DocumentLinesTable from '@/components/DocumentLinesTable.vue'
 import ConfirmModal from '@/components/ConfirmModal.vue'
-import { useFlash } from '@/composables/useFlash'
+import { useToastStore } from '@/stores/toastStore'
 import { useFormat } from '@/composables/useFormat'
 import { stockTypeLabels } from '@/composables/useDocumentLabels'
 import type { DocumentHeader } from '@/types'
@@ -16,7 +15,7 @@ const router = useRouter()
 const store = useDocumentStockStore()
 
 const { fmt } = useFormat()
-const { successMsg, errorMsg, flash, flashError } = useFlash()
+const toast = useToastStore()
 
 const doc = ref<DocumentHeader | null>(null)
 const actionLoading = ref(false)
@@ -53,13 +52,9 @@ async function applyDocument() {
     const result = await store.appliquer(doc.value.id)
     if (result.success) {
       doc.value = result.document!
-      flash('Document appliqué. Les mouvements de stock ont été enregistrés.')
-    } else {
-      flashError(store.error ?? "Erreur lors de l'application.")
+      toast.success('Document appliqué. Les mouvements de stock ont été enregistrés.')
     }
-  } catch {
-    flashError("Erreur lors de l'application.")
-  }
+  } catch { /* Axios interceptor shows toast */ }
   actionLoading.value = false
 }
 
@@ -70,13 +65,9 @@ async function cancelDocument() {
     const result = await store.annuler(doc.value.id)
     if (result.success) {
       doc.value = result.document!
-      flash('Document annulé.')
-    } else {
-      flashError(store.error ?? "Erreur lors de l'annulation.")
+      toast.success('Document annulé.')
     }
-  } catch {
-    flashError("Erreur lors de l'annulation.")
-  }
+  } catch { /* Axios interceptor shows toast */ }
   actionLoading.value = false
 }
 
@@ -85,10 +76,9 @@ async function deleteDocument() {
   actionLoading.value = true
   try {
     await store.remove(doc.value.id)
+    toast.success('Document supprimé.')
     router.push('/stock/documents')
-  } catch {
-    flashError('Erreur lors de la suppression.')
-  }
+  } catch { /* Axios interceptor shows toast */ }
   actionLoading.value = false
   showDeleteConfirm.value = false
 }
@@ -109,8 +99,6 @@ async function deleteDocument() {
 
     <!-- Document -->
     <div v-else-if="doc">
-      <FlashMessages :success="successMsg" :error="errorMsg || store.error || ''" />
-
       <!-- Breadcrumb + Title Row -->
       <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
         <div>
@@ -161,10 +149,14 @@ async function deleteDocument() {
             class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-50"
             @click="applyDocument"
           >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <svg v-if="actionLoading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
             </svg>
-            Appliquer au stock
+            {{ actionLoading ? 'Application...' : 'Appliquer au stock' }}
           </button>
 
           <!-- Badge appliqué -->

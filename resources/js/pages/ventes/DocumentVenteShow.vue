@@ -3,12 +3,11 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDocumentVenteStore } from '@/stores/ventes/useDocumentVenteStore'
 import BaseModal from '@/components/BaseModal.vue'
-import FlashMessages from '@/components/FlashMessages.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
 import DocumentLinesTable from '@/components/DocumentLinesTable.vue'
 import PaymentModal from '@/components/PaymentModal.vue'
 import ConfirmModal from '@/components/ConfirmModal.vue'
-import { useFlash } from '@/composables/useFlash'
+import { useToastStore } from '@/stores/toastStore'
 import { useFormat } from '@/composables/useFormat'
 import { usePdf } from '@/composables/usePdf'
 import { saleTypeLabels } from '@/composables/useDocumentLabels'
@@ -19,7 +18,7 @@ const router = useRouter()
 const store = useDocumentVenteStore()
 
 const { fmt } = useFormat()
-const { successMsg, errorMsg, flash, flashError } = useFlash()
+const toast = useToastStore()
 const { pdfLoading, downloadPdf: doPdfDownload, previewPdf: doPdfPreview } = usePdf()
 
 const doc = ref<DocumentHeader | null>(null)
@@ -72,10 +71,8 @@ async function confirmDocument() {
   try {
     await store.updateStatus(doc.value.id, 'confirmed')
     doc.value = await store.fetchOne(doc.value.id)
-    flash('Document confirmé avec succès.')
-  } catch {
-    flashError('Erreur lors de la confirmation.')
-  }
+    toast.success('Document confirmé avec succès.')
+  } catch { /* Axios interceptor shows toast */ }
   actionLoading.value = false
 }
 
@@ -94,23 +91,19 @@ async function convertDocument() {
     if (doc.value.document_type === 'QuoteSale') {
       const result = await store.genererBC(doc.value.id)
       if (result.success && result.bc) {
-        flash('Bon de Commande Client créé avec succès.')
+        toast.success('Bon de Commande Client créé avec succès.')
         router.push(`/ventes/documents/${result.bc.id}`)
         return
       }
-      if (result.error) flashError(result.error)
     } else if (doc.value.document_type === 'CustomerOrder') {
       const result = await store.genererBL(doc.value.id)
       if (result.success && result.bl) {
-        flash('Bon de Livraison créé avec succès.')
+        toast.success('Bon de Livraison créé avec succès.')
         router.push(`/ventes/documents/${result.bl.id}`)
         return
       }
-      if (result.creditError) flashError(result.creditError)
     }
-  } catch {
-    flashError('Erreur lors de la conversion.')
-  }
+  } catch { /* Axios interceptor shows toast */ }
   actionLoading.value = false
 }
 
@@ -121,16 +114,12 @@ async function confirmGenerateInvoice() {
   try {
     const result = await store.confirmerReception(doc.value.id, invoicePaymentMethod.value)
     if (result.success && result.facture) {
-      // Refresh current document to show updated status
       doc.value = await store.fetchOne(doc.value.id)
-      flash('Facture ' + result.facture.reference + ' créée avec succès.')
-      // Navigate to the new invoice
+      toast.success('Facture ' + result.facture.reference + ' créée avec succès.')
       router.push(`/ventes/documents/${result.facture.id}`)
       return
     }
-  } catch {
-    flashError('Erreur lors de la génération de la facture.')
-  }
+  } catch { /* Axios interceptor shows toast */ }
   actionLoading.value = false
 }
 
@@ -140,10 +129,8 @@ async function cancelDocument() {
   try {
     await store.updateStatus(doc.value.id, 'cancelled')
     doc.value = await store.fetchOne(doc.value.id)
-    flash('Document annulé.')
-  } catch {
-    flashError("Erreur lors de l'annulation.")
-  }
+    toast.success('Document annulé.')
+  } catch { /* Axios interceptor shows toast */ }
   actionLoading.value = false
 }
 
@@ -152,10 +139,9 @@ async function deleteDocument() {
   actionLoading.value = true
   try {
     await store.remove(doc.value.id)
+    toast.success('Document supprimé.')
     router.push('/ventes/documents')
-  } catch {
-    flashError('Erreur lors de la suppression.')
-  }
+  } catch { /* Axios interceptor shows toast */ }
   actionLoading.value = false
   showDeleteConfirm.value = false
 }
@@ -177,7 +163,7 @@ async function submitPayment(payload: {
     })
     showPaymentModal.value = false
     doc.value = await store.fetchOne(doc.value.id)
-    flash('Paiement enregistré.')
+    toast.success('Paiement enregistré.')
   } catch {
     paymentError.value = "Erreur lors de l'enregistrement du paiement."
   }
@@ -223,8 +209,6 @@ const paymentProgress = computed(() => {
 
     <!-- Document -->
     <div v-else-if="doc">
-      <FlashMessages :success="successMsg" :error="errorMsg || store.creditError || ''" />
-
       <!-- Breadcrumb + Title Row -->
       <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
         <div>
@@ -273,10 +257,14 @@ const paymentProgress = computed(() => {
             class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
             @click="confirmDocument"
           >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <svg v-if="actionLoading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            Confirmer
+            {{ actionLoading ? 'Confirmation...' : 'Confirmer' }}
           </button>
 
           <button
@@ -285,14 +273,18 @@ const paymentProgress = computed(() => {
             class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
             @click="convertDocument"
           >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <svg v-if="actionLoading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
               />
             </svg>
-            {{ convertLabel }}
+            {{ actionLoading ? 'Conversion...' : convertLabel }}
           </button>
 
           <button
