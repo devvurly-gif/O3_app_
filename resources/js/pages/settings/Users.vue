@@ -215,7 +215,6 @@
       </template>
     </BaseModal>
 
-    <BaseNotification ref="toast" />
   </div>
 </template>
 
@@ -229,7 +228,7 @@ import { useAuthStore } from '@/stores/authStore'
 import BaseTable from '@/components/BaseTable.vue'
 import BasePagination from '@/components/BasePagination.vue'
 import BaseModal from '@/components/BaseModal.vue'
-import BaseNotification from '@/components/BaseNotification.vue'
+import { useToastStore } from '@/stores/toastStore'
 
 const { t } = useI18n()
 const store = useUserStore()
@@ -246,7 +245,7 @@ const roleFilter = ref('')
 const statusFilter = ref('')
 const currentPage = ref(1)
 const perPage = 15
-const toast = ref(null)
+const toast = useToastStore()
 
 const showModal = ref(false)
 const showDelete = ref(false)
@@ -311,18 +310,14 @@ async function submit() {
   try {
     if (editTarget.value) {
       await store.update(editTarget.value.id, payload)
-      toast.value?.notify(t('users.updated'), 'success')
+      toast.success(t('users.updated'))
     } else {
       await store.create(payload)
-      toast.value?.notify(t('users.created'), 'success')
+      toast.success(t('users.created'))
     }
     showModal.value = false
-  } catch (err: unknown) {
-    const e = err as { response?: { data?: { message?: string } } }
-    toast.value?.notify(e.response?.data?.message ?? t('common.failedSave'), 'error')
-  } finally {
-    saving.value = false
-  }
+  } catch { /* Axios interceptor shows toast */ }
+  saving.value = false
 }
 
 function confirmDelete(row: Record<string, unknown>) {
@@ -334,14 +329,10 @@ async function doDelete() {
   deleting.value = true
   try {
     await store.remove(deleteTarget.value.id)
-    toast.value?.notify(t('users.deleted'), 'success')
+    toast.success(t('users.deleted'))
     showDelete.value = false
-  } catch (err: unknown) {
-    const e = err as { response?: { data?: { message?: string } } }
-    toast.value?.notify(e.response?.data?.message ?? t('common.failedDelete'), 'error')
-  } finally {
-    deleting.value = false
-  }
+  } catch { /* Axios interceptor shows toast */ }
+  deleting.value = false
 }
 
 onMounted(() => {

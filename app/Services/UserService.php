@@ -25,7 +25,7 @@ class UserService
 
     public function update(User $user, array $data): User
     {
-        if (isset($data['password']) && empty($data['password'])) {
+        if (array_key_exists('password', $data) && ($data['password'] === null || $data['password'] === '')) {
             unset($data['password']);
         }
 
