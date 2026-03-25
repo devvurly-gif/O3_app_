@@ -41,7 +41,7 @@ const canConvert = computed(() => {
   if (!doc.value) return false
   if (doc.value.document_type === 'QuoteSale' && doc.value.status === 'confirmed') return true
   if (doc.value.document_type === 'CustomerOrder' && doc.value.status === 'confirmed') return true
-  if (doc.value.document_type === 'DeliveryNote' && doc.value.status === 'confirmed') return true
+  if (doc.value.document_type === 'DeliveryNote' && ['confirmed', 'delivered'].includes(doc.value.status)) return true
   return false
 })
 const canPay = computed(() => {

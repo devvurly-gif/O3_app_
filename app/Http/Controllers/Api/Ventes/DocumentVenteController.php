@@ -157,9 +157,9 @@ class DocumentVenteController extends Controller
             ], 422);
         }
 
-        if ($bl->status !== 'confirmed') {
+        if (!in_array($bl->status, ['confirmed', 'delivered'])) {
             return response()->json([
-                'message' => 'Ce BL ne peut plus être confirmé. Statut actuel : ' . $bl->status,
+                'message' => 'Ce BL ne peut plus être converti en facture. Statut actuel : ' . $bl->status,
             ], 422);
         }
 
