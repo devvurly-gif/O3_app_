@@ -36,6 +36,12 @@ class AuthService
             ]);
         }
 
+        if ($user->isCashier() && !Module::where('name', 'pos')->where('is_active', true)->exists()) {
+            throw ValidationException::withMessages([
+                'email' => ['Le module POS n\'est pas activé. Contactez votre administrateur.'],
+            ]);
+        }
+
         $this->users->revokeApiTokens($user, 'api');
         $token = $this->users->createToken($user, 'api');
 

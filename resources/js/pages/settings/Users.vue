@@ -30,7 +30,7 @@
         class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
       >
         <option value="">{{ $t('users.allRoles') }}</option>
-        <option v-for="r in roleStore.items" :key="r.id" :value="r.name">{{ r.display_name }}</option>
+        <option v-for="r in availableRoles" :key="r.id" :value="r.name">{{ r.display_name }}</option>
       </select>
       <select
         v-model="statusFilter"
@@ -161,7 +161,7 @@
               class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option :value="null" disabled>-- Sélectionner --</option>
-              <option v-for="r in roleStore.items" :key="r.id" :value="r.id">{{ r.display_name }}</option>
+              <option v-for="r in availableRoles" :key="r.id" :value="r.id">{{ r.display_name }}</option>
             </select>
           </div>
           <div class="flex items-center gap-2 pt-6">
@@ -225,6 +225,7 @@ import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/stores/user'
 import { useRoleStore } from '@/stores/role'
+import { useAuthStore } from '@/stores/authStore'
 import BaseTable from '@/components/BaseTable.vue'
 import BasePagination from '@/components/BasePagination.vue'
 import BaseModal from '@/components/BaseModal.vue'
@@ -233,6 +234,11 @@ import BaseNotification from '@/components/BaseNotification.vue'
 const { t } = useI18n()
 const store = useUserStore()
 const roleStore = useRoleStore()
+const auth = useAuthStore()
+
+const availableRoles = computed(() =>
+  roleStore.items.filter((r) => r.name !== 'cashier' || auth.hasModule('pos')),
+)
 const { items } = storeToRefs(store)
 
 const search = ref('')
