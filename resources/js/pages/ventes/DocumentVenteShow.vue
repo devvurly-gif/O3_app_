@@ -103,7 +103,10 @@ async function convertDocument() {
         return
       }
     }
-  } catch { /* Axios interceptor shows toast */ }
+  } catch {
+    // Refresh document to update status/badge after failed conversion
+    doc.value = await store.fetchOne(doc.value.id)
+  }
   actionLoading.value = false
 }
 
@@ -119,7 +122,9 @@ async function confirmGenerateInvoice() {
       router.push(`/ventes/documents/${result.facture.id}`)
       return
     }
-  } catch { /* Axios interceptor shows toast */ }
+  } catch {
+    doc.value = await store.fetchOne(doc.value.id)
+  }
   actionLoading.value = false
 }
 
