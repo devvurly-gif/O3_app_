@@ -157,7 +157,7 @@ class DocumentHeader extends Model
             // Les documents de stock ne se convertissent pas
         ];
 
-        return !$this->isConverted()
+        return !$this->trashed()
             && in_array($targetType, $allowed[$this->document_type] ?? []);
     }
 }

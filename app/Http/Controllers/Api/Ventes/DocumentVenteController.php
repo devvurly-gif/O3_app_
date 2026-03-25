@@ -69,7 +69,7 @@ class DocumentVenteController extends Controller
             $this->bulkCopyLines($devis, $bc, $now);
             $this->copyFooter($devis, $bc);
 
-            $devis->update(['status' => 'converted']);
+            $devis->delete(); // soft-delete — BC keeps parent_id for traceability
 
             return $bc;
         });
@@ -127,7 +127,7 @@ class DocumentVenteController extends Controller
             $this->bulkCopyLines($bc, $bl, $now);
             $this->copyFooter($bc, $bl);
 
-            $bc->update(['status' => 'converted']);
+            $bc->delete(); // soft-delete — BL keeps parent_id for traceability
 
             $bl->load('lignes');
             $this->stockService->processDocument($bl);

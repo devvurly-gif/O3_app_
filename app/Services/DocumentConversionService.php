@@ -64,7 +64,7 @@ class DocumentConversionService
                 ]);
             }
 
-            $this->documents->update($source, ['status' => 'converted']);
+            $source->delete(); // soft-delete — target keeps parent_id for traceability
 
             $this->incrementors->incrementNextTrick($incrementor);
 
@@ -74,8 +74,8 @@ class DocumentConversionService
 
     private function validateConversion(DocumentHeader $source, int $targetIncrementorId): void
     {
-        if ($source->isConverted()) {
-            throw new \Exception("Document {$source->reference} is already converted.");
+        if ($source->trashed()) {
+            throw new \Exception("Document {$source->reference} has already been converted.");
         }
 
         $targetIncrementor = $this->incrementors->find($targetIncrementorId);

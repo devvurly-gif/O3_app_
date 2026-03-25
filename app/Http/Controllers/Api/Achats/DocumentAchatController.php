@@ -88,7 +88,7 @@ class DocumentAchatController extends Controller
             ])->toArray();
 
             if (!empty($lignesData)) {
-                \App\Models\DocumentLine::insert($lignesData);
+                \App\Models\DocumentLigne::insert($lignesData);
             }
 
             if ($commande->footer) {
@@ -102,7 +102,7 @@ class DocumentAchatController extends Controller
                 ]);
             }
 
-            $commande->update(['status' => 'converted']);
+            $commande->delete(); // soft-delete — BR keeps parent_id for traceability
 
             // Reload lignes from DB for stock processing
             $br->load('lignes');
@@ -184,7 +184,7 @@ class DocumentAchatController extends Controller
             ])->toArray();
 
             if (!empty($lignesData)) {
-                \App\Models\DocumentLine::insert($lignesData);
+                \App\Models\DocumentLigne::insert($lignesData);
             }
 
             if ($br->footer) {
