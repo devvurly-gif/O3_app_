@@ -88,7 +88,7 @@ async function convertDocument() {
     if (doc.value.document_type === 'PurchaseOrder') {
       const result = await store.genererReception(doc.value.id)
       if (result.success && result.br) {
-        toast.success('Bon de Réception créé avec succès.')
+        toast.success(`BR ${result.br.reference} créé avec succès.`)
         router.push(`/achats/documents/${result.br.id}`)
         return
       }
@@ -104,7 +104,6 @@ async function confirmGenerateInvoice() {
   try {
     const result = await store.confirmerFacture(doc.value.id, invoicePaymentMethod.value)
     if (result.success && result.facture) {
-      doc.value = await store.fetchOne(doc.value.id)
       toast.success('Facture Achat ' + result.facture.reference + ' créée avec succès.')
       router.push(`/achats/documents/${result.facture.id}`)
       return

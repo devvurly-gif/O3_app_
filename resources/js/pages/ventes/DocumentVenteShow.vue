@@ -91,22 +91,19 @@ async function convertDocument() {
     if (doc.value.document_type === 'QuoteSale') {
       const result = await store.genererBC(doc.value.id)
       if (result.success && result.bc) {
-        toast.success('Bon de Commande Client créé avec succès.')
+        toast.success(`BC ${result.bc.reference} créé avec succès.`)
         router.push(`/ventes/documents/${result.bc.id}`)
         return
       }
     } else if (doc.value.document_type === 'CustomerOrder') {
       const result = await store.genererBL(doc.value.id)
       if (result.success && result.bl) {
-        toast.success('Bon de Livraison créé avec succès.')
+        toast.success(`BL ${result.bl.reference} créé avec succès.`)
         router.push(`/ventes/documents/${result.bl.id}`)
         return
       }
     }
-  } catch {
-    // Refresh document to update status/badge after failed conversion
-    doc.value = await store.fetchOne(doc.value.id)
-  }
+  } catch { /* Axios interceptor shows toast */ }
   actionLoading.value = false
 }
 
@@ -117,14 +114,11 @@ async function confirmGenerateInvoice() {
   try {
     const result = await store.confirmerReception(doc.value.id, invoicePaymentMethod.value)
     if (result.success && result.facture) {
-      doc.value = await store.fetchOne(doc.value.id)
       toast.success('Facture ' + result.facture.reference + ' créée avec succès.')
       router.push(`/ventes/documents/${result.facture.id}`)
       return
     }
-  } catch {
-    doc.value = await store.fetchOne(doc.value.id)
-  }
+  } catch { /* Axios interceptor shows toast */ }
   actionLoading.value = false
 }
 
