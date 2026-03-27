@@ -31,6 +31,10 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'resend' => [
+        'key' => env('RESEND_API_KEY'),
+    ],
+
     'ecom' => [
         'api_key'         => env('ECOM_API_KEY', 'o3-ecom-default-key-change-me'),
         'default_user_id' => env('ECOM_DEFAULT_USER_ID', 1),
