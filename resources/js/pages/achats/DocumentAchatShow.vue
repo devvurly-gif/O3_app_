@@ -216,6 +216,29 @@ const paymentProgress = computed(() => {
           >
             {{ doc.document_title }}
           </p>
+          <!-- Document chain (parent / children) -->
+          <div v-if="doc.parent || (doc.children && doc.children.length)" class="flex flex-wrap items-center gap-2 mt-2 text-xs">
+            <template v-if="doc.parent">
+              <span class="text-gray-400 dark:text-gray-500">Issu de :</span>
+              <router-link
+                :to="`/achats/documents/${doc.parent.id}`"
+                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 hover:bg-teal-100 dark:hover:bg-teal-900/50 transition"
+              >
+                {{ typeLabels[doc.parent.document_type] ?? doc.parent.document_type }} #{{ doc.parent.reference }}
+              </router-link>
+            </template>
+            <template v-if="doc.children && doc.children.length">
+              <span class="text-gray-400 dark:text-gray-500">{{ doc.parent ? '|' : '' }} A produit :</span>
+              <router-link
+                v-for="child in doc.children"
+                :key="child.id"
+                :to="`/achats/documents/${child.id}`"
+                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/50 transition"
+              >
+                {{ typeLabels[child.document_type] ?? child.document_type }} #{{ child.reference }}
+              </router-link>
+            </template>
+          </div>
         </div>
 
         <StatusBadge :status="doc.status" class="shrink-0 self-start" />

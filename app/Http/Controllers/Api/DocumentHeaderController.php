@@ -97,7 +97,7 @@ class DocumentHeaderController extends Controller
     public function show(DocumentHeader $documentHeader): JsonResponse
     {
         return response()->json(
-            $documentHeader->load(['thirdPartner', 'user', 'warehouse', 'lignes.product', 'footer', 'payments'])
+            $documentHeader->load(['thirdPartner', 'user', 'warehouse', 'lignes.product', 'footer', 'payments', 'parent:id,reference,document_type', 'children:id,reference,document_type,parent_id'])
         );
     }
 
