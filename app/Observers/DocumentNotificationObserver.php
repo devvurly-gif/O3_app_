@@ -5,7 +5,6 @@ namespace App\Observers;
 use App\Models\DocumentHeader;
 use App\Models\User;
 use App\Notifications\OrderConfirmation;
-use Illuminate\Support\Facades\Log;
 
 class DocumentNotificationObserver
 {
@@ -35,20 +34,9 @@ class DocumentNotificationObserver
             ->where('is_active', true)
             ->get();
 
+        // Notifications are queued (ShouldQueue) — they won't block the response
         foreach ($recipients as $user) {
-            try {
-                $user->notify(new OrderConfirmation($doc));
-            } catch (\Throwable $e) {
-                Log::warning("Email notification failed for document {$doc->reference}, falling back to database only.", [
-                    'user_id' => $user->id,
-                    'error'   => $e->getMessage(),
-                ]);
-
-                try {
-                    $user->notify((new OrderConfirmation($doc))->onlyDatabase());
-                } catch (\Throwable) {
-                }
-            }
+            $user->notify(new OrderConfirmation($doc));
         }
     }
 }

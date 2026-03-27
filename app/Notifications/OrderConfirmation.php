@@ -12,6 +12,9 @@ class OrderConfirmation extends Notification implements ShouldQueue
 {
     use Queueable;
 
+    public int $tries = 3;
+    public int $backoff = 60; // retry after 60 seconds
+
     private static array $typeLabels = [
         'QuoteSale'            => 'Devis',
         'CustomerOrder'        => 'Bon de Commande Client',
@@ -26,22 +29,13 @@ class OrderConfirmation extends Notification implements ShouldQueue
         'ReturnPurchase'       => 'Bon de Retour Fournisseur',
     ];
 
-    private bool $databaseOnly = false;
-
     public function __construct(
         private DocumentHeader $document,
     ) {}
 
-    public function onlyDatabase(): static
-    {
-        $this->databaseOnly = true;
-
-        return $this;
-    }
-
     public function via(object $notifiable): array
     {
-        return $this->databaseOnly ? ['database'] : ['mail', 'database'];
+        return ['mail', 'database'];
     }
 
     public function toMail(object $notifiable): MailMessage
