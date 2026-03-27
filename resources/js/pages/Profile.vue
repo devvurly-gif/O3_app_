@@ -104,18 +104,17 @@
       </form>
     </div>
 
-    <BaseNotification ref="toast" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
+import { useToastStore } from '@/stores/toastStore'
 import http from '@/services/http'
-import BaseNotification from '@/components/BaseNotification.vue'
 
 const auth = useAuthStore()
-const toast = ref<InstanceType<typeof BaseNotification> | null>(null)
+const toast = useToastStore()
 
 const profileForm = reactive({
   name: '',
@@ -141,13 +140,9 @@ async function updateProfile() {
   try {
     const { data } = await http.put('/auth/profile', profileForm)
     auth.setUser(data)
-    toast.value?.notify('Profil mis à jour', 'success')
-  } catch (err: unknown) {
-    const e = err as { response?: { data?: { message?: string } } }
-    toast.value?.notify(e.response?.data?.message ?? 'Erreur', 'error')
-  } finally {
-    savingProfile.value = false
-  }
+    toast.success('Profil mis à jour.')
+  } catch { /* Axios interceptor shows toast */ }
+  savingProfile.value = false
 }
 
 async function updatePassword() {
@@ -157,15 +152,8 @@ async function updatePassword() {
     passwordForm.current_password = ''
     passwordForm.password = ''
     passwordForm.password_confirmation = ''
-    toast.value?.notify('Mot de passe modifié', 'success')
-  } catch (err: unknown) {
-    const e = err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } }
-    const msg = e.response?.data?.errors?.current_password?.[0]
-      ?? e.response?.data?.message
-      ?? 'Erreur'
-    toast.value?.notify(msg, 'error')
-  } finally {
-    savingPassword.value = false
-  }
+    toast.success('Mot de passe modifié avec succès.')
+  } catch { /* Axios interceptor shows toast */ }
+  savingPassword.value = false
 }
 </script>

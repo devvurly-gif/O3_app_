@@ -105,11 +105,12 @@
               type="text"
               required
               :disabled="editTarget?.is_system"
-              placeholder="ex: commercial"
-              pattern="^[a-z_]+$"
+              placeholder="ex: sales_operator_g2"
+              pattern="^[a-z][a-z0-9_]*$"
+              @input="form.name = form.name.toLowerCase()"
               class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
             />
-            <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Lettres minuscules et underscores uniquement</p>
+            <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Lettres minuscules, chiffres et underscores (commence par une lettre)</p>
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nom affiché <span class="text-red-500">*</span></label>
