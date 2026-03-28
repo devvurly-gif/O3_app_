@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDocumentVenteStore } from '@/stores/ventes/useDocumentVenteStore'
 import BaseModal from '@/components/BaseModal.vue'
@@ -31,8 +31,15 @@ const paymentError = ref('')
 
 const typeLabels = saleTypeLabels
 
-onMounted(async () => {
+async function loadDocument() {
+  actionLoading.value = false
   doc.value = await store.fetchOne(Number(route.params.id))
+}
+
+onMounted(loadDocument)
+
+watch(() => route.params.id, (newId) => {
+  if (newId) loadDocument()
 })
 
 const canEdit = computed(() => doc.value?.status === 'draft')
