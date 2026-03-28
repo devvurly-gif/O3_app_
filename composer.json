@@ -9,11 +9,12 @@
         "barryvdh/laravel-dompdf": "^3.1",
         "guzzlehttp/guzzle": "^7.2",
         "laravel/framework": "^10.10",
-        "laravel/reverb": "^1.8",
         "laravel/sanctum": "^3.3",
         "laravel/tinker": "^2.8",
         "maatwebsite/excel": "^3.1",
+        "pusher/pusher-php-server": "^7.0",
         "spatie/laravel-activitylog": "^4.12",
+        "stancl/tenancy": "^3.8",
         "twilio/sdk": "^8.11"
     },
     "require-dev": {

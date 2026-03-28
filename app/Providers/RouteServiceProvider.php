@@ -29,12 +29,36 @@ class RouteServiceProvider extends ServiceProvider
         });
 
         $this->routes(function () {
+            // Central API routes (tenant management)
+            $this->mapCentralRoutes();
+
+            // Central API routes (used by both central & tenant via tenant.php)
             Route::middleware('api')
                 ->prefix('api')
                 ->group(base_path('routes/api.php'));
 
+            // Central web (SPA catch-all for central domains)
             Route::middleware('web')
                 ->group(base_path('routes/web.php'));
         });
+    }
+
+    /**
+     * Register central-only routes (tenant management panel).
+     */
+    protected function mapCentralRoutes(): void
+    {
+        foreach ($this->centralDomains() as $domain) {
+            Route::domain($domain)
+                ->group(base_path('routes/central.php'));
+        }
+    }
+
+    protected function centralDomains(): array
+    {
+        return config('tenancy.central_domains', [
+            'localhost',
+            '127.0.0.1',
+        ]);
     }
 }

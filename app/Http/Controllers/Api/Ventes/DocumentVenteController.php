@@ -308,6 +308,59 @@ class DocumentVenteController extends Controller
         }
     }
 
+    /**
+     * Duplicate a document for multiple clients.
+     *
+     * POST /api/ventes/documents/{document}/duplicate-for-clients
+     * Body: { "client_ids": [1, 2, 3] }
+     *
+     * Creates a draft copy of the document for each selected client.
+     */
+    public function duplicateForClients(Request $request, DocumentHeader $document): JsonResponse
+    {
+        $request->validate([
+            'client_ids'   => 'required|array|min:1',
+            'client_ids.*' => 'integer|exists:third_partners,id',
+        ]);
+
+        $document->loadMissing(['lignes', 'footer']);
+
+        $created = DB::transaction(function () use ($document, $request) {
+            $copies = [];
+            $now = now();
+
+            foreach ($request->client_ids as $clientId) {
+                $reference = $this->generateReference($document->document_type);
+
+                $copy = DocumentHeader::create([
+                    'document_incrementor_id' => $document->document_incrementor_id,
+                    'reference'               => $reference,
+                    'document_type'           => $document->document_type,
+                    'document_title'          => $document->document_title,
+                    'thirdPartner_id'         => $clientId,
+                    'company_role'            => $document->company_role,
+                    'warehouse_id'            => $document->warehouse_id,
+                    'user_id'                 => auth()->id(),
+                    'status'                  => 'draft',
+                    'issued_at'               => $now,
+                    'notes'                   => $document->notes,
+                ]);
+
+                $this->bulkCopyLines($document, $copy, $now);
+                $this->copyFooter($document, $copy);
+
+                $copies[] = $copy->load(['thirdPartner', 'lignes.product', 'footer']);
+            }
+
+            return $copies;
+        });
+
+        return response()->json([
+            'message' => count($created) . ' copie(s) créée(s) avec succès.',
+            'data'    => $created,
+        ], 201);
+    }
+
     private function generateReference(string $documentType): string
     {
         $incrementor = $this->incrementors
