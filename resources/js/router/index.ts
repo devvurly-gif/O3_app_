@@ -252,9 +252,15 @@ router.beforeEach(async (to) => {
   // ── 1. Auth check ──────────────────────────────────────────────
   const isAuthenticated = auth.isAuthenticated
 
-  // Guest-only page (login) — redirect to dashboard if already logged in
+  // Guest-only page (login) — redirect after login
   if (to.meta.guest) {
-    return isAuthenticated ? { path: '/dashboard' } : undefined
+    if (!isAuthenticated) return undefined
+    // Central domain → redirect to tenant management
+    const centralDomains = ['localhost', '127.0.0.1', import.meta.env.VITE_CENTRAL_DOMAIN].filter(Boolean)
+    if (centralDomains.includes(window.location.hostname)) {
+      return { path: '/central/tenants' }
+    }
+    return { path: '/dashboard' }
   }
 
   // All other pages require authentication
@@ -281,11 +287,16 @@ router.beforeEach(async (to) => {
   }
 
   // ── 3b. Central-only guard (tenant management) ─────────────────
-  if (to.path.startsWith('/central')) {
-    const centralDomains = ['localhost', '127.0.0.1', import.meta.env.VITE_CENTRAL_DOMAIN].filter(Boolean)
-    if (!centralDomains.includes(window.location.hostname)) {
-      return { path: '/dashboard' }
-    }
+  const centralDomains2 = ['localhost', '127.0.0.1', import.meta.env.VITE_CENTRAL_DOMAIN].filter(Boolean)
+  const onCentral = centralDomains2.includes(window.location.hostname)
+
+  if (to.path.startsWith('/central') && !onCentral) {
+    return { path: '/dashboard' }
+  }
+
+  // On central domain, redirect non-central pages to tenant management
+  if (onCentral && to.path === '/dashboard') {
+    return { path: '/central/tenants' }
   }
 
   // ── 4. POS module guard (frontend-side) ────────────────────────
