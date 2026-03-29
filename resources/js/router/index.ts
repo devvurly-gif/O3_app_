@@ -222,6 +222,23 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../pages/settings/ActivityLog.vue'),
     meta: { layout: 'app', title: "Piste d'audit", breadcrumb: "Piste d'audit", adminOnly: true },
   },
+
+  // ── Central Admin (Tenant Management) ────────────────────────────
+  {
+    path: '/central/tenants',
+    component: () => import('../pages/central/TenantList.vue'),
+    meta: { layout: 'app', title: 'Gestion Clients', breadcrumb: 'Clients', adminOnly: true },
+  },
+  {
+    path: '/central/tenants/create',
+    component: () => import('../pages/central/TenantCreate.vue'),
+    meta: { layout: 'app', title: 'Nouveau Client', breadcrumb: 'Nouveau Client', adminOnly: true },
+  },
+  {
+    path: '/central/tenants/:id',
+    component: () => import('../pages/central/TenantShow.vue'),
+    meta: { layout: 'app', title: 'Détail Client', breadcrumb: 'Détail', adminOnly: true },
+  },
 ]
 
 const router = createRouter({
