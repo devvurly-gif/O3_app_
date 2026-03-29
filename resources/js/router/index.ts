@@ -280,6 +280,14 @@ router.beforeEach(async (to) => {
     return { path: '/dashboard' }
   }
 
+  // ── 3b. Central-only guard (tenant management) ─────────────────
+  if (to.path.startsWith('/central')) {
+    const centralDomains = ['localhost', '127.0.0.1', import.meta.env.VITE_CENTRAL_DOMAIN].filter(Boolean)
+    if (!centralDomains.includes(window.location.hostname)) {
+      return { path: '/dashboard' }
+    }
+  }
+
   // ── 4. POS module guard (frontend-side) ────────────────────────
   if (to.path.startsWith('/pos') && !auth.hasModule('pos')) {
     return { path: '/dashboard' }
