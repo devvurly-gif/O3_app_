@@ -15,6 +15,7 @@ declare module 'vue-router' {
 const routes: RouteRecordRaw[] = [
   { path: '/', redirect: '/dashboard' },
 
+  { path: '/landing', component: () => import('../pages/LandingPage.vue'), meta: { guest: true, layout: 'none' } },
   { path: '/login', component: () => import('../pages/auth/Login.vue'), meta: { guest: true } },
 
   {
@@ -252,12 +253,15 @@ router.beforeEach(async (to) => {
   // ── 1. Auth check ──────────────────────────────────────────────
   const isAuthenticated = auth.isAuthenticated
 
-  // Guest-only page (login) — redirect after login
+  // Helper: check if on central domain
+  const centralDomains = ['localhost', '127.0.0.1', import.meta.env.VITE_CENTRAL_DOMAIN].filter(Boolean)
+  const onCentralDomain = centralDomains.includes(window.location.hostname)
+
+  // Guest-only page (login, landing) — redirect after login
   if (to.meta.guest) {
     if (!isAuthenticated) return undefined
     // Central domain → redirect to tenant management
-    const centralDomains = ['localhost', '127.0.0.1', import.meta.env.VITE_CENTRAL_DOMAIN].filter(Boolean)
-    if (centralDomains.includes(window.location.hostname)) {
+    if (onCentralDomain) {
       return { path: '/central/tenants' }
     }
     return { path: '/dashboard' }
@@ -265,6 +269,10 @@ router.beforeEach(async (to) => {
 
   // All other pages require authentication
   if (!isAuthenticated) {
+    // On central domain, show landing page instead of login
+    if (onCentralDomain && to.path !== '/login') {
+      return { path: '/landing' }
+    }
     return { path: '/login', query: { redirect: to.fullPath } }
   }
 
@@ -287,15 +295,12 @@ router.beforeEach(async (to) => {
   }
 
   // ── 3b. Central-only guard (tenant management) ─────────────────
-  const centralDomains2 = ['localhost', '127.0.0.1', import.meta.env.VITE_CENTRAL_DOMAIN].filter(Boolean)
-  const onCentral = centralDomains2.includes(window.location.hostname)
-
-  if (to.path.startsWith('/central') && !onCentral) {
+  if (to.path.startsWith('/central') && !onCentralDomain) {
     return { path: '/dashboard' }
   }
 
   // On central domain, redirect non-central pages to tenant management
-  if (onCentral && to.path === '/dashboard') {
+  if (onCentralDomain && to.path === '/dashboard') {
     return { path: '/central/tenants' }
   }
 
