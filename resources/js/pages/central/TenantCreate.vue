@@ -48,25 +48,31 @@ const plans = [
     value: 'starter',
     label: 'Starter',
     desc: 'Ventes + Stock',
-    price: '299 MAD/mois',
+    features: ['Gestion des ventes', 'Gestion du stock', 'Sous-domaine gratuit', '500 emails/mois', 'Support email'],
+    price: '499',
     color: 'border-gray-300 dark:border-gray-600',
-    selectedColor: 'border-gray-500 bg-gray-50 dark:bg-gray-700',
+    selectedColor: 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20',
+    badge: '',
   },
   {
     value: 'business',
     label: 'Business',
     desc: 'Ventes + Achats + Stock + POS',
-    price: '499 MAD/mois',
+    features: ['Tout le plan Starter', 'Gestion des achats', 'Point de vente (POS)', 'Domaine personnalisé', '2000 emails/mois', '200 WhatsApp/mois', 'Support prioritaire'],
+    price: '999',
     color: 'border-gray-300 dark:border-gray-600',
-    selectedColor: 'border-blue-500 bg-blue-50 dark:bg-blue-900/30',
+    selectedColor: 'border-blue-500 bg-blue-50 dark:bg-blue-900/20',
+    badge: 'Populaire',
   },
   {
     value: 'enterprise',
     label: 'Enterprise',
-    desc: 'Tout + eCom + WhatsApp',
-    price: '999 MAD/mois',
+    desc: 'Tout + eCom + WhatsApp illimité',
+    features: ['Tout le plan Business', 'Module e-Commerce', 'WhatsApp illimité', 'Emails illimités', 'Domaine personnalisé (.ma)', 'Backup quotidien', 'Formation 2h incluse', 'Support téléphonique'],
+    price: '1999',
     color: 'border-gray-300 dark:border-gray-600',
-    selectedColor: 'border-purple-500 bg-purple-50 dark:bg-purple-900/30',
+    selectedColor: 'border-purple-500 bg-purple-50 dark:bg-purple-900/20',
+    badge: 'Premium',
   },
 ]
 </script>
@@ -158,20 +164,30 @@ const plans = [
 
       <!-- Plan Selection -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Plan</label>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Plan d'abonnement</label>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <button
             v-for="plan in plans"
             :key="plan.value"
             type="button"
             @click="form.plan = plan.value"
             :class="[
-              'relative rounded-xl border-2 p-4 text-left transition cursor-pointer',
+              'relative rounded-xl border-2 p-5 text-left transition cursor-pointer',
               form.plan === plan.value ? plan.selectedColor : plan.color,
             ]"
           >
-            <div class="flex items-center justify-between mb-2">
-              <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ plan.label }}</span>
+            <!-- Badge -->
+            <span
+              v-if="plan.badge"
+              :class="[
+                'absolute -top-2.5 right-3 px-2.5 py-0.5 text-xs font-bold rounded-full',
+                plan.value === 'business' ? 'bg-blue-600 text-white' : 'bg-purple-600 text-white',
+              ]"
+            >{{ plan.badge }}</span>
+
+            <!-- Header -->
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-base font-bold text-gray-900 dark:text-white">{{ plan.label }}</span>
               <span
                 v-if="form.plan === plan.value"
                 class="w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center"
@@ -181,8 +197,23 @@ const plans = [
                 </svg>
               </span>
             </div>
-            <p class="text-xs text-gray-500 dark:text-gray-400">{{ plan.desc }}</p>
-            <p class="text-sm font-bold text-gray-900 dark:text-white mt-2">{{ plan.price }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">{{ plan.desc }}</p>
+
+            <!-- Price -->
+            <div class="mb-3">
+              <span class="text-2xl font-extrabold text-gray-900 dark:text-white">{{ plan.price }}</span>
+              <span class="text-sm text-gray-500 dark:text-gray-400"> MAD/mois</span>
+            </div>
+
+            <!-- Features -->
+            <ul class="space-y-1.5">
+              <li v-for="feature in plan.features" :key="feature" class="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-400">
+                <svg class="w-3.5 h-3.5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                </svg>
+                {{ feature }}
+              </li>
+            </ul>
           </button>
         </div>
       </div>
