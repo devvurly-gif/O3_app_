@@ -70,7 +70,7 @@ class TenantController extends Controller
         // Seed the tenant database with an admin user
         $tenant->run(function () use ($validated) {
             // Create admin role
-            $role = \App\Models\Role::create(['name' => 'admin']);
+            $role = \App\Models\Role::firstOrCreate(['name' => 'admin']);
 
             // Create admin user
             \App\Models\User::create([
@@ -82,11 +82,9 @@ class TenantController extends Controller
             ]);
 
             // Seed default settings
-            \App\Models\Setting::insert([
-                ['key' => 'company_name', 'value' => $validated['name']],
-                ['key' => 'currency', 'value' => 'MAD'],
-                ['key' => 'tax_rate', 'value' => '20'],
-            ]);
+            \App\Models\Setting::set('general', 'company_name', $validated['name']);
+            \App\Models\Setting::set('general', 'currency', 'MAD');
+            \App\Models\Setting::set('general', 'tax_rate', '20');
         });
 
         return response()->json([
