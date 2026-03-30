@@ -17,6 +17,43 @@
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white text-center mb-1">{{ $t('auth.welcomeBack') }}</h1>
         <p class="text-sm text-gray-500 dark:text-gray-400 text-center mb-8">{{ $t('auth.signInAccount') }}</p>
 
+        <!-- Demo Credentials Banner -->
+        <div
+          v-if="isDemo"
+          class="mb-5 px-4 py-4 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800"
+        >
+          <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
+              </svg>
+            </div>
+            <div class="flex-1">
+              <p class="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-2">{{ $t('auth.demoMode') || 'Mode Démonstration' }}</p>
+              <div class="space-y-1.5">
+                <div class="flex items-center gap-2">
+                  <span class="text-xs text-blue-600 dark:text-blue-400 font-medium w-14">Email :</span>
+                  <code class="text-xs bg-white dark:bg-gray-800 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-700 text-gray-800 dark:text-gray-200 font-mono select-all">demo@o3app.ma</code>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs text-blue-600 dark:text-blue-400 font-medium w-14">{{ $t('auth.password') || 'Password' }} :</span>
+                  <code class="text-xs bg-white dark:bg-gray-800 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-700 text-gray-800 dark:text-gray-200 font-mono select-all">demo1234</code>
+                </div>
+              </div>
+              <button
+                type="button"
+                @click="fillDemo"
+                class="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition"
+              >
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672zm-7.518-.267A8.25 8.25 0 1120.25 10.5M8.288 14.212A5.25 5.25 0 1117.25 10.5" />
+                </svg>
+                {{ $t('auth.fillDemo') || 'Remplir et se connecter' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- Error -->
         <div
           v-if="error"
@@ -123,7 +160,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { useI18n } from 'vue-i18n'
@@ -138,6 +175,19 @@ const loading = ref(false)
 const error = ref('')
 const showPassword = ref(false)
 const year = new Date().getFullYear()
+
+// Detect demo tenant by hostname
+const isDemo = computed(() => {
+  const host = window.location.hostname.toLowerCase()
+  return host.startsWith('demo.')
+})
+
+function fillDemo() {
+  form.email = 'demo@o3app.ma'
+  form.password = 'demo1234'
+  form.remember = true
+  handleLogin()
+}
 
 async function handleLogin() {
   loading.value = true
