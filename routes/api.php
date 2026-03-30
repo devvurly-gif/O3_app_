@@ -273,6 +273,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::post('settings',   [SettingController::class, 'upsert']);
         Route::delete('settings', [SettingController::class, 'destroy']);
+        Route::post('settings/logo',          [SettingController::class, 'uploadLogo']);
+        Route::delete('settings/logo',        [SettingController::class, 'deleteLogo']);
         Route::post('settings/test-email',    [SettingController::class, 'testEmail']);
         Route::post('settings/test-whatsapp', [SettingController::class, 'testWhatsapp']);
 

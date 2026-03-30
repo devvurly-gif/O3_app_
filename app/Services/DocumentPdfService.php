@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\DocumentHeader;
 use App\Models\Setting;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Storage;
 
 class DocumentPdfService
 {
@@ -56,8 +57,22 @@ class DocumentPdfService
 
     private function getCompanyInfo(): array
     {
+        // Resolve logo to base64 data URI for DomPDF (it can't fetch URLs)
+        $logoUrl  = Setting::get('company', 'logo');
+        $logoData = null;
+
+        if ($logoUrl) {
+            $relativePath = str_replace('/storage/', '', $logoUrl);
+            if (Storage::disk('public')->exists($relativePath)) {
+                $content  = Storage::disk('public')->get($relativePath);
+                $mime     = Storage::disk('public')->mimeType($relativePath);
+                $logoData = 'data:' . $mime . ';base64,' . base64_encode($content);
+            }
+        }
+
         return [
             'name'    => Setting::get('company', 'name', 'Mon Entreprise'),
+            'logo'    => $logoData,
             'address' => Setting::get('company', 'address', ''),
             'city'    => Setting::get('company', 'city', ''),
             'phone'   => Setting::get('company', 'phone', ''),

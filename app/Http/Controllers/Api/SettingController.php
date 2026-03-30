@@ -9,6 +9,7 @@ use App\Services\WhatsAppService;
 use App\Models\Setting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class SettingController extends Controller
 {
@@ -103,5 +104,47 @@ class SettingController extends Controller
                 ? "WhatsApp test sent to {$phone}"
                 : 'WhatsApp test failed. Check your Twilio credentials.',
         ], $sent ? 200 : 422);
+    }
+
+    /**
+     * Upload company logo.
+     */
+    public function uploadLogo(Request $request): JsonResponse
+    {
+        $request->validate([
+            'logo' => ['required', 'image', 'mimes:jpeg,jpg,png,webp,svg', 'max:2048'],
+        ]);
+
+        // Delete old logo if exists
+        $oldLogo = Setting::get('company', 'logo');
+        if ($oldLogo) {
+            $oldPath = str_replace('/storage/', '', $oldLogo);
+            Storage::disk('public')->delete($oldPath);
+        }
+
+        $path = $request->file('logo')->store('logos', 'public');
+        $url  = Storage::url($path);
+
+        $this->settings->upsert('company', 'logo', $url);
+
+        return response()->json([
+            'message' => 'Logo uploaded successfully.',
+            'url'     => $url,
+        ]);
+    }
+
+    /**
+     * Delete company logo.
+     */
+    public function deleteLogo(): JsonResponse
+    {
+        $logo = Setting::get('company', 'logo');
+        if ($logo) {
+            $path = str_replace('/storage/', '', $logo);
+            Storage::disk('public')->delete($path);
+            $this->settings->upsert('company', 'logo', null);
+        }
+
+        return response()->json(['message' => 'Logo deleted.']);
     }
 }

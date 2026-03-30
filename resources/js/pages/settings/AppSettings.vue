@@ -32,6 +32,45 @@
         <!-- Company -->
         <section class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 space-y-4">
           <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 uppercase tracking-wide">{{ $t('appSettings.company') }}</h3>
+
+          <!-- Logo Upload -->
+          <div class="flex items-start gap-5 pb-4 border-b border-gray-100 dark:border-gray-700">
+            <div class="flex-shrink-0">
+              <div v-if="logoPreview || company.logo" class="w-24 h-24 rounded-xl border-2 border-gray-200 dark:border-gray-600 overflow-hidden bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+                <img :src="logoPreview || company.logo" alt="Logo" class="max-w-full max-h-full object-contain" />
+              </div>
+              <div v-else class="w-24 h-24 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+                <svg class="w-8 h-8 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
+                </svg>
+              </div>
+            </div>
+            <div class="flex-1 space-y-2">
+              <p class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $t('appSettings.companyLogo') || 'Logo de l\'entreprise' }}</p>
+              <p class="text-xs text-gray-400 dark:text-gray-500">{{ $t('appSettings.logoHint') || 'JPG, PNG, WebP ou SVG. Max 2 Mo. Apparaît sur les factures et documents imprimés.' }}</p>
+              <div class="flex items-center gap-2">
+                <label class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                  </svg>
+                  {{ uploadingLogo ? ($t('common.uploading') || 'Upload...') : ($t('appSettings.uploadLogo') || 'Télécharger') }}
+                  <input type="file" accept="image/jpeg,image/png,image/webp,image/svg+xml" class="hidden" @change="handleLogoUpload" :disabled="uploadingLogo" />
+                </label>
+                <button
+                  v-if="company.logo"
+                  @click="deleteLogo"
+                  :disabled="deletingLogo"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                  </svg>
+                  {{ $t('common.delete') || 'Supprimer' }}
+                </button>
+              </div>
+            </div>
+          </div>
+
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.companyName') }}</label>
@@ -365,7 +404,10 @@ const testingEmail = ref(false)
 const whatsappTestResult = ref<{ success: boolean; message: string } | null>(null)
 const emailTestResult = ref<{ success: boolean; message: string } | null>(null)
 
-const company = reactive({ name: '', phone: '', email: '', ice: '', rc: '', if: '', address: '' })
+const company = reactive({ name: '', phone: '', email: '', ice: '', rc: '', if: '', address: '', logo: '' })
+const logoPreview = ref<string | null>(null)
+const uploadingLogo = ref(false)
+const deletingLogo = ref(false)
 const locale = reactive({ currency: '', currency_symbol: '', timezone: '', date_format: '', language: 'en' })
 const invoice = reactive({ default_tax_rate: '', payment_terms_days: '', footer_note: '' })
 const stock = reactive({ autoriser_stock_negatif: 'false' })
@@ -445,6 +487,50 @@ async function testEmail() {
     toast.value?.notify('Email test failed', 'error')
   } finally {
     testingEmail.value = false
+  }
+}
+
+async function handleLogoUpload(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+
+  // Preview
+  logoPreview.value = URL.createObjectURL(file)
+  uploadingLogo.value = true
+
+  try {
+    const formData = new FormData()
+    formData.append('logo', file)
+    const { data } = await http.post('/settings/logo', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    company.logo = data.url
+    logoPreview.value = null
+    toast.value?.notify('Logo uploaded!', 'success')
+    // Refresh settings store
+    await store.fetchAll()
+  } catch (e: any) {
+    logoPreview.value = null
+    toast.value?.notify(e.response?.data?.message || 'Logo upload failed', 'error')
+  } finally {
+    uploadingLogo.value = false
+    input.value = ''
+  }
+}
+
+async function deleteLogo() {
+  deletingLogo.value = true
+  try {
+    await http.delete('/settings/logo')
+    company.logo = ''
+    logoPreview.value = null
+    toast.value?.notify('Logo deleted.', 'success')
+    await store.fetchAll()
+  } catch {
+    toast.value?.notify('Failed to delete logo', 'error')
+  } finally {
+    deletingLogo.value = false
   }
 }
 

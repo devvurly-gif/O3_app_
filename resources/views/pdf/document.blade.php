@@ -14,6 +14,7 @@
         .header-left, .header-right { display: table-cell; vertical-align: top; }
         .header-left { width: 55%; }
         .header-right { width: 45%; text-align: right; }
+        .company-logo { max-height: 60px; max-width: 180px; margin-bottom: 8px; }
         .company-name { font-size: 18px; font-weight: bold; color: #1e3a5f; margin-bottom: 4px; }
         .company-info { font-size: 9px; color: #555; line-height: 1.6; }
         .doc-title { font-size: 22px; font-weight: bold; color: #1e3a5f; margin-bottom: 6px; }
@@ -95,6 +96,9 @@
     {{-- ── Header ──────────────────────────────────────────── --}}
     <div class="header">
         <div class="header-left">
+            @if(!empty($company['logo']))
+                <img src="{{ $company['logo'] }}" alt="Logo" class="company-logo" />
+            @endif
             <div class="company-name">{{ $company['name'] }}</div>
             <div class="company-info">
                 @if($company['address']){{ $company['address'] }}<br>@endif
