@@ -18,6 +18,8 @@ const form = ref({
   domain: '',
   plan: 'starter',
   admin_password: '',
+  pos_enabled: false,
+  paiement_bl_enabled: false,
 })
 
 // Auto-generate domain from ID
@@ -42,6 +44,16 @@ async function onSubmit() {
     loading.value = false
   }
 }
+
+function onPlanChange(plan: string) {
+  form.value.plan = plan
+  // Auto-enable POS for business/enterprise plans
+  if (plan === 'business' || plan === 'enterprise') {
+    form.value.pos_enabled = true
+  }
+}
+
+const toggleClass = 'w-11 h-6 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[\'\'] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 dark:after:border-gray-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600'
 
 const plans = [
   {
@@ -170,7 +182,7 @@ const plans = [
             v-for="plan in plans"
             :key="plan.value"
             type="button"
-            @click="form.plan = plan.value"
+            @click="onPlanChange(plan.value)"
             :class="[
               'relative rounded-xl border-2 p-5 text-left transition cursor-pointer',
               form.plan === plan.value ? plan.selectedColor : plan.color,
@@ -215,6 +227,50 @@ const plans = [
               </li>
             </ul>
           </button>
+        </div>
+      </div>
+
+      <!-- Feature Flags -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Modules & Options</label>
+        <div class="space-y-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+          <!-- POS Toggle -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-lg flex items-center justify-center" :class="form.pos_enabled ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-gray-200 dark:bg-gray-700'">
+                <svg :class="['w-5 h-5', form.pos_enabled ? 'text-blue-600' : 'text-gray-400']" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <div>
+                <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Point de Vente (POS)</p>
+                <p class="text-xs text-gray-400">Caisse, tickets, sessions</p>
+              </div>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input v-model="form.pos_enabled" type="checkbox" class="sr-only peer" />
+              <div :class="toggleClass"></div>
+            </label>
+          </div>
+
+          <!-- Paiement BL Toggle -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-lg flex items-center justify-center" :class="form.paiement_bl_enabled ? 'bg-green-100 dark:bg-green-900/30' : 'bg-gray-200 dark:bg-gray-700'">
+                <svg :class="['w-5 h-5', form.paiement_bl_enabled ? 'text-green-600' : 'text-gray-400']" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
+                </svg>
+              </div>
+              <div>
+                <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Paiement sur Bon de Livraison</p>
+                <p class="text-xs text-gray-400">Paiements directement sur les BL</p>
+              </div>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input v-model="form.paiement_bl_enabled" type="checkbox" class="sr-only peer" />
+              <div class="w-11 h-6 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 dark:after:border-gray-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+            </label>
+          </div>
         </div>
       </div>
 

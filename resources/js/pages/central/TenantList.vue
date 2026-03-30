@@ -174,6 +174,7 @@ function formatDate(d: string) {
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Domaine</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Plan</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Statut</th>
+            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Modules</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Essai expire</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Créé le</th>
             <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Actions</th>
@@ -181,7 +182,7 @@ function formatDate(d: string) {
         </thead>
         <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
           <tr v-if="filtered.length === 0">
-            <td colspan="7" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+            <td colspan="8" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
               Aucun client trouvé.
             </td>
           </tr>
@@ -224,6 +225,38 @@ function formatDate(d: string) {
                 <span :class="['w-1.5 h-1.5 rounded-full', tenant.is_active ? 'bg-green-500' : 'bg-red-500']" />
                 {{ tenant.is_active ? 'Actif' : 'Inactif' }}
               </span>
+            </td>
+            <td class="px-6 py-4">
+              <div class="flex items-center justify-center gap-2">
+                <span
+                  :class="[
+                    'inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full',
+                    tenant.pos_enabled
+                      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
+                      : 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500'
+                  ]"
+                  :title="tenant.pos_enabled ? 'POS activé' : 'POS désactivé'"
+                >
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  </svg>
+                  POS
+                </span>
+                <span
+                  :class="[
+                    'inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full',
+                    tenant.paiement_bl_enabled
+                      ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
+                      : 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500'
+                  ]"
+                  :title="tenant.paiement_bl_enabled ? 'Paiement BL activé' : 'Paiement BL désactivé'"
+                >
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
+                  </svg>
+                  BL
+                </span>
+              </div>
             </td>
             <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
               {{ tenant.trial_ends_at ? formatDate(tenant.trial_ends_at) : '-' }}

@@ -47,12 +47,14 @@ class TenantController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'id'             => 'required|string|max:50|unique:tenants,id|alpha_dash',
-            'name'           => 'required|string|max:255',
-            'email'          => 'required|email|unique:tenants,email',
-            'domain'         => 'required|string|unique:domains,domain',
-            'plan'           => 'required|in:starter,business,enterprise',
-            'admin_password' => 'required|string|min:6',
+            'id'                  => 'required|string|max:50|unique:tenants,id|alpha_dash',
+            'name'                => 'required|string|max:255',
+            'email'               => 'required|email|unique:tenants,email',
+            'domain'              => 'required|string|unique:domains,domain',
+            'plan'                => 'required|in:starter,business,enterprise',
+            'admin_password'      => 'required|string|min:6',
+            'pos_enabled'         => 'sometimes|boolean',
+            'paiement_bl_enabled' => 'sometimes|boolean',
         ]);
 
         $tenant = Tenant::create([
@@ -62,6 +64,11 @@ class TenantController extends Controller
             'plan'          => $validated['plan'],
             'trial_ends_at' => now()->addDays(14),
         ]);
+
+        // Store feature flags in JSON data column
+        $tenant->pos_enabled = $validated['pos_enabled'] ?? in_array($validated['plan'], ['business', 'enterprise']);
+        $tenant->paiement_bl_enabled = $validated['paiement_bl_enabled'] ?? false;
+        $tenant->save();
 
         $tenant->domains()->create([
             'domain' => $validated['domain'],
@@ -85,6 +92,11 @@ class TenantController extends Controller
             \App\Models\Setting::set('general', 'company_name', $validated['name']);
             \App\Models\Setting::set('general', 'currency', 'MAD');
             \App\Models\Setting::set('general', 'tax_rate', '20');
+
+            // Set tenant-level feature flags
+            \App\Models\Setting::set('ventes', 'paiement_sur_bl',
+                ($validated['paiement_bl_enabled'] ?? false) ? 'true' : 'false'
+            );
         });
 
         return response()->json([
@@ -99,12 +111,36 @@ class TenantController extends Controller
     public function update(Request $request, Tenant $tenant): JsonResponse
     {
         $validated = $request->validate([
-            'name'      => 'sometimes|string|max:255',
-            'plan'      => 'sometimes|in:starter,business,enterprise',
-            'is_active' => 'sometimes|boolean',
+            'name'                => 'sometimes|string|max:255',
+            'plan'                => 'sometimes|in:starter,business,enterprise',
+            'is_active'           => 'sometimes|boolean',
+            'pos_enabled'         => 'sometimes|boolean',
+            'paiement_bl_enabled' => 'sometimes|boolean',
         ]);
 
-        $tenant->update($validated);
+        // Separate custom columns from data-stored attributes
+        $customFields = ['name', 'plan', 'is_active'];
+        $custom = array_intersect_key($validated, array_flip($customFields));
+        $extra  = array_diff_key($validated, array_flip($customFields));
+
+        if ($custom) {
+            $tenant->update($custom);
+        }
+
+        // Store extra fields in the JSON 'data' column (Stancl handles this)
+        foreach ($extra as $key => $value) {
+            $tenant->$key = $value;
+        }
+        $tenant->save();
+
+        // Sync tenant-level settings inside the tenant's database
+        if (array_key_exists('pos_enabled', $validated) || array_key_exists('paiement_bl_enabled', $validated)) {
+            $tenant->run(function () use ($validated) {
+                if (array_key_exists('paiement_bl_enabled', $validated)) {
+                    \App\Models\Setting::set('ventes', 'paiement_sur_bl', $validated['paiement_bl_enabled'] ? 'true' : 'false');
+                }
+            });
+        }
 
         return response()->json([
             'message' => 'Tenant mis à jour.',

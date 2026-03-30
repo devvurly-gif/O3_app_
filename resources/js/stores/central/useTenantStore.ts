@@ -8,6 +8,8 @@ export interface Tenant {
   email: string
   plan: 'starter' | 'business' | 'enterprise'
   is_active: boolean
+  pos_enabled: boolean
+  paiement_bl_enabled: boolean
   trial_ends_at: string | null
   created_at: string
   updated_at: string

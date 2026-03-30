@@ -30,6 +30,17 @@ async function changePlan(plan: string) {
   saving.value = false
 }
 
+async function toggleFeature(feature: string, value: boolean) {
+  if (!tenant.value) return
+  saving.value = true
+  try {
+    tenant.value = await store.update(tenant.value.id, { [feature]: value } as any)
+    const label = feature === 'pos_enabled' ? 'POS' : 'Paiement sur BL'
+    toast.success(`${label} ${value ? 'activé' : 'désactivé'}.`)
+  } catch { /* interceptor */ }
+  saving.value = false
+}
+
 async function toggleActive() {
   if (!tenant.value) return
   saving.value = true
@@ -167,6 +178,62 @@ function getPlanColor(plan: string) {
               <span class="capitalize">{{ plan }}</span>
               <span v-if="tenant.plan === plan" class="text-xs">Plan actuel</span>
             </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature Flags -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-4">Modules & Options</h3>
+        <div class="space-y-4">
+          <!-- POS Toggle -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-lg flex items-center justify-center" :class="tenant.pos_enabled ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-gray-100 dark:bg-gray-700'">
+                <svg :class="['w-5 h-5', tenant.pos_enabled ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400']" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <div>
+                <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Point de Vente (POS)</p>
+                <p class="text-xs text-gray-400 dark:text-gray-500">Activer la caisse et les tickets de vente</p>
+              </div>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                :checked="tenant.pos_enabled"
+                @change="toggleFeature('pos_enabled', !tenant.pos_enabled)"
+                class="sr-only peer"
+                :disabled="saving"
+              />
+              <div class="w-11 h-6 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 dark:after:border-gray-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+            </label>
+          </div>
+
+          <!-- Paiement sur BL Toggle -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-lg flex items-center justify-center" :class="tenant.paiement_bl_enabled ? 'bg-green-100 dark:bg-green-900/30' : 'bg-gray-100 dark:bg-gray-700'">
+                <svg :class="['w-5 h-5', tenant.paiement_bl_enabled ? 'text-green-600 dark:text-green-400' : 'text-gray-400']" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
+                </svg>
+              </div>
+              <div>
+                <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Paiement sur Bon de Livraison</p>
+                <p class="text-xs text-gray-400 dark:text-gray-500">Permettre les paiements directement sur les BL</p>
+              </div>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                :checked="tenant.paiement_bl_enabled"
+                @change="toggleFeature('paiement_bl_enabled', !tenant.paiement_bl_enabled)"
+                class="sr-only peer"
+                :disabled="saving"
+              />
+              <div class="w-11 h-6 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 dark:after:border-gray-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+            </label>
           </div>
         </div>
       </div>
