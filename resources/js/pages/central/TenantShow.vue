@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useTenantStore, type Tenant } from '@/stores/central/useTenantStore'
 import { useToastStore } from '@/stores/toastStore'
@@ -12,6 +12,53 @@ const toast = useToastStore()
 const tenant = ref<Tenant | null>(null)
 const loading = ref(true)
 const saving = ref(false)
+
+// Editable fields
+const editForm = reactive({
+  name: '',
+  email: '',
+  domain: '',
+})
+const editingInfo = ref(false)
+const savingInfo = ref(false)
+
+function startEditInfo() {
+  if (!tenant.value) return
+  editForm.name = tenant.value.name
+  editForm.email = tenant.value.email
+  editForm.domain = tenant.value.domains?.[0]?.domain || ''
+  editingInfo.value = true
+}
+
+function cancelEditInfo() {
+  editingInfo.value = false
+}
+
+async function saveInfo() {
+  if (!tenant.value) return
+  savingInfo.value = true
+  try {
+    const payload: Record<string, string> = {}
+    if (editForm.name !== tenant.value.name) payload.name = editForm.name
+    if (editForm.email !== tenant.value.email) payload.email = editForm.email
+    const currentDomain = tenant.value.domains?.[0]?.domain || ''
+    if (editForm.domain !== currentDomain) payload.domain = editForm.domain
+
+    if (Object.keys(payload).length === 0) {
+      editingInfo.value = false
+      savingInfo.value = false
+      return
+    }
+
+    tenant.value = await store.update(tenant.value.id, payload as any)
+    toast.success('Informations mises à jour.')
+    editingInfo.value = false
+  } catch (err: any) {
+    const msg = err?.response?.data?.message || 'Erreur lors de la mise à jour.'
+    toast.error(msg)
+  }
+  savingInfo.value = false
+}
 
 onMounted(async () => {
   try {
@@ -133,8 +180,22 @@ function getPlanColor(plan: string) {
       <!-- Info Grid -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-          <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Informations</h3>
-          <dl class="space-y-3">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Informations</h3>
+            <button
+              v-if="!editingInfo"
+              @click="startEditInfo"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 dark:text-blue-400 rounded-lg transition"
+            >
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+              </svg>
+              Modifier
+            </button>
+          </div>
+
+          <!-- View Mode -->
+          <dl v-if="!editingInfo" class="space-y-3">
             <div class="flex justify-between">
               <dt class="text-sm text-gray-500">Email</dt>
               <dd class="text-sm font-medium text-gray-900 dark:text-white">{{ tenant.email }}</dd>
@@ -156,6 +217,62 @@ function getPlanColor(plan: string) {
               <dd class="text-sm font-medium text-gray-900 dark:text-white">{{ tenant.trial_ends_at ? formatDate(tenant.trial_ends_at) : 'N/A' }}</dd>
             </div>
           </dl>
+
+          <!-- Edit Mode -->
+          <div v-else class="space-y-4">
+            <div>
+              <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Nom</label>
+              <input
+                v-model="editForm.name"
+                type="text"
+                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+              />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Email</label>
+              <input
+                v-model="editForm.email"
+                type="email"
+                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+              />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Domaine</label>
+              <input
+                v-model="editForm.domain"
+                type="text"
+                placeholder="tenant.o3app.ma"
+                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+              />
+            </div>
+            <div class="flex justify-between text-xs text-gray-400 dark:text-gray-500">
+              <span>Base de données : <span class="font-mono">{{ tenant.tenancy_db_name }}</span></span>
+              <span>Créé le {{ formatDate(tenant.created_at) }}</span>
+            </div>
+            <div class="flex items-center gap-2 pt-1">
+              <button
+                @click="saveInfo"
+                :disabled="savingInfo"
+                class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition disabled:opacity-50"
+              >
+                <svg v-if="savingInfo" class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                </svg>
+                <svg v-else class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                </svg>
+                Enregistrer
+              </button>
+              <button
+                @click="cancelEditInfo"
+                :disabled="savingInfo"
+                class="px-4 py-2 text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition"
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- Plan Upgrade -->

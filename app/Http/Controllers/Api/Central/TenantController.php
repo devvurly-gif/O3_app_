@@ -112,14 +112,42 @@ class TenantController extends Controller
     {
         $validated = $request->validate([
             'name'                => 'sometimes|string|max:255',
+            'email'               => 'sometimes|email',
+            'domain'              => 'sometimes|string',
             'plan'                => 'sometimes|in:starter,business,enterprise',
             'is_active'           => 'sometimes|boolean',
             'pos_enabled'         => 'sometimes|boolean',
             'paiement_bl_enabled' => 'sometimes|boolean',
         ]);
 
+        // Handle domain update separately
+        if (array_key_exists('domain', $validated)) {
+            $newDomain = $validated['domain'];
+            unset($validated['domain']);
+
+            // Validate uniqueness (excluding current tenant's domains)
+            $existingDomain = \Stancl\Tenancy\Database\Models\Domain::where('domain', $newDomain)
+                ->where('tenant_id', '!=', $tenant->id)
+                ->first();
+
+            if ($existingDomain) {
+                return response()->json([
+                    'message' => 'Ce domaine est déjà utilisé par un autre tenant.',
+                    'errors'  => ['domain' => ['Ce domaine est déjà utilisé.']],
+                ], 422);
+            }
+
+            // Update or create the domain
+            $currentDomain = $tenant->domains()->first();
+            if ($currentDomain) {
+                $currentDomain->update(['domain' => $newDomain]);
+            } else {
+                $tenant->domains()->create(['domain' => $newDomain]);
+            }
+        }
+
         // Separate custom columns from data-stored attributes
-        $customFields = ['name', 'plan', 'is_active'];
+        $customFields = ['name', 'email', 'plan', 'is_active'];
         $custom = array_intersect_key($validated, array_flip($customFields));
         $extra  = array_diff_key($validated, array_flip($customFields));
 
