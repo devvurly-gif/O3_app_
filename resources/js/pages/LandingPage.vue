@@ -4,24 +4,22 @@ import { ref, computed } from 'vue'
 const currentLang = ref<'fr' | 'en'>('fr')
 
 // Build demo URL dynamically based on current domain
+// Landing page is always served from the central domain, so host = central domain
 const demoUrl = computed(() => {
   const host = window.location.hostname
   const protocol = window.location.protocol
   // If on nip.io domain, use demo.IP.nip.io
   if (host.includes('nip.io')) {
     const parts = host.split('.')
-    // Remove first part if it's a subdomain, keep IP.nip.io
-    const ipAndNip = parts.slice(-6).join('.') // e.g. 161.35.19.66.nip.io
+    const ipAndNip = parts.slice(-6).join('.')
     return `${protocol}//demo.${ipAndNip}`
   }
   // If on IP directly
   if (/^\d+\.\d+\.\d+\.\d+$/.test(host)) {
     return `${protocol}//demo.${host}.nip.io`
   }
-  // If on custom domain (o3app.ma), use demo.o3app.ma
-  const baseDomain = host.replace(/^[^.]+\./, '')
-  const domain = host.includes('.') ? baseDomain : host
-  return `${protocol}//demo.${domain}`
+  // On custom domain (e.g. o3app.ma) → demo.o3app.ma
+  return `${protocol}//demo.${host}`
 })
 
 const t = {
