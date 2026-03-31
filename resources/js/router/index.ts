@@ -310,4 +310,10 @@ router.beforeEach(async (to) => {
   }
 })
 
+// ── Dynamic page title ──────────────────────────────────────────
+router.afterEach((to) => {
+  const title = to.meta.title
+  document.title = title ? `${title} — O3 App` : 'O3 App — Gestion commerciale'
+})
+
 export default router

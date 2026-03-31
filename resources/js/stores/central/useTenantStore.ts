@@ -66,5 +66,9 @@ export const useTenantStore = defineStore('tenant', () => {
     items.value = items.value.filter(t => t.id !== id)
   }
 
-  return { items, loading, error, fetchAll, fetchOne, create, update, remove }
+  async function resetPassword(id: string, password: string): Promise<void> {
+    await http.post(`/central/tenants/${id}/reset-password`, { password })
+  }
+
+  return { items, loading, error, fetchAll, fetchOne, create, update, remove, resetPassword }
 })

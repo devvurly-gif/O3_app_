@@ -177,6 +177,33 @@ class TenantController extends Controller
     }
 
     /**
+     * Reset the admin user password inside a tenant's database.
+     */
+    public function resetPassword(Request $request, Tenant $tenant): JsonResponse
+    {
+        $validated = $request->validate([
+            'password' => 'required|string|min:6',
+        ]);
+
+        $tenant->run(function () use ($validated) {
+            $admin = \App\Models\User::whereHas('role', fn($q) => $q->where('name', 'admin'))
+                ->first();
+
+            if (!$admin) {
+                $admin = \App\Models\User::first();
+            }
+
+            if ($admin) {
+                $admin->update(['password' => bcrypt($validated['password'])]);
+            }
+        });
+
+        return response()->json([
+            'message' => "Mot de passe admin réinitialisé pour '{$tenant->name}'.",
+        ]);
+    }
+
+    /**
      * Delete a tenant (and its database).
      */
     public function destroy(Tenant $tenant): JsonResponse
