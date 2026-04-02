@@ -369,6 +369,7 @@ const tenantNavItems = computed((): SidebarLink[] => {
     },
     { to: '/categories', labelKey: 'nav.categories', icon: icons.categories, groupKey_ref: 'nav.catalogue' },
     { to: '/brands', labelKey: 'nav.brands', icon: icons.brands, groupKey_ref: 'nav.catalogue' },
+    { to: '/storage/gallery', label: 'Galerie Images', icon: icons.slides, groupKey_ref: 'nav.catalogue' },
 
     { groupKey: 'nav.partners', groupIcon: groupIcons.partners },
     {

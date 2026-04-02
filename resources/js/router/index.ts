@@ -138,6 +138,13 @@ const routes: RouteRecordRaw[] = [
     meta: { layout: 'app', title: 'Rapports', breadcrumb: 'Rapports' },
   },
 
+  // Storage Gallery
+  {
+    path: '/storage/gallery',
+    component: () => import('../pages/StorageGallery.vue'),
+    meta: { layout: 'app', title: 'Galerie Images', breadcrumb: 'Galerie Images' },
+  },
+
   // Marketing & eCom
   {
     path: '/marketing/promotions',

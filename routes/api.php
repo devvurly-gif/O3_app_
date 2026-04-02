@@ -44,6 +44,7 @@ use App\Http\Controllers\Api\Ecom\EcomPromotionController;
 use App\Http\Controllers\Api\Ecom\EcomOrderController;
 use App\Http\Controllers\Api\Ecom\EcomSlideController;
 use App\Http\Controllers\Api\Ecom\EcomConfigController;
+use App\Http\Controllers\Api\StorageGalleryController;
 use App\Services\CacheService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
@@ -113,6 +114,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('payments',                           [PaymentController::class, 'index']);
     Route::get('payments/{payment}',                 [PaymentController::class, 'show']);
     Route::get('settings',                           [SettingController::class, 'index']);
+    Route::get('storage/products',                   [StorageGalleryController::class, 'products']);
 
     // ── Exports (all authenticated users) ────────────────────────────────
     Route::prefix('export')->group(function () {
@@ -153,6 +155,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('products/{product}/images',                     [ProductImageController::class, 'store']);
         Route::patch('products/{product}/images/{image}/set-primary',[ProductImageController::class, 'setPrimary']);
         Route::delete('products/{product}/images/{image}',           [ProductImageController::class, 'destroy']);
+
+        Route::post('storage/products/assign',                       [StorageGalleryController::class, 'assign']);
 
         Route::post('third-partners',                     [ThirdPartnerController::class, 'store']);
         Route::put('third-partners/{thirdPartner}',       [ThirdPartnerController::class, 'update']);
