@@ -34,6 +34,15 @@ npm run build
 echo "[6/7] Restarting queue workers..."
 php artisan queue:restart
 
+# Setup Nginx (first deploy only)
+if [ ! -f /etc/nginx/sites-enabled/o3app.conf ]; then
+    echo "[*] Installing Nginx config..."
+    sudo cp "$APP_DIR/deployment/nginx/o3app.conf" /etc/nginx/sites-available/o3app.conf
+    sudo ln -sf /etc/nginx/sites-available/o3app.conf /etc/nginx/sites-enabled/o3app.conf
+    sudo rm -f /etc/nginx/sites-enabled/default
+    sudo nginx -t && sudo systemctl reload nginx
+fi
+
 # Setup Supervisor (first deploy only)
 if [ ! -f /etc/supervisor/conf.d/o3-queue-worker.conf ]; then
     echo "[*] Installing Supervisor config..."
