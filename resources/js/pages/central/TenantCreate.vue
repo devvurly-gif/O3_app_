@@ -20,12 +20,15 @@ const form = ref({
   admin_password: '',
   pos_enabled: false,
   paiement_bl_enabled: false,
+  ecom_enabled: false,
 })
 
 // Auto-generate domain from ID
 function onIdInput() {
   form.value.id = form.value.id.toLowerCase().replace(/[^a-z0-9-]/g, '')
-  form.value.domain = form.value.id ? `${form.value.id}.161.35.19.66.nip.io` : ''
+  const host = window.location.hostname
+  const baseDomain = (host === 'localhost' || host === '127.0.0.1') ? `${host}.nip.io` : host
+  form.value.domain = form.value.id ? `${form.value.id}.${baseDomain}` : ''
 }
 
 async function onSubmit() {
@@ -50,6 +53,10 @@ function onPlanChange(plan: string) {
   // Auto-enable POS for business/enterprise plans
   if (plan === 'business' || plan === 'enterprise') {
     form.value.pos_enabled = true
+  }
+  // Auto-enable eCom for enterprise plan
+  if (plan === 'enterprise') {
+    form.value.ecom_enabled = true
   }
 }
 
@@ -269,6 +276,25 @@ const plans = [
             <label class="relative inline-flex items-center cursor-pointer">
               <input v-model="form.paiement_bl_enabled" type="checkbox" class="sr-only peer" />
               <div class="w-11 h-6 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 dark:after:border-gray-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+            </label>
+          </div>
+
+          <!-- eCom Toggle -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-lg flex items-center justify-center" :class="form.ecom_enabled ? 'bg-indigo-100 dark:bg-indigo-900/30' : 'bg-gray-200 dark:bg-gray-700'">
+                <svg :class="['w-5 h-5', form.ecom_enabled ? 'text-indigo-600' : 'text-gray-400']" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.016A3.001 3.001 0 0021 9.349m-18 0h18" />
+                </svg>
+              </div>
+              <div>
+                <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Boutique en Ligne (eCom)</p>
+                <p class="text-xs text-gray-400">Catalogue, panier, commandes en ligne</p>
+              </div>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input v-model="form.ecom_enabled" type="checkbox" class="sr-only peer" />
+              <div class="w-11 h-6 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 dark:after:border-gray-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
             </label>
           </div>
         </div>

@@ -55,6 +55,7 @@ class TenantController extends Controller
             'admin_password'      => 'required|string|min:6',
             'pos_enabled'         => 'sometimes|boolean',
             'paiement_bl_enabled' => 'sometimes|boolean',
+            'ecom_enabled'        => 'sometimes|boolean',
         ]);
 
         $tenant = Tenant::create([
@@ -68,6 +69,9 @@ class TenantController extends Controller
         // Store feature flags in JSON data column
         $tenant->pos_enabled = $validated['pos_enabled'] ?? in_array($validated['plan'], ['business', 'enterprise']);
         $tenant->paiement_bl_enabled = $validated['paiement_bl_enabled'] ?? false;
+        $tenant->ecom_enabled = $validated['ecom_enabled'] ?? false;
+        // Auto-generate unique API key for ecom
+        $tenant->ecom_api_key = 'ecom_' . bin2hex(random_bytes(20));
         $tenant->save();
 
         $tenant->domains()->create([
@@ -118,7 +122,14 @@ class TenantController extends Controller
             'is_active'           => 'sometimes|boolean',
             'pos_enabled'         => 'sometimes|boolean',
             'paiement_bl_enabled' => 'sometimes|boolean',
+            'ecom_enabled'        => 'sometimes|boolean',
         ]);
+
+        // Generate ecom API key if enabling ecom for the first time
+        if (($validated['ecom_enabled'] ?? false) && !$tenant->ecom_api_key) {
+            $tenant->ecom_api_key = 'ecom_' . bin2hex(random_bytes(20));
+            $tenant->save();
+        }
 
         // Handle domain update separately
         if (array_key_exists('domain', $validated)) {

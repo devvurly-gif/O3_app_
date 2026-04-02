@@ -82,7 +82,7 @@ async function toggleFeature(feature: string, value: boolean) {
   saving.value = true
   try {
     tenant.value = await store.update(tenant.value.id, { [feature]: value } as any)
-    const label = feature === 'pos_enabled' ? 'POS' : 'Paiement sur BL'
+    const label = feature === 'pos_enabled' ? 'POS' : feature === 'ecom_enabled' ? 'Boutique eCom' : 'Paiement sur BL'
     toast.success(`${label} ${value ? 'activé' : 'désactivé'}.`)
   } catch { /* interceptor */ }
   saving.value = false
@@ -374,6 +374,51 @@ function getPlanColor(plan: string) {
               />
               <div class="w-11 h-6 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 dark:after:border-gray-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
             </label>
+          </div>
+
+          <!-- eCom Toggle -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-lg flex items-center justify-center" :class="tenant.ecom_enabled ? 'bg-indigo-100 dark:bg-indigo-900/30' : 'bg-gray-100 dark:bg-gray-700'">
+                <svg :class="['w-5 h-5', tenant.ecom_enabled ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-400']" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.016A3.001 3.001 0 0021 9.349m-18 0h18" />
+                </svg>
+              </div>
+              <div>
+                <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Boutique en Ligne (eCom)</p>
+                <p class="text-xs text-gray-400 dark:text-gray-500">Activer la boutique en ligne pour ce tenant</p>
+              </div>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                :checked="tenant.ecom_enabled"
+                @change="toggleFeature('ecom_enabled', !tenant.ecom_enabled)"
+                class="sr-only peer"
+                :disabled="saving"
+              />
+              <div class="w-11 h-6 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 dark:after:border-gray-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+            </label>
+          </div>
+
+          <!-- eCom Shop URL (shown when enabled) -->
+          <div v-if="tenant.ecom_enabled && tenant.domains?.length" class="ml-13 pl-1 border-l-2 border-indigo-200 dark:border-indigo-800">
+            <div class="flex items-center gap-2 py-2 pl-3">
+              <span class="text-xs text-gray-500 dark:text-gray-400">URL Boutique :</span>
+              <a
+                :href="'http://shop.' + tenant.domains[0].domain"
+                target="_blank"
+                class="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
+              >
+                shop.{{ tenant.domains[0].domain }}
+              </a>
+            </div>
+            <div class="flex items-center gap-2 py-1 pl-3">
+              <span class="text-xs text-gray-500 dark:text-gray-400">API Key :</span>
+              <code class="text-xs font-mono text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">
+                {{ tenant.ecom_api_key ? tenant.ecom_api_key.substring(0, 15) + '...' : '-' }}
+              </code>
+            </div>
           </div>
         </div>
       </div>

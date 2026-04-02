@@ -256,6 +256,20 @@ function formatDate(d: string) {
                   </svg>
                   BL
                 </span>
+                <span
+                  :class="[
+                    'inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full',
+                    tenant.ecom_enabled
+                      ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300'
+                      : 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500'
+                  ]"
+                  :title="tenant.ecom_enabled ? 'eCom activé' : 'eCom désactivé'"
+                >
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.016A3.001 3.001 0 0021 9.349m-18 0h18" />
+                  </svg>
+                  eCom
+                </span>
               </div>
             </td>
             <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">

@@ -43,6 +43,7 @@ use App\Http\Controllers\Api\Ecom\EcomCatalogueController;
 use App\Http\Controllers\Api\Ecom\EcomPromotionController;
 use App\Http\Controllers\Api\Ecom\EcomOrderController;
 use App\Http\Controllers\Api\Ecom\EcomSlideController;
+use App\Http\Controllers\Api\Ecom\EcomConfigController;
 use App\Services\CacheService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
@@ -301,6 +302,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('slides/reorder',        [SlideController::class, 'reorder']);
     });
 });
+
+// ── eCom Config (public, no API key required) ─────────────────────────────
+Route::get('ecom/config', EcomConfigController::class)->middleware('throttle:30,1');
 
 // ── eCom Public API (API Key auth, no session) ────────────────────────────
 Route::prefix('ecom')->middleware(['ecom.key', 'throttle:60,1'])->group(function () {
