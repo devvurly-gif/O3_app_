@@ -11,13 +11,19 @@ use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 | Tenant Routes
 |--------------------------------------------------------------------------
 |
-| All tenant-scoped routes. Each tenant accesses the app via their own
-| subdomain (e.g. client1.o3app.com). The middleware initializes tenancy
-| automatically, switching to the tenant's database.
+| API routes MUST be registered BEFORE the web catch-all,
+| otherwise /{any} intercepts /api/* requests.
 |
 */
 
-// ── Tenant Web ───────────────────────────────────────────────────────────
+// ── 1. Tenant API (must come first) ─────────────────────────────────────
+Route::middleware([
+    'api',
+    InitializeTenancyByDomain::class,
+    PreventAccessFromCentralDomains::class,
+])->prefix('api')->group(base_path('routes/api.php'));
+
+// ── 2. Tenant Web ───────────────────────────────────────────────────────
 Route::middleware([
     'web',
     InitializeTenancyByDomain::class,
@@ -32,15 +38,8 @@ Route::middleware([
         return response()->file($disk->path($path));
     })->where('path', '.*')->name('tenant.storage');
 
-    // SPA catch-all
+    // SPA catch-all (exclude api and storage paths)
     Route::get('/{any}', function () {
         return view('welcome');
-    })->where('any', '.*');
+    })->where('any', '^(?!api|storage).*$');
 });
-
-// ── Tenant API ───────────────────────────────────────────────────────────
-Route::middleware([
-    'api',
-    InitializeTenancyByDomain::class,
-    PreventAccessFromCentralDomains::class,
-])->prefix('api')->group(base_path('routes/api.php'));
