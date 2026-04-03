@@ -72,5 +72,15 @@ export const useTenantStore = defineStore('tenant', () => {
     await http.post(`/central/tenants/${id}/reset-password`, { password })
   }
 
-  return { items, loading, error, fetchAll, fetchOne, create, update, remove, resetPassword }
+  async function resetDatabase(id: string): Promise<string> {
+    const { data } = await http.post(`/central/tenants/${id}/reset-database`, { confirm: 'RESET' })
+    return data.message
+  }
+
+  async function purgeFiles(id: string, types: ('images' | 'pdfs')[]): Promise<{ message: string; deleted: { images: number; pdfs: number } }> {
+    const { data } = await http.post(`/central/tenants/${id}/purge-files`, { types })
+    return data
+  }
+
+  return { items, loading, error, fetchAll, fetchOne, create, update, remove, resetPassword, resetDatabase, purgeFiles }
 })

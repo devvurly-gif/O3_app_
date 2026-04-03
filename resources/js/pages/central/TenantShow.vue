@@ -121,6 +121,53 @@ async function resetPassword() {
   resettingPassword.value = false
 }
 
+// Database reset
+const resettingDb = ref(false)
+const resetConfirmText = ref('')
+
+async function resetDatabase() {
+  if (!tenant.value) return
+  if (resetConfirmText.value !== 'RESET') {
+    toast.error('Tapez RESET pour confirmer.')
+    return
+  }
+  resettingDb.value = true
+  try {
+    const msg = await store.resetDatabase(tenant.value.id)
+    toast.success(msg)
+    resetConfirmText.value = ''
+  } catch (err: any) {
+    toast.error(err?.response?.data?.message || 'Erreur lors de la réinitialisation.')
+  }
+  resettingDb.value = false
+}
+
+// Purge files
+const purgingFiles = ref(false)
+const purgeImages = ref(true)
+const purgePdfs = ref(true)
+
+async function purgeFiles() {
+  if (!tenant.value) return
+  const types: ('images' | 'pdfs')[] = []
+  if (purgeImages.value) types.push('images')
+  if (purgePdfs.value) types.push('pdfs')
+  if (types.length === 0) {
+    toast.error('Sélectionnez au moins un type de fichier.')
+    return
+  }
+  const labels = types.map(t => t === 'images' ? 'images' : 'PDFs').join(' et ')
+  if (!confirm(`Supprimer tous les ${labels} de "${tenant.value.name}" ? Cette action est irréversible !`)) return
+  purgingFiles.value = true
+  try {
+    const result = await store.purgeFiles(tenant.value.id, types)
+    toast.success(result.message)
+  } catch (err: any) {
+    toast.error(err?.response?.data?.message || 'Erreur lors de la suppression.')
+  }
+  purgingFiles.value = false
+}
+
 async function deleteTenant() {
   if (!tenant.value) return
   if (!confirm(`Supprimer "${tenant.value.name}" et sa base de données ? Irréversible !`)) return
@@ -470,6 +517,111 @@ function getPlanColor(plan: string) {
         <p class="mt-2 text-xs text-gray-400 dark:text-gray-500">
           Cela changera le mot de passe de l'utilisateur admin principal de ce tenant.
         </p>
+      </div>
+
+      <!-- Maintenance — Reset DB & Purge Files -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl border border-red-200 dark:border-red-900/50 p-5">
+        <div class="flex items-center gap-2 mb-4">
+          <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+          </svg>
+          <h3 class="text-sm font-semibold text-red-600 dark:text-red-400">Zone de maintenance</h3>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <!-- Reset Database -->
+          <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-3">
+            <div class="flex items-center gap-2">
+              <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75" />
+              </svg>
+              <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300">Réinitialiser la base de données</h4>
+            </div>
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              Supprime toutes les données (produits, clients, factures...) et recrée l'utilisateur admin.
+            </p>
+            <div class="space-y-2">
+              <label class="block text-xs font-medium text-gray-500 dark:text-gray-400">
+                Tapez <span class="font-mono font-bold text-red-500">RESET</span> pour confirmer
+              </label>
+              <input
+                v-model="resetConfirmText"
+                type="text"
+                placeholder="RESET"
+                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition font-mono"
+              />
+              <button
+                @click="resetDatabase"
+                :disabled="resettingDb || resetConfirmText !== 'RESET'"
+                class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <svg v-if="resettingDb" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                </svg>
+                <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182" />
+                </svg>
+                Réinitialiser la BDD
+              </button>
+            </div>
+          </div>
+
+          <!-- Purge Files -->
+          <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-3">
+            <div class="flex items-center gap-2">
+              <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+              </svg>
+              <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300">Supprimer les fichiers</h4>
+            </div>
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              Supprime les images produits et/ou les fichiers PDF (factures, bons...) du stockage tenant.
+            </p>
+            <div class="space-y-2">
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input
+                  v-model="purgeImages"
+                  type="checkbox"
+                  class="w-4 h-4 text-red-600 bg-gray-100 border-gray-300 rounded focus:ring-red-500 dark:bg-gray-700 dark:border-gray-600"
+                />
+                <span class="text-sm text-gray-700 dark:text-gray-300">
+                  <svg class="w-4 h-4 inline text-blue-500 mr-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5a1.5 1.5 0 001.5-1.5v-13.5a1.5 1.5 0 00-1.5-1.5H3.75a1.5 1.5 0 00-1.5 1.5v13.5a1.5 1.5 0 001.5 1.5z" />
+                  </svg>
+                  Images (produits, photos)
+                </span>
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input
+                  v-model="purgePdfs"
+                  type="checkbox"
+                  class="w-4 h-4 text-red-600 bg-gray-100 border-gray-300 rounded focus:ring-red-500 dark:bg-gray-700 dark:border-gray-600"
+                />
+                <span class="text-sm text-gray-700 dark:text-gray-300">
+                  <svg class="w-4 h-4 inline text-red-400 mr-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                  </svg>
+                  PDFs (factures, bons, devis)
+                </span>
+              </label>
+              <button
+                @click="purgeFiles"
+                :disabled="purgingFiles || (!purgeImages && !purgePdfs)"
+                class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <svg v-if="purgingFiles" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                </svg>
+                <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                </svg>
+                Supprimer les fichiers
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Actions -->

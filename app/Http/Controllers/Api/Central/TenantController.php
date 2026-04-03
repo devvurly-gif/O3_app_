@@ -215,6 +215,115 @@ class TenantController extends Controller
     }
 
     /**
+     * Reset (wipe) all data in a tenant's database.
+     * Keeps the structure (tables) but truncates all rows, then re-seeds the admin user.
+     */
+    public function resetDatabase(Request $request, Tenant $tenant): JsonResponse
+    {
+        $validated = $request->validate([
+            'confirm' => 'required|in:RESET',
+        ]);
+
+        $tenant->run(function () use ($tenant) {
+            // Disable FK checks, truncate all tenant tables, re-enable
+            \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=0');
+
+            $tables = \Illuminate\Support\Facades\DB::select('SHOW TABLES');
+            $dbName = \Illuminate\Support\Facades\DB::getDatabaseName();
+            $key = "Tables_in_{$dbName}";
+
+            $excludeTables = ['migrations'];
+
+            foreach ($tables as $table) {
+                $tableName = $table->$key;
+                if (in_array($tableName, $excludeTables)) continue;
+                \Illuminate\Support\Facades\DB::table($tableName)->truncate();
+            }
+
+            \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=1');
+
+            // Re-seed admin user
+            $role = \App\Models\Role::firstOrCreate(['name' => 'admin']);
+            \App\Models\User::create([
+                'name'      => 'Admin',
+                'email'     => $tenant->email,
+                'password'  => bcrypt('password'),
+                'role_id'   => $role->id,
+                'is_active' => true,
+            ]);
+
+            // Re-seed default settings
+            \App\Models\Setting::set('general', 'company_name', $tenant->name);
+            \App\Models\Setting::set('general', 'currency', 'MAD');
+            \App\Models\Setting::set('general', 'tax_rate', '20');
+        });
+
+        return response()->json([
+            'message' => "Base de données de '{$tenant->name}' réinitialisée. Admin recréé (mot de passe: password).",
+        ]);
+    }
+
+    /**
+     * Purge tenant storage files (images and/or PDFs).
+     */
+    public function purgeFiles(Request $request, Tenant $tenant): JsonResponse
+    {
+        $validated = $request->validate([
+            'types' => 'required|array|min:1',
+            'types.*' => 'in:images,pdfs',
+        ]);
+
+        $deleted = ['images' => 0, 'pdfs' => 0];
+
+        $tenant->run(function () use ($validated, &$deleted) {
+            $disk = \Illuminate\Support\Facades\Storage::disk('public');
+
+            if (in_array('images', $validated['types'])) {
+                // Delete product images
+                $imageDirs = ['products', 'images', 'photos', 'uploads'];
+                foreach ($imageDirs as $dir) {
+                    if ($disk->exists($dir)) {
+                        $files = $disk->allFiles($dir);
+                        foreach ($files as $file) {
+                            $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+                            if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'])) {
+                                $disk->delete($file);
+                                $deleted['images']++;
+                            }
+                        }
+                    }
+                }
+
+                // Also clean image references in DB
+                if (class_exists(\App\Models\ProductImage::class)) {
+                    \App\Models\ProductImage::truncate();
+                }
+            }
+
+            if (in_array('pdfs', $validated['types'])) {
+                // Delete PDFs from all directories
+                $allFiles = $disk->allFiles();
+                foreach ($allFiles as $file) {
+                    if (strtolower(pathinfo($file, PATHINFO_EXTENSION)) === 'pdf') {
+                        $disk->delete($file);
+                        $deleted['pdfs']++;
+                    }
+                }
+            }
+        });
+
+        $parts = [];
+        if ($deleted['images'] > 0) $parts[] = "{$deleted['images']} image(s)";
+        if ($deleted['pdfs'] > 0)   $parts[] = "{$deleted['pdfs']} PDF(s)";
+        $summary = count($parts) ? implode(' et ', $parts) . ' supprimé(s).' : 'Aucun fichier trouvé.';
+
+        return response()->json([
+            'message' => $summary,
+            'deleted' => $deleted,
+        ]);
+    }
+
+    /**
      * Delete a tenant (and its database).
      */
     public function destroy(Tenant $tenant): JsonResponse

@@ -21,4 +21,6 @@ Route::prefix('api/central')->middleware(['api'])->group(function () {
     Route::put('tenants/{tenant}',     [TenantController::class, 'update']);
     Route::delete('tenants/{tenant}',  [TenantController::class, 'destroy']);
     Route::post('tenants/{tenant}/reset-password', [TenantController::class, 'resetPassword']);
+    Route::post('tenants/{tenant}/reset-database', [TenantController::class, 'resetDatabase']);
+    Route::post('tenants/{tenant}/purge-files',    [TenantController::class, 'purgeFiles']);
 });
