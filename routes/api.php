@@ -236,7 +236,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware(['module:pos', 'permission:pos.access'])->prefix('pos')->group(function () {
         // Terminals (admin/manager)
         Route::middleware('role:admin,manager,cashier')->group(function () {
-            Route::apiResource('terminals', PosTerminalController::class)->names('pos.terminals');
+            Route::get('terminals',              [PosTerminalController::class, 'index']);
+            Route::post('terminals',             [PosTerminalController::class, 'store']);
+            Route::get('terminals/{terminal}',   [PosTerminalController::class, 'show']);
+            Route::put('terminals/{terminal}',   [PosTerminalController::class, 'update']);
+            Route::delete('terminals/{terminal}',[PosTerminalController::class, 'destroy']);
         });
 
         // Sessions
@@ -265,12 +269,30 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ── Admin-only (users, settings, structures, incrementors, roles, modules) ──
     Route::middleware('role:admin')->group(function () {
-        Route::apiResource('users',                 UserController::class);
-        Route::apiResource('roles',                 RoleController::class);
+        Route::get('users',              [UserController::class, 'index']);
+        Route::post('users',             [UserController::class, 'store']);
+        Route::get('users/{user}',       [UserController::class, 'show']);
+        Route::put('users/{user}',       [UserController::class, 'update']);
+        Route::delete('users/{user}',    [UserController::class, 'destroy']);
+
+        Route::get('roles',              [RoleController::class, 'index']);
+        Route::post('roles',             [RoleController::class, 'store']);
+        Route::get('roles/{role}',       [RoleController::class, 'show']);
+        Route::put('roles/{role}',       [RoleController::class, 'update']);
+        Route::delete('roles/{role}',    [RoleController::class, 'destroy']);
         Route::get('permissions',                   [PermissionController::class, 'index']);
         Route::get('permissions/grouped',           [PermissionController::class, 'grouped']);
-        Route::apiResource('structures',            StructureIncrementorController::class);
-        Route::apiResource('document-incrementors', DocumentIncrementorController::class);
+        Route::get('structures',                         [StructureIncrementorController::class, 'index']);
+        Route::post('structures',                        [StructureIncrementorController::class, 'store']);
+        Route::get('structures/{structure}',             [StructureIncrementorController::class, 'show']);
+        Route::put('structures/{structure}',             [StructureIncrementorController::class, 'update']);
+        Route::delete('structures/{structure}',          [StructureIncrementorController::class, 'destroy']);
+
+        Route::get('document-incrementors',                              [DocumentIncrementorController::class, 'index']);
+        Route::post('document-incrementors',                             [DocumentIncrementorController::class, 'store']);
+        Route::get('document-incrementors/{document_incrementor}',       [DocumentIncrementorController::class, 'show']);
+        Route::put('document-incrementors/{document_incrementor}',       [DocumentIncrementorController::class, 'update']);
+        Route::delete('document-incrementors/{document_incrementor}',    [DocumentIncrementorController::class, 'destroy']);
 
         // Modules
         Route::get('modules',                  [ModuleController::class, 'index']);
@@ -295,7 +317,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ── Marketing & Promotions (admin, manager) ──────────────────────────
     Route::middleware('role:admin,manager')->group(function () {
-        Route::apiResource('promotions', PromotionController::class);
+        Route::get('promotions',                   [PromotionController::class, 'index']);
+        Route::post('promotions',                  [PromotionController::class, 'store']);
+        Route::get('promotions/{promotion}',       [PromotionController::class, 'show']);
+        Route::put('promotions/{promotion}',       [PromotionController::class, 'update']);
+        Route::delete('promotions/{promotion}',    [PromotionController::class, 'destroy']);
 
         Route::get('slides',                 [SlideController::class, 'index']);
         Route::get('slides/{slide}',         [SlideController::class, 'show']);
