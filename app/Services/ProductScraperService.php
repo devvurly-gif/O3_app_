@@ -157,8 +157,15 @@ class ProductScraperService
     {
         $products = [];
 
-        // Try to find product cards with data attributes or typical Shopify classes
-        // Shopify often has product data in script tags or data-product attributes
+        // Strategy 1: Try /products.json endpoint (most reliable for Shopify)
+        $products = $this->fetchShopifyProductsJson($baseUrl);
+        if (! empty($products)) return $products;
+
+        // Strategy 2: Parse meta.products JS variable (Shopify collection pages)
+        $products = $this->parseShopifyMeta($html, $baseUrl);
+        if (! empty($products)) return $products;
+
+        // Strategy 3: Try data-product attributes
         preg_match_all('/data-product=["\']({.*?})["\']/s', $html, $dataMatches);
         foreach ($dataMatches[1] ?? [] as $json) {
             $data = @json_decode(html_entity_decode($json), true);
@@ -175,9 +182,160 @@ class ProductScraperService
             }
         }
 
-        // Fallback: parse product cards from HTML
+        // Strategy 4: Fallback to HTML card parsing
         if (empty($products)) {
             $products = $this->parseShopifyCards($html, $baseUrl);
+        }
+
+        return $products;
+    }
+
+    /**
+     * Fetch ALL products via Shopify's /products.json API (handles pagination).
+     */
+    private function fetchShopifyProductsJson(string $baseUrl): array
+    {
+        $parsed = parse_url($baseUrl);
+        $baseHost = ($parsed['scheme'] ?? 'https') . '://' . ($parsed['host'] ?? '');
+        $path = $parsed['path'] ?? '';
+
+        // Determine the JSON URL
+        // /collections/xxx → /collections/xxx/products.json
+        // /products → /products.json
+        $jsonUrl = null;
+        if (preg_match('#/collections/[^/]+#', $path, $m)) {
+            $jsonUrl = $baseHost . $m[0] . '/products.json';
+        } else {
+            $jsonUrl = $baseHost . '/products.json';
+        }
+
+        $products = [];
+        $page = 1;
+        $limit = 250; // Shopify max per page
+
+        while (true) {
+            try {
+                $response = Http::withHeaders([
+                    'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                    'Accept' => 'application/json',
+                ])->timeout(15)->get($jsonUrl, ['page' => $page, 'limit' => $limit]);
+
+                if (! $response->successful()) break;
+
+                $data = $response->json();
+                $items = $data['products'] ?? [];
+                if (empty($items)) break;
+
+                foreach ($items as $item) {
+                    $price = 0;
+                    $oldPrice = null;
+                    $image = null;
+
+                    // Get price from first variant
+                    if (! empty($item['variants'])) {
+                        $variant = $item['variants'][0];
+                        $price = (float) ($variant['price'] ?? 0);
+                        $compareAt = (float) ($variant['compare_at_price'] ?? 0);
+                        if ($compareAt > $price) $oldPrice = $compareAt;
+                    }
+
+                    // Get image
+                    if (! empty($item['images'])) {
+                        $image = $item['images'][0]['src'] ?? null;
+                    } elseif (! empty($item['image'])) {
+                        $image = $item['image']['src'] ?? null;
+                    }
+
+                    $products[] = [
+                        'name'        => $item['title'] ?? '',
+                        'price'       => $price,
+                        'old_price'   => $oldPrice,
+                        'brand'       => $item['vendor'] ?? null,
+                        'image'       => $image,
+                        'description' => Str::limit(strip_tags($item['body_html'] ?? ''), 500),
+                        'url'         => $baseHost . '/products/' . ($item['handle'] ?? ''),
+                    ];
+                }
+
+                // If we got less than limit, we're done
+                if (count($items) < $limit) break;
+                $page++;
+                if ($page > 10) break; // safety limit
+            } catch (\Exception $e) {
+                break;
+            }
+        }
+
+        return $products;
+    }
+
+    /**
+     * Parse Shopify's meta.products JavaScript variable from collection pages.
+     */
+    private function parseShopifyMeta(string $html, string $baseUrl): array
+    {
+        $products = [];
+        $parsed = parse_url($baseUrl);
+        $baseHost = ($parsed['scheme'] ?? 'https') . '://' . ($parsed['host'] ?? '');
+
+        // Match: var meta = {...products:[...]...} or meta.products = [...]
+        // Shopify embeds product data in various JS patterns
+        $patterns = [
+            '/var\s+meta\s*=\s*(\{.*?\});\s*$/ms',
+            '/"products"\s*:\s*(\[.*?\])\s*[,}]/s',
+            '/productVariants"\s*:\s*(\[.*?\])/s',
+        ];
+
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $html, $m)) {
+                $data = @json_decode($m[1], true);
+                if (! $data) continue;
+
+                // If it's the meta object, get products from it
+                if (isset($data['products'])) {
+                    $data = $data['products'];
+                }
+
+                if (! is_array($data)) continue;
+
+                foreach ($data as $item) {
+                    $name = $item['title'] ?? $item['name'] ?? null;
+                    if (! $name) continue;
+
+                    $price = 0;
+                    $oldPrice = null;
+
+                    // Price can be in cents (Shopify) or as regular number
+                    if (isset($item['price'])) {
+                        $p = (float) $item['price'];
+                        $price = $p > 1000000 ? $p / 100 : ($p > 10000 ? $p / 100 : $p);
+                    }
+                    if (isset($item['variants'][0]['price'])) {
+                        $price = (float) $item['variants'][0]['price'];
+                    }
+                    if (isset($item['compare_at_price'])) {
+                        $cap = (float) $item['compare_at_price'];
+                        if ($cap > $price) $oldPrice = $cap > 10000 ? $cap / 100 : $cap;
+                    }
+
+                    $image = $item['featured_image'] ?? $item['image'] ?? null;
+                    if ($image && ! str_starts_with($image, 'http')) {
+                        $image = 'https:' . $image;
+                    }
+
+                    $products[] = [
+                        'name'        => $name,
+                        'price'       => $price,
+                        'old_price'   => $oldPrice,
+                        'brand'       => $item['vendor'] ?? null,
+                        'image'       => $image,
+                        'description' => Str::limit(strip_tags($item['description'] ?? $item['body_html'] ?? ''), 500),
+                        'url'         => isset($item['handle']) ? $baseHost . '/products/' . $item['handle'] : null,
+                    ];
+                }
+
+                if (! empty($products)) return $products;
+            }
         }
 
         return $products;
