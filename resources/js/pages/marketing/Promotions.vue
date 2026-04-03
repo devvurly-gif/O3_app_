@@ -150,11 +150,17 @@
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date début</label>
-              <input v-model="form.starts_at" type="datetime-local" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+              <div class="flex gap-2">
+                <input :value="form.starts_at?.slice(0, 10)" @input="form.starts_at = ($event.target as HTMLInputElement).value + 'T' + (form.starts_at?.slice(11, 16) || '00:00')" type="date" class="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+                <input :value="form.starts_at?.slice(11, 16)" @input="form.starts_at = (form.starts_at?.slice(0, 10) || '') + 'T' + ($event.target as HTMLInputElement).value" type="time" class="w-28 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+              </div>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date fin</label>
-              <input v-model="form.ends_at" type="datetime-local" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+              <div class="flex gap-2">
+                <input :value="form.ends_at?.slice(0, 10)" @input="form.ends_at = ($event.target as HTMLInputElement).value + 'T' + (form.ends_at?.slice(11, 16) || '23:59')" type="date" class="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+                <input :value="form.ends_at?.slice(11, 16)" @input="form.ends_at = (form.ends_at?.slice(0, 10) || '') + 'T' + ($event.target as HTMLInputElement).value" type="time" class="w-28 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+              </div>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Remise max (MAD)</label>
