@@ -224,10 +224,13 @@ class TenantController extends Controller
     public function resetDatabase(Request $request, Tenant $tenant): JsonResponse
     {
         $validated = $request->validate([
-            'confirm' => 'required|in:RESET',
+            'confirm'        => 'required|in:RESET',
+            'admin_password' => 'required|string|min:6',
         ]);
 
-        $tenant->run(function () use ($tenant) {
+        $adminPassword = $validated['admin_password'];
+
+        $tenant->run(function () use ($tenant, $adminPassword) {
             // Disable FK checks, truncate all tenant tables, re-enable
             \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=0');
 
@@ -245,24 +248,35 @@ class TenantController extends Controller
 
             \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=1');
 
-            // Re-seed admin user
-            $role = \App\Models\Role::firstOrCreate(['name' => 'admin']);
+            // Re-seed essential foundation data
+            $seeder = new \Database\Seeders\StructureIncrementorSeeder();
+            $seeder->run();
+
+            $docSeeder = new \Database\Seeders\DocumentIncrementorSeeder();
+            $docSeeder->run();
+
+            $settingSeeder = new \Database\Seeders\SettingSeeder();
+            $settingSeeder->run();
+
+            $roleSeeder = new \Database\Seeders\RolePermissionSeeder();
+            $roleSeeder->run();
+
+            // Re-seed admin user with tenant info from central
+            $role = \App\Models\Role::where('name', 'admin')->first();
             \App\Models\User::create([
-                'name'      => 'Admin',
+                'name'      => $tenant->name,
                 'email'     => $tenant->email,
-                'password'  => bcrypt('password'),
+                'password'  => bcrypt($adminPassword),
                 'role_id'   => $role->id,
                 'is_active' => true,
             ]);
 
-            // Re-seed default settings
+            // Override settings with tenant info
             \App\Models\Setting::set('general', 'company_name', $tenant->name);
-            \App\Models\Setting::set('general', 'currency', 'MAD');
-            \App\Models\Setting::set('general', 'tax_rate', '20');
         });
 
         return response()->json([
-            'message' => "Base de données de '{$tenant->name}' réinitialisée. Admin recréé (mot de passe: password).",
+            'message' => "Base de données de '{$tenant->name}' réinitialisée. Admin recréé ({$tenant->email}).",
         ]);
     }
 

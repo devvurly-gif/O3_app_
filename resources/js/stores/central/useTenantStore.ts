@@ -82,8 +82,8 @@ export const useTenantStore = defineStore('tenant', () => {
     await http.post(`/central/tenants/${id}/reset-password`, { password })
   }
 
-  async function resetDatabase(id: string): Promise<string> {
-    const { data } = await http.post(`/central/tenants/${id}/reset-database`, { confirm: 'RESET' })
+  async function resetDatabase(id: string, adminPassword: string): Promise<string> {
+    const { data } = await http.post(`/central/tenants/${id}/reset-database`, { confirm: 'RESET', admin_password: adminPassword })
     return data.message
   }
 
