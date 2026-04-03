@@ -82,9 +82,10 @@ server {
 }
 
 # ── 2) o3app.ma + *.o3app.ma → Laravel — HTTPS ──
+# Use regex so shop regex block (listed first) takes priority over this one
 server {
     listen 443 ssl http2;
-    server_name o3app.ma *.o3app.ma;
+    server_name o3app.ma ~^(?!shop\.)([a-z0-9-]+\.)?o3app\.ma$;
 
     ssl_certificate     /etc/letsencrypt/live/o3app.ma/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/o3app.ma/privkey.pem;
