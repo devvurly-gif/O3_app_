@@ -15,7 +15,7 @@ export const useCategoryStore = defineStore('category', () => {
     error.value = null
     try {
       const { data } = await http.get<Category[]>('/categories')
-      items.value = data
+      items.value = Array.isArray(data) ? data : (data as any).data ?? []
     } catch (e: unknown) {
       error.value = e
     } finally {

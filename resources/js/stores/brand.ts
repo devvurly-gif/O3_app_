@@ -15,7 +15,7 @@ export const useBrandStore = defineStore('brand', () => {
     error.value = null
     try {
       const { data } = await http.get<Brand[]>('/brands')
-      items.value = data
+      items.value = Array.isArray(data) ? data : (data as any).data ?? []
     } catch (e: unknown) {
       error.value = e
     } finally {
