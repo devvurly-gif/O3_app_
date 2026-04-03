@@ -168,6 +168,66 @@ async function purgeFiles() {
   purgingFiles.value = false
 }
 
+// Product import from URL
+const scrapeUrl = ref('')
+const scrapeCategory = ref('Import')
+const scraping = ref(false)
+const importing = ref(false)
+const scrapedProducts = ref<any[]>([])
+const scrapedSource = ref('')
+const selectedProducts = ref<Set<number>>(new Set())
+
+async function scrapeProducts() {
+  if (!scrapeUrl.value) return
+  scraping.value = true
+  scrapedProducts.value = []
+  try {
+    const result = await store.scrapeProducts(scrapeUrl.value)
+    scrapedProducts.value = result.products
+    scrapedSource.value = result.source
+    // Select all by default
+    selectedProducts.value = new Set(result.products.map((_: any, i: number) => i))
+    if (result.count === 0) toast.error('Aucun produit trouvé sur cette page.')
+    else toast.success(`${result.count} produit(s) trouvé(s) depuis ${result.source}`)
+  } catch (err: any) {
+    toast.error(err?.response?.data?.message || 'Erreur lors du scraping.')
+  }
+  scraping.value = false
+}
+
+function toggleProduct(index: number) {
+  if (selectedProducts.value.has(index)) selectedProducts.value.delete(index)
+  else selectedProducts.value.add(index)
+  selectedProducts.value = new Set(selectedProducts.value)
+}
+
+function toggleAllProducts() {
+  if (selectedProducts.value.size === scrapedProducts.value.length) {
+    selectedProducts.value = new Set()
+  } else {
+    selectedProducts.value = new Set(scrapedProducts.value.map((_: any, i: number) => i))
+  }
+}
+
+async function importProducts() {
+  if (!tenant.value || selectedProducts.value.size === 0) return
+  if (!confirm(`Importer ${selectedProducts.value.size} produit(s) dans "${tenant.value.name}" ?`)) return
+  importing.value = true
+  try {
+    const toImport = scrapedProducts.value.filter((_: any, i: number) => selectedProducts.value.has(i))
+    const result = await store.importProducts(tenant.value.id, toImport, scrapeCategory.value)
+    toast.success(result.message)
+    if (result.errors?.length) result.errors.forEach((e: string) => toast.error(e))
+    // Clear after success
+    scrapedProducts.value = []
+    selectedProducts.value = new Set()
+    scrapeUrl.value = ''
+  } catch (err: any) {
+    toast.error(err?.response?.data?.message || "Erreur lors de l'import.")
+  }
+  importing.value = false
+}
+
 async function deleteTenant() {
   if (!tenant.value) return
   if (!confirm(`Supprimer "${tenant.value.name}" et sa base de données ? Irréversible !`)) return
@@ -621,6 +681,131 @@ function getPlanColor(plan: string) {
               </button>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Import Products from URL -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl border border-blue-200 dark:border-blue-900/50 p-5">
+        <div class="flex items-center gap-2 mb-4">
+          <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
+          </svg>
+          <h3 class="text-sm font-semibold text-blue-600 dark:text-blue-400">Importer des produits depuis un site e-commerce</h3>
+        </div>
+
+        <!-- Step 1: URL Input -->
+        <div class="space-y-3">
+          <div class="flex gap-2">
+            <input
+              v-model="scrapeUrl"
+              type="url"
+              placeholder="https://example.com/collections/smartphones"
+              class="flex-1 px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+              @keyup.enter="scrapeProducts"
+            />
+            <button
+              @click="scrapeProducts"
+              :disabled="scraping || !scrapeUrl"
+              class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+            >
+              <svg v-if="scraping" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+              </svg>
+              <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+              </svg>
+              {{ scraping ? 'Analyse...' : 'Scanner' }}
+            </button>
+          </div>
+          <p class="text-xs text-gray-400 dark:text-gray-500">
+            Collez le lien d'une page produits (Shopify, WooCommerce, ou autre). Les produits seront extraits automatiquement.
+          </p>
+        </div>
+
+        <!-- Step 2: Preview scraped products -->
+        <div v-if="scrapedProducts.length > 0" class="mt-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                {{ scrapedProducts.length }} produit(s) trouvé(s)
+                <span class="text-xs text-gray-400"> — {{ scrapedSource }}</span>
+              </span>
+              <label class="flex items-center gap-1.5 cursor-pointer text-xs text-blue-600 dark:text-blue-400">
+                <input type="checkbox" :checked="selectedProducts.size === scrapedProducts.length" @change="toggleAllProducts" class="w-3.5 h-3.5 text-blue-600 rounded" />
+                Tout sélectionner
+              </label>
+            </div>
+            <span class="text-xs font-medium text-blue-600 dark:text-blue-400">
+              {{ selectedProducts.size }} sélectionné(s)
+            </span>
+          </div>
+
+          <!-- Category input -->
+          <div class="flex items-center gap-2">
+            <label class="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Catégorie :</label>
+            <input
+              v-model="scrapeCategory"
+              type="text"
+              placeholder="Smartphones"
+              class="w-48 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+            />
+          </div>
+
+          <!-- Product list -->
+          <div class="max-h-80 overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700">
+            <div
+              v-for="(p, i) in scrapedProducts"
+              :key="i"
+              @click="toggleProduct(i)"
+              :class="[
+                'flex items-center gap-3 p-2.5 cursor-pointer transition',
+                selectedProducts.has(i)
+                  ? 'bg-blue-50 dark:bg-blue-900/20'
+                  : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
+              ]"
+            >
+              <input type="checkbox" :checked="selectedProducts.has(i)" class="w-4 h-4 text-blue-600 rounded pointer-events-none" />
+              <img
+                v-if="p.image"
+                :src="p.image"
+                :alt="p.name"
+                class="w-10 h-10 rounded object-cover bg-gray-100 dark:bg-gray-700 flex-shrink-0"
+                loading="lazy"
+              />
+              <div v-else class="w-10 h-10 rounded bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5a1.5 1.5 0 001.5-1.5v-13.5a1.5 1.5 0 00-1.5-1.5H3.75a1.5 1.5 0 00-1.5 1.5v13.5a1.5 1.5 0 001.5 1.5z" />
+                </svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{{ p.name }}</p>
+                <div class="flex items-center gap-2">
+                  <span v-if="p.brand" class="text-xs text-gray-400">{{ p.brand }}</span>
+                </div>
+              </div>
+              <div class="text-right flex-shrink-0">
+                <p class="text-sm font-bold text-gray-900 dark:text-white">{{ p.price.toLocaleString() }} MAD</p>
+                <p v-if="p.old_price" class="text-xs text-gray-400 line-through">{{ p.old_price.toLocaleString() }} MAD</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Import button -->
+          <button
+            @click="importProducts"
+            :disabled="importing || selectedProducts.size === 0"
+            class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <svg v-if="importing" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+            </svg>
+            <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+            </svg>
+            {{ importing ? 'Import en cours...' : `Importer ${selectedProducts.size} produit(s) dans ${tenant?.name}` }}
+          </button>
         </div>
       </div>
 

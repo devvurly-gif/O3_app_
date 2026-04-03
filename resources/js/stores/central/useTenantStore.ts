@@ -28,6 +28,16 @@ export interface CreateTenantPayload {
   admin_password: string
 }
 
+export interface ScrapedProduct {
+  name: string
+  price: number
+  old_price: number | null
+  brand: string | null
+  image: string | null
+  description: string
+  url: string | null
+}
+
 export const useTenantStore = defineStore('tenant', () => {
   const items = ref<Tenant[]>([])
   const loading = ref(false)
@@ -82,5 +92,15 @@ export const useTenantStore = defineStore('tenant', () => {
     return data
   }
 
-  return { items, loading, error, fetchAll, fetchOne, create, update, remove, resetPassword, resetDatabase, purgeFiles }
+  async function scrapeProducts(url: string): Promise<{ products: ScrapedProduct[]; source: string; count: number }> {
+    const { data } = await http.post('/central/tenants/scrape-products', { url })
+    return data
+  }
+
+  async function importProducts(id: string, products: ScrapedProduct[], category: string): Promise<{ message: string; created: number; skipped: number; errors: string[] }> {
+    const { data } = await http.post(`/central/tenants/${id}/import-products`, { products, category })
+    return data
+  }
+
+  return { items, loading, error, fetchAll, fetchOne, create, update, remove, resetPassword, resetDatabase, purgeFiles, scrapeProducts, importProducts }
 })

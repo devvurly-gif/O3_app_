@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Api\Central;
 
 use App\Http\Controllers\Controller;
 use App\Models\Tenant;
+use App\Services\ProductScraperService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class TenantController extends Controller
 {
@@ -320,6 +323,160 @@ class TenantController extends Controller
         return response()->json([
             'message' => $summary,
             'deleted' => $deleted,
+        ]);
+    }
+
+    /**
+     * Step 1: Scrape products from an ecommerce URL (preview before import).
+     */
+    public function scrapeProducts(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'url' => 'required|url',
+        ]);
+
+        try {
+            $scraper = new ProductScraperService();
+            $result = $scraper->scrape($validated['url']);
+
+            return response()->json($result);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => "Erreur de scraping: {$e->getMessage()}",
+                'products' => [],
+                'count' => 0,
+            ], 422);
+        }
+    }
+
+    /**
+     * Step 2: Import scraped products into a tenant's database.
+     */
+    public function importProducts(Request $request, Tenant $tenant): JsonResponse
+    {
+        $validated = $request->validate([
+            'products'            => 'required|array|min:1',
+            'products.*.name'     => 'required|string|max:255',
+            'products.*.price'    => 'required|numeric|min:0',
+            'products.*.old_price' => 'nullable|numeric|min:0',
+            'products.*.brand'    => 'nullable|string|max:100',
+            'products.*.image'    => 'nullable|string',
+            'products.*.description' => 'nullable|string',
+            'category'            => 'nullable|string|max:100',
+        ]);
+
+        $categoryName = $validated['category'] ?: 'Import';
+        $created = 0;
+        $skipped = 0;
+        $errors = [];
+
+        $tenant->run(function () use ($validated, $categoryName, &$created, &$skipped, &$errors) {
+            // Create/find category
+            $category = \App\Models\Category::firstOrCreate(
+                ['ctg_title' => $categoryName],
+                ['ctg_code' => Str::upper(Str::slug($categoryName, '_')), 'ctg_status' => true]
+            );
+
+            foreach ($validated['products'] as $i => $item) {
+                try {
+                    $slug = Str::slug($item['name']);
+
+                    // Skip duplicates
+                    if (\App\Models\Product::where('p_slug', $slug)->exists()) {
+                        $skipped++;
+                        continue;
+                    }
+
+                    // Create/find brand
+                    $brandId = null;
+                    if (! empty($item['brand'])) {
+                        $brand = \App\Models\Brand::firstOrCreate(
+                            ['br_title' => $item['brand']],
+                            ['br_code' => Str::upper(Str::slug($item['brand'], '_')), 'br_status' => true]
+                        );
+                        $brandId = $brand->id;
+                    }
+
+                    $code = 'IMP-' . str_pad((string) ($i + 1), 4, '0', STR_PAD_LEFT);
+                    $purchasePrice = round($item['price'] * 0.65, 2);
+
+                    $product = \App\Models\Product::create([
+                        'p_title'            => $item['name'],
+                        'p_code'             => $code,
+                        'p_slug'             => $slug,
+                        'p_description'      => Str::limit($item['description'] ?? '', 500),
+                        'p_long_description' => $item['description'] ?? '',
+                        'p_sku'              => $slug,
+                        'p_purchasePrice'    => $purchasePrice,
+                        'p_salePrice'        => $item['price'],
+                        'p_cost'             => $item['old_price'] ?? $item['price'],
+                        'p_status'           => true,
+                        'p_taxRate'          => 20.00,
+                        'p_unit'             => 'pièce',
+                        'category_id'        => $category->id,
+                        'brand_id'           => $brandId,
+                        'is_ecom'            => true,
+                    ]);
+
+                    // Download image
+                    if (! empty($item['image'])) {
+                        $this->downloadProductImage($product, $item['image'], $slug);
+                    }
+
+                    $created++;
+                } catch (\Exception $e) {
+                    $errors[] = "{$item['name']}: {$e->getMessage()}";
+                }
+            }
+        });
+
+        $message = "{$created} produit(s) importé(s)";
+        if ($skipped > 0) $message .= ", {$skipped} doublon(s) ignoré(s)";
+        if (count($errors) > 0) $message .= ", " . count($errors) . " erreur(s)";
+
+        return response()->json([
+            'message' => $message . '.',
+            'created' => $created,
+            'skipped' => $skipped,
+            'errors'  => array_slice($errors, 0, 10),
+        ]);
+    }
+
+    private function downloadProductImage(\App\Models\Product $product, string $url, string $slug): void
+    {
+        try {
+            $response = \Illuminate\Support\Facades\Http::withHeaders([
+                'User-Agent' => 'Mozilla/5.0 (compatible; O3App/1.0)',
+            ])->withOptions([
+                'verify' => false,
+            ])->timeout(10)->get($url);
+
+            if ($response->successful()) {
+                $ext = pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION) ?: 'png';
+                $ext = preg_replace('/\?.*/', '', $ext); // remove query string from ext
+                $filename = $slug . '.' . $ext;
+                $path = 'products/' . $filename;
+
+                Storage::disk('public')->put($path, $response->body());
+
+                \App\Models\ProductImage::create([
+                    'product_id' => $product->id,
+                    'url'        => '/storage/' . $path,
+                    'title'      => $slug,
+                    'isPrimary'  => true,
+                ]);
+                return;
+            }
+        } catch (\Exception $e) {
+            // Fallback below
+        }
+
+        // Fallback: store external URL
+        \App\Models\ProductImage::create([
+            'product_id' => $product->id,
+            'url'        => $url,
+            'title'      => $slug,
+            'isPrimary'  => true,
         ]);
     }
 
