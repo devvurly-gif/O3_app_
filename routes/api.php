@@ -236,7 +236,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware(['module:pos', 'permission:pos.access'])->prefix('pos')->group(function () {
         // Terminals (admin/manager)
         Route::middleware('role:admin,manager,cashier')->group(function () {
-            Route::apiResource('terminals', PosTerminalController::class);
+            Route::apiResource('terminals', PosTerminalController::class)->names('pos.terminals');
         });
 
         // Sessions
