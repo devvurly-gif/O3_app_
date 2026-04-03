@@ -17,12 +17,22 @@ use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 |
 */
 
-// ── Tenant Web (SPA catch-all) ───────────────────────────────────────────
+// ── Tenant Web ───────────────────────────────────────────────────────────
 Route::middleware([
     'web',
     InitializeTenancyByDomain::class,
     PreventAccessFromCentralDomains::class,
 ])->group(function () {
+    // Serve tenant storage files (images, etc.)
+    Route::get('/storage/{path}', function (string $path) {
+        $disk = \Illuminate\Support\Facades\Storage::disk('public');
+        if (! $disk->exists($path)) {
+            abort(404);
+        }
+        return response()->file($disk->path($path));
+    })->where('path', '.*')->name('tenant.storage');
+
+    // SPA catch-all
     Route::get('/{any}', function () {
         return view('welcome');
     })->where('any', '.*');
