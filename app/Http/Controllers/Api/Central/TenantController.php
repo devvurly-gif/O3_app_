@@ -368,6 +368,10 @@ class TenantController extends Controller
      */
     public function importProducts(Request $request, Tenant $tenant): JsonResponse
     {
+        // Import can take a long time (downloading images for many products)
+        set_time_limit(600); // 10 minutes
+        ini_set('max_execution_time', '600');
+
         $validated = $request->validate([
             'products'            => 'required|array|min:1',
             'products.*.name'     => 'required|string|max:255',

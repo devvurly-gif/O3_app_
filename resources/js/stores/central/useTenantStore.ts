@@ -98,7 +98,7 @@ export const useTenantStore = defineStore('tenant', () => {
   }
 
   async function importProducts(id: string, products: ScrapedProduct[], category: string): Promise<{ message: string; created: number; skipped: number; errors: string[] }> {
-    const { data } = await http.post(`/central/tenants/${id}/import-products`, { products, category })
+    const { data } = await http.post(`/central/tenants/${id}/import-products`, { products, category }, { timeout: 600000 }) // 10 min
     return data
   }
 

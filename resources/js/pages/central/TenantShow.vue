@@ -219,8 +219,8 @@ function toggleAllProducts() {
 
 async function importProducts() {
   if (!tenant.value || selectedProducts.value.size === 0) return
-  if (!confirm(`Importer ${selectedProducts.value.size} produit(s) dans "${tenant.value.name}" ?`)) return
   importing.value = true
+  toast.success(`Import de ${selectedProducts.value.size} produit(s) lancé... Patientez, téléchargement des images en cours.`)
   try {
     const toImport = scrapedProducts.value.filter((_: any, i: number) => selectedProducts.value.has(i))
     const result = await store.importProducts(tenant.value.id, toImport, scrapeCategory.value)
@@ -231,7 +231,9 @@ async function importProducts() {
     selectedProducts.value = new Set()
     scrapeUrl.value = ''
   } catch (err: any) {
-    toast.error(err?.response?.data?.message || "Erreur lors de l'import.")
+    const msg = err?.response?.data?.message || err?.message || "Erreur lors de l'import."
+    toast.error(`Import échoué: ${msg}`)
+    console.error('Import error:', err)
   }
   importing.value = false
 }
