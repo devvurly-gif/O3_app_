@@ -188,7 +188,7 @@ class ImportElectrosalamProducts extends Command
 
             ProductImage::create([
                 'product_id' => $product->id,
-                'url'        => '/tenancy/assets/' . $path,
+                'url'        => '/storage/' . $path,
                 'title'      => Str::slug($name),
                 'isPrimary'  => true,
             ]);

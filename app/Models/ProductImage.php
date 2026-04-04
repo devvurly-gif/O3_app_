@@ -16,8 +16,8 @@ class ProductImage extends Model
     }
 
     /**
-     * Ensure the URL always uses the tenant asset route.
-     * Converts /storage/xxx to /tenancy/assets/xxx automatically.
+     * Normalize image URL: ensure /storage/ prefix for tenant file serving.
+     * Both /storage/ and /tenancy/assets/ are handled by Laravel tenant routes.
      * External URLs (http/https) are left untouched.
      */
     protected function url(): Attribute
@@ -29,18 +29,18 @@ class ProductImage extends Model
                     return $value;
                 }
 
-                // Fix old /storage/ prefix → /tenancy/assets/
-                if (str_starts_with($value, '/storage/')) {
-                    return '/tenancy/assets/' . substr($value, 9);
+                // Normalize /tenancy/assets/ back to /storage/
+                if (str_starts_with($value, '/tenancy/assets/')) {
+                    return '/storage/' . substr($value, 16);
                 }
 
-                // Already correct
-                if (str_starts_with($value, '/tenancy/assets/')) {
+                // Already /storage/ prefix — good
+                if (str_starts_with($value, '/storage/')) {
                     return $value;
                 }
 
-                // Fallback: prepend tenant asset route
-                return '/tenancy/assets/' . ltrim($value, '/');
+                // No prefix — add /storage/
+                return '/storage/' . ltrim($value, '/');
             },
         );
     }

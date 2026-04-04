@@ -17,7 +17,7 @@ class StorageGalleryController extends Controller
 
         $images = collect($files)->map(fn (string $path) => [
             'name' => basename($path),
-            'url'  => '/tenancy/assets/' . $path,
+            'url'  => '/storage/' . $path,
             'size' => Storage::disk('public')->size($path),
         ])->values();
 
@@ -46,7 +46,7 @@ class StorageGalleryController extends Controller
             $isPrimary = !$hasImages && $i === 0;
 
             $created[] = $product->images()->create([
-                'url'        => '/tenancy/assets/' . $path,
+                'url'        => '/storage/' . $path,
                 'title'      => pathinfo($filename, PATHINFO_FILENAME),
                 'altContent' => null,
                 'isPrimary'  => $isPrimary,
