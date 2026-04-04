@@ -273,10 +273,16 @@ class TenantController extends Controller
 
             // Override settings with tenant info
             \App\Models\Setting::set('general', 'company_name', $tenant->name);
+
+            // Clean up product image files from disk
+            $disk = \Illuminate\Support\Facades\Storage::disk('public');
+            if ($disk->exists('products')) {
+                $disk->deleteDirectory('products');
+            }
         });
 
         return response()->json([
-            'message' => "Base de données de '{$tenant->name}' réinitialisée. Admin recréé ({$tenant->email}).",
+            'message' => "Base de données de '{$tenant->name}' réinitialisée. Admin recréé ({$tenant->email}). Fichiers images supprimés.",
         ]);
     }
 
@@ -440,7 +446,7 @@ class TenantController extends Controller
 
                     // ── Step 3: Download image + create ProductImage ─
                     if (! empty($item['image'])) {
-                        $imgResult = $this->downloadProductImage($product, $item['image'], $slug);
+                        $imgResult = $this->downloadProductImage($product, $item['image'], $product->p_code);
                         if ($imgResult) {
                             $imageSuccess++;
                         } else {
@@ -472,7 +478,7 @@ class TenantController extends Controller
         ]);
     }
 
-    private function downloadProductImage(\App\Models\Product $product, string $url, string $slug): bool
+    private function downloadProductImage(\App\Models\Product $product, string $url, string $code): bool
     {
         // Fix protocol-relative URLs
         if (str_starts_with($url, '//')) {
@@ -525,7 +531,7 @@ class TenantController extends Controller
                 };
             }
 
-            $filename = $slug . '.' . $ext;
+            $filename = $code . '.' . $ext;
             $path = 'products/' . $filename;
 
             Storage::disk('public')->put($path, $response->body());
@@ -533,7 +539,7 @@ class TenantController extends Controller
             \App\Models\ProductImage::create([
                 'product_id' => $product->id,
                 'url'        => '/storage/' . $path,
-                'title'      => $slug,
+                'title'      => $code,
                 'isPrimary'  => true,
             ]);
 
@@ -545,7 +551,7 @@ class TenantController extends Controller
         \App\Models\ProductImage::create([
             'product_id' => $product->id,
             'url'        => $url,
-            'title'      => $slug,
+            'title'      => $code,
             'isPrimary'  => true,
         ]);
 
