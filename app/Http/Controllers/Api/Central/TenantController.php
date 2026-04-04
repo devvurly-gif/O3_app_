@@ -384,15 +384,15 @@ class TenantController extends Controller
         $skipped = 0;
         $errors = [];
 
-        $tenant->run(function () use ($validated, $categoryName, &$created, &$skipped, &$errors) {
+        $imageErrors = 0;
+        $imageSuccess = 0;
+
+        $tenant->run(function () use ($validated, $categoryName, &$created, &$skipped, &$errors, &$imageErrors, &$imageSuccess) {
             // Create/find category
             $category = \App\Models\Category::firstOrCreate(
                 ['ctg_title' => $categoryName],
                 ['ctg_code' => Str::upper(Str::slug($categoryName, '_')), 'ctg_status' => true]
             );
-
-            // ── Phase 1: Create all products ────────────────────────
-            $productImageQueue = []; // [{product, image_url, slug}]
 
             foreach ($validated['products'] as $i => $item) {
                 try {
@@ -404,7 +404,7 @@ class TenantController extends Controller
                         continue;
                     }
 
-                    // Create/find brand
+                    // ── Step 1: Create/find brand ───────────────────
                     $brandId = null;
                     if (! empty($item['brand'])) {
                         $brand = \App\Models\Brand::firstOrCreate(
@@ -416,6 +416,7 @@ class TenantController extends Controller
 
                     $purchasePrice = round($item['price'] * 0.65, 2);
 
+                    // ── Step 2: Create product ──────────────────────
                     $product = \App\Models\Product::create([
                         'p_title'            => $item['name'],
                         'p_slug'             => $slug,
@@ -433,47 +434,41 @@ class TenantController extends Controller
                         'is_ecom'            => true,
                     ]);
 
-                    $created++;
-
-                    // Queue image for download in phase 2
+                    // ── Step 3: Download image + create ProductImage ─
                     if (! empty($item['image'])) {
-                        $productImageQueue[] = [
-                            'product_id' => $product->id,
-                            'image_url'  => $item['image'],
-                            'slug'       => $slug,
-                        ];
+                        $imgResult = $this->downloadProductImage($product, $item['image'], $slug);
+                        if ($imgResult) {
+                            $imageSuccess++;
+                        } else {
+                            $imageErrors++;
+                        }
                     }
+
+                    $created++;
                 } catch (\Exception $e) {
                     $errors[] = "{$item['name']}: {$e->getMessage()}";
-                }
-            }
-
-            // ── Phase 2: Download all images and link to products ────
-            foreach ($productImageQueue as $imgJob) {
-                try {
-                    $product = \App\Models\Product::find($imgJob['product_id']);
-                    if (! $product) continue;
-
-                    $this->downloadProductImage($product, $imgJob['image_url'], $imgJob['slug']);
-                } catch (\Exception $e) {
-                    $errors[] = "Image {$imgJob['slug']}: {$e->getMessage()}";
                 }
             }
         });
 
         $message = "{$created} produit(s) importé(s)";
         if ($skipped > 0) $message .= ", {$skipped} doublon(s) ignoré(s)";
+        $message .= " ({$imageSuccess} images téléchargées";
+        if ($imageErrors > 0) $message .= ", {$imageErrors} images en erreur";
+        $message .= ')';
         if (count($errors) > 0) $message .= ", " . count($errors) . " erreur(s)";
 
         return response()->json([
-            'message' => $message . '.',
-            'created' => $created,
-            'skipped' => $skipped,
-            'errors'  => array_slice($errors, 0, 10),
+            'message'       => $message . '.',
+            'created'       => $created,
+            'skipped'       => $skipped,
+            'images_ok'     => $imageSuccess,
+            'images_failed' => $imageErrors,
+            'errors'        => array_slice($errors, 0, 10),
         ]);
     }
 
-    private function downloadProductImage(\App\Models\Product $product, string $url, string $slug): void
+    private function downloadProductImage(\App\Models\Product $product, string $url, string $slug): bool
     {
         // Fix protocol-relative URLs
         if (str_starts_with($url, '//')) {
@@ -539,7 +534,7 @@ class TenantController extends Controller
             ]);
 
             \Illuminate\Support\Facades\Log::info("Image imported: {$path} for product #{$product->id}");
-            return;
+            return true;
         }
 
         // Fallback: store external URL so the product still has an image reference
@@ -551,6 +546,7 @@ class TenantController extends Controller
         ]);
 
         \Illuminate\Support\Facades\Log::warning("Image fallback to external URL for product #{$product->id}: {$url}");
+        return false;
     }
 
     /**
