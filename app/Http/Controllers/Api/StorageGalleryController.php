@@ -33,7 +33,6 @@ class StorageGalleryController extends Controller
         ]);
 
         $product = Product::findOrFail($validated['product_id']);
-        $hasImages = $product->images()->count() > 0;
         $created = [];
 
         foreach ($validated['files'] as $i => $filename) {
@@ -43,13 +42,16 @@ class StorageGalleryController extends Controller
                 continue;
             }
 
-            $isPrimary = !$hasImages && $i === 0;
+            // First assigned image becomes primary, unset all others
+            if ($i === 0) {
+                $product->images()->update(['isPrimary' => false]);
+            }
 
             $created[] = $product->images()->create([
                 'url'        => '/storage/' . $path,
                 'title'      => pathinfo($filename, PATHINFO_FILENAME),
                 'altContent' => null,
-                'isPrimary'  => $isPrimary,
+                'isPrimary'  => $i === 0,
             ]);
         }
 
