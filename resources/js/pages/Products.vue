@@ -61,10 +61,11 @@
       <template #cell-primary_image="{ row }">
         <div class="w-20 h-15 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center shrink-0">
           <img
-            v-if="row.primary_image"
-            :src="row.primary_image.url"
+            v-if="row.primary_image || (row.images && row.images.length)"
+            :src="(row.primary_image || row.images[0]).url"
             :alt="row.p_title"
             class="w-full h-full object-cover"
+            @error="($event: Event) => (($event.target as HTMLImageElement).style.display = 'none')"
           />
           <svg
             v-else

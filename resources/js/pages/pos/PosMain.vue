@@ -55,10 +55,11 @@
           >
             <div class="w-full aspect-square rounded-lg bg-gray-200 mb-2 overflow-hidden flex items-center justify-center">
               <img
-                v-if="product.primary_image?.url"
-                :src="product.primary_image.url"
+                v-if="product.primary_image?.url || product.images?.length"
+                :src="(product.primary_image || product.images[0]).url"
                 :alt="product.p_title"
                 class="w-full h-full object-cover"
+                @error="($event: Event) => (($event.target as HTMLImageElement).style.display = 'none')"
               />
               <svg v-else class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0v10l-8 4m0-14L4 17m8 4V10" />
