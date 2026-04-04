@@ -26,7 +26,7 @@ class ProductImageService
 
         /** @var ProductImage $image */
         $image = $this->images->createForProduct($product, [
-            'url'        => '/storage/' . $path,
+            'url'        => '/tenancy/assets/' . $path,
             'title'      => $title ?? pathinfo($path, PATHINFO_FILENAME),
             'altContent' => $altContent,
             'isPrimary'  => $isPrimary || $isFirstImage,

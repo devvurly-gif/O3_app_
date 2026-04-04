@@ -528,7 +528,7 @@ class TenantController extends Controller
 
             \App\Models\ProductImage::create([
                 'product_id' => $product->id,
-                'url'        => '/storage/' . $path,
+                'url'        => '/tenancy/assets/' . $path,
                 'title'      => $slug,
                 'isPrimary'  => true,
             ]);

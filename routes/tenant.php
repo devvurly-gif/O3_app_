@@ -41,5 +41,5 @@ Route::middleware([
     // SPA catch-all (exclude api and storage paths)
     Route::get('/{any}', function () {
         return view('welcome');
-    })->where('any', '^(?!api|storage).*$');
+    })->where('any', '^(?!api|storage|tenancy).*$');
 });

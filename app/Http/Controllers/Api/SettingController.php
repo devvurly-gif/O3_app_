@@ -118,12 +118,12 @@ class SettingController extends Controller
         // Delete old logo if exists
         $oldLogo = Setting::get('company', 'logo');
         if ($oldLogo) {
-            $oldPath = str_replace('/storage/', '', $oldLogo);
+            $oldPath = str_replace('/tenancy/assets/', '', str_replace('/storage/', '', $oldLogo));
             Storage::disk('public')->delete($oldPath);
         }
 
         $path = $request->file('logo')->store('logos', 'public');
-        $url  = Storage::url($path);
+        $url  = '/tenancy/assets/' . $path;
 
         $this->settings->upsert('company', 'logo', $url);
 
@@ -140,7 +140,7 @@ class SettingController extends Controller
     {
         $logo = Setting::get('company', 'logo');
         if ($logo) {
-            $path = str_replace('/storage/', '', $logo);
+            $path = str_replace('/tenancy/assets/', '', str_replace('/storage/', '', $logo));
             Storage::disk('public')->delete($path);
             $this->settings->upsert('company', 'logo', null);
         }
