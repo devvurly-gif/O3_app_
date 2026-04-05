@@ -81,14 +81,15 @@ class TenantController extends Controller
             'domain' => $validated['domain'],
         ]);
 
-        // Seed the tenant database with an admin user
+        // Seed the tenant database with an admin user + base data
         $tenant->run(function () use ($validated) {
-            // Create admin role
-            $role = \App\Models\Role::firstOrCreate(['name' => 'admin']);
+            // Seed roles & permissions first
+            (new \Database\Seeders\RolePermissionSeeder())->run();
 
             // Create admin user
+            $role = \App\Models\Role::where('name', 'admin')->first();
             \App\Models\User::create([
-                'name'      => 'Admin',
+                'name'      => $validated['name'],
                 'email'     => $validated['email'],
                 'password'  => bcrypt($validated['admin_password']),
                 'role_id'   => $role->id,
@@ -96,6 +97,7 @@ class TenantController extends Controller
             ]);
 
             // Seed default settings
+            (new \Database\Seeders\SettingSeeder())->run();
             \App\Models\Setting::set('general', 'company_name', $validated['name']);
             \App\Models\Setting::set('general', 'currency', 'MAD');
             \App\Models\Setting::set('general', 'tax_rate', '20');
@@ -104,6 +106,12 @@ class TenantController extends Controller
             \App\Models\Setting::set('ventes', 'paiement_sur_bl',
                 ($validated['paiement_bl_enabled'] ?? false) ? 'true' : 'false'
             );
+
+            // Seed document incrementors (devis, factures, BL, etc.)
+            (new \Database\Seeders\DocumentIncrementorSeeder())->run();
+
+            // Seed structure incrementors
+            (new \Database\Seeders\StructureIncrementorSeeder())->run();
         });
 
         return response()->json([
