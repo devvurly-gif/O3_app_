@@ -116,10 +116,16 @@
               <input v-model="form.subtitle" type="text" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
             </div>
             <div class="col-span-2">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">URL Image *</label>
-              <input v-model="form.image" type="text" required class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500" placeholder="https://...">
-              <div v-if="form.image" class="mt-2 rounded-lg overflow-hidden h-32 bg-gray-100 dark:bg-gray-900">
-                <img :src="form.image" class="w-full h-full object-cover" @error="($event.target as HTMLImageElement).style.display='none'">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Image *</label>
+              <div class="flex items-center gap-3">
+                <label class="flex-1 flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:border-blue-400 dark:hover:border-blue-500 transition">
+                  <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                  <span class="text-sm text-gray-500 dark:text-gray-400">{{ imageFile ? imageFile.name : 'Choisir une image...' }}</span>
+                  <input type="file" accept="image/*" class="hidden" @change="onFileSelected">
+                </label>
+              </div>
+              <div v-if="imagePreview || form.image" class="mt-2 rounded-lg overflow-hidden h-32 bg-gray-100 dark:bg-gray-900">
+                <img :src="imagePreview || form.image" class="w-full h-full object-cover" @error="($event.target as HTMLImageElement).style.display='none'">
               </div>
             </div>
             <div>
@@ -231,6 +237,16 @@ const emptyForm = () => ({
   is_active: true,
 })
 const form = ref(emptyForm())
+const imageFile = ref<File | null>(null)
+const imagePreview = ref<string | null>(null)
+
+function onFileSelected(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (file) {
+    imageFile.value = file
+    imagePreview.value = URL.createObjectURL(file)
+  }
+}
 
 async function fetchSlides() {
   loading.value = true
@@ -251,6 +267,8 @@ function formatDate(d: string): string {
 function openCreate() {
   editingSlide.value = null
   form.value = emptyForm()
+  imageFile.value = null
+  imagePreview.value = null
   showModal.value = true
 }
 
@@ -270,23 +288,43 @@ function openEdit(slide: any) {
     ends_at: slide.ends_at ? slide.ends_at.slice(0, 16) : '',
     is_active: slide.is_active,
   }
+  imageFile.value = null
+  imagePreview.value = null
   showModal.value = true
 }
 
 async function save() {
   saving.value = true
   try {
-    const payload = {
-      ...form.value,
-      starts_at: form.value.starts_at || null,
-      ends_at: form.value.ends_at || null,
-      link_id: form.value.link_id || null,
-      link_url: form.value.link_url || null,
+    const fd = new FormData()
+    fd.append('title', form.value.title)
+    fd.append('subtitle', form.value.subtitle || '')
+    fd.append('button_text', form.value.button_text || '')
+    fd.append('link_type', form.value.link_type)
+    fd.append('position', form.value.position)
+    fd.append('sort_order', String(form.value.sort_order))
+    fd.append('is_active', form.value.is_active ? '1' : '0')
+    if (form.value.link_id) fd.append('link_id', String(form.value.link_id))
+    if (form.value.link_url) fd.append('link_url', form.value.link_url)
+    if (form.value.starts_at) fd.append('starts_at', form.value.starts_at)
+    if (form.value.ends_at) fd.append('ends_at', form.value.ends_at)
+
+    // File or existing URL
+    if (imageFile.value) {
+      fd.append('image', imageFile.value)
+    } else if (form.value.image) {
+      fd.append('image', form.value.image)
     }
+
     if (editingSlide.value) {
-      await http.put(`/slides/${editingSlide.value.id}`, payload)
+      fd.append('_method', 'PUT')
+      await http.post(`/slides/${editingSlide.value.id}`, fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
     } else {
-      await http.post('/slides', payload)
+      await http.post('/slides', fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
     }
     showModal.value = false
     fetchSlides()

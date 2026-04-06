@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Slide;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class SlideController extends Controller
@@ -31,7 +32,7 @@ class SlideController extends Controller
         $validated = $request->validate([
             'title'       => 'required|string|max:255',
             'subtitle'    => 'nullable|string|max:255',
-            'image'       => 'required|string|max:500',
+            'image'       => 'required',
             'button_text' => 'nullable|string|max:100',
             'link_type'   => ['required', Rule::in(['promotion', 'category', 'product', 'url', 'none'])],
             'link_id'     => 'nullable|integer',
@@ -43,6 +44,14 @@ class SlideController extends Controller
             'is_active'   => 'boolean',
         ]);
 
+        // Handle file upload or URL string
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
+            $filename = 'slide-' . time() . '-' . uniqid() . '.' . $file->getClientOriginalExtension();
+            $file->storeAs('slides', $filename, 'public');
+            $validated['image'] = '/storage/slides/' . $filename;
+        }
+
         $slide = Slide::create($validated);
 
         return response()->json($slide, 201);
@@ -53,7 +62,7 @@ class SlideController extends Controller
         $validated = $request->validate([
             'title'       => 'sometimes|string|max:255',
             'subtitle'    => 'nullable|string|max:255',
-            'image'       => 'sometimes|string|max:500',
+            'image'       => 'nullable',
             'button_text' => 'nullable|string|max:100',
             'link_type'   => ['sometimes', Rule::in(['promotion', 'category', 'product', 'url', 'none'])],
             'link_id'     => 'nullable|integer',
@@ -64,6 +73,21 @@ class SlideController extends Controller
             'ends_at'     => 'nullable|date|after_or_equal:starts_at',
             'is_active'   => 'boolean',
         ]);
+
+        // Handle file upload or keep existing
+        if ($request->hasFile('image')) {
+            // Delete old file if it was a local upload
+            if ($slide->image && str_starts_with($slide->image, '/storage/slides/')) {
+                $oldPath = str_replace('/storage/', '', $slide->image);
+                Storage::disk('public')->delete($oldPath);
+            }
+            $file = $request->file('image');
+            $filename = 'slide-' . time() . '-' . uniqid() . '.' . $file->getClientOriginalExtension();
+            $file->storeAs('slides', $filename, 'public');
+            $validated['image'] = '/storage/slides/' . $filename;
+        } elseif (!$request->filled('image')) {
+            unset($validated['image']);
+        }
 
         $slide->update($validated);
 
