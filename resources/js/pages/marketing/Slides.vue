@@ -154,9 +154,26 @@
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">URL</label>
               <input v-model="form.link_url" type="text" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500" placeholder="https://...">
             </div>
-            <div v-if="['promotion','category','product'].includes(form.link_type)">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">ID {{ form.link_type }}</label>
-              <input v-model.number="form.link_id" type="number" min="1" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+            <div v-if="form.link_type === 'product'">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Produit</label>
+              <select v-model.number="form.link_id" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+                <option :value="null">-- Sélectionner un produit --</option>
+                <option v-for="p in productsList" :key="p.id" :value="p.id">{{ p.p_name }} ({{ p.p_code }})</option>
+              </select>
+            </div>
+            <div v-if="form.link_type === 'category'">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Catégorie</label>
+              <select v-model.number="form.link_id" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+                <option :value="null">-- Sélectionner une catégorie --</option>
+                <option v-for="c in categoriesList" :key="c.id" :value="c.id">{{ c.name }}</option>
+              </select>
+            </div>
+            <div v-if="form.link_type === 'promotion'">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Promotion</label>
+              <select v-model.number="form.link_id" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+                <option :value="null">-- Sélectionner une promotion --</option>
+                <option v-for="pr in promotionsList" :key="pr.id" :value="pr.id">{{ pr.name }}</option>
+              </select>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ordre</label>
@@ -221,6 +238,20 @@ const showModal = ref(false)
 const showDeleteModal = ref(false)
 const editingSlide = ref<any>(null)
 const deletingSlide = ref<any>(null)
+const productsList = ref<any[]>([])
+const categoriesList = ref<any[]>([])
+const promotionsList = ref<any[]>([])
+
+async function fetchLinkOptions() {
+  const [products, categories, promotions] = await Promise.all([
+    http.get('/products').catch(() => ({ data: [] })),
+    http.get('/categories').catch(() => ({ data: [] })),
+    http.get('/promotions').catch(() => ({ data: [] })),
+  ])
+  productsList.value = Array.isArray(products.data) ? products.data : products.data.data || []
+  categoriesList.value = Array.isArray(categories.data) ? categories.data : categories.data.data || []
+  promotionsList.value = Array.isArray(promotions.data) ? promotions.data : promotions.data.data || []
+}
 
 const emptyForm = () => ({
   title: '',
@@ -376,5 +407,8 @@ async function deleteSlide() {
 }
 
 watch(positionFilter, fetchSlides)
-onMounted(fetchSlides)
+onMounted(() => {
+  fetchSlides()
+  fetchLinkOptions()
+})
 </script>
