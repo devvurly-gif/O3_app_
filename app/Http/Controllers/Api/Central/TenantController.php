@@ -82,7 +82,7 @@ class TenantController extends Controller
         ]);
 
         // Seed the tenant database with an admin user + base data
-        $tenant->run(function () use ($validated) {
+        $tenant->run(function () use ($validated, $tenant) {
             // Seed roles & permissions first
             (new \Database\Seeders\RolePermissionSeeder())->run();
 
@@ -112,6 +112,18 @@ class TenantController extends Controller
 
             // Seed structure incrementors
             (new \Database\Seeders\StructureIncrementorSeeder())->run();
+
+            // Seed modules and activate based on tenant flags
+            (new \Database\Seeders\ModuleSeeder())->run();
+            if ($tenant->pos_enabled) {
+                \App\Models\Module::where('name', 'pos')->update(['is_active' => true]);
+            }
+            if ($tenant->ecom_enabled) {
+                \App\Models\Module::updateOrCreate(
+                    ['name' => 'ecom'],
+                    ['display_name' => 'E-Commerce', 'description' => 'Boutique en ligne', 'is_active' => true]
+                );
+            }
         });
 
         return response()->json([
@@ -281,6 +293,18 @@ class TenantController extends Controller
 
             // Override settings with tenant info
             \App\Models\Setting::set('general', 'company_name', $tenant->name);
+
+            // Seed modules and activate based on tenant flags
+            (new \Database\Seeders\ModuleSeeder())->run();
+            if ($tenant->pos_enabled) {
+                \App\Models\Module::where('name', 'pos')->update(['is_active' => true]);
+            }
+            if ($tenant->ecom_enabled) {
+                \App\Models\Module::updateOrCreate(
+                    ['name' => 'ecom'],
+                    ['display_name' => 'E-Commerce', 'description' => 'Boutique en ligne', 'is_active' => true]
+                );
+            }
 
             // Clean up product image files from disk
             $disk = \Illuminate\Support\Facades\Storage::disk('public');
