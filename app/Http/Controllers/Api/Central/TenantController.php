@@ -128,6 +128,9 @@ class TenantController extends Controller
                     ['display_name' => 'E-Commerce', 'description' => 'Boutique en ligne', 'is_active' => true]
                 );
             }
+
+            // Seed default operational data
+            $this->seedDefaultData($tenant);
         });
 
         return response()->json([
@@ -311,6 +314,9 @@ class TenantController extends Controller
                     ['display_name' => 'E-Commerce', 'description' => 'Boutique en ligne', 'is_active' => true]
                 );
             }
+
+            // Seed default operational data
+            $this->seedDefaultData($tenant);
 
             // Clean up product image files from disk
             $disk = \Illuminate\Support\Facades\Storage::disk('public');
@@ -514,6 +520,71 @@ class TenantController extends Controller
             'images_failed' => $imageErrors,
             'errors'        => array_slice($errors, 0, 10),
         ]);
+    }
+
+    /**
+     * Seed default operational data for a new/reset tenant.
+     */
+    private function seedDefaultData(Tenant $tenant): void
+    {
+        // Helper to generate code from StructureIncrementor
+        $generateCode = function (string $model): ?string {
+            $inc = \App\Models\StructureIncrementor::where('si_model', $model)->first();
+            if (!$inc) return null;
+            $code = $inc->generateCode();
+            $inc->refresh();
+            return $code;
+        };
+
+        // 1. Default category: "Non catégorisé"
+        \App\Models\Category::firstOrCreate(
+            ['ctg_title' => 'Non catégorisé'],
+            [
+                'ctg_code'   => $generateCode('Category'),
+                'ctg_status' => true,
+            ]
+        );
+
+        // 2. Default brand: "Marque inconnue"
+        \App\Models\Brand::firstOrCreate(
+            ['br_title' => 'Marque inconnue'],
+            [
+                'br_code'   => $generateCode('Brand'),
+                'br_status' => true,
+            ]
+        );
+
+        // 3. Default warehouse: "Dépôt Principal"
+        $warehouse = \App\Models\Warehouse::firstOrCreate(
+            ['wh_title' => 'Dépôt Principal'],
+            [
+                'wh_code'   => $generateCode('Warehouse'),
+                'wh_status' => true,
+            ]
+        );
+
+        // 4. Default POS terminal: "POS_1" (linked to default warehouse)
+        if ($tenant->pos_enabled) {
+            \App\Models\PosTerminal::firstOrCreate(
+                ['code' => 'POS_1'],
+                [
+                    'name'         => 'POS_1',
+                    'warehouse_id' => $warehouse->id,
+                    'is_active'    => true,
+                ]
+            );
+        }
+
+        // 5. Default client: "Client Comptoir" (walk-in customer, cash only)
+        \App\Models\ThirdPartner::firstOrCreate(
+            ['tp_code' => 'CLIENT-COMPTOIR'],
+            [
+                'tp_title'    => 'Client Comptoir',
+                'tp_Role'     => 'customer',
+                'tp_status'   => true,
+                'type_compte' => 'normal',
+            ]
+        );
     }
 
     private function downloadProductImage(\App\Models\Product $product, string $url, string $code): bool
