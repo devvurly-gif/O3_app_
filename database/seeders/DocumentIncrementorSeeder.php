@@ -25,6 +25,9 @@ class DocumentIncrementorSeeder extends Seeder
             ['di_title' => 'Avoir Fournisseur',      'di_model' => 'CreditNotePurchase', 'di_domain' => 'purchases', 'template' => 'AVR-ACH-{YYYY}-{MM}-{NNNN}', 'operatorSens' => 'out'],
             ['di_title' => 'Bon de Retour Fournisseur','di_model' => 'ReturnPurchase',   'di_domain' => 'purchases', 'template' => 'RTR-ACH-{YYYY}-{MM}-{NNNN}', 'operatorSens' => 'out'],
 
+            // ── POS ────────────────────────────────────────────
+            ['di_title' => 'Ticket POS',            'di_model' => 'TicketSale',          'di_domain' => 'pos',   'template' => 'TK-{YY}-{MM}-{NNNN}',      'operatorSens' => 'out'],
+
             // ── Stock ───────────────────────────────────────────
             ['di_title' => 'Bon de Transfert',       'di_model' => 'StockTransfer',       'di_domain' => 'stock', 'template' => 'BTR-{YYYY}-{MM}-{NNNN}',    'operatorSens' => 'both'],
             ['di_title' => "Bon d'Ajustement",       'di_model' => 'StockAdjustmentNote', 'di_domain' => 'stock', 'template' => 'ADJ-{YYYY}-{MM}-{NNNN}',    'operatorSens' => 'both'],
