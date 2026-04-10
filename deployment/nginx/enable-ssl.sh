@@ -116,6 +116,19 @@ server {
         try_files $uri /index.php?$query_string;
     }
 
+    # Force /storage/ requests through Laravel (tenant file serving)
+    location /storage/ {
+        try_files /dev/null /index.php?$query_string;
+    }
+
+    # Long timeout for product import
+    location ~ /central/tenants/.*/import-products {
+        fastcgi_pass unix:/run/php/php8.3-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        include fastcgi_params;
+        fastcgi_read_timeout 600s;
+    }
+
     location / {
         try_files $uri $uri/ /index.php?$query_string;
     }

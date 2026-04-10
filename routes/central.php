@@ -13,8 +13,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::prefix('api/central')->middleware(['api'])->group(function () {
-    // TODO: add auth middleware for super-admin protection
+Route::prefix('api/central')->middleware(['api', 'auth:sanctum', 'role:admin'])->group(function () {
     Route::get('tenants',              [TenantController::class, 'index']);
     Route::get('tenants/{tenant}',     [TenantController::class, 'show']);
     Route::post('tenants',             [TenantController::class, 'store']);
