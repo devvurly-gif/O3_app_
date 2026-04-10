@@ -102,6 +102,10 @@ class TenantController extends Controller
             \App\Models\Setting::set('general', 'currency', 'MAD');
             \App\Models\Setting::set('general', 'tax_rate', '20');
 
+            // Company info (used by PDF documents)
+            \App\Models\Setting::set('company', 'name', $validated['name']);
+            \App\Models\Setting::set('company', 'email', $validated['email']);
+
             // Set tenant-level feature flags
             \App\Models\Setting::set('ventes', 'paiement_sur_bl',
                 ($validated['paiement_bl_enabled'] ?? false) ? 'true' : 'false'
@@ -293,6 +297,8 @@ class TenantController extends Controller
 
             // Override settings with tenant info
             \App\Models\Setting::set('general', 'company_name', $tenant->name);
+            \App\Models\Setting::set('company', 'name', $tenant->name);
+            \App\Models\Setting::set('company', 'email', $tenant->email);
 
             // Seed modules and activate based on tenant flags
             (new \Database\Seeders\ModuleSeeder())->run();
