@@ -11,4 +11,11 @@ class StockMouvementRepository extends BaseRepository implements StockMouvementR
     {
         parent::__construct($model);
     }
+
+    public function forDocument(int $documentHeaderId): \Illuminate\Database\Eloquent\Collection
+    {
+        return StockMouvement::where('document_header_id', $documentHeaderId)
+            ->where('reason', '!=', 'cancellation')
+            ->get();
+    }
 }
