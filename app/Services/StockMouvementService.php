@@ -24,9 +24,11 @@ class StockMouvementService
 
     /**
      * Process stock movements for all product lines of a document.
-     * Call this AFTER lines have been created.
+     *
+     * @param bool $pending  If true, movements are recorded as 'pending'
+     *                       and warehouse stock is NOT updated yet.
      */
-    public function processDocument(DocumentHeader $document): void
+    public function processDocument(DocumentHeader $document, bool $pending = false): void
     {
         if (!$document->warehouse_id) {
             return;
@@ -46,7 +48,6 @@ class StockMouvementService
         };
 
         if (!$direction) {
-            // StockAdjustment et StockTransfer ont une logique spéciale
             if ($document->document_type === 'StockAdjustmentNote') {
                 $this->processAdjustment($document);
             } elseif ($document->document_type === 'StockTransfer') {
@@ -54,6 +55,8 @@ class StockMouvementService
             }
             return;
         }
+
+        $status = $pending ? 'pending' : 'applied';
 
         foreach ($document->lignes as $ligne) {
             if (!$ligne->product_id) {
@@ -65,8 +68,8 @@ class StockMouvementService
                 ? $currentStock + $ligne->quantity
                 : $currentStock - $ligne->quantity;
 
-            // Negative stock check (skip for adjustments)
-            if ($direction === 'out' && $stockAfter < 0) {
+            // Negative stock check (only when applying immediately)
+            if (!$pending && $direction === 'out' && $stockAfter < 0) {
                 $this->guardNegativeStock($ligne, $currentStock);
             }
 
@@ -81,28 +84,122 @@ class StockMouvementService
                 'quantity'           => $ligne->quantity,
                 'unit_cost'          => $ligne->unit_price,
                 'stock_before'       => $currentStock,
-                'stock_after'        => $stockAfter,
+                'stock_after'        => $pending ? $currentStock : $stockAfter,
                 'user_id'            => $document->user_id,
                 'notes'              => $label,
+                'status'             => $status,
             ]);
 
-            $this->stocks->upsertStock($ligne->product_id, $document->warehouse_id, [
-                'stockLevel'  => $stockAfter,
-                'stockAtTime' => now(),
-                'user_id'     => $document->user_id,
-            ]);
+            // Only update warehouse stock when not pending
+            if (!$pending) {
+                $this->stocks->upsertStock($ligne->product_id, $document->warehouse_id, [
+                    'stockLevel'  => $stockAfter,
+                    'stockAtTime' => now(),
+                    'user_id'     => $document->user_id,
+                ]);
 
-            $this->checkLowStockAlert($ligne->product_id, $document->warehouse_id, $stockAfter);
+                $this->checkLowStockAlert($ligne->product_id, $document->warehouse_id, $stockAfter);
+            }
         }
 
-        // Encours: only increment for direct invoices (not BL — BL doesn't create debt)
-        if ($direction === 'out' && $document->thirdPartner_id
+        // Encours: only increment for direct invoices (not BL)
+        if (!$pending && $direction === 'out' && $document->thirdPartner_id
             && $document->document_type === 'InvoiceSale') {
             $document->loadMissing('footer', 'thirdPartner');
             if ($document->footer && $document->thirdPartner) {
                 $document->thirdPartner->increment('encours_actuel', $document->footer->total_ttc);
             }
         }
+    }
+
+    /**
+     * Apply pending movements of a document: update warehouse stock and mark as 'applied'.
+     */
+    public function applyDocumentMovements(DocumentHeader $document): void
+    {
+        $movements = $this->mouvements->forDocumentByStatus($document->id, 'pending');
+
+        foreach ($movements as $mouvement) {
+            $currentStock = $this->stocks->getStockLevel($mouvement->product_id, $mouvement->warehouse_id);
+            $stockAfter   = $mouvement->direction === 'in'
+                ? $currentStock + $mouvement->quantity
+                : $currentStock - $mouvement->quantity;
+
+            // Negative stock check
+            if ($mouvement->direction === 'out' && $stockAfter < 0) {
+                $this->guardNegativeStockRaw($mouvement->product_id, $mouvement->quantity, $currentStock);
+            }
+
+            // Update the movement record with real stock values
+            $mouvement->update([
+                'stock_before' => $currentStock,
+                'stock_after'  => $stockAfter,
+                'status'       => 'applied',
+            ]);
+
+            $this->stocks->upsertStock($mouvement->product_id, $mouvement->warehouse_id, [
+                'stockLevel'  => $stockAfter,
+                'stockAtTime' => now(),
+                'user_id'     => auth()->id(),
+            ]);
+
+            $this->checkLowStockAlert($mouvement->product_id, $mouvement->warehouse_id, $stockAfter);
+        }
+    }
+
+    /**
+     * Cancel pending movements of a document (no stock reversal needed).
+     * For already-applied movements, create reverse entries.
+     */
+    public function cancelDocumentMovements(DocumentHeader $document): void
+    {
+        // 1. Cancel any pending movements (simple — no stock was affected)
+        $this->mouvements->updateStatusForDocument($document->id, 'pending', 'cancelled');
+
+        // 2. Reverse any applied movements
+        $appliedMovements = $this->mouvements->forDocumentByStatus($document->id, 'applied');
+
+        foreach ($appliedMovements as $mouvement) {
+            $reverseDirection = $mouvement->direction === 'out' ? 'in' : 'out';
+            $currentStock     = $this->stocks->getStockLevel($mouvement->product_id, $mouvement->warehouse_id);
+            $stockAfter       = $reverseDirection === 'in'
+                ? $currentStock + $mouvement->quantity
+                : $currentStock - $mouvement->quantity;
+
+            $this->mouvements->create([
+                'product_id'         => $mouvement->product_id,
+                'warehouse_id'       => $mouvement->warehouse_id,
+                'document_header_id' => $document->id,
+                'document_reference' => $document->reference,
+                'document_type'      => $document->document_type,
+                'direction'          => $reverseDirection,
+                'reason'             => 'cancellation',
+                'quantity'           => $mouvement->quantity,
+                'unit_cost'          => $mouvement->unit_cost,
+                'stock_before'       => $currentStock,
+                'stock_after'        => $stockAfter,
+                'user_id'            => auth()->id(),
+                'notes'              => 'Annulation ' . $document->reference,
+                'status'             => 'applied',
+            ]);
+
+            // Mark original as cancelled
+            $mouvement->update(['status' => 'cancelled']);
+
+            $this->stocks->upsertStock($mouvement->product_id, $mouvement->warehouse_id, [
+                'stockLevel'  => $stockAfter,
+                'stockAtTime' => now(),
+                'user_id'     => auth()->id(),
+            ]);
+        }
+    }
+
+    /**
+     * Reverse all stock movements of a document (legacy — kept for compatibility).
+     */
+    public function reverseDocument(DocumentHeader $document): void
+    {
+        $this->cancelDocumentMovements($document);
     }
 
     public function record(
@@ -140,6 +237,7 @@ class StockMouvementService
             'stock_before'         => $currentStock,
             'stock_after'          => $stockAfter,
             'user_id'              => auth()->id(),
+            'status'               => 'applied',
         ]);
 
         $this->stocks->upsertStock($ligne->product_id, $document->warehouse_id, [
@@ -150,8 +248,7 @@ class StockMouvementService
     }
 
     /**
-     * Process a StockAdjustment document:
-     * each line's quantity is the new target stock → delta = new - current.
+     * Process a StockAdjustment document.
      */
     private function processAdjustment(DocumentHeader $document): void
     {
@@ -186,6 +283,7 @@ class StockMouvementService
                 'stock_after'        => $stockAfter,
                 'user_id'            => $document->user_id,
                 'notes'              => 'Ajustement inventaire ' . $document->reference,
+                'status'             => 'applied',
             ]);
 
             $this->stocks->upsertStock($ligne->product_id, $document->warehouse_id, [
@@ -197,8 +295,7 @@ class StockMouvementService
     }
 
     /**
-     * Process a StockTransfer document:
-     * OUT from warehouse_id, IN to warehouse_dest_id.
+     * Process a StockTransfer document.
      */
     private function processTransfer(DocumentHeader $document): void
     {
@@ -212,7 +309,6 @@ class StockMouvementService
             $stockOut = $this->stocks->getStockLevel($ligne->product_id, $document->warehouse_id);
             $stockIn  = $this->stocks->getStockLevel($ligne->product_id, $document->warehouse_dest_id);
 
-            // Negative stock check on source warehouse
             if ($stockOut - $ligne->quantity < 0) {
                 $this->guardNegativeStock($ligne, $stockOut);
             }
@@ -231,6 +327,7 @@ class StockMouvementService
                 'stock_after'        => $stockOut - $ligne->quantity,
                 'user_id'            => $document->user_id,
                 'notes'              => 'Transfert sortie ' . $document->reference,
+                'status'             => 'applied',
             ]);
 
             $this->stocks->upsertStock($ligne->product_id, $document->warehouse_id, [
@@ -253,6 +350,7 @@ class StockMouvementService
                 'stock_after'        => $stockIn + $ligne->quantity,
                 'user_id'            => $document->user_id,
                 'notes'              => 'Transfert entrée ' . $document->reference,
+                'status'             => 'applied',
             ]);
 
             $this->stocks->upsertStock($ligne->product_id, $document->warehouse_dest_id, [
@@ -272,7 +370,6 @@ class StockMouvementService
     ): void {
         $stockOut = $this->stocks->getStockLevel($productId, $fromWarehouseId);
 
-        // Negative stock check on source warehouse
         if ($stockOut - $quantity < 0) {
             $this->guardNegativeStockRaw($productId, $quantity, $stockOut);
         }
@@ -286,6 +383,7 @@ class StockMouvementService
             'stock_before' => $stockOut,
             'stock_after'  => $stockOut - $quantity,
             'user_id'      => $userId,
+            'status'       => 'applied',
         ]);
 
         $this->stocks->upsertStock($productId, $fromWarehouseId, [
@@ -305,6 +403,7 @@ class StockMouvementService
             'stock_before' => $stockIn,
             'stock_after'  => $stockIn + $quantity,
             'user_id'      => $userId,
+            'status'       => 'applied',
         ]);
 
         $this->stocks->upsertStock($productId, $toWarehouseId, [
@@ -314,52 +413,6 @@ class StockMouvementService
         ]);
     }
 
-    /**
-     * Reverse all stock movements of a document (used on BL cancellation).
-     * Creates inverse movements so the audit trail is preserved.
-     */
-    public function reverseDocument(DocumentHeader $document): void
-    {
-        if (!$document->warehouse_id) {
-            return;
-        }
-
-        $movements = $this->mouvements->forDocument($document->id);
-
-        foreach ($movements as $mouvement) {
-            $reverseDirection = $mouvement->direction === 'out' ? 'in' : 'out';
-            $currentStock     = $this->stocks->getStockLevel($mouvement->product_id, $mouvement->warehouse_id);
-            $stockAfter       = $reverseDirection === 'in'
-                ? $currentStock + $mouvement->quantity
-                : $currentStock - $mouvement->quantity;
-
-            $this->mouvements->create([
-                'product_id'         => $mouvement->product_id,
-                'warehouse_id'       => $mouvement->warehouse_id,
-                'document_header_id' => $document->id,
-                'document_reference' => $document->reference,
-                'document_type'      => $document->document_type,
-                'direction'          => $reverseDirection,
-                'reason'             => 'cancellation',
-                'quantity'           => $mouvement->quantity,
-                'unit_cost'          => $mouvement->unit_cost,
-                'stock_before'       => $currentStock,
-                'stock_after'        => $stockAfter,
-                'user_id'            => auth()->id(),
-                'notes'              => 'Annulation ' . $document->reference,
-            ]);
-
-            $this->stocks->upsertStock($mouvement->product_id, $mouvement->warehouse_id, [
-                'stockLevel'  => $stockAfter,
-                'stockAtTime' => now(),
-                'user_id'     => auth()->id(),
-            ]);
-        }
-    }
-
-    /**
-     * Throw if negative stock is not allowed (uses a DocumentLigne for context).
-     */
     private function guardNegativeStock(DocumentLigne $ligne, float $currentStock): void
     {
         if (Setting::get('stock', 'autoriser_stock_negatif', 'false') === 'true') {
@@ -376,9 +429,6 @@ class StockMouvementService
         );
     }
 
-    /**
-     * Throw if negative stock is not allowed (raw values, no ligne context).
-     */
     private function guardNegativeStockRaw(int $productId, float $requested, float $available): void
     {
         if (Setting::get('stock', 'autoriser_stock_negatif', 'false') === 'true') {
@@ -395,9 +445,6 @@ class StockMouvementService
         );
     }
 
-    /**
-     * Send a StockMovementAlert when stock drops to 5 or below.
-     */
     private function checkLowStockAlert(int $productId, int $warehouseId, float $stockAfter): void
     {
         $threshold = (int) Setting::get('stock', 'seuil_alerte_stock', '5');

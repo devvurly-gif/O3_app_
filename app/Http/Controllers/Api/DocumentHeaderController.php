@@ -73,8 +73,14 @@ class DocumentHeaderController extends Controller
             $request->footerData()
         );
 
-        // Stock movements for BL / BR (always impact stock)
-        if (in_array($document->document_type, ['DeliveryNote', 'ReceiptNotePurchase']) && $document->warehouse_id) {
+        // Stock movements for BL: create as pending (applied on confirmation)
+        if ($document->document_type === 'DeliveryNote' && $document->warehouse_id) {
+            $isPending = in_array($document->status, ['draft', 'pending']);
+            $this->stockService->processDocument($document, pending: $isPending);
+        }
+
+        // Stock movements for BR (always impact stock immediately)
+        if ($document->document_type === 'ReceiptNotePurchase' && $document->warehouse_id) {
             $this->stockService->processDocument($document);
         }
 

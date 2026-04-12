@@ -87,7 +87,7 @@ class DocumentVenteController extends Controller
      *
      * POST /api/ventes/documents/{bc}/generer-bl
      *
-     * BC Client (confirmé) → BL (confirmé) — stock exit happens here
+     * BC Client (confirmé) → BL (draft) — stock movements created as PENDING
      */
     public function generer_bl(
         DocumentHeader $bc,
@@ -121,7 +121,7 @@ class DocumentVenteController extends Controller
                 'company_role'            => $bc->company_role,
                 'warehouse_id'            => $bc->warehouse_id,
                 'user_id'                 => auth()->id(),
-                'status'                  => 'confirmed',
+                'status'                  => 'draft',
                 'issued_at'               => $now,
                 'notes'                   => $bc->notes,
             ]);
@@ -131,16 +131,62 @@ class DocumentVenteController extends Controller
 
             $bc->delete(); // soft-delete — BL keeps parent_id for traceability
 
+            // Create stock movements as PENDING (no warehouse stock update yet)
             $bl->load('lignes');
-            $this->stockService->processDocument($bl);
+            $this->stockService->processDocument($bl, pending: true);
 
             return $bl;
         });
 
         return response()->json([
-            'message' => 'Bon de Livraison créé avec succès.',
+            'message' => 'Bon de Livraison créé (en attente de confirmation).',
             'data'    => $bl->load(['thirdPartner', 'lignes.product', 'footer', 'user', 'warehouse']),
         ], 201);
+    }
+
+    /**
+     * Confirm a draft BL — applies pending stock movements.
+     *
+     * PUT /api/ventes/documents/{bl}/confirmer-bl
+     *
+     * BL (draft) → BL (confirmed) — stock exit happens HERE
+     */
+    public function confirmer_bl(DocumentHeader $bl): JsonResponse
+    {
+        if (!$bl->isDeliveryNote()) {
+            return response()->json([
+                'message' => 'Ce document n\'est pas un Bon de Livraison.',
+            ], 422);
+        }
+
+        if ($bl->status !== 'draft') {
+            return response()->json([
+                'message' => 'Ce BL est déjà confirmé. Statut actuel : ' . $bl->status,
+            ], 422);
+        }
+
+        DB::transaction(function () use ($bl) {
+            // Apply pending stock movements → warehouse stock updated now
+            $this->stockService->applyDocumentMovements($bl);
+
+            $bl->update(['status' => 'confirmed']);
+
+            // Encours: if paiement_sur_bl is active
+            if (Setting::get('ventes', 'paiement_sur_bl', 'false') === 'true'
+                && $bl->thirdPartner_id
+            ) {
+                $bl->loadMissing('footer');
+                if ($bl->footer?->total_ttc > 0) {
+                    ThirdPartner::where('id', $bl->thirdPartner_id)
+                        ->increment('encours_actuel', $bl->footer->total_ttc);
+                }
+            }
+        });
+
+        return response()->json([
+            'message' => 'Bon de Livraison confirmé. Stock mis à jour.',
+            'data'    => $bl->fresh(['thirdPartner', 'lignes.product', 'footer', 'user', 'warehouse']),
+        ]);
     }
 
     /**
@@ -148,8 +194,8 @@ class DocumentVenteController extends Controller
      *
      * PUT /api/ventes/documents/{bl}/confirmer
      *
-     * The invoice does NOT impact stock -- stock was already exited
-     * when the BL was created.
+     * BL must be confirmed first (stock already applied).
+     * The invoice does NOT impact stock.
      */
     public function confirmer_reception(Request $request, DocumentHeader $bl): JsonResponse
     {
@@ -161,7 +207,7 @@ class DocumentVenteController extends Controller
 
         if (!in_array($bl->status, ['confirmed', 'delivered'])) {
             return response()->json([
-                'message' => 'Ce BL ne peut plus être converti en facture. Statut actuel : ' . $bl->status,
+                'message' => 'Ce BL doit être confirmé avant d\'être facturé. Statut actuel : ' . $bl->status,
             ], 422);
         }
 
@@ -268,9 +314,12 @@ class DocumentVenteController extends Controller
     }
 
     /**
-     * Cancel a Delivery Note (BL) and reverse its stock movements.
+     * Cancel a Delivery Note (BL) and reverse/cancel its stock movements.
      *
      * POST /api/ventes/documents/{bl}/annuler
+     *
+     * - If BL is draft: cancels pending movements (no stock impact)
+     * - If BL is confirmed: reverses applied movements (stock restored)
      */
     public function annuler_bl(DocumentHeader $bl): JsonResponse
     {
@@ -280,7 +329,7 @@ class DocumentVenteController extends Controller
             ], 422);
         }
 
-        if (!in_array($bl->status, ['confirmed', 'delivered'])) {
+        if (!in_array($bl->status, ['draft', 'confirmed', 'delivered'])) {
             return response()->json([
                 'message' => 'Ce BL ne peut pas être annulé. Statut actuel : ' . $bl->status,
             ], 422);
@@ -294,12 +343,12 @@ class DocumentVenteController extends Controller
         }
 
         DB::transaction(function () use ($bl) {
-            // 1. Reverse stock movements
-            $this->stockService->reverseDocument($bl);
+            // 1. Cancel/reverse stock movements
+            $this->stockService->cancelDocumentMovements($bl);
 
-            // 2. Reverse encours if paiement_sur_bl was active and BL came from a chain
-            if (Setting::get('ventes', 'paiement_sur_bl', 'false') === 'true'
-                && $bl->parent_id !== null
+            // 2. Reverse encours if BL was confirmed and paiement_sur_bl was active
+            if (in_array($bl->status, ['confirmed', 'delivered'])
+                && Setting::get('ventes', 'paiement_sur_bl', 'false') === 'true'
                 && $bl->thirdPartner_id
             ) {
                 $bl->loadMissing('footer');

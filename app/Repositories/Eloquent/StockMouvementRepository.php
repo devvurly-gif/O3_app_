@@ -18,4 +18,19 @@ class StockMouvementRepository extends BaseRepository implements StockMouvementR
             ->where('reason', '!=', 'cancellation')
             ->get();
     }
+
+    public function forDocumentByStatus(int $documentHeaderId, string $status): \Illuminate\Database\Eloquent\Collection
+    {
+        return StockMouvement::where('document_header_id', $documentHeaderId)
+            ->where('status', $status)
+            ->where('reason', '!=', 'cancellation')
+            ->get();
+    }
+
+    public function updateStatusForDocument(int $documentHeaderId, string $fromStatus, string $toStatus): int
+    {
+        return StockMouvement::where('document_header_id', $documentHeaderId)
+            ->where('status', $fromStatus)
+            ->update(['status' => $toStatus]);
+    }
 }

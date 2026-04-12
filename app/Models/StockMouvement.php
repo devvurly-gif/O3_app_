@@ -33,6 +33,7 @@ class StockMouvement extends Model
         'stock_after',
         'user_id',
         'notes',
+        'status',
     ];
 
     protected function casts(): array
@@ -65,6 +66,9 @@ class StockMouvement extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function isIn(): bool  { return $this->direction === 'in'; }
-    public function isOut(): bool { return $this->direction === 'out'; }
+    public function isIn(): bool       { return $this->direction === 'in'; }
+    public function isOut(): bool      { return $this->direction === 'out'; }
+    public function isPending(): bool  { return $this->status === 'pending'; }
+    public function isApplied(): bool  { return $this->status === 'applied'; }
+    public function isCancelled(): bool { return $this->status === 'cancelled'; }
 }
