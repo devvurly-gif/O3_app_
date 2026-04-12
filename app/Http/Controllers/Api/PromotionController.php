@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Promotion;
+use App\Models\Slide;
 use App\Services\PromotionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -90,6 +91,22 @@ class PromotionController extends Controller
             $promotion->products()->sync($syncData);
         }
 
+        // Auto-create a hero slide if banner_image is set
+        if (!empty($promotion->banner_image)) {
+            Slide::create([
+                'title'       => $promotion->name,
+                'subtitle'    => $promotion->banner_text,
+                'image'       => $promotion->banner_image,
+                'button_text' => 'Voir la promo',
+                'link_type'   => 'promotion',
+                'link_id'     => $promotion->id,
+                'position'    => 'hero',
+                'starts_at'   => $promotion->starts_at,
+                'ends_at'     => $promotion->ends_at,
+                'is_active'   => $promotion->is_active ?? true,
+            ]);
+        }
+
         $this->promotionService->clearCache();
 
         return response()->json($promotion->load('products'), 201);
@@ -137,6 +154,33 @@ class PromotionController extends Controller
             $promotion->products()->sync($syncData);
         }
 
+        // Auto-sync linked slide
+        $linkedSlide = Slide::where('link_type', 'promotion')->where('link_id', $promotion->id)->first();
+
+        if (!empty($promotion->banner_image)) {
+            $slideData = [
+                'title'       => $promotion->name,
+                'subtitle'    => $promotion->banner_text,
+                'image'       => $promotion->banner_image,
+                'button_text' => 'Voir la promo',
+                'link_type'   => 'promotion',
+                'link_id'     => $promotion->id,
+                'position'    => 'hero',
+                'starts_at'   => $promotion->starts_at,
+                'ends_at'     => $promotion->ends_at,
+                'is_active'   => $promotion->is_active ?? true,
+            ];
+
+            if ($linkedSlide) {
+                $linkedSlide->update($slideData);
+            } else {
+                Slide::create($slideData);
+            }
+        } elseif ($linkedSlide) {
+            // Banner removed → delete linked slide
+            $linkedSlide->delete();
+        }
+
         $this->promotionService->clearCache();
 
         return response()->json($promotion->load('products'));
@@ -144,6 +188,9 @@ class PromotionController extends Controller
 
     public function destroy(Promotion $promotion): JsonResponse
     {
+        // Delete linked slide(s)
+        Slide::where('link_type', 'promotion')->where('link_id', $promotion->id)->delete();
+
         $promotion->delete();
         $this->promotionService->clearCache();
 

@@ -211,6 +211,92 @@ class PosSessionController extends Controller
         }
     }
 
+    /**
+     * GET /api/pos/report/daily
+     * Consolidated daily POS report (all sessions for a given date).
+     */
+    public function dailyReport(Request $request): JsonResponse|Response
+    {
+        $date = $request->input('date', now()->toDateString());
+        $format = $request->input('format', 'json'); // json or pdf
+
+        $sessions = PosSession::whereNotNull('closed_at')
+            ->whereDate('opened_at', $date)
+            ->with(['terminal', 'user'])
+            ->orderBy('opened_at')
+            ->get();
+
+        if ($sessions->isEmpty()) {
+            return response()->json(['message' => 'Aucune session fermée pour cette date.', 'data' => null], 200);
+        }
+
+        // Aggregate stats across all sessions
+        $allTickets = DocumentHeader::where('document_type', 'TicketSale')
+            ->whereIn('pos_session_id', $sessions->pluck('id'))
+            ->with(['footer', 'payments', 'thirdPartner'])
+            ->orderBy('issued_at')
+            ->get();
+
+        $activeTickets = $allTickets->where('status', '!=', 'cancelled');
+
+        $paymentsByMethod = [];
+        foreach ($activeTickets as $t) {
+            foreach ($t->payments as $p) {
+                $paymentsByMethod[$p->method] = ($paymentsByMethod[$p->method] ?? 0) + (float) $p->amount;
+            }
+        }
+
+        $totalPaid = array_sum($paymentsByMethod);
+        $totalCredit = $paymentsByMethod['credit'] ?? 0;
+
+        // Per-session summary
+        $sessionsSummary = $sessions->map(function ($s) {
+            $stats = $this->buildSessionStats($s);
+            return [
+                'id'             => $s->id,
+                'terminal'       => $s->terminal->name ?? '—',
+                'user'           => $s->user->name ?? '—',
+                'opened_at'      => $s->opened_at,
+                'closed_at'      => $s->closed_at,
+                'opening_cash'   => (float) $s->opening_cash,
+                'closing_cash'   => (float) $s->closing_cash,
+                'cash_difference'=> (float) $s->cash_difference,
+                'tickets'        => $stats['total_tickets'],
+                'total_ttc'      => $stats['total_ttc'],
+            ];
+        });
+
+        $data = [
+            'date'               => $date,
+            'sessions_count'     => $sessions->count(),
+            'total_tickets'      => $activeTickets->count(),
+            'cancelled_tickets'  => $allTickets->where('status', 'cancelled')->count(),
+            'total_ttc'          => $activeTickets->sum(fn ($t) => $t->footer?->total_ttc ?? 0),
+            'total_ht'           => $activeTickets->sum(fn ($t) => $t->footer?->total_ht ?? 0),
+            'total_tax'          => $activeTickets->sum(fn ($t) => $t->footer?->total_tax ?? 0),
+            'total_paid'         => $totalPaid,
+            'total_credit'       => $totalCredit,
+            'payments_by_method' => $paymentsByMethod,
+            'total_opening_cash' => $sessions->sum('opening_cash'),
+            'total_closing_cash' => $sessions->sum('closing_cash'),
+            'total_difference'   => $sessions->sum('cash_difference'),
+            'sessions'           => $sessionsSummary,
+        ];
+
+        if ($format === 'pdf') {
+            $company = $this->getCompanyInfo();
+            $pdf = Pdf::loadView('pdf.pos-daily-report', [
+                'data'    => $data,
+                'company' => $company,
+                'tickets' => $allTickets,
+            ]);
+            $pdf->setPaper('A4', 'portrait');
+            return $pdf->download("rapport-pos-journalier-{$date}.pdf");
+        }
+
+        return response()->json($data);
+    }
+
     private function getCompanyInfo(): array
     {
         return [

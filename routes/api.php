@@ -133,6 +133,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('purchases/pdf', [ReportController::class, 'purchasesPdf']);
         Route::get('stock',         [ReportController::class, 'stock']);
         Route::get('stock/pdf',     [ReportController::class, 'stockPdf']);
+        Route::get('credit-clients',[ReportController::class, 'creditClients']);
     });
 
     // ── Catalogue write (admin, manager) ──────────────────────────────────
@@ -258,6 +259,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Session closing report
         Route::get('sessions/{session}/report', [PosSessionController::class, 'closingReport']);
+
+        // Daily consolidated POS report
+        Route::get('report/daily',              [PosSessionController::class, 'dailyReport']);
 
         // Customers (search + quick-create from POS)
         Route::get('customers',                [PosCustomerController::class, 'index']);
