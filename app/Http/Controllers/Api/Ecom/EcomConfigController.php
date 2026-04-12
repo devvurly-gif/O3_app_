@@ -34,12 +34,14 @@ class EcomConfigController extends Controller
         $logo = null;
         $phone = null;
         $email = null;
+        $address = null;
 
         try {
             $companyName = Setting::get('general', 'company_name');
             $logo = Setting::get('company', 'logo');
             $phone = Setting::get('general', 'phone');
             $email = Setting::get('general', 'email');
+            $address = Setting::get('company', 'address');
         } catch (\Exception $e) {
             // Settings table may not exist yet
         }
@@ -48,10 +50,11 @@ class EcomConfigController extends Controller
             'enabled'  => true,
             'api_key'  => $tenant->ecom_api_key,
             'shop'     => [
-                'name'  => $companyName ?? $tenant->name,
-                'logo'  => $logo,
-                'phone' => $phone,
-                'email' => $email,
+                'name'    => $companyName ?? $tenant->name,
+                'logo'    => $logo,
+                'phone'   => $phone,
+                'email'   => $email,
+                'address' => $address,
             ],
         ]);
     }
