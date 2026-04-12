@@ -315,6 +315,49 @@ class StockMouvementService
     }
 
     /**
+     * Reverse all stock movements of a document (used on BL cancellation).
+     * Creates inverse movements so the audit trail is preserved.
+     */
+    public function reverseDocument(DocumentHeader $document): void
+    {
+        if (!$document->warehouse_id) {
+            return;
+        }
+
+        $movements = $this->mouvements->forDocument($document->id);
+
+        foreach ($movements as $mouvement) {
+            $reverseDirection = $mouvement->direction === 'out' ? 'in' : 'out';
+            $currentStock     = $this->stocks->getStockLevel($mouvement->product_id, $mouvement->warehouse_id);
+            $stockAfter       = $reverseDirection === 'in'
+                ? $currentStock + $mouvement->quantity
+                : $currentStock - $mouvement->quantity;
+
+            $this->mouvements->create([
+                'product_id'         => $mouvement->product_id,
+                'warehouse_id'       => $mouvement->warehouse_id,
+                'document_header_id' => $document->id,
+                'document_reference' => $document->reference,
+                'document_type'      => $document->document_type,
+                'direction'          => $reverseDirection,
+                'reason'             => 'cancellation',
+                'quantity'           => $mouvement->quantity,
+                'unit_cost'          => $mouvement->unit_cost,
+                'stock_before'       => $currentStock,
+                'stock_after'        => $stockAfter,
+                'user_id'            => auth()->id(),
+                'notes'              => 'Annulation ' . $document->reference,
+            ]);
+
+            $this->stocks->upsertStock($mouvement->product_id, $mouvement->warehouse_id, [
+                'stockLevel'  => $stockAfter,
+                'stockAtTime' => now(),
+                'user_id'     => auth()->id(),
+            ]);
+        }
+    }
+
+    /**
      * Throw if negative stock is not allowed (uses a DocumentLigne for context).
      */
     private function guardNegativeStock(DocumentLigne $ligne, float $currentStock): void

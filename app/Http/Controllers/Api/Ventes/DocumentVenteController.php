@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Ventes\StoreDocumentVenteRequest;
 use App\Models\DocumentHeader;
 use App\Models\Payment;
+use App\Models\Setting;
+use App\Models\ThirdPartner;
 use App\Repositories\Contracts\DocumentIncrementorRepositoryInterface;
 use App\Services\DocumentIncrementorService;
 use App\Services\StockMouvementService;
@@ -263,6 +265,70 @@ class DocumentVenteController extends Controller
             'message' => 'Réception confirmée. Facture ' . $facture->reference . ' créée.',
             'data'    => $facture->load(['thirdPartner', 'lignes.product', 'footer', 'user']),
         ], 201);
+    }
+
+    /**
+     * Cancel a Delivery Note (BL) and reverse its stock movements.
+     *
+     * POST /api/ventes/documents/{bl}/annuler
+     */
+    public function annuler_bl(DocumentHeader $bl): JsonResponse
+    {
+        if (!$bl->isDeliveryNote()) {
+            return response()->json([
+                'message' => 'Ce document n\'est pas un Bon de Livraison.',
+            ], 422);
+        }
+
+        if (!in_array($bl->status, ['confirmed', 'delivered'])) {
+            return response()->json([
+                'message' => 'Ce BL ne peut pas être annulé. Statut actuel : ' . $bl->status,
+            ], 422);
+        }
+
+        // Cannot cancel a BL that already has a child invoice
+        if ($bl->children()->where('document_type', 'InvoiceSale')->exists()) {
+            return response()->json([
+                'message' => 'Ce BL a déjà été facturé et ne peut pas être annulé.',
+            ], 422);
+        }
+
+        DB::transaction(function () use ($bl) {
+            // 1. Reverse stock movements
+            $this->stockService->reverseDocument($bl);
+
+            // 2. Reverse encours if paiement_sur_bl was active and BL came from a chain
+            if (Setting::get('ventes', 'paiement_sur_bl', 'false') === 'true'
+                && $bl->parent_id !== null
+                && $bl->thirdPartner_id
+            ) {
+                $bl->loadMissing('footer');
+                if ($bl->footer?->total_ttc > 0) {
+                    ThirdPartner::where('id', $bl->thirdPartner_id)
+                        ->decrement('encours_actuel', $bl->footer->total_ttc);
+                    // Prevent negative encours
+                    ThirdPartner::where('id', $bl->thirdPartner_id)
+                        ->where('encours_actuel', '<', 0)
+                        ->update(['encours_actuel' => 0]);
+                }
+            }
+
+            // 3. Restore the parent BC (soft-deleted when BL was created)
+            if ($bl->parent_id) {
+                DocumentHeader::withTrashed()
+                    ->where('id', $bl->parent_id)
+                    ->whereNotNull('deleted_at')
+                    ->restore();
+            }
+
+            // 4. Mark BL as cancelled
+            $bl->update(['status' => 'cancelled']);
+        });
+
+        return response()->json([
+            'message' => 'Bon de Livraison annulé. Stocks restaurés.',
+            'data'    => $bl->fresh(['thirdPartner', 'lignes.product', 'footer', 'user', 'warehouse']),
+        ]);
     }
 
     /**

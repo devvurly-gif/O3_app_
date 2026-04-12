@@ -204,6 +204,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('ventes/documents/{devis}/generer-bc',  [DocumentVenteController::class, 'generer_bc']);
         Route::post('ventes/documents/{bc}/generer-bl',     [DocumentVenteController::class, 'generer_bl']);
         Route::put('ventes/documents/{bl}/confirmer',       [DocumentVenteController::class, 'confirmer_reception']);
+        Route::post('ventes/documents/{bl}/annuler',        [DocumentVenteController::class, 'annuler_bl']);
 
         // ── Purchase workflow (Achats) ───────────────────────────────
         Route::post('achats/documents/{commande}/generer-reception', [DocumentAchatController::class, 'generer_reception']);
