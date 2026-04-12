@@ -7,6 +7,7 @@ use App\Models\Promotion;
 use App\Services\PromotionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
@@ -71,6 +72,13 @@ class PromotionController extends Controller
             $validated['slug'] = Str::slug($validated['name']);
         }
 
+        // Handle banner_image file upload
+        if ($request->hasFile('banner_image_file')) {
+            $request->validate(['banner_image_file' => 'image|max:2048']);
+            $path = $request->file('banner_image_file')->store('promotions', 'public');
+            $validated['banner_image'] = '/storage/' . $path;
+        }
+
         $promotion = Promotion::create($validated);
 
         // Attach products
@@ -107,6 +115,17 @@ class PromotionController extends Controller
             'product_ids.*.id'         => 'required|exists:products,id',
             'product_ids.*.promo_price' => 'nullable|numeric|min:0',
         ]);
+
+        // Handle banner_image file upload
+        if ($request->hasFile('banner_image_file')) {
+            $request->validate(['banner_image_file' => 'image|max:2048']);
+            // Delete old banner if stored locally
+            if ($promotion->banner_image && str_starts_with($promotion->banner_image, '/storage/')) {
+                Storage::disk('public')->delete(str_replace('/storage/', '', $promotion->banner_image));
+            }
+            $path = $request->file('banner_image_file')->store('promotions', 'public');
+            $validated['banner_image'] = '/storage/' . $path;
+        }
 
         $promotion->update($validated);
 

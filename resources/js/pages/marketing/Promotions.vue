@@ -232,65 +232,117 @@
             <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
-        <form @submit.prevent="savePromo" class="p-5 space-y-4">
-          <div class="grid grid-cols-2 gap-4">
-            <div class="col-span-2">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nom *</label>
-              <input v-model="promoForm.name" type="text" required class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500" placeholder="Ex: Soldes d'été -20%">
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type *</label>
-              <select v-model="promoForm.type" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
-                <option value="percentage">Pourcentage (%)</option>
-                <option value="fixed_amount">Montant fixe (MAD)</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Valeur *</label>
-              <div class="relative">
-                <input v-model.number="promoForm.value" type="number" step="0.01" min="0" required class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
-                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">{{ promoForm.type === 'percentage' ? '%' : 'MAD' }}</span>
+        <form @submit.prevent="savePromo" class="p-5 space-y-0">
+
+          <!-- ── Section steps ── -->
+          <div class="flex gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1 mb-5">
+            <button type="button" @click="promoStep = 'info'"
+              class="flex-1 px-3 py-2 text-sm font-medium rounded-md transition flex items-center justify-center gap-1.5"
+              :class="promoStep === 'info' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400'">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              Informations
+            </button>
+            <button type="button" @click="promoStep = 'slide'"
+              class="flex-1 px-3 py-2 text-sm font-medium rounded-md transition flex items-center justify-center gap-1.5"
+              :class="promoStep === 'slide' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400'">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+              Slide
+            </button>
+            <button type="button" @click="promoStep = 'products'"
+              class="flex-1 px-3 py-2 text-sm font-medium rounded-md transition flex items-center justify-center gap-1.5"
+              :class="promoStep === 'products' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400'">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+              Produits
+              <span v-if="promoForm.product_ids.length" class="px-1.5 py-0.5 text-xs rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">{{ promoForm.product_ids.length }}</span>
+            </button>
+          </div>
+
+          <!-- ── Step 1: Informations ── -->
+          <div v-show="promoStep === 'info'" class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+              <div class="col-span-2">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nom *</label>
+                <input v-model="promoForm.name" type="text" required class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500" placeholder="Ex: Soldes d'été -20%">
               </div>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date début</label>
-              <div class="flex gap-2">
-                <input :value="promoForm.starts_at?.slice(0, 10)" @input="promoForm.starts_at = ($event.target as HTMLInputElement).value + 'T' + (promoForm.starts_at?.slice(11, 16) || '00:00')" type="date" class="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
-                <input :value="promoForm.starts_at?.slice(11, 16)" @input="promoForm.starts_at = (promoForm.starts_at?.slice(0, 10) || '') + 'T' + ($event.target as HTMLInputElement).value" type="time" class="w-28 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type *</label>
+                <select v-model="promoForm.type" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+                  <option value="percentage">Pourcentage (%)</option>
+                  <option value="fixed_amount">Montant fixe (MAD)</option>
+                </select>
               </div>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date fin</label>
-              <div class="flex gap-2">
-                <input :value="promoForm.ends_at?.slice(0, 10)" @input="promoForm.ends_at = ($event.target as HTMLInputElement).value + 'T' + (promoForm.ends_at?.slice(11, 16) || '23:59')" type="date" class="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
-                <input :value="promoForm.ends_at?.slice(11, 16)" @input="promoForm.ends_at = (promoForm.ends_at?.slice(0, 10) || '') + 'T' + ($event.target as HTMLInputElement).value" type="time" class="w-28 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Valeur *</label>
+                <div class="relative">
+                  <input v-model.number="promoForm.value" type="number" step="0.01" min="0" required class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+                  <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">{{ promoForm.type === 'percentage' ? '%' : 'MAD' }}</span>
+                </div>
               </div>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Remise max (MAD)</label>
-              <input v-model.number="promoForm.max_discount" type="number" step="0.01" min="0" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500" placeholder="Optionnel">
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Priorité</label>
-              <input v-model.number="promoForm.priority" type="number" min="0" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500" placeholder="0">
-            </div>
-            <div class="col-span-2">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Image bannière (URL)</label>
-              <input v-model="promoForm.banner_image" type="text" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500" placeholder="https://...">
-              <div v-if="promoForm.banner_image" class="mt-2 rounded-lg overflow-hidden h-28 bg-gray-100 dark:bg-gray-900">
-                <img :src="promoForm.banner_image" class="w-full h-full object-cover" @error="($event.target as HTMLImageElement).style.display='none'">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date début</label>
+                <div class="flex gap-2">
+                  <input :value="promoForm.starts_at?.slice(0, 10)" @input="promoForm.starts_at = ($event.target as HTMLInputElement).value + 'T' + (promoForm.starts_at?.slice(11, 16) || '00:00')" type="date" class="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+                  <input :value="promoForm.starts_at?.slice(11, 16)" @input="promoForm.starts_at = (promoForm.starts_at?.slice(0, 10) || '') + 'T' + ($event.target as HTMLInputElement).value" type="time" class="w-28 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+                </div>
               </div>
-            </div>
-            <div class="col-span-2">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
-              <textarea v-model="promoForm.description" rows="2" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500" placeholder="Description optionnelle..."></textarea>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date fin</label>
+                <div class="flex gap-2">
+                  <input :value="promoForm.ends_at?.slice(0, 10)" @input="promoForm.ends_at = ($event.target as HTMLInputElement).value + 'T' + (promoForm.ends_at?.slice(11, 16) || '23:59')" type="date" class="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+                  <input :value="promoForm.ends_at?.slice(11, 16)" @input="promoForm.ends_at = (promoForm.ends_at?.slice(0, 10) || '') + 'T' + ($event.target as HTMLInputElement).value" type="time" class="w-28 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+                </div>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Remise max (MAD)</label>
+                <input v-model.number="promoForm.max_discount" type="number" step="0.01" min="0" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500" placeholder="Optionnel">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Priorité</label>
+                <input v-model.number="promoForm.priority" type="number" min="0" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500" placeholder="0">
+              </div>
+              <div class="col-span-2">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+                <textarea v-model="promoForm.description" rows="2" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500" placeholder="Description optionnelle..."></textarea>
+              </div>
             </div>
           </div>
 
-          <!-- Products selector -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Produits en promotion</label>
-            <div class="relative mb-2">
+          <!-- ── Step 2: Slide / Bannière ── -->
+          <div v-show="promoStep === 'slide'" class="space-y-4">
+            <p class="text-sm text-gray-500 dark:text-gray-400">Image affichée sur le site eCom pour illustrer cette promotion (hero, bannière, etc.)</p>
+
+            <!-- File upload -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Télécharger une image</label>
+              <label class="flex items-center justify-center gap-2 px-4 py-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl cursor-pointer hover:border-blue-400 dark:hover:border-blue-500 transition bg-gray-50 dark:bg-gray-900/30">
+                <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>
+                <span class="text-sm text-gray-500 dark:text-gray-400">{{ promoBannerFile ? promoBannerFile.name : 'Cliquez pour choisir une image (JPG, PNG, WebP)' }}</span>
+                <input type="file" accept="image/*" class="hidden" @change="onPromoBannerSelected">
+              </label>
+            </div>
+
+            <!-- Preview -->
+            <div v-if="promoBannerPreview || promoForm.banner_image" class="rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+              <div class="relative h-44 bg-gray-100 dark:bg-gray-900">
+                <img :src="promoBannerPreview || promoForm.banner_image" class="w-full h-full object-cover" @error="($event.target as HTMLImageElement).style.display='none'">
+                <button type="button" @click="clearPromoBanner" class="absolute top-2 right-2 p-1.5 rounded-full bg-red-500 text-white hover:bg-red-600 transition shadow" title="Supprimer">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Or URL -->
+            <div class="relative">
+              <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-200 dark:border-gray-700"></div></div>
+              <div class="relative flex justify-center"><span class="px-3 bg-white dark:bg-gray-800 text-xs text-gray-400 uppercase">ou coller une URL</span></div>
+            </div>
+            <input v-model="promoForm.banner_image" type="text" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500" placeholder="https://exemple.com/banner.jpg">
+          </div>
+
+          <!-- ── Step 3: Produits ── -->
+          <div v-show="promoStep === 'products'" class="space-y-3">
+            <p class="text-sm text-gray-500 dark:text-gray-400">Sélectionnez les produits concernés par cette promotion. Vous pouvez forcer un prix promo spécifique par produit.</p>
+            <div class="relative">
               <input
                 v-model="productSearch"
                 type="text"
@@ -311,10 +363,10 @@
                 </button>
               </div>
             </div>
-            <div v-if="promoForm.product_ids.length" class="space-y-1.5">
+            <div v-if="promoForm.product_ids.length" class="space-y-1.5 max-h-64 overflow-y-auto">
               <div v-for="(item, idx) in promoForm.product_ids" :key="item.id" class="flex items-center gap-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
-                <span class="flex-1 text-sm text-gray-900 dark:text-white">{{ item.title }}</span>
-                <div class="flex items-center gap-2">
+                <span class="flex-1 text-sm text-gray-900 dark:text-white truncate">{{ item.title }}</span>
+                <div class="flex items-center gap-2 shrink-0">
                   <input v-model.number="item.promo_price" type="number" step="0.01" min="0" class="w-28 px-2 py-1 text-xs rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white" placeholder="Prix forcé" />
                   <button type="button" @click="promoForm.product_ids.splice(idx, 1)" class="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -322,10 +374,11 @@
                 </div>
               </div>
             </div>
-            <p v-else class="text-xs text-gray-400 dark:text-gray-500 mt-1">Aucun produit sélectionné — la promotion ne s'appliquera à rien</p>
+            <p v-else class="text-center py-6 text-sm text-gray-400 dark:text-gray-500">Aucun produit sélectionné — la promotion ne s'appliquera à rien</p>
           </div>
 
-          <div class="flex items-center justify-end gap-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+          <!-- ── Footer actions ── -->
+          <div class="flex items-center justify-end gap-3 pt-5 mt-5 border-t border-gray-200 dark:border-gray-700">
             <button type="button" @click="showPromoModal = false" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition">Annuler</button>
             <button type="submit" :disabled="saving" class="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition disabled:opacity-50">
               {{ saving ? 'Enregistrement...' : (editingPromo ? 'Mettre à jour' : 'Créer') }}
@@ -486,12 +539,31 @@ const productSearch = ref('')
 const productResults = ref<any[]>([])
 let searchTimeout: ReturnType<typeof setTimeout>
 
+const promoStep = ref<'info' | 'slide' | 'products'>('info')
+const promoBannerFile = ref<File | null>(null)
+const promoBannerPreview = ref<string | null>(null)
+
 const emptyPromoForm = () => ({
   name: '', type: 'percentage' as string, value: 0, description: '',
   banner_image: '', starts_at: '', ends_at: '', max_discount: null as number | null,
   priority: 0, product_ids: [] as PromoProduct[],
 })
 const promoForm = ref(emptyPromoForm())
+
+function onPromoBannerSelected(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (file) {
+    promoBannerFile.value = file
+    promoBannerPreview.value = URL.createObjectURL(file)
+    promoForm.value.banner_image = '' // clear URL when file is selected
+  }
+}
+
+function clearPromoBanner() {
+  promoBannerFile.value = null
+  promoBannerPreview.value = null
+  promoForm.value.banner_image = ''
+}
 
 async function fetchPromotions() {
   loading.value = true
@@ -514,6 +586,9 @@ function isActive(promo: any): boolean {
 function openCreatePromo() {
   editingPromo.value = null
   promoForm.value = emptyPromoForm()
+  promoStep.value = 'info'
+  promoBannerFile.value = null
+  promoBannerPreview.value = null
   showPromoModal.value = true
 }
 
@@ -532,23 +607,56 @@ async function openEditPromo(promo: any) {
       promo_price: p.pivot?.promo_price ? Number(p.pivot.promo_price) : null,
     })),
   }
+  promoStep.value = 'info'
+  promoBannerFile.value = null
+  promoBannerPreview.value = null
   showPromoModal.value = true
 }
 
 async function savePromo() {
   saving.value = true
   try {
-    const payload = {
-      ...promoForm.value,
-      starts_at: promoForm.value.starts_at || null,
-      ends_at: promoForm.value.ends_at || null,
-      product_ids: promoForm.value.product_ids.map(p => ({ id: p.id, promo_price: p.promo_price || null })),
-    }
-    if (editingPromo.value) {
-      await http.put(`/promotions/${editingPromo.value.id}`, payload)
+    const hasBannerFile = !!promoBannerFile.value
+
+    if (hasBannerFile) {
+      // Use FormData when file upload is needed
+      const fd = new FormData()
+      fd.append('name', promoForm.value.name)
+      fd.append('type', promoForm.value.type)
+      fd.append('value', String(promoForm.value.value))
+      if (promoForm.value.description) fd.append('description', promoForm.value.description)
+      if (promoForm.value.banner_image) fd.append('banner_image', promoForm.value.banner_image)
+      if (promoForm.value.starts_at) fd.append('starts_at', promoForm.value.starts_at)
+      if (promoForm.value.ends_at) fd.append('ends_at', promoForm.value.ends_at)
+      if (promoForm.value.max_discount != null) fd.append('max_discount', String(promoForm.value.max_discount))
+      fd.append('priority', String(promoForm.value.priority))
+      fd.append('banner_image_file', promoBannerFile.value!)
+      promoForm.value.product_ids.forEach((p, i) => {
+        fd.append(`product_ids[${i}][id]`, String(p.id))
+        if (p.promo_price) fd.append(`product_ids[${i}][promo_price]`, String(p.promo_price))
+      })
+
+      if (editingPromo.value) {
+        fd.append('_method', 'PUT')
+        await http.post(`/promotions/${editingPromo.value.id}`, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+      } else {
+        await http.post('/promotions', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+      }
     } else {
-      await http.post('/promotions', payload)
+      // JSON payload when no file
+      const payload = {
+        ...promoForm.value,
+        starts_at: promoForm.value.starts_at || null,
+        ends_at: promoForm.value.ends_at || null,
+        product_ids: promoForm.value.product_ids.map(p => ({ id: p.id, promo_price: p.promo_price || null })),
+      }
+      if (editingPromo.value) {
+        await http.put(`/promotions/${editingPromo.value.id}`, payload)
+      } else {
+        await http.post('/promotions', payload)
+      }
     }
+
     showPromoModal.value = false
     fetchPromotions()
   } finally { saving.value = false }
