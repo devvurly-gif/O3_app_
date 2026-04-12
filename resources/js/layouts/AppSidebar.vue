@@ -417,16 +417,10 @@ const tenantNavItems = computed((): SidebarLink[] => {
     { groupKey: 'nav.marketing', groupIcon: groupIcons.marketing },
     {
       to: '/marketing/promotions',
-      label: 'Promotions',
+      label: 'Promotions & Bannières',
       icon: icons.promo,
       groupKey_ref: 'nav.marketing',
       groupFirst: true,
-    },
-    {
-      to: '/marketing/slides',
-      label: 'Slides & Bannières',
-      icon: icons.slides,
-      groupKey_ref: 'nav.marketing',
     },
 
     // POS (conditional on module)

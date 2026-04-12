@@ -149,12 +149,11 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/marketing/promotions',
     component: () => import('../pages/marketing/Promotions.vue'),
-    meta: { layout: 'app', title: 'Promotions', breadcrumb: 'Promotions' },
+    meta: { layout: 'app', title: 'Promotions & Bannières', breadcrumb: 'Marketing' },
   },
   {
     path: '/marketing/slides',
-    component: () => import('../pages/marketing/Slides.vue'),
-    meta: { layout: 'app', title: 'Slides & Bannières', breadcrumb: 'Slides' },
+    redirect: '/marketing/promotions',
   },
 
   // POS (module-gated, layout: pos)
