@@ -44,6 +44,8 @@ class StockMouvementService
             'TicketSale'           => ['out', 'pos_sale',           'Sortie POS '         . $document->reference],
             'StockEntry'           => ['in',  'stock_entry',       'Entrée stock '       . $document->reference],
             'StockExit'            => ['out', 'stock_exit',        'Sortie stock '       . $document->reference],
+            'ReturnSale'           => ['in',  'return_in',         'Retour client '      . $document->reference],
+            'ReturnPurchase'       => ['out', 'return_out',        'Retour fournisseur ' . $document->reference],
             default                => [null,  null,                null],
         };
 

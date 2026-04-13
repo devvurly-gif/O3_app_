@@ -73,15 +73,10 @@ class DocumentHeaderController extends Controller
             $request->footerData()
         );
 
-        // Stock movements for BL: create as pending (applied on confirmation)
-        if ($document->document_type === 'DeliveryNote' && $document->warehouse_id) {
+        // Stock movements for BL / BR: pending if draft, applied if confirmed
+        if (in_array($document->document_type, ['DeliveryNote', 'ReceiptNotePurchase']) && $document->warehouse_id) {
             $isPending = in_array($document->status, ['draft', 'pending']);
             $this->stockService->processDocument($document, pending: $isPending);
-        }
-
-        // Stock movements for BR (always impact stock immediately)
-        if ($document->document_type === 'ReceiptNotePurchase' && $document->warehouse_id) {
-            $this->stockService->processDocument($document);
         }
 
         // Invoices created directly (not from BL/BR) → impact stock
@@ -138,6 +133,28 @@ class DocumentHeaderController extends Controller
 
     public function destroy(DocumentHeader $documentHeader): JsonResponse
     {
+        // Confirmed documents cannot be deleted — must use return documents
+        $protectedStatuses = ['confirmed', 'delivered', 'received', 'pending', 'paid', 'partial'];
+
+        if (in_array($documentHeader->status, $protectedStatuses)) {
+            $hint = match (true) {
+                in_array($documentHeader->document_type, ['DeliveryNote', 'InvoiceSale'])
+                    => 'Créez un Retour Client à la place.',
+                in_array($documentHeader->document_type, ['ReceiptNotePurchase', 'InvoicePurchase'])
+                    => 'Créez un Retour Fournisseur à la place.',
+                default => '',
+            };
+
+            return response()->json([
+                'message' => 'Un document confirmé ne peut pas être supprimé. ' . $hint,
+            ], 422);
+        }
+
+        // Draft/cancelled documents: cancel any pending stock movements first
+        if (in_array($documentHeader->document_type, ['DeliveryNote', 'ReceiptNotePurchase'])) {
+            $this->stockService->cancelDocumentMovements($documentHeader);
+        }
+
         $this->documents->delete($documentHeader);
         CacheService::flushDocuments();
 

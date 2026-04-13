@@ -201,15 +201,19 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('document-incrementors/{documentIncrementor}/confirm', [DocumentIncrementorController::class, 'confirmNext']);
 
         // ── Sales workflow (Ventes) ───────────────────────────────────
-        Route::post('ventes/documents/{devis}/generer-bc',  [DocumentVenteController::class, 'generer_bc']);
-        Route::post('ventes/documents/{bc}/generer-bl',     [DocumentVenteController::class, 'generer_bl']);
-        Route::put('ventes/documents/{bl}/confirmer-bl',     [DocumentVenteController::class, 'confirmer_bl']);
-        Route::put('ventes/documents/{bl}/confirmer',       [DocumentVenteController::class, 'confirmer_reception']);
-        Route::post('ventes/documents/{bl}/annuler',        [DocumentVenteController::class, 'annuler_bl']);
+        Route::post('ventes/documents/{devis}/generer-bc',         [DocumentVenteController::class, 'generer_bc']);
+        Route::post('ventes/documents/{bc}/generer-bl',            [DocumentVenteController::class, 'generer_bl']);
+        Route::put('ventes/documents/{bl}/confirmer-bl',           [DocumentVenteController::class, 'confirmer_bl']);
+        Route::put('ventes/documents/{bl}/confirmer',              [DocumentVenteController::class, 'confirmer_reception']);
+        Route::post('ventes/documents/{bl}/annuler',               [DocumentVenteController::class, 'annuler_bl']);
+        Route::post('ventes/documents/{document}/retour-client',   [DocumentVenteController::class, 'retour_client']);
 
         // ── Purchase workflow (Achats) ───────────────────────────────
-        Route::post('achats/documents/{commande}/generer-reception', [DocumentAchatController::class, 'generer_reception']);
-        Route::put('achats/documents/{br}/confirmer-facture',        [DocumentAchatController::class, 'confirmer_facture']);
+        Route::post('achats/documents/{commande}/generer-reception',       [DocumentAchatController::class, 'generer_reception']);
+        Route::put('achats/documents/{br}/confirmer-br',                   [DocumentAchatController::class, 'confirmer_br']);
+        Route::put('achats/documents/{br}/confirmer-facture',              [DocumentAchatController::class, 'confirmer_facture']);
+        Route::post('achats/documents/{br}/annuler',                       [DocumentAchatController::class, 'annuler_br']);
+        Route::post('achats/documents/{document}/retour-fournisseur',      [DocumentAchatController::class, 'retour_fournisseur']);
     });
 
     // ── Stock write (admin, manager, warehouse) ───────────────────────────

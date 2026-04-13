@@ -24,9 +24,9 @@ class DocumentVenteController extends Controller
     ) {
     }
 
+    // ── Devis → BC ───────────────────────────────────────────────────
+
     /**
-     * Convert a confirmed Quote into a Customer Order (BC Client).
-     *
      * POST /api/ventes/documents/{devis}/generer-bc
      *
      * Devis (confirmé) → BC Client (confirmé) — NO stock impact
@@ -36,15 +36,11 @@ class DocumentVenteController extends Controller
         StoreDocumentVenteRequest $request
     ): JsonResponse {
         if (!$devis->isQuoteSale()) {
-            return response()->json([
-                'message' => 'Ce document n\'est pas un Devis.',
-            ], 422);
+            return response()->json(['message' => 'Ce document n\'est pas un Devis.'], 422);
         }
 
         if ($devis->status !== 'confirmed') {
-            return response()->json([
-                'message' => 'Ce devis ne peut pas être converti. Statut actuel : ' . $devis->status,
-            ], 422);
+            return response()->json(['message' => 'Ce devis ne peut pas être converti. Statut actuel : ' . $devis->status], 422);
         }
 
         $devis->loadMissing(['lignes', 'footer']);
@@ -70,8 +66,7 @@ class DocumentVenteController extends Controller
 
             $this->bulkCopyLines($devis, $bc, $now);
             $this->copyFooter($devis, $bc);
-
-            $devis->delete(); // soft-delete — BC keeps parent_id for traceability
+            $devis->delete();
 
             return $bc;
         });
@@ -82,27 +77,23 @@ class DocumentVenteController extends Controller
         ], 201);
     }
 
+    // ── BC → BL (draft, pending stock) ───────────────────────────────
+
     /**
-     * Convert a confirmed Customer Order into a Delivery Note (BL).
-     *
      * POST /api/ventes/documents/{bc}/generer-bl
      *
-     * BC Client (confirmé) → BL (draft) — stock movements created as PENDING
+     * BC Client (confirmé) → BL (draft) — stock movements PENDING
      */
     public function generer_bl(
         DocumentHeader $bc,
         StoreDocumentVenteRequest $request
     ): JsonResponse {
         if (!$bc->isCustomerOrder()) {
-            return response()->json([
-                'message' => 'Ce document n\'est pas un Bon de Commande Client.',
-            ], 422);
+            return response()->json(['message' => 'Ce document n\'est pas un Bon de Commande Client.'], 422);
         }
 
         if ($bc->status !== 'confirmed') {
-            return response()->json([
-                'message' => 'Ce BC ne peut pas être converti. Statut actuel : ' . $bc->status,
-            ], 422);
+            return response()->json(['message' => 'Ce BC ne peut pas être converti. Statut actuel : ' . $bc->status], 422);
         }
 
         $bc->loadMissing(['lignes', 'footer']);
@@ -128,10 +119,8 @@ class DocumentVenteController extends Controller
 
             $this->bulkCopyLines($bc, $bl, $now);
             $this->copyFooter($bc, $bl);
+            $bc->delete();
 
-            $bc->delete(); // soft-delete — BL keeps parent_id for traceability
-
-            // Create stock movements as PENDING (no warehouse stock update yet)
             $bl->load('lignes');
             $this->stockService->processDocument($bl, pending: true);
 
@@ -144,37 +133,28 @@ class DocumentVenteController extends Controller
         ], 201);
     }
 
+    // ── Confirmer BL (draft → confirmed, stock applied) ──────────────
+
     /**
-     * Confirm a draft BL — applies pending stock movements.
-     *
      * PUT /api/ventes/documents/{bl}/confirmer-bl
      *
-     * BL (draft) → BL (confirmed) — stock exit happens HERE
+     * BL (draft) → BL (confirmed) — stock exit applied HERE
      */
     public function confirmer_bl(DocumentHeader $bl): JsonResponse
     {
         if (!$bl->isDeliveryNote()) {
-            return response()->json([
-                'message' => 'Ce document n\'est pas un Bon de Livraison.',
-            ], 422);
+            return response()->json(['message' => 'Ce document n\'est pas un Bon de Livraison.'], 422);
         }
 
         if ($bl->status !== 'draft') {
-            return response()->json([
-                'message' => 'Ce BL est déjà confirmé. Statut actuel : ' . $bl->status,
-            ], 422);
+            return response()->json(['message' => 'Ce BL est déjà confirmé. Statut : ' . $bl->status], 422);
         }
 
         DB::transaction(function () use ($bl) {
-            // Apply pending stock movements → warehouse stock updated now
             $this->stockService->applyDocumentMovements($bl);
-
             $bl->update(['status' => 'confirmed']);
 
-            // Encours: if paiement_sur_bl is active
-            if (Setting::get('ventes', 'paiement_sur_bl', 'false') === 'true'
-                && $bl->thirdPartner_id
-            ) {
+            if (Setting::get('ventes', 'paiement_sur_bl', 'false') === 'true' && $bl->thirdPartner_id) {
                 $bl->loadMissing('footer');
                 if ($bl->footer?->total_ttc > 0) {
                     ThirdPartner::where('id', $bl->thirdPartner_id)
@@ -189,31 +169,63 @@ class DocumentVenteController extends Controller
         ]);
     }
 
+    // ── Annuler BL (draft only — cancel pending movements) ──────────
+
     /**
-     * Confirm delivery reception and create the Invoice.
+     * POST /api/ventes/documents/{bl}/annuler
      *
+     * Only draft BLs can be cancelled. Confirmed → use retour client.
+     */
+    public function annuler_bl(DocumentHeader $bl): JsonResponse
+    {
+        if (!$bl->isDeliveryNote()) {
+            return response()->json(['message' => 'Ce document n\'est pas un Bon de Livraison.'], 422);
+        }
+
+        if ($bl->status !== 'draft') {
+            return response()->json([
+                'message' => 'Seuls les BL en brouillon peuvent être annulés. '
+                           . 'Pour un BL confirmé, créez un Retour Client.',
+            ], 422);
+        }
+
+        DB::transaction(function () use ($bl) {
+            $this->stockService->cancelDocumentMovements($bl);
+
+            if ($bl->parent_id) {
+                DocumentHeader::withTrashed()
+                    ->where('id', $bl->parent_id)
+                    ->whereNotNull('deleted_at')
+                    ->restore();
+            }
+
+            $bl->update(['status' => 'cancelled']);
+        });
+
+        return response()->json([
+            'message' => 'Bon de Livraison annulé.',
+            'data'    => $bl->fresh(['thirdPartner', 'lignes.product', 'footer', 'user', 'warehouse']),
+        ]);
+    }
+
+    // ── BL → Facture ─────────────────────────────────────────────────
+
+    /**
      * PUT /api/ventes/documents/{bl}/confirmer
      *
-     * BL must be confirmed first (stock already applied).
-     * The invoice does NOT impact stock.
+     * BL (confirmed) → Facture (pending). No stock impact.
      */
     public function confirmer_reception(Request $request, DocumentHeader $bl): JsonResponse
     {
         if (!$bl->isDeliveryNote()) {
-            return response()->json([
-                'message' => 'Ce document n\'est pas un Bon de Livraison.',
-            ], 422);
+            return response()->json(['message' => 'Ce document n\'est pas un Bon de Livraison.'], 422);
         }
 
         if (!in_array($bl->status, ['confirmed', 'delivered'])) {
-            return response()->json([
-                'message' => 'Ce BL doit être confirmé avant d\'être facturé. Statut actuel : ' . $bl->status,
-            ], 422);
+            return response()->json(['message' => 'Ce BL doit être confirmé avant d\'être facturé. Statut : ' . $bl->status], 422);
         }
 
         $paymentMethod = $request->input('payment_method', 'credit');
-
-        // Eager-load relations upfront to avoid N+1 queries
         $bl->loadMissing(['lignes', 'footer', 'payments']);
 
         $facture = DB::transaction(function () use ($bl, $paymentMethod) {
@@ -238,26 +250,7 @@ class DocumentVenteController extends Controller
                 'notes'                   => $bl->notes,
             ]);
 
-            // Bulk insert lines from BL to Invoice
-            $lignesData = $bl->lignes->map(fn ($ligne) => [
-                'document_header_id' => $facture->id,
-                'product_id'         => $ligne->product_id,
-                'sort_order'         => $ligne->sort_order,
-                'line_type'          => $ligne->line_type,
-                'designation'        => $ligne->designation,
-                'reference'          => $ligne->reference,
-                'quantity'           => $ligne->quantity,
-                'unit'               => $ligne->unit,
-                'unit_price'         => $ligne->unit_price,
-                'discount_percent'   => $ligne->discount_percent,
-                'tax_percent'        => $ligne->tax_percent,
-                'created_at'         => $now,
-                'updated_at'         => $now,
-            ])->toArray();
-
-            if (!empty($lignesData)) {
-                \App\Models\DocumentLigne::insert($lignesData);
-            }
+            $this->bulkCopyLines($bl, $facture, $now);
 
             if ($bl->footer) {
                 $facture->footer()->create([
@@ -270,14 +263,12 @@ class DocumentVenteController extends Controller
                     'payment_method' => $paymentMethod,
                 ]);
 
-                // If payment is on credit, add total_ttc to the customer's encours_actuel
                 if ($paymentMethod === 'credit' && $bl->thirdPartner_id && $bl->footer->total_ttc > 0) {
-                    \App\Models\ThirdPartner::where('id', $bl->thirdPartner_id)
+                    ThirdPartner::where('id', $bl->thirdPartner_id)
                         ->increment('encours_actuel', $bl->footer->total_ttc);
                 }
             }
 
-            // Transfer existing BL payments to the new invoice in bulk
             if ($bl->payments->isNotEmpty()) {
                 Payment::$skipNotification = true;
                 try {
@@ -287,7 +278,6 @@ class DocumentVenteController extends Controller
                     Payment::$skipNotification = false;
                 }
 
-                // Recalculate invoice footer after payment transfer
                 $totalPaid = $bl->payments->sum('amount');
                 $facture->loadMissing('footer');
                 if ($facture->footer) {
@@ -295,7 +285,6 @@ class DocumentVenteController extends Controller
                         'amount_paid' => $totalPaid,
                         'amount_due'  => max(0, $facture->footer->total_ttc - $totalPaid),
                     ]);
-
                     if ($totalPaid >= $facture->footer->total_ttc) {
                         $facture->update(['status' => 'paid']);
                     } elseif ($totalPaid > 0) {
@@ -308,81 +297,141 @@ class DocumentVenteController extends Controller
         });
 
         return response()->json([
-            'message' => 'Réception confirmée. Facture ' . $facture->reference . ' créée.',
+            'message' => 'Facture ' . $facture->reference . ' créée.',
             'data'    => $facture->load(['thirdPartner', 'lignes.product', 'footer', 'user']),
         ], 201);
     }
 
+    // ── Retour Client (BL/Facture confirmés → ReturnSale, stock IN) ──
+
     /**
-     * Cancel a Delivery Note (BL) and reverse/cancel its stock movements.
+     * POST /api/ventes/documents/{document}/retour-client
      *
-     * POST /api/ventes/documents/{bl}/annuler
-     *
-     * - If BL is draft: cancels pending movements (no stock impact)
-     * - If BL is confirmed: reverses applied movements (stock restored)
+     * Creates a ReturnSale from a confirmed BL or InvoiceSale.
+     * Stock moves back IN. Encours decremented.
      */
-    public function annuler_bl(DocumentHeader $bl): JsonResponse
+    public function retour_client(Request $request, DocumentHeader $document): JsonResponse
     {
-        if (!$bl->isDeliveryNote()) {
+        if (!in_array($document->document_type, ['DeliveryNote', 'InvoiceSale'])) {
             return response()->json([
-                'message' => 'Ce document n\'est pas un Bon de Livraison.',
+                'message' => 'Un retour client ne peut être créé qu\'à partir d\'un BL ou d\'une Facture.',
             ], 422);
         }
 
-        if (!in_array($bl->status, ['draft', 'confirmed', 'delivered'])) {
+        $confirmedStatuses = ['confirmed', 'delivered', 'pending', 'paid', 'partial'];
+        if (!in_array($document->status, $confirmedStatuses)) {
             return response()->json([
-                'message' => 'Ce BL ne peut pas être annulé. Statut actuel : ' . $bl->status,
+                'message' => 'Ce document ne peut pas faire l\'objet d\'un retour. Statut : ' . $document->status,
             ], 422);
         }
 
-        // Cannot cancel a BL that already has a child invoice
-        if ($bl->children()->where('document_type', 'InvoiceSale')->exists()) {
-            return response()->json([
-                'message' => 'Ce BL a déjà été facturé et ne peut pas être annulé.',
-            ], 422);
-        }
+        // Optional: partial return with specific lines/quantities
+        $request->validate([
+            'lines'            => 'nullable|array',
+            'lines.*.product_id' => 'required_with:lines|exists:products,id',
+            'lines.*.quantity'   => 'required_with:lines|numeric|min:0.01',
+            'notes'            => 'nullable|string',
+        ]);
 
-        DB::transaction(function () use ($bl) {
-            // 1. Cancel/reverse stock movements
-            $this->stockService->cancelDocumentMovements($bl);
+        $document->loadMissing(['lignes', 'footer']);
 
-            // 2. Reverse encours if BL was confirmed and paiement_sur_bl was active
-            if (in_array($bl->status, ['confirmed', 'delivered'])
-                && Setting::get('ventes', 'paiement_sur_bl', 'false') === 'true'
-                && $bl->thirdPartner_id
-            ) {
-                $bl->loadMissing('footer');
-                if ($bl->footer?->total_ttc > 0) {
-                    ThirdPartner::where('id', $bl->thirdPartner_id)
-                        ->decrement('encours_actuel', $bl->footer->total_ttc);
-                    // Prevent negative encours
-                    ThirdPartner::where('id', $bl->thirdPartner_id)
-                        ->where('encours_actuel', '<', 0)
-                        ->update(['encours_actuel' => 0]);
+        $retour = DB::transaction(function () use ($document, $request) {
+            $reference = $this->generateReference('ReturnSale');
+            $now = now();
+
+            $retour = DocumentHeader::create([
+                'document_incrementor_id' => $document->document_incrementor_id,
+                'reference'               => $reference,
+                'document_type'           => 'ReturnSale',
+                'document_title'          => 'Bon de Retour Client',
+                'parent_id'               => $document->id,
+                'thirdPartner_id'         => $document->thirdPartner_id,
+                'company_role'            => $document->company_role,
+                'warehouse_id'            => $document->warehouse_id,
+                'user_id'                 => auth()->id(),
+                'status'                  => 'confirmed',
+                'issued_at'               => $now,
+                'notes'                   => $request->input('notes', 'Retour client - ' . $document->reference),
+            ]);
+
+            // If specific lines provided → partial return; else → full return
+            $requestedLines = $request->input('lines');
+
+            if ($requestedLines) {
+                $lineMap = collect($requestedLines)->keyBy('product_id');
+                $lignesData = [];
+                $totalHt = 0;
+                $totalTax = 0;
+
+                foreach ($document->lignes as $ligne) {
+                    if (!$lineMap->has($ligne->product_id)) continue;
+
+                    $qty = min($lineMap[$ligne->product_id]['quantity'], $ligne->quantity);
+                    $lineHt = $qty * $ligne->unit_price * (1 - ($ligne->discount_percent / 100));
+                    $lineTax = $lineHt * ($ligne->tax_percent / 100);
+                    $totalHt += $lineHt;
+                    $totalTax += $lineTax;
+
+                    $lignesData[] = [
+                        'document_header_id' => $retour->id,
+                        'product_id'         => $ligne->product_id,
+                        'sort_order'         => $ligne->sort_order,
+                        'line_type'          => $ligne->line_type,
+                        'designation'        => $ligne->designation,
+                        'reference'          => $ligne->reference,
+                        'quantity'           => $qty,
+                        'unit'               => $ligne->unit,
+                        'unit_price'         => $ligne->unit_price,
+                        'discount_percent'   => $ligne->discount_percent,
+                        'tax_percent'        => $ligne->tax_percent,
+                        'created_at'         => $now,
+                        'updated_at'         => $now,
+                    ];
                 }
+
+                if (!empty($lignesData)) {
+                    \App\Models\DocumentLigne::insert($lignesData);
+                }
+
+                $retour->footer()->create([
+                    'total_ht'       => $totalHt,
+                    'total_discount' => 0,
+                    'total_tax'      => $totalTax,
+                    'total_ttc'      => $totalHt + $totalTax,
+                    'amount_paid'    => 0,
+                    'amount_due'     => 0,
+                ]);
+            } else {
+                // Full return — copy all lines
+                $this->bulkCopyLines($document, $retour, $now);
+                $this->copyFooter($document, $retour);
             }
 
-            // 3. Restore the parent BC (soft-deleted when BL was created)
-            if ($bl->parent_id) {
-                DocumentHeader::withTrashed()
-                    ->where('id', $bl->parent_id)
-                    ->whereNotNull('deleted_at')
-                    ->restore();
+            // Process stock: ReturnSale = stock IN (goods come back)
+            $retour->load('lignes');
+            $this->stockService->processDocument($retour);
+
+            // Decrement encours
+            $retour->loadMissing('footer');
+            if ($document->thirdPartner_id && $retour->footer?->total_ttc > 0) {
+                ThirdPartner::where('id', $document->thirdPartner_id)
+                    ->decrement('encours_actuel', $retour->footer->total_ttc);
+                ThirdPartner::where('id', $document->thirdPartner_id)
+                    ->where('encours_actuel', '<', 0)
+                    ->update(['encours_actuel' => 0]);
             }
 
-            // 4. Mark BL as cancelled
-            $bl->update(['status' => 'cancelled']);
+            return $retour;
         });
 
         return response()->json([
-            'message' => 'Bon de Livraison annulé. Stocks restaurés.',
-            'data'    => $bl->fresh(['thirdPartner', 'lignes.product', 'footer', 'user', 'warehouse']),
-        ]);
+            'message' => 'Retour Client ' . $retour->reference . ' créé. Stock restauré.',
+            'data'    => $retour->load(['thirdPartner', 'lignes.product', 'footer', 'user', 'warehouse']),
+        ], 201);
     }
 
-    /**
-     * Bulk copy lines from source document to target document.
-     */
+    // ── Helpers ───────────────────────────────────────────────────────
+
     private function bulkCopyLines(DocumentHeader $source, DocumentHeader $target, $now): void
     {
         $lignesData = $source->lignes->map(fn ($ligne) => [
@@ -406,9 +455,6 @@ class DocumentVenteController extends Controller
         }
     }
 
-    /**
-     * Copy footer from source document to target document.
-     */
     private function copyFooter(DocumentHeader $source, DocumentHeader $target): void
     {
         if ($source->footer) {
@@ -425,11 +471,6 @@ class DocumentVenteController extends Controller
 
     /**
      * Duplicate a document for multiple clients.
-     *
-     * POST /api/ventes/documents/{document}/duplicate-for-clients
-     * Body: { "client_ids": [1, 2, 3] }
-     *
-     * Creates a draft copy of the document for each selected client.
      */
     public function duplicateForClients(Request $request, DocumentHeader $document): JsonResponse
     {
@@ -487,6 +528,7 @@ class DocumentVenteController extends Controller
                 'CustomerOrder' => 'BC',
                 'DeliveryNote'  => 'BL',
                 'InvoiceSale'   => 'FAC',
+                'ReturnSale'    => 'BRC',
                 default         => 'DOC',
             };
             return sprintf('%s-%d-%04d', $prefix, now()->year, rand(1, 9999));
