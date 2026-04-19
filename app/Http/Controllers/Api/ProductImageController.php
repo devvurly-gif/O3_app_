@@ -26,12 +26,27 @@ class ProductImageController extends Controller
     public function store(Request $request, Product $product): JsonResponse
     {
         $request->validate([
-            'image'      => ['required', 'image', 'max:2048'],
+            'images'     => ['required_without:image', 'array', 'min:1'],
+            'images.*'   => ['image', 'max:2048'],
+            'image'      => ['required_without:images', 'image', 'max:2048'],
             'title'      => ['nullable', 'string', 'max:255'],
             'altContent' => ['nullable', 'string', 'max:255'],
             'isPrimary'  => ['boolean'],
         ]);
 
+        // Support both single and multiple images (backwards compatible)
+        if ($request->hasFile('images')) {
+            $images = $this->imageService->uploadMultiple(
+                $product,
+                $request->file('images'),
+                $request->title,
+                $request->altContent,
+                $request->boolean('isPrimary'),
+            );
+            return response()->json($images, 201);
+        }
+
+        // Single image upload (legacy)
         $image = $this->imageService->upload(
             $product,
             $request->file('image'),

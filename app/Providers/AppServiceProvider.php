@@ -4,10 +4,12 @@ namespace App\Providers;
 
 use App\Mail\Transport\ResendTransport;
 use App\Models\DocumentHeader;
+use App\Models\ProductImage;
 use App\Observers\DocumentAchatObserver;
 use App\Observers\DocumentNotificationObserver;
 use App\Observers\DocumentVenteObserver;
 use App\Observers\NotificationObserver;
+use App\Observers\ProductImageObserver;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\ServiceProvider;
@@ -29,6 +31,7 @@ class AppServiceProvider extends ServiceProvider
         DocumentHeader::observe(DocumentVenteObserver::class);
         DocumentHeader::observe(DocumentAchatObserver::class);
         DocumentHeader::observe(DocumentNotificationObserver::class);
+        ProductImage::observe(ProductImageObserver::class);
 
         DatabaseNotification::observe(NotificationObserver::class);
     }
