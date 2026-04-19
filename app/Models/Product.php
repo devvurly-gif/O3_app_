@@ -37,6 +37,7 @@ class Product extends Model
         'p_description',
         'p_sku',
         'p_ean13',
+        'p_imei',
         'p_purchasePrice',
         'p_salePrice',
         'p_cost',
@@ -49,6 +50,7 @@ class Product extends Model
         'is_ecom',
         'p_slug',
         'p_long_description',
+        'p_notes',
     ];
 
     protected function casts(): array
@@ -139,6 +141,13 @@ class Product extends Model
         static::creating(function (self $product) {
             if ($product->is_ecom && empty($product->p_slug)) {
                 $product->p_slug = Str::slug($product->p_title);
+            }
+
+            // Auto-generate SKU if not provided
+            if (empty($product->p_sku)) {
+                $slug = Str::slug($product->p_title);
+                $date = now()->format('Ymd');
+                $product->p_sku = "SKU-{$date}-{$slug}";
             }
         });
 
