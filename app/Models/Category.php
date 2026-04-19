@@ -14,7 +14,7 @@ class Category extends Model
 
     public string $codeField = 'ctg_code';
 
-    protected $fillable = ['ctg_title', 'ctg_code', 'ctg_description', 'ctg_status', 'structure_id'];
+    protected $fillable = ['ctg_title', 'ctg_code', 'ctg_status', 'structure_id'];
 
     protected function casts(): array
     {

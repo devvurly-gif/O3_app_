@@ -21,12 +21,10 @@ class ProductSeeder extends Seeder
 
         // Create/get phone categories
         $catPhone = Category::firstOrCreate(
-            ['ctg_title' => 'Téléphones'],
-            ['ctg_description' => 'Smartphones et téléphones mobiles']
+            ['ctg_title' => 'Téléphones']
         );
         $catAccess = Category::firstOrCreate(
-            ['ctg_title' => 'Accessoires Téléphones'],
-            ['ctg_description' => 'Câbles, chargeurs, étuis pour téléphones']
+            ['ctg_title' => 'Accessoires Téléphones']
         );
 
         $brandHP     = Brand::where('br_title', 'HP')->first();
