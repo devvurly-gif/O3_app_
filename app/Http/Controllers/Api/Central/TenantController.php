@@ -623,6 +623,18 @@ class TenantController extends Controller
                 'type_compte' => 'normal',
             ]
         );
+
+        // 6. Default price list: "Détail" (tarif grand public, default for all channels)
+        \App\Models\PriceList::firstOrCreate(
+            ['name' => 'Détail'],
+            [
+                'description' => 'Tarif par défaut – grand public',
+                'channel'     => 'all',
+                'is_default'  => true,
+                'is_active'   => true,
+                'priority'    => 0,
+            ]
+        );
     }
 
     private function downloadProductImage(\App\Models\Product $product, string $url, string $code): bool

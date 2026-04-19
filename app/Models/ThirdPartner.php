@@ -44,6 +44,7 @@ class ThirdPartner extends Model
         'type_compte',
         'frequence_facturation',
         'structure_id',
+        'price_list_id',
     ];
 
     protected function casts(): array
@@ -75,6 +76,11 @@ class ThirdPartner extends Model
     public function structure(): BelongsTo
     {
         return $this->belongsTo(StructureIncrementor::class, 'structure_id');
+    }
+
+    public function priceList(): BelongsTo
+    {
+        return $this->belongsTo(PriceList::class);
     }
 
     public function documentHeaders(): HasMany

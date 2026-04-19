@@ -55,6 +55,7 @@ class ThirdPartnerController extends Controller
             'seuil_credit'             => ['nullable', 'numeric', 'min:0'],
             'type_compte'              => ['nullable', 'in:normal,en_compte'],
             'frequence_facturation'    => ['nullable', 'required_if:type_compte,en_compte', 'in:mensuelle,trimestrielle,semestrielle'],
+            'price_list_id'            => ['nullable', 'integer', 'exists:price_lists,id'],
         ]);
 
         // Force encours_actuel to 0 on creation — it's calculated from invoices/payments
@@ -94,6 +95,7 @@ class ThirdPartnerController extends Controller
             'seuil_credit'             => ['nullable', 'numeric', 'min:0'],
             'type_compte'              => ['nullable', 'in:normal,en_compte'],
             'frequence_facturation'    => ['nullable', 'required_if:type_compte,en_compte', 'in:mensuelle,trimestrielle,semestrielle'],
+            'price_list_id'            => ['nullable', 'integer', 'exists:price_lists,id'],
         ]);
 
         // Never allow manual encours_actuel update — it's calculated from invoices/payments

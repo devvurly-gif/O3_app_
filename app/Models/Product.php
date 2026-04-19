@@ -113,6 +113,18 @@ class Product extends Model
             ->withTimestamps();
     }
 
+    public function priceListItems(): HasMany
+    {
+        return $this->hasMany(PriceListItem::class);
+    }
+
+    public function priceLists(): BelongsToMany
+    {
+        return $this->belongsToMany(PriceList::class, 'price_list_items')
+            ->withPivot(['price_ht', 'price_ttc', 'min_qty', 'valid_from', 'valid_to'])
+            ->withTimestamps();
+    }
+
     /**
      * Get the currently active promotion with highest priority.
      */

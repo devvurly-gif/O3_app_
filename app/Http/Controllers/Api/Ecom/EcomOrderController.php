@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Api\Ecom;
 
 use App\Http\Controllers\Controller;
 use App\Models\DocumentIncrementor;
+use App\Models\Product;
 use App\Models\ThirdPartner;
 use App\Services\DocumentHeaderService;
+use App\Services\PriceResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -13,6 +15,7 @@ class EcomOrderController extends Controller
 {
     public function __construct(
         private DocumentHeaderService $documentService,
+        private PriceResolver $priceResolver,
     ) {
     }
 
@@ -33,7 +36,7 @@ class EcomOrderController extends Controller
             'items.*.product_id'  => 'required|integer|exists:products,id',
             'items.*.designation' => 'required|string|max:255',
             'items.*.quantity'    => 'required|numeric|min:1',
-            'items.*.unit_price'  => 'required|numeric|min:0',
+            'items.*.unit_price'  => 'nullable|numeric|min:0', // ignored — resolved server-side
             'items.*.tax_percent' => 'nullable|numeric|min:0',
         ]);
 
@@ -64,15 +67,24 @@ class EcomOrderController extends Controller
             return response()->json(['message' => 'QuoteSale incrementor not configured'], 500);
         }
 
-        // Build lines for the document
-        $lines = collect($validated['items'])->map(fn ($item) => [
-            'product_id'       => $item['product_id'],
-            'designation'      => $item['designation'],
-            'quantity'         => $item['quantity'],
-            'unit_price'       => $item['unit_price'],
-            'tax_percent'      => $item['tax_percent'] ?? 0,
-            'discount_percent' => 0,
-        ])->toArray();
+        // Build lines — resolve prices server-side to prevent price tampering
+        $lines = collect($validated['items'])->map(function ($item) use ($customer) {
+            $product = Product::find($item['product_id']);
+            $resolved = $this->priceResolver->resolve(
+                product:  $product,
+                customer: $customer,
+                quantity: (int) $item['quantity'],
+                channel:  'ecom',
+            );
+            return [
+                'product_id'       => $item['product_id'],
+                'designation'      => $item['designation'],
+                'quantity'         => $item['quantity'],
+                'unit_price'       => $resolved['price_ht'],
+                'tax_percent'      => $item['tax_percent'] ?? (float) ($product->p_taxRate ?? 0),
+                'discount_percent' => 0,
+            ];
+        })->toArray();
 
         // Calculate totals
         $totalHt = collect($lines)->sum(fn ($l) => $l['quantity'] * $l['unit_price']);

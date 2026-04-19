@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\DocumentHeaderController;
 use App\Http\Controllers\Api\DocumentIncrementorController;
 use App\Http\Controllers\Api\DocumentLigneController;
 use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\PriceListController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ProductImageController;
 use App\Http\Controllers\Api\SettingController;
@@ -323,6 +324,21 @@ Route::middleware('auth:sanctum')->group(function () {
         // Activity Log (audit trail)
         Route::get('activity-log',              [ActivityLogController::class, 'index']);
         Route::get('activity-log/{activity}',   [ActivityLogController::class, 'show']);
+    });
+
+    // ── Price resolver (all authenticated: POS + ecom internal consumers) ─
+    Route::get('price-lists-resolve', [PriceListController::class, 'resolve']);
+
+    // ── Price Lists / Tarifs (admin, manager) ────────────────────────────
+    Route::middleware('role:admin,manager')->group(function () {
+        Route::get('price-lists',                        [PriceListController::class, 'index']);
+        Route::get('price-lists/{id}',                   [PriceListController::class, 'show']);
+        Route::post('price-lists',                       [PriceListController::class, 'store']);
+        Route::put('price-lists/{id}',                   [PriceListController::class, 'update']);
+        Route::patch('price-lists/{id}',                 [PriceListController::class, 'update']);
+        Route::delete('price-lists/{id}',                [PriceListController::class, 'destroy']);
+        Route::post('price-lists/{id}/items',            [PriceListController::class, 'upsertItems']);
+        Route::delete('price-lists/{id}/items/{itemId}', [PriceListController::class, 'destroyItem']);
     });
 
     // ── Marketing & Promotions (admin, manager) ──────────────────────────

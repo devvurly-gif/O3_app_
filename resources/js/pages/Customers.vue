@@ -422,6 +422,22 @@
                   </select>
                 </div>
               </div>
+
+              <!-- Grille tarifaire (price list) assignée -->
+              <div class="mt-4">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  {{ $t('pricelists.title') }}
+                </label>
+                <select
+                  v-model="form.price_list_id"
+                  class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option :value="null">{{ $t('pricelists.selectList') }}</option>
+                  <option v-for="pl in priceLists" :key="pl.id" :value="pl.id">
+                    {{ pl.name }}<template v-if="pl.is_default"> ({{ $t('pricelists.defaultBadge') }})</template>
+                  </option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
@@ -1285,6 +1301,7 @@ import { ref, reactive, computed, watch, onMounted, h } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useThirdPartnerStore } from '@/stores/thirdPartner'
+import { usePriceListStore } from '@/stores/priceList'
 import { useExcelExport } from '@/composables/useExcelExport'
 import http from '@/services/http'
 import BaseTable from '@/components/BaseTable.vue'
@@ -1295,6 +1312,8 @@ import BaseNotification from '@/components/BaseNotification.vue'
 const { t } = useI18n()
 const store = useThirdPartnerStore()
 const { items } = storeToRefs(store)
+const priceListStore = usePriceListStore()
+const { items: priceLists } = storeToRefs(priceListStore)
 
 const { exporting, exportExcel } = useExcelExport()
 
@@ -1621,6 +1640,7 @@ const emptyForm = () => ({
   seuil_credit: 0,
   type_compte: 'normal' as 'normal' | 'en_compte',
   frequence_facturation: null as string | null,
+  price_list_id: null as number | null,
 })
 const form = reactive(emptyForm())
 
@@ -1764,6 +1784,7 @@ function openEdit(row: any) {
     seuil_credit: row.seuil_credit ?? 0,
     type_compte: row.type_compte ?? 'normal',
     frequence_facturation: row.frequence_facturation ?? null,
+    price_list_id: row.price_list_id ?? null,
   })
   showModal.value = true
   // Load detail data (invoices, payments) in background
@@ -1810,5 +1831,8 @@ async function doDelete() {
   }
 }
 
-onMounted(() => loadPage())
+onMounted(() => {
+  loadPage()
+  if (!priceLists.value.length) priceListStore.fetchAll()
+})
 </script>

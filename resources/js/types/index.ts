@@ -156,6 +156,8 @@ export interface ThirdPartner extends BaseModel {
   seuil_credit: number
   type_compte: TypeCompte
   frequence_facturation: FrequenceFacturation | null
+  price_list_id?: number | null
+  price_list?: PriceList | null
 }
 
 // ── Warehouse ─────────────────────────────────────────────────────────────
@@ -164,6 +166,32 @@ export interface Warehouse extends BaseModel {
   wh_code?: string
   wh_address?: string
   wh_status?: boolean
+}
+
+// ── Price List / Tarifs ───────────────────────────────────────────────────
+export type PriceListChannel = 'all' | 'pos' | 'ecom'
+
+export interface PriceListItem extends BaseModel {
+  price_list_id: number
+  product_id: number
+  price_ht: number
+  price_ttc: number
+  min_qty: number
+  valid_from: string | null
+  valid_to: string | null
+  product?: Product
+}
+
+export interface PriceList extends BaseModel {
+  name: string
+  description: string | null
+  channel: PriceListChannel
+  is_default: boolean
+  is_active: boolean
+  priority: number
+  items_count?: number
+  customers_count?: number
+  items?: PriceListItem[]
 }
 
 // ── Document ──────────────────────────────────────────────────────────────
