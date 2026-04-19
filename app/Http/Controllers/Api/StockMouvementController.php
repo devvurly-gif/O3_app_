@@ -31,7 +31,26 @@ class StockMouvementController extends Controller
             $query->whereHas('product', function ($q) use ($search) {
                 $q->where('p_title', 'like', "%{$search}%")
                   ->orWhere('p_sku', 'like', "%{$search}%")
-                  ->orWhere('p_ean13', 'like', "%{$search}%");
+                  ->orWhere('p_ean13', 'like', "%{$search}%")
+                  ->orWhere('p_imei', 'like', "%{$search}%");
+            });
+        }
+        // Filter by SKU
+        if ($request->filled('sku')) {
+            $query->whereHas('product', function ($q) use ($request) {
+                $q->where('p_sku', 'like', "%{$request->sku}%");
+            });
+        }
+        // Filter by EAN13
+        if ($request->filled('ean13')) {
+            $query->whereHas('product', function ($q) use ($request) {
+                $q->where('p_ean13', 'like', "%{$request->ean13}%");
+            });
+        }
+        // Filter by IMEI
+        if ($request->filled('imei')) {
+            $query->whereHas('product', function ($q) use ($request) {
+                $q->where('p_imei', 'like', "%{$request->imei}%");
             });
         }
 
