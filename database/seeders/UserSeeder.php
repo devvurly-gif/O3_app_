@@ -14,12 +14,28 @@ class UserSeeder extends Seeder
     {
         $structure = StructureIncrementor::where('si_model', 'User')->first();
 
-        $users = [
-            ['name' => 'Admin',     'email' => 'admin@o2app.ma',     'password' => 'Admin@1234',     'role' => 'admin'],
-            ['name' => 'Manager',   'email' => 'manager@o2app.ma',   'password' => 'Manager@1234',   'role' => 'manager'],
-            ['name' => 'Cashier',   'email' => 'cashier@o2app.ma',   'password' => 'Cashier@1234',   'role' => 'cashier'],
-            ['name' => 'Warehouse', 'email' => 'warehouse@o2app.ma', 'password' => 'Warehouse@1234', 'role' => 'warehouse'],
-        ];
+        // Get tenant ID from Tenancy, if in tenant context
+        $tenantId = \Stancl\Tenancy\Facades\Tenancy::current()?->getTenantKey();
+
+        $users = [];
+
+        // Create default admin user for tenant
+        if ($tenantId) {
+            $users[] = [
+                'name' => 'Admin',
+                'email' => "admin@{$tenantId}.ma",
+                'password' => "{$tenantId}@1234",
+                'role' => 'admin'
+            ];
+        } else {
+            // Fallback for central database
+            $users = [
+                ['name' => 'Admin',     'email' => 'admin@o2app.ma',     'password' => 'Admin@1234',     'role' => 'admin'],
+                ['name' => 'Manager',   'email' => 'manager@o2app.ma',   'password' => 'Manager@1234',   'role' => 'manager'],
+                ['name' => 'Cashier',   'email' => 'cashier@o2app.ma',   'password' => 'Cashier@1234',   'role' => 'cashier'],
+                ['name' => 'Warehouse', 'email' => 'warehouse@o2app.ma', 'password' => 'Warehouse@1234', 'role' => 'warehouse'],
+            ];
+        }
 
         foreach ($users as $userData) {
             if (User::where('email', $userData['email'])->exists()) {
