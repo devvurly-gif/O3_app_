@@ -6,12 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\Module;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Stancl\Tenancy\Middleware\InitializeTenancy;
 
 class ModuleController extends Controller
 {
     public function index(): JsonResponse
     {
-        return response()->json(Module::all());
+        return response()->json(Module::whereTenantId(tenant('id'))->get());
     }
 
     public function update(Request $request, Module $module): JsonResponse

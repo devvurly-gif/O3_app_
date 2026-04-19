@@ -17,7 +17,8 @@ class StockMouvementController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $query = StockMouvement::with(['product', 'warehouse', 'user']);
+        $query = StockMouvement::with(['product', 'warehouse', 'user'])
+            ->where('status', 'applied');
 
         if ($request->filled('direction')) {
             $query->where('direction', $request->direction);

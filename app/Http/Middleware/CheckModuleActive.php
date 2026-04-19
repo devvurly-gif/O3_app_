@@ -11,7 +11,12 @@ class CheckModuleActive
 {
     public function handle(Request $request, Closure $next, string $module): Response
     {
-        if (!Module::enabled($module)) {
+        $tenantId = tenant('id');
+        $moduleRecord = Module::where('tenant_id', $tenantId)
+            ->where('name', $module)
+            ->first();
+
+        if (!$moduleRecord?->isEnabled()) {
             return response()->json([
                 'message' => "Le module « {$module} » n'est pas activé.",
             ], 403);

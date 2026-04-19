@@ -2,7 +2,14 @@
   "permissions": {
     "allow": [
       "Bash(php artisan:*)",
-      "Bash(npx vite:*)"
+      "Bash(npx vite:*)",
+      "Bash(grep -l \"encours_actuel\\\\|seuil_credit\\\\|type_compte\" /c/laragon/www/O3_app/database/migrations/tenant/*.php)",
+      "Bash(find /c/laragon/www/O3_app/resources/js/types -type f -name \"*.ts\" -exec ls -ltr {} \\\\;)",
+      "Bash(npm run:*)",
+      "Bash(git reset:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m ':*)",
+      "Bash(git push:*)"
     ]
   }
 }
