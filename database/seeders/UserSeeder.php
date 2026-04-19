@@ -14,8 +14,13 @@ class UserSeeder extends Seeder
     {
         $structure = StructureIncrementor::where('si_model', 'User')->first();
 
-        // Get tenant ID from Tenancy, if in tenant context
-        $tenantId = \Stancl\Tenancy\Facades\Tenancy::current()?->getTenantKey();
+        // Get tenant ID from container if in tenant context
+        $tenantId = null;
+        try {
+            $tenantId = app(\Stancl\Tenancy\Contracts\Tenant::class)->getTenantKey();
+        } catch (\Exception $e) {
+            // Not in tenant context, use fallback
+        }
 
         $users = [];
 
