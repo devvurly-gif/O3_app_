@@ -95,6 +95,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('categories/{category}',              [CategoryController::class, 'show']);
     Route::get('products',                           [ProductController::class, 'index']);
     Route::get('products/{product}',                 [ProductController::class, 'show']);
+    Route::get('products/{product}/statistics',      [ProductController::class, 'statistics']);
+    Route::get('products/{product}/stock-history',   [ProductController::class, 'stockHistory']);
+    Route::get('products/{product}/price-lists',     [ProductController::class, 'priceLists']);
     Route::get('products/{product}/images',          [ProductImageController::class, 'index']);
     Route::get('third-partners',                     [ThirdPartnerController::class, 'index']);
     Route::get('third-partners/{thirdPartner}',      [ThirdPartnerController::class, 'show']);

@@ -64,8 +64,68 @@ class ProductController extends Controller
     public function show(Product $product): JsonResponse
     {
         return response()->json(
-            $product->load(['category', 'brand', 'images', 'warehouseStocks.warehouse'])
+            $product->load([
+                'category', 'brand', 'images', 'primaryImage',
+                'warehouseStocks.warehouse', 'priceListItems.priceList'
+            ])
         );
+    }
+
+    public function statistics(Product $product): JsonResponse
+    {
+        $sales = $product->documentLines()
+            ->whereHas('documentHeader', function ($q) {
+                $q->whereIn('document_type', ['InvoiceSale', 'TicketSale']);
+            })
+            ->get();
+
+        $purchases = $product->documentLines()
+            ->whereHas('documentHeader', function ($q) {
+                $q->whereIn('document_type', ['InvoicePurchase', 'ReceiptNotePurchase']);
+            })
+            ->get();
+
+        $totalUnitsSold = $sales->sum('quantity');
+        $totalRevenue = $sales->sum('total_ttc');
+        $totalUnitsPurchased = $purchases->sum('quantity');
+        $totalCost = $purchases->sum('total_ht');
+
+        return response()->json([
+            'sales' => [
+                'total_units' => $totalUnitsSold,
+                'total_revenue' => round($totalRevenue, 2),
+                'avg_price' => $totalUnitsSold > 0 ? round($totalRevenue / $totalUnitsSold, 2) : 0,
+                'count' => $sales->groupBy('document_header_id')->count(),
+                'last_sale_date' => $sales->max(fn ($item) => $item->documentHeader->issued_at),
+            ],
+            'purchases' => [
+                'total_units' => $totalUnitsPurchased,
+                'total_cost' => round($totalCost, 2),
+                'avg_price' => $totalUnitsPurchased > 0 ? round($totalCost / $totalUnitsPurchased, 2) : 0,
+                'count' => $purchases->groupBy('document_header_id')->count(),
+                'last_purchase_date' => $purchases->max(fn ($item) => $item->documentHeader->issued_at),
+            ],
+        ]);
+    }
+
+    public function stockHistory(Request $request, Product $product): JsonResponse
+    {
+        $movements = $product->stockMouvements()
+            ->with('warehouse', 'documentHeader', 'user')
+            ->orderBy('created_at', 'desc')
+            ->paginate((int) $request->input('per_page', 20));
+
+        return response()->json($movements);
+    }
+
+    public function priceLists(Product $product): JsonResponse
+    {
+        $priceListItems = $product->priceListItems()
+            ->with('priceList')
+            ->orderBy('min_qty', 'asc')
+            ->get();
+
+        return response()->json($priceListItems);
     }
 
     public function update(Request $request, Product $product): JsonResponse
