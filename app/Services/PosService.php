@@ -108,10 +108,15 @@ class PosService
                 $customerId = $comptoir?->id;
             }
 
-            // Find the TicketSale incrementor
-            $incrementor = $this->incrementors->findByModel('TicketSale');
+            // Determine if this is a credit/encours sale
+            $isCreditSale = collect($payments)->some(fn ($p) => $p['method'] === 'credit');
+            $documentType = $isCreditSale ? 'BL' : 'TicketSale';
+            $documentTitle = $isCreditSale ? 'Bon de Livraison (POS)' : 'Ticket POS';
+
+            // Find the appropriate incrementor
+            $incrementor = $this->incrementors->findByModel($documentType);
             if (!$incrementor) {
-                abort(422, "Aucun numéroteur configuré pour les tickets POS (TicketSale).");
+                abort(422, "Aucun numéroteur configuré pour les documents POS ({$documentType}).");
             }
 
             $reference = $this->incrementorService->formatReference(
@@ -125,8 +130,8 @@ class PosService
             $document = $this->documents->create([
                 'document_incrementor_id' => $incrementor->id,
                 'reference'               => $reference,
-                'document_type'           => 'TicketSale',
-                'document_title'          => 'Ticket POS',
+                'document_type'           => $documentType,
+                'document_title'          => $documentTitle,
                 'thirdPartner_id'         => $customerId,
                 'company_role'            => 'seller',
                 'user_id'                 => $session->user_id,
@@ -242,12 +247,6 @@ class PosService
             $status = $creditAmount <= 0 ? 'paid' : ($paidAmount > 0 ? 'partial' : 'pending');
             $document->update(['status' => $status]);
 
-            // ── Create BL (DeliveryNote) for "en compte" tickets ────────
-            // So they can be converted to Invoice at end of month
-            if ($creditAmount > 0) {
-                $this->createDeliveryNoteFromTicket($document, $session, $warehouseId, $customerId, $items, $totalHt, $totalTax, $totalTtc, $creditAmount);
-            }
-
             return $document->load(['lignes', 'footer', 'payments']);
         });
     }
@@ -352,7 +351,7 @@ class PosService
     /**
      * Search products for POS with stock info.
      */
-    public function searchProducts(string $query, int $warehouseId, ?int $categoryId = null, int $limit = 50): array
+    public function searchProducts(string $query, int $warehouseId, ?int $categoryId = null, int $limit = 50, ?float $minPrice = null, ?float $maxPrice = null): array
     {
         $q = Product::where('p_status', true)
             ->where(function ($builder) use ($query) {
@@ -364,6 +363,12 @@ class PosService
 
         if ($categoryId) {
             $q->where('category_id', $categoryId);
+        }
+
+        if ($minPrice !== null || $maxPrice !== null) {
+            $min = $minPrice ?? 0;
+            $max = $maxPrice ?? PHP_FLOAT_MAX;
+            $q->whereBetween('p_salePrice', [$min, $max]);
         }
 
         $products = $q->with(['category', 'brand', 'primaryImage'])

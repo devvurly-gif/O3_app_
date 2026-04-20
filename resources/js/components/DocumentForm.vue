@@ -104,10 +104,19 @@ function selectPendingProduct(product: Product) {
 
 const filteredPendingProducts = computed(() => {
   const q = pendingSearch.value.toLowerCase().trim()
-  if (!q) return products.value.slice(0, 15)
-  return products.value
-    .filter((p) => p.p_title.toLowerCase().includes(q) || p.p_code.toLowerCase().includes(q))
-    .slice(0, 15)
+  const filtered = !q
+    ? products.value.slice(0, 15)
+    : products.value
+        .filter((p) => p.p_title.toLowerCase().includes(q) || p.p_code.toLowerCase().includes(q))
+        .slice(0, 15)
+
+  // Attach warehouse stock info if warehouse selected
+  if (!form.warehouse_id) return filtered
+
+  return filtered.map((p: any) => ({
+    ...p,
+    warehouse_stock: p.warehouseStocks?.find((ws: any) => ws.warehouse_id === form.warehouse_id)?.stockLevel ?? 0,
+  }))
 })
 
 function canAddArticle(): boolean {
@@ -324,6 +333,12 @@ onMounted(async () => {
 function fmt(n: number): string {
   return n.toFixed(2)
 }
+
+function getStockClass(stock: number): string {
+  if (stock > 0) return 'text-green-600 dark:text-green-400'
+  if (stock < 0) return 'text-red-600 dark:text-red-400'
+  return 'text-yellow-600 dark:text-yellow-400'
+}
 </script>
 
 <template>
@@ -504,9 +519,12 @@ function fmt(n: number): string {
                 class="w-full text-left px-4 py-2.5 text-sm hover:bg-blue-50 dark:hover:bg-blue-900/30 transition flex justify-between items-center"
                 @mousedown.prevent="selectPendingProduct(p)"
               >
-                <span>
+                <span class="flex-1">
                   <span class="font-medium dark:text-gray-200">{{ p.p_title }}</span>
                   <span class="text-gray-400 dark:text-gray-500 text-xs ml-1">[{{ p.p_code }}]</span>
+                  <span v-if="form.warehouse_id" :class="getStockClass(p.warehouse_stock)" class="ml-2 text-xs font-medium">
+                    Stock: {{ p.warehouse_stock ?? 0 }} {{ p.p_unit ?? 'pcs' }}
+                  </span>
                 </span>
                 <span class="text-gray-500 dark:text-gray-400 text-xs"
                   >{{ domain === 'vente' ? p.p_salePrice : p.p_purchasePrice }} DH</span

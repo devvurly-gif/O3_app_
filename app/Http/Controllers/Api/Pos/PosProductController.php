@@ -27,6 +27,8 @@ class PosProductController extends Controller
             $session->terminal->warehouse_id,
             $request->input('category_id') ? (int) $request->input('category_id') : null,
             $request->input('limit', 50),
+            $request->input('min_price') ? (float) $request->input('min_price') : null,
+            $request->input('max_price') ? (float) $request->input('max_price') : null,
         );
 
         return response()->json($products);

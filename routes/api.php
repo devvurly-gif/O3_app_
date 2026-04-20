@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\BrandController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\DocumentFooterController;
 use App\Http\Controllers\Api\DocumentHeaderController;
+use App\Http\Controllers\Api\DocumentImportController;
 use App\Http\Controllers\Api\DocumentIncrementorController;
 use App\Http\Controllers\Api\DocumentLigneController;
 use App\Http\Controllers\Api\PaymentController;
@@ -193,6 +194,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('documents/{documentHeader}/lines',               [DocumentLigneController::class, 'store']);
         Route::patch('documents/{documentHeader}/lines/{documentLigne}',[DocumentLigneController::class, 'update']);
         Route::delete('documents/{documentHeader}/lines/{documentLigne}',[DocumentLigneController::class, 'destroy']);
+        Route::post('documents/{documentHeader}/import-lines',        [DocumentImportController::class, 'importLines']);
 
         Route::put('documents/{documentHeader}/footer',               [DocumentFooterController::class, 'upsert']);
 
