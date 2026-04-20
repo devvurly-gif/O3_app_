@@ -14,7 +14,7 @@ class ProductImageService
     {
     }
 
-    public function upload(Product $product, UploadedFile $file, ?string $title, ?string $altContent, bool $isPrimary): ProductImage
+    public function upload(Product $product, UploadedFile $file, ?string $title = null, ?string $altContent = null, bool $isPrimary = false): ProductImage
     {
         $path = $file->store('products', 'public');
 
@@ -49,10 +49,11 @@ class ProductImageService
         foreach ($files as $index => $file) {
             // Only first image is marked as primary if requested
             $isFirst = $index === 0;
+            $imageTitle = $title ? $title . ' ' . ($index + 1) : null;
             $image = $this->upload(
                 $product,
                 $file,
-                $title ? "{$title} {$index + 1}" : null,
+                $imageTitle,
                 $altContent,
                 ($isPrimary && $isFirst) || (!$this->images->countForProduct($product) && $index === 0)
             );
