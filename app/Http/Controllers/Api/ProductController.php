@@ -74,15 +74,17 @@ class ProductController extends Controller
     public function statistics(Product $product): JsonResponse
     {
         $sales = $product->documentLines()
-            ->whereHas('documentHeader', function ($q) {
+            ->whereHas('document', function ($q) {
                 $q->whereIn('document_type', ['InvoiceSale', 'TicketSale']);
             })
+            ->with('document:id,issued_at')
             ->get();
 
         $purchases = $product->documentLines()
-            ->whereHas('documentHeader', function ($q) {
+            ->whereHas('document', function ($q) {
                 $q->whereIn('document_type', ['InvoicePurchase', 'ReceiptNotePurchase']);
             })
+            ->with('document:id,issued_at')
             ->get();
 
         $totalUnitsSold = $sales->sum('quantity');
@@ -96,14 +98,14 @@ class ProductController extends Controller
                 'total_revenue' => round($totalRevenue, 2),
                 'avg_price' => $totalUnitsSold > 0 ? round($totalRevenue / $totalUnitsSold, 2) : 0,
                 'count' => $sales->groupBy('document_header_id')->count(),
-                'last_sale_date' => $sales->max(fn ($item) => $item->documentHeader->issued_at),
+                'last_sale_date' => $sales->max(fn ($item) => $item->document?->issued_at),
             ],
             'purchases' => [
                 'total_units' => $totalUnitsPurchased,
                 'total_cost' => round($totalCost, 2),
                 'avg_price' => $totalUnitsPurchased > 0 ? round($totalCost / $totalUnitsPurchased, 2) : 0,
                 'count' => $purchases->groupBy('document_header_id')->count(),
-                'last_purchase_date' => $purchases->max(fn ($item) => $item->documentHeader->issued_at),
+                'last_purchase_date' => $purchases->max(fn ($item) => $item->document?->issued_at),
             ],
         ]);
     }
