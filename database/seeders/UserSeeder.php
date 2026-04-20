@@ -33,12 +33,12 @@ class UserSeeder extends Seeder
                 'role' => 'admin'
             ];
         } else {
-            // Fallback for central database
+            // Fallback for central database (O3app.ma)
             $users = [
-                ['name' => 'Admin',     'email' => 'admin@o2app.ma',     'password' => 'Admin@1234',     'role' => 'admin'],
-                ['name' => 'Manager',   'email' => 'manager@o2app.ma',   'password' => 'Manager@1234',   'role' => 'manager'],
-                ['name' => 'Cashier',   'email' => 'cashier@o2app.ma',   'password' => 'Cashier@1234',   'role' => 'cashier'],
-                ['name' => 'Warehouse', 'email' => 'warehouse@o2app.ma', 'password' => 'Warehouse@1234', 'role' => 'warehouse'],
+                ['name' => 'Admin',     'email' => 'admin@o3app.ma',     'password' => 'Admin@1234',     'role' => 'admin'],
+                ['name' => 'Manager',   'email' => 'manager@o3app.ma',   'password' => 'Manager@1234',   'role' => 'manager'],
+                ['name' => 'Cashier',   'email' => 'cashier@o3app.ma',   'password' => 'Cashier@1234',   'role' => 'cashier'],
+                ['name' => 'Warehouse', 'email' => 'warehouse@o3app.ma', 'password' => 'Warehouse@1234', 'role' => 'warehouse'],
             ];
         }
 
