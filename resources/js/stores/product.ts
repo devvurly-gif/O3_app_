@@ -26,9 +26,7 @@ export const useProductStore = defineStore('product', () => {
 
   // ── Image actions ─────────────────────────────────────────────────────
   async function uploadImage(productId: number, formData: FormData): Promise<ProductImage> {
-    const { data } = await http.post<ProductImage>(`/products/${productId}/images`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    })
+    const { data } = await http.post<ProductImage>(`/products/${productId}/images`, formData)
     const idx = items.value.findIndex((p) => p.id === productId)
     if (idx !== -1) {
       if (!items.value[idx].images) items.value[idx].images = []
