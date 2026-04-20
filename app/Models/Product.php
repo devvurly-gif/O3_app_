@@ -108,6 +108,11 @@ class Product extends Model
         return $this->hasMany(StockMouvement::class, 'product_id');
     }
 
+    public function documentLines(): HasMany
+    {
+        return $this->hasMany(DocumentLigne::class, 'product_id');
+    }
+
     public function promotions(): BelongsToMany
     {
         return $this->belongsToMany(Promotion::class, 'promotion_product')
