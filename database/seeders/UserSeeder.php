@@ -17,7 +17,10 @@ class UserSeeder extends Seeder
         // Get tenant ID from container if in tenant context
         $tenantId = null;
         try {
-            $tenantId = app(\Stancl\Tenancy\Contracts\Tenant::class)->getTenantKey();
+            $tenant = app(\Stancl\Tenancy\Contracts\Tenant::class);
+            if ($tenant) {
+                $tenantId = $tenant->getTenantKey();
+            }
         } catch (\Exception $e) {
             // Not in tenant context, use fallback
         }
