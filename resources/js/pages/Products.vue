@@ -309,156 +309,361 @@
         </div>
 
         <!-- Tab: Tarifs (Pricing) -->
-        <div v-if="currentTab === 1" class="space-y-4">
-          <!-- Category -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.category') }}</label>
-            <select
-              v-model="form.category_id"
-              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option :value="null">—</option>
-              <option v-for="cat in categories" :key="cat.id" :value="cat.id">
-                {{ cat.ctg_title }}
-              </option>
-            </select>
+        <div v-if="currentTab === 1" class="space-y-6">
+          <!-- Master Prices Section -->
+          <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg space-y-4">
+            <h4 class="font-semibold text-gray-900 dark:text-white text-sm">Master Prices</h4>
+
+            <div class="grid grid-cols-2 gap-4">
+              <!-- Purchase Price -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  >{{ $t('products.purchasePrice') }} <span class="text-red-500">*</span></label
+                >
+                <input
+                  v-model.number="form.p_purchasePrice"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  required
+                  placeholder="0.00"
+                  class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <!-- Sale Price -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  >{{ $t('products.salePrice') }} <span class="text-red-500">*</span></label
+                >
+                <input
+                  v-model.number="form.p_salePrice"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  required
+                  placeholder="0.00"
+                  class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <!-- Cost Price -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.costPrice') ?? 'Cost Price' }}</label>
+                <input
+                  v-model.number="form.p_cost"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                  class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <!-- Tax Rate -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.taxRate') }}</label>
+                <input
+                  v-model.number="form.p_taxRate"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  placeholder="20"
+                  class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            <!-- Unit -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.unit') }}</label>
+              <input
+                v-model="form.p_unit"
+                type="text"
+                :placeholder="$t('products.unitPlaceholder')"
+                class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+
+            <!-- Margin Indicator -->
+            <div v-if="form.p_salePrice > 0 && form.p_purchasePrice > 0" class="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded text-sm">
+              <p class="text-blue-800 dark:text-blue-200">
+                <span class="font-semibold">Margin:</span>
+                {{ marginPercent }}%
+                <span :class="marginPercent >= 20 ? 'text-green-600 dark:text-green-400' : 'text-orange-600 dark:text-orange-400'">
+                  ({{ marginPercent >= 20 ? 'Healthy' : 'Low' }})
+                </span>
+              </p>
+            </div>
           </div>
 
-          <!-- Brand -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.brand') }}</label>
-            <select
-              v-model="form.brand_id"
-              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option :value="null">—</option>
-              <option v-for="br in brands" :key="br.id" :value="br.id">
-                {{ br.br_title }}
-              </option>
-            </select>
-          </div>
-
-          <!-- Purchase Price -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-              >{{ $t('products.purchasePrice') }} <span class="text-red-500">*</span></label
-            >
-            <input
-              v-model.number="form.p_purchasePrice"
-              type="number"
-              min="0"
-              step="0.01"
-              required
-              placeholder="0.00"
-              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-
-          <!-- Sale Price -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-              >{{ $t('products.salePrice') }} <span class="text-red-500">*</span></label
-            >
-            <input
-              v-model.number="form.p_salePrice"
-              type="number"
-              min="0"
-              step="0.01"
-              required
-              placeholder="0.00"
-              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-
-          <!-- Cost Price -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.costPrice') ?? 'Cost Price' }}</label>
-            <input
-              v-model.number="form.p_cost"
-              type="number"
-              min="0"
-              step="0.01"
-              placeholder="0.00"
-              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-
-          <!-- Tax Rate -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.taxRate') }}</label>
-            <input
-              v-model.number="form.p_taxRate"
-              type="number"
-              min="0"
-              max="100"
-              step="0.01"
-              placeholder="20"
-              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-
-          <!-- Unit -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.unit') }}</label>
-            <input
-              v-model="form.p_unit"
-              type="text"
-              :placeholder="$t('products.unitPlaceholder')"
-              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-
-          <!-- E-commerce Slug -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.slug') ?? 'Slug' }}</label>
-            <input
-              v-model="form.p_slug"
-              type="text"
-              :placeholder="$t('products.slugPlaceholder') ?? 'Auto-generated from title'"
-              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-
-          <!-- E-commerce Toggle -->
-          <div class="flex items-center gap-2 pt-2">
-            <input
-              id="product-ecom"
-              v-model="form.is_ecom"
-              type="checkbox"
-              class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
-            />
-            <label for="product-ecom" class="text-sm text-gray-700 dark:text-gray-300">{{ $t('products.ecommerce') ?? 'E-commerce Product' }}</label>
-          </div>
-        </div>
-
-        <!-- Tab: Stock -->
-        <div v-if="currentTab === 2" class="space-y-4">
-          <div v-if="editTarget" class="space-y-3">
-            <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">{{ $t('products.stockByWarehouse') ?? 'Stock by Warehouse' }}</h3>
-            <div v-if="editTarget.warehouseStocks && editTarget.warehouseStocks.length" class="overflow-x-auto">
+          <!-- Price List Tiers Section -->
+          <div class="space-y-3">
+            <h4 class="font-semibold text-gray-900 dark:text-white text-sm">Price Tiers</h4>
+            <div v-if="editTarget && priceListItems.length" class="overflow-x-auto">
               <table class="w-full text-sm">
                 <thead class="bg-gray-50 dark:bg-gray-700">
                   <tr>
-                    <th class="px-3 py-2 text-left text-gray-600 dark:text-gray-300 font-medium">{{ $t('products.warehouse') ?? 'Warehouse' }}</th>
-                    <th class="px-3 py-2 text-right text-gray-600 dark:text-gray-300 font-medium">{{ $t('products.stock') ?? 'Stock' }}</th>
-                    <th class="px-3 py-2 text-right text-gray-600 dark:text-gray-300 font-medium">{{ $t('products.unit') }}</th>
+                    <th class="px-3 py-2 text-left text-gray-600 dark:text-gray-300 font-medium">List</th>
+                    <th class="px-3 py-2 text-right text-gray-600 dark:text-gray-300 font-medium">Min Qty</th>
+                    <th class="px-3 py-2 text-right text-gray-600 dark:text-gray-300 font-medium">Price HT</th>
+                    <th class="px-3 py-2 text-right text-gray-600 dark:text-gray-300 font-medium">Price TTC</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                  <tr v-for="ws in editTarget.warehouseStocks" :key="ws.id">
-                    <td class="px-3 py-2 text-gray-800 dark:text-gray-200">{{ ws.warehouse?.wh_name ?? '—' }}</td>
-                    <td class="px-3 py-2 text-right font-mono">{{ Number(ws.stockLevel).toFixed(2) }}</td>
-                    <td class="px-3 py-2 text-right text-gray-500">{{ editTarget.p_unit ?? 'pcs' }}</td>
+                  <tr v-for="item in priceListItems" :key="item.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                    <td class="px-3 py-2 text-gray-800 dark:text-gray-200">{{ item.priceList?.name ?? '—' }}</td>
+                    <td class="px-3 py-2 text-right font-mono">{{ item.min_qty }}</td>
+                    <td class="px-3 py-2 text-right font-mono">{{ Number(item.price_ht).toFixed(2) }} MAD</td>
+                    <td class="px-3 py-2 text-right font-mono">{{ Number(item.price_ttc).toFixed(2) }} MAD</td>
                   </tr>
                 </tbody>
               </table>
             </div>
             <div v-else class="text-sm text-gray-500 dark:text-gray-400">
-              {{ $t('products.noStock') ?? 'No stock records yet' }}
+              {{ editTarget ? 'No price tiers yet' : 'Price tiers available after saving' }}
+            </div>
+          </div>
+
+          <!-- Category & Brand -->
+          <div class="pt-4 border-t border-gray-200 dark:border-gray-700 space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+              <!-- Category -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.category') }}</label>
+                <select
+                  v-model="form.category_id"
+                  class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option :value="null">—</option>
+                  <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+                    {{ cat.ctg_title }}
+                  </option>
+                </select>
+              </div>
+
+              <!-- Brand -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.brand') }}</label>
+                <select
+                  v-model="form.brand_id"
+                  class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option :value="null">—</option>
+                  <option v-for="br in brands" :key="br.id" :value="br.id">
+                    {{ br.br_title }}
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <!-- E-commerce Slug -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.slug') ?? 'Slug' }}</label>
+              <input
+                v-model="form.p_slug"
+                type="text"
+                :placeholder="$t('products.slugPlaceholder') ?? 'Auto-generated from title'"
+                class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+
+            <!-- E-commerce Toggle -->
+            <div class="flex items-center gap-2 pt-2">
+              <input
+                id="product-ecom"
+                v-model="form.is_ecom"
+                type="checkbox"
+                class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
+              />
+              <label for="product-ecom" class="text-sm text-gray-700 dark:text-gray-300">{{ $t('products.ecommerce') ?? 'E-commerce Product' }}</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab: Stock -->
+        <div v-if="currentTab === 2" class="space-y-4">
+          <div v-if="editTarget" class="space-y-4">
+            <!-- Summary Cards -->
+            <div class="grid grid-cols-2 gap-3">
+              <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                <p class="text-xs text-blue-600 dark:text-blue-400 font-medium">Total Stock</p>
+                <p class="text-lg font-bold text-blue-900 dark:text-blue-200">{{ editTarget.total_stock ?? 0 }}</p>
+              </div>
+              <div class="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg border border-green-200 dark:border-green-800">
+                <p class="text-xs text-green-600 dark:text-green-400 font-medium">Stock Value</p>
+                <p class="text-lg font-bold text-green-900 dark:text-green-200">{{ (Number(editTarget.total_stock ?? 0) * Number(form.p_cost || 0)).toFixed(2) }} MAD</p>
+              </div>
+            </div>
+
+            <!-- Warehouse Breakdown -->
+            <div class="space-y-2">
+              <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Warehouse Breakdown</h3>
+              <div v-if="editTarget.warehouseStocks && editTarget.warehouseStocks.length" class="overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead class="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                      <th class="px-3 py-2 text-left text-gray-600 dark:text-gray-300 font-medium">Warehouse</th>
+                      <th class="px-3 py-2 text-right text-gray-600 dark:text-gray-300 font-medium">Stock</th>
+                      <th class="px-3 py-2 text-center text-gray-600 dark:text-gray-300 font-medium">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                    <tr v-for="ws in editTarget.warehouseStocks" :key="ws.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                      <td class="px-3 py-2 text-gray-800 dark:text-gray-200">{{ ws.warehouse?.wh_name ?? '—' }}</td>
+                      <td class="px-3 py-2 text-right font-mono">{{ Number(ws.stockLevel).toFixed(2) }} {{ editTarget.p_unit ?? 'pcs' }}</td>
+                      <td class="px-3 py-2 text-center">
+                        <span
+                          class="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
+                          :class="Number(ws.stockLevel) > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
+                        >
+                          {{ Number(ws.stockLevel) > 0 ? 'In Stock' : 'Out' }}
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div v-else class="text-sm text-gray-500 dark:text-gray-400">
+                {{ $t('products.noStock') ?? 'No stock records yet' }}
+              </div>
+            </div>
+
+            <!-- Recent Movements -->
+            <div class="space-y-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Recent Movements</h3>
+              <div v-if="stockMouvements.length" class="space-y-2 max-h-40 overflow-y-auto">
+                <div v-for="mov in stockMouvements" :key="mov.id" class="p-2 bg-gray-50 dark:bg-gray-700/50 rounded text-xs">
+                  <p class="font-mono text-gray-800 dark:text-gray-200">
+                    {{ mov.direction === 'in' ? '➕' : '➖' }}
+                    {{ mov.quantity }} on {{ new Date(mov.created_at).toLocaleDateString() }}
+                  </p>
+                </div>
+              </div>
+              <div v-else class="text-xs text-gray-500 dark:text-gray-400">No movements yet</div>
             </div>
           </div>
           <div v-else class="text-sm text-gray-500 dark:text-gray-400">
             {{ $t('products.stockAfterSave') ?? 'Stock information available after saving the product.' }}
+          </div>
+        </div>
+
+        <!-- Tab: Statistics -->
+        <div v-if="currentTab === 3" class="space-y-4">
+          <div v-if="editTarget" class="space-y-4">
+            <!-- Sales Metrics -->
+            <div class="space-y-2">
+              <h4 class="font-semibold text-gray-900 dark:text-white text-sm">Sales Metrics</h4>
+              <div class="grid grid-cols-2 gap-3">
+                <div class="bg-purple-50 dark:bg-purple-900/20 p-3 rounded border border-purple-200 dark:border-purple-800">
+                  <p class="text-xs text-purple-600 dark:text-purple-400 font-medium">Total Units Sold</p>
+                  <p class="text-lg font-bold text-purple-900 dark:text-purple-200">{{ statistics?.sales?.total_units ?? 0 }}</p>
+                </div>
+                <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded border border-blue-200 dark:border-blue-800">
+                  <p class="text-xs text-blue-600 dark:text-blue-400 font-medium">Total Revenue</p>
+                  <p class="text-lg font-bold text-blue-900 dark:text-blue-200">{{ (statistics?.sales?.total_revenue ?? 0).toFixed(2) }} MAD</p>
+                </div>
+                <div class="bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded border border-indigo-200 dark:border-indigo-800">
+                  <p class="text-xs text-indigo-600 dark:text-indigo-400 font-medium">Avg Sale Price</p>
+                  <p class="text-lg font-bold text-indigo-900 dark:text-indigo-200">{{ (statistics?.sales?.avg_price ?? 0).toFixed(2) }} MAD</p>
+                </div>
+                <div class="bg-pink-50 dark:bg-pink-900/20 p-3 rounded border border-pink-200 dark:border-pink-800">
+                  <p class="text-xs text-pink-600 dark:text-pink-400 font-medium">Sale Transactions</p>
+                  <p class="text-lg font-bold text-pink-900 dark:text-pink-200">{{ statistics?.sales?.count ?? 0 }}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Purchase Metrics -->
+            <div class="space-y-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <h4 class="font-semibold text-gray-900 dark:text-white text-sm">Purchase Metrics</h4>
+              <div class="grid grid-cols-2 gap-3">
+                <div class="bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded border border-emerald-200 dark:border-emerald-800">
+                  <p class="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Total Units Purchased</p>
+                  <p class="text-lg font-bold text-emerald-900 dark:text-emerald-200">{{ statistics?.purchases?.total_units ?? 0 }}</p>
+                </div>
+                <div class="bg-teal-50 dark:bg-teal-900/20 p-3 rounded border border-teal-200 dark:border-teal-800">
+                  <p class="text-xs text-teal-600 dark:text-teal-400 font-medium">Total Cost</p>
+                  <p class="text-lg font-bold text-teal-900 dark:text-teal-200">{{ (statistics?.purchases?.total_cost ?? 0).toFixed(2) }} MAD</p>
+                </div>
+                <div class="bg-cyan-50 dark:bg-cyan-900/20 p-3 rounded border border-cyan-200 dark:border-cyan-800">
+                  <p class="text-xs text-cyan-600 dark:text-cyan-400 font-medium">Avg Purchase Price</p>
+                  <p class="text-lg font-bold text-cyan-900 dark:text-cyan-200">{{ (statistics?.purchases?.avg_price ?? 0).toFixed(2) }} MAD</p>
+                </div>
+                <div class="bg-orange-50 dark:bg-orange-900/20 p-3 rounded border border-orange-200 dark:border-orange-800">
+                  <p class="text-xs text-orange-600 dark:text-orange-400 font-medium">Purchase Transactions</p>
+                  <p class="text-lg font-bold text-orange-900 dark:text-orange-200">{{ statistics?.purchases?.count ?? 0 }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div v-else class="text-sm text-gray-500 dark:text-gray-400">
+            Statistics available after saving the product.
+          </div>
+        </div>
+
+        <!-- Tab: Gallery -->
+        <div v-if="currentTab === 4" class="space-y-4">
+          <div v-if="editTarget">
+            <!-- Upload Area -->
+            <label class="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 cursor-pointer hover:border-blue-400 transition">
+              <svg v-if="!uploadingImage" class="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              <svg v-else class="w-6 h-6 animate-spin text-blue-500 mb-2" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+              </svg>
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                {{ uploadingImage ? 'Uploading...' : 'Drag images here or click to select' }}
+              </span>
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                class="hidden"
+                :disabled="uploadingImage"
+                @change="handleImageUpload"
+              />
+            </label>
+
+            <!-- Images Grid -->
+            <div v-if="editImages.length" class="grid grid-cols-4 gap-3">
+              <div
+                v-for="img in editImages"
+                :key="img.id"
+                class="relative group rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 aspect-square bg-gray-50 dark:bg-gray-900"
+              >
+                <img :src="img.url" :alt="img.title" class="w-full h-full object-cover" />
+                <span v-if="img.isPrimary" class="absolute top-1 left-1 text-[10px] font-bold bg-blue-600 text-white px-1.5 py-0.5 rounded">
+                  PRIMARY
+                </span>
+                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2">
+                  <button
+                    v-if="!img.isPrimary"
+                    type="button"
+                    class="p-1.5 bg-white dark:bg-gray-800 rounded-lg text-blue-600 hover:bg-blue-50 transition"
+                    @click="doSetPrimary(img)"
+                  >
+                    ⭐
+                  </button>
+                  <button
+                    type="button"
+                    class="p-1.5 bg-white dark:bg-gray-800 rounded-lg text-red-500 hover:bg-red-50 transition"
+                    @click="doDeleteImage(img)"
+                  >
+                    🗑️
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div v-else class="text-sm text-gray-500 dark:text-gray-400 text-center py-8">
+              No images yet. Upload images to get started.
+            </div>
+          </div>
+          <div v-else class="text-sm text-gray-500 dark:text-gray-400">
+            Gallery available after saving the product.
           </div>
         </div>
       </form>
@@ -682,10 +887,17 @@ const deleteTarget = ref(null)
 // Images for the currently-edited product (reactive copy)
 const editImages = ref([])
 
+// Statistics, movements, and price lists for the currently-edited product
+const statistics = ref(null)
+const stockMouvements = ref([])
+const priceListItems = ref([])
+
 const tabs = [
   { label: t('products.tabInfo') ?? 'Info' },
   { label: t('products.tabTarifs') ?? 'Tarifs' },
   { label: t('products.tabStock') ?? 'Stock' },
+  { label: t('products.tabStatistics') ?? 'Statistics' },
+  { label: t('products.tabGallery') ?? 'Gallery' },
 ]
 
 const emptyForm = () => ({
@@ -722,6 +934,11 @@ const columns = computed(() => [
   { key: 'total_stock', label: 'Stock' },
 ])
 
+const marginPercent = computed(() => {
+  if (!form.p_salePrice || !form.p_purchasePrice) return 0
+  return Math.round(((form.p_salePrice - form.p_purchasePrice) / form.p_salePrice) * 100)
+})
+
 // ── Server-side filters + pagination ─────────────────────────────────────
 function buildParams(): Record<string, string> {
   const p: Record<string, string> = {}
@@ -754,7 +971,7 @@ function openCreate() {
   showModal.value = true
 }
 
-function openEdit(row) {
+async function openEdit(row) {
   editTarget.value = row
   editImages.value = [...(row.images ?? [])]
   currentTab.value = 0
@@ -778,6 +995,28 @@ function openEdit(row) {
     category_id: row.category_id ?? null,
     brand_id: row.brand_id ?? null,
   })
+
+  // Load additional data for tabs
+  try {
+    const [statsRes, stockRes, pricesRes] = await Promise.all([
+      fetch(`/api/products/${row.id}/statistics`),
+      fetch(`/api/products/${row.id}/stock-history?per_page=5`),
+      fetch(`/api/products/${row.id}/price-lists`),
+    ])
+
+    if (statsRes.ok) statistics.value = await statsRes.json()
+    if (stockRes.ok) {
+      const data = await stockRes.json()
+      stockMouvements.value = Array.isArray(data) ? data : data.data ?? []
+    }
+    if (pricesRes.ok) {
+      const data = await pricesRes.json()
+      priceListItems.value = Array.isArray(data) ? data : data.data ?? []
+    }
+  } catch (e) {
+    console.error('Error loading product details:', e)
+  }
+
   showModal.value = true
 }
 
