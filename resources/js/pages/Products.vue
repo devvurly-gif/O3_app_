@@ -300,6 +300,61 @@
             />
           </div>
 
+          <!-- Category / Brand / Slug -->
+          <div class="pt-4 border-t border-gray-200 dark:border-gray-700 space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <!-- Category -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.category') }}</label>
+                <select
+                  v-model="form.category_id"
+                  class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option :value="null">—</option>
+                  <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+                    {{ cat.ctg_title }}
+                  </option>
+                </select>
+              </div>
+
+              <!-- Brand -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.brand') }}</label>
+                <select
+                  v-model="form.brand_id"
+                  class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option :value="null">—</option>
+                  <option v-for="br in brands" :key="br.id" :value="br.id">
+                    {{ br.br_title }}
+                  </option>
+                </select>
+              </div>
+
+              <!-- E-commerce Slug -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.slug') ?? 'Slug' }}</label>
+                <input
+                  v-model="form.p_slug"
+                  type="text"
+                  :placeholder="$t('products.slugPlaceholder') ?? 'Auto-generated from title'"
+                  class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            <!-- E-commerce Toggle -->
+            <div class="flex items-center gap-2 pt-2">
+              <input
+                id="product-ecom"
+                v-model="form.is_ecom"
+                type="checkbox"
+                class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
+              />
+              <label for="product-ecom" class="text-sm text-gray-700 dark:text-gray-300">{{ $t('products.ecommerce') ?? 'E-commerce Product' }}</label>
+            </div>
+          </div>
+
           <!-- Status -->
           <div class="flex items-center gap-2 pt-2">
             <input
@@ -430,60 +485,6 @@
             </div>
           </div>
 
-          <!-- Category / Brand / Slug -->
-          <div class="pt-4 border-t border-gray-200 dark:border-gray-700 space-y-4">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <!-- Category -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.category') }}</label>
-                <select
-                  v-model="form.category_id"
-                  class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option :value="null">—</option>
-                  <option v-for="cat in categories" :key="cat.id" :value="cat.id">
-                    {{ cat.ctg_title }}
-                  </option>
-                </select>
-              </div>
-
-              <!-- Brand -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.brand') }}</label>
-                <select
-                  v-model="form.brand_id"
-                  class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option :value="null">—</option>
-                  <option v-for="br in brands" :key="br.id" :value="br.id">
-                    {{ br.br_title }}
-                  </option>
-                </select>
-              </div>
-
-              <!-- E-commerce Slug -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.slug') ?? 'Slug' }}</label>
-                <input
-                  v-model="form.p_slug"
-                  type="text"
-                  :placeholder="$t('products.slugPlaceholder') ?? 'Auto-generated from title'"
-                  class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-
-            <!-- E-commerce Toggle -->
-            <div class="flex items-center gap-2 pt-2">
-              <input
-                id="product-ecom"
-                v-model="form.is_ecom"
-                type="checkbox"
-                class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
-              />
-              <label for="product-ecom" class="text-sm text-gray-700 dark:text-gray-300">{{ $t('products.ecommerce') ?? 'E-commerce Product' }}</label>
-            </div>
-          </div>
         </div>
 
         <!-- Tab: Stock -->
