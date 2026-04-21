@@ -162,6 +162,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('products/{product}/images/{image}/set-primary',[ProductImageController::class, 'setPrimary']);
         Route::delete('products/{product}/images/{image}',           [ProductImageController::class, 'destroy']);
 
+        Route::post('storage/products/upload',                       [StorageGalleryController::class, 'upload']);
         Route::post('storage/products/assign',                       [StorageGalleryController::class, 'assign']);
 
         Route::post('third-partners',                     [ThirdPartnerController::class, 'store']);
