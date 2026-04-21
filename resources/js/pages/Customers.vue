@@ -1174,7 +1174,7 @@
             >
           </div>
         </div>
-        <div v-else-if="!paymentLoading" class="text-center py-8 text-gray-400 dark:text-gray-500">
+        <div v-else-if="!paymentLoading && paymentPayableDocs.length === 0" class="text-center py-8 text-gray-400 dark:text-gray-500">
           <svg
             class="w-10 h-10 mx-auto mb-2 text-gray-300"
             fill="none"
@@ -1188,7 +1188,76 @@
               d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
             />
           </svg>
-          <p class="text-sm">Aucune facture impayée</p>
+          <p class="text-sm">Ce client n'a aucune facture.</p>
+        </div>
+
+        <!-- Fallback: no unpaid docs but payable docs exist → single-invoice payment -->
+        <div v-else-if="!paymentLoading && paymentUnpaidDocs.length === 0" class="space-y-4">
+          <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-800">
+            Toutes les factures sont soldées. Vous pouvez enregistrer un paiement sur une facture spécifique (ex. correction, avoir).
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Facture <span class="text-red-500">*</span>
+            </label>
+            <select
+              v-model="paymentSelectedDocId"
+              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+            >
+              <option :value="null" disabled>-- Choisir une facture --</option>
+              <option v-for="doc in paymentPayableDocs" :key="doc.id" :value="doc.id">
+                {{ doc.reference }} — {{ formatDate(doc.issued_at) }} — {{ formatNumber(Number(doc.footer?.total_ttc ?? 0)) }} DH
+              </option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Montant <span class="text-red-500">*</span>
+            </label>
+            <div class="relative">
+              <input
+                v-model.number="paymentForm.amount"
+                type="number"
+                min="0.01"
+                step="0.01"
+                placeholder="0.00"
+                class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent pr-12"
+              />
+              <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 dark:text-gray-500 font-medium">DH</span>
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Méthode de paiement <span class="text-red-500">*</span>
+            </label>
+            <select
+              v-model="paymentForm.method"
+              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+            >
+              <option value="cash">Espèces</option>
+              <option value="bank_transfer">Virement bancaire</option>
+              <option value="cheque">Chèque</option>
+              <option value="effet">Effet</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Référence</label>
+            <input
+              v-model="paymentForm.reference"
+              type="text"
+              placeholder="N° chèque, virement..."
+              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
+            <textarea
+              v-model="paymentForm.notes"
+              rows="2"
+              placeholder="Remarques..."
+              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none"
+            ></textarea>
+          </div>
         </div>
         <div v-if="paymentLoading" class="flex items-center justify-center py-8">
           <svg class="w-6 h-6 animate-spin text-blue-500" fill="none" viewBox="0 0 24 24">
@@ -1290,6 +1359,21 @@
             stroke-width="2"
             viewBox="0 0 24 24"
           >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          {{ paymentSaving ? 'Enregistrement...' : 'Enregistrer le paiement' }}
+        </button>
+        <button
+          v-else-if="!paymentLoading && paymentPayableDocs.length > 0"
+          class="px-4 py-2 text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition disabled:opacity-60"
+          :disabled="paymentSaving || !paymentSelectedDocId || !paymentForm.amount || paymentForm.amount <= 0"
+          @click="submitSingleDocPayment"
+        >
+          <svg class="w-4 h-4 inline -mt-0.5 mr-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -1581,6 +1665,16 @@ const paymentUnpaidDocs = computed(() => {
     .sort((a: any, b: any) => new Date(a.issued_at).getTime() - new Date(b.issued_at).getTime())
 })
 
+// All payable documents (invoices, any amount_due) — used as fallback when no unpaid docs
+const paymentPayableDocs = computed(() => {
+  if (!paymentDetail.value?.document_headers) return []
+  return paymentDetail.value.document_headers
+    .filter((d: any) => ['InvoiceSale', 'InvoicePurchase'].includes(d.document_type))
+    .sort((a: any, b: any) => new Date(b.issued_at).getTime() - new Date(a.issued_at).getTime())
+})
+
+const paymentSelectedDocId = ref<number | null>(null)
+
 const paymentTotalDue = computed(() =>
   paymentUnpaidDocs.value.reduce((sum: number, d: any) => sum + Number(d.footer?.amount_due ?? 0), 0),
 )
@@ -1590,6 +1684,7 @@ async function openBulkPayment(row: any) {
   paymentResult.value = null
   Object.assign(paymentForm, { amount: 0, method: 'cash', reference: '', notes: '' })
   paymentDetail.value = null
+  paymentSelectedDocId.value = null
   showPaymentModal.value = true
   paymentLoading.value = true
   try {
@@ -1599,6 +1694,43 @@ async function openBulkPayment(row: any) {
     paymentDetail.value = null
   } finally {
     paymentLoading.value = false
+  }
+}
+
+async function submitSingleDocPayment() {
+  if (!paymentSelectedDocId.value || !paymentForm.amount || paymentForm.amount <= 0) return
+  paymentSaving.value = true
+  paymentResult.value = null
+  try {
+    await http.post('/payments', {
+      document_header_id: paymentSelectedDocId.value,
+      amount: paymentForm.amount,
+      method: paymentForm.method,
+      paid_at: new Date().toISOString().slice(0, 10),
+      reference: paymentForm.reference || null,
+      notes: paymentForm.notes || null,
+    })
+    ;(toast.value as any)?.notify('Paiement enregistré.', 'success')
+    // Reload detail for the current modal context
+    const { data: refreshed } = await http.get(`/third-partners/${paymentTarget.value.id}`)
+    paymentDetail.value = refreshed
+    if (showModal.value && editTarget.value?.id === paymentTarget.value.id) {
+      customerDetail.value = refreshed
+    }
+    if (showShowModal.value && showTarget.value?.id === paymentTarget.value.id) {
+      showDetail.value = refreshed
+    }
+    loadPage(store.meta.current_page)
+    // Reset form
+    paymentForm.amount = 0
+    paymentForm.reference = ''
+    paymentForm.notes = ''
+    paymentSelectedDocId.value = null
+  } catch (err: unknown) {
+    const e = err as { response?: { data?: { message?: string } } }
+    ;(toast.value as any)?.notify(e.response?.data?.message ?? 'Erreur lors du paiement', 'error')
+  } finally {
+    paymentSaving.value = false
   }
 }
 
