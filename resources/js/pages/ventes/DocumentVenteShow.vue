@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDocumentVenteStore } from '@/stores/ventes/useDocumentVenteStore'
+import { useSettingStore } from '@/stores/setting'
 import BaseModal from '@/components/BaseModal.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
 import DocumentLinesTable from '@/components/DocumentLinesTable.vue'
@@ -16,6 +17,11 @@ import type { DocumentHeader } from '@/types'
 const route = useRoute()
 const router = useRouter()
 const store = useDocumentVenteStore()
+const settingStore = useSettingStore()
+
+const paiementSurBl = computed(
+  () => settingStore.settings?.ventes?.paiement_sur_bl === 'true',
+)
 
 const { fmt } = useFormat()
 const toast = useToastStore()
@@ -36,7 +42,10 @@ async function loadDocument() {
   doc.value = await store.fetchOne(Number(route.params.id))
 }
 
-onMounted(loadDocument)
+onMounted(() => {
+  loadDocument()
+  if (!settingStore.settings?.ventes) settingStore.fetchAll()
+})
 
 watch(() => route.params.id, (newId) => {
   if (newId) loadDocument()
@@ -54,9 +63,10 @@ const canConvert = computed(() => {
 const canPay = computed(() => {
   if (!doc.value) return false
   const payable = ['InvoiceSale']
+  if (paiementSurBl.value) payable.push('DeliveryNote')
   return (
     payable.includes(doc.value.document_type) &&
-    ['confirmed', 'pending', 'partial'].includes(doc.value.status) &&
+    ['confirmed', 'pending', 'partial', 'delivered'].includes(doc.value.status) &&
     Number(doc.value.footer?.amount_due ?? 0) > 0
   )
 })
