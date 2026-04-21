@@ -459,29 +459,109 @@
 
           <!-- Price List Tiers Section -->
           <div class="space-y-3">
-            <h4 class="font-semibold text-gray-900 dark:text-white text-sm">Price Tiers</h4>
+            <div class="flex items-center justify-between">
+              <h4 class="font-semibold text-gray-900 dark:text-white text-sm">Tarifs par grille</h4>
+              <button
+                v-if="editTarget"
+                type="button"
+                :disabled="tierAdding"
+                class="text-xs px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-medium transition disabled:opacity-50"
+                @click="tierAdding = !tierAdding"
+              >
+                {{ tierAdding ? 'Annuler' : '+ Ajouter un tarif' }}
+              </button>
+            </div>
+
+            <!-- Inline add-tier form -->
+            <div
+              v-if="editTarget && tierAdding"
+              class="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg grid grid-cols-1 sm:grid-cols-4 gap-2"
+            >
+              <div class="sm:col-span-2">
+                <label class="block text-[11px] font-medium text-gray-600 dark:text-gray-400 mb-1">Grille</label>
+                <select
+                  v-model.number="newTier.price_list_id"
+                  class="w-full px-2 py-1.5 rounded-md border border-gray-300 dark:border-gray-600 text-sm bg-white dark:bg-gray-800"
+                >
+                  <option :value="null" disabled>— Choisir —</option>
+                  <option
+                    v-for="pl in priceListsOptions"
+                    :key="pl.id"
+                    :value="pl.id"
+                    :disabled="isListAlreadyUsed(pl.id, newTier.min_qty)"
+                  >
+                    {{ pl.name }}{{ pl.is_default ? ' (défaut)' : '' }}
+                  </option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-[11px] font-medium text-gray-600 dark:text-gray-400 mb-1">Qté min</label>
+                <input
+                  v-model.number="newTier.min_qty"
+                  type="number"
+                  min="1"
+                  class="w-full px-2 py-1.5 rounded-md border border-gray-300 dark:border-gray-600 text-sm font-mono bg-white dark:bg-gray-800"
+                />
+              </div>
+              <div>
+                <label class="block text-[11px] font-medium text-gray-600 dark:text-gray-400 mb-1">Prix HT</label>
+                <input
+                  v-model.number="newTier.price_ht"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  class="w-full px-2 py-1.5 rounded-md border border-gray-300 dark:border-gray-600 text-sm font-mono bg-white dark:bg-gray-800"
+                />
+              </div>
+              <div class="sm:col-span-4 flex items-center justify-between pt-1">
+                <p class="text-xs text-gray-600 dark:text-gray-400">
+                  Prix TTC estimé :
+                  <span class="font-mono font-semibold">{{ newTierTtc }} MAD</span>
+                </p>
+                <button
+                  type="button"
+                  :disabled="!canAddTier || tierSaving"
+                  class="text-xs px-3 py-1.5 rounded-md bg-green-600 hover:bg-green-700 text-white font-semibold disabled:opacity-50"
+                  @click="addTier"
+                >
+                  {{ tierSaving ? 'Enregistrement…' : 'Enregistrer' }}
+                </button>
+              </div>
+            </div>
+
             <div v-if="editTarget && priceListItems.length" class="overflow-x-auto">
               <table class="w-full text-sm">
                 <thead class="bg-gray-50 dark:bg-gray-700">
                   <tr>
-                    <th class="px-3 py-2 text-left text-gray-600 dark:text-gray-300 font-medium">List</th>
-                    <th class="px-3 py-2 text-right text-gray-600 dark:text-gray-300 font-medium">Min Qty</th>
-                    <th class="px-3 py-2 text-right text-gray-600 dark:text-gray-300 font-medium">Price HT</th>
-                    <th class="px-3 py-2 text-right text-gray-600 dark:text-gray-300 font-medium">Price TTC</th>
+                    <th class="px-3 py-2 text-left text-gray-600 dark:text-gray-300 font-medium">Grille</th>
+                    <th class="px-3 py-2 text-right text-gray-600 dark:text-gray-300 font-medium">Qté min</th>
+                    <th class="px-3 py-2 text-right text-gray-600 dark:text-gray-300 font-medium">Prix HT</th>
+                    <th class="px-3 py-2 text-right text-gray-600 dark:text-gray-300 font-medium">Prix TTC</th>
+                    <th class="px-3 py-2 w-10"></th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                   <tr v-for="item in priceListItems" :key="item.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                    <td class="px-3 py-2 text-gray-800 dark:text-gray-200">{{ item.priceList?.name ?? '—' }}</td>
+                    <td class="px-3 py-2 text-gray-800 dark:text-gray-200">{{ item.price_list?.name ?? item.priceList?.name ?? '—' }}</td>
                     <td class="px-3 py-2 text-right font-mono">{{ item.min_qty }}</td>
                     <td class="px-3 py-2 text-right font-mono">{{ Number(item.price_ht).toFixed(2) }} MAD</td>
                     <td class="px-3 py-2 text-right font-mono">{{ Number(item.price_ttc).toFixed(2) }} MAD</td>
+                    <td class="px-3 py-2 text-right">
+                      <button
+                        type="button"
+                        class="text-red-600 hover:text-red-800 dark:text-red-400 text-xs"
+                        :disabled="tierDeletingId === item.id"
+                        @click="removeTier(item)"
+                      >
+                        ×
+                      </button>
+                    </td>
                   </tr>
                 </tbody>
               </table>
             </div>
             <div v-else class="text-sm text-gray-500 dark:text-gray-400">
-              {{ editTarget ? 'No price tiers yet' : 'Price tiers available after saving' }}
+              {{ editTarget ? 'Aucun tarif spécifique — le prix de vente principal est utilisé.' : 'Enregistrez d\'abord le produit pour ajouter des tarifs par grille.' }}
             </div>
           </div>
 
@@ -745,6 +825,8 @@ import { useI18n } from 'vue-i18n'
 import { useProductStore } from '@/stores/product'
 import { useCategoryStore } from '@/stores/category'
 import { useBrandStore } from '@/stores/brand'
+import { usePriceListStore } from '@/stores/priceList'
+import http from '@/services/http'
 import { useExcelExport } from '@/composables/useExcelExport'
 import BaseTable from '@/components/BaseTable.vue'
 import BasePagination from '@/components/BasePagination.vue'
@@ -756,10 +838,12 @@ const { t } = useI18n()
 const store = useProductStore()
 const categoryStore = useCategoryStore()
 const brandStore = useBrandStore()
+const priceListStore = usePriceListStore()
 
 const { items } = storeToRefs(store)
 const { items: categories } = storeToRefs(categoryStore)
 const { items: brands } = storeToRefs(brandStore)
+const { items: priceListsOptions } = storeToRefs(priceListStore)
 
 const { exporting, exportExcel } = useExcelExport()
 
@@ -790,6 +874,16 @@ const editImages = ref([])
 const statistics = ref(null)
 const stockMouvements = ref([])
 const priceListItems = ref([])
+
+// Add-tier inline form state
+const tierAdding = ref(false)
+const tierSaving = ref(false)
+const tierDeletingId = ref<number | null>(null)
+const newTier = reactive({
+  price_list_id: null as number | null,
+  min_qty: 1,
+  price_ht: 0,
+})
 
 const tabs = [
   { label: t('products.tabInfo') ?? 'Info' },
@@ -837,6 +931,78 @@ const marginPercent = computed(() => {
   if (!form.p_salePrice || !form.p_purchasePrice) return 0
   return Math.round(((form.p_salePrice - form.p_purchasePrice) / form.p_salePrice) * 100)
 })
+
+// ── Price-list tier helpers ──────────────────────────────────────────────
+const newTierTtc = computed(() => {
+  const ht = Number(newTier.price_ht) || 0
+  const rate = Number(form.p_taxRate) || 0
+  return (ht * (1 + rate / 100)).toFixed(2)
+})
+
+const canAddTier = computed(() =>
+  !!newTier.price_list_id &&
+  Number(newTier.min_qty) >= 1 &&
+  Number(newTier.price_ht) > 0,
+)
+
+function isListAlreadyUsed(listId: number, minQty: number): boolean {
+  return priceListItems.value.some(
+    (i: any) => Number(i.price_list_id) === listId && Number(i.min_qty) === Number(minQty),
+  )
+}
+
+async function reloadPriceListItems() {
+  if (!editTarget.value) return
+  try {
+    const { data } = await http.get(`/products/${editTarget.value.id}/price-lists`)
+    priceListItems.value = Array.isArray(data) ? data : data.data ?? []
+  } catch (e) {
+    console.error('Failed to reload price tiers', e)
+  }
+}
+
+async function addTier() {
+  if (!canAddTier.value || !editTarget.value) return
+  tierSaving.value = true
+  try {
+    await http.post(`/price-lists/${newTier.price_list_id}/items`, {
+      items: [
+        {
+          product_id: editTarget.value.id,
+          price_ht: Number(newTier.price_ht),
+          min_qty: Number(newTier.min_qty) || 1,
+        },
+      ],
+    })
+    await reloadPriceListItems()
+    // Reset form
+    newTier.price_list_id = null
+    newTier.min_qty = 1
+    newTier.price_ht = 0
+    tierAdding.value = false
+    toast.value?.notify('Tarif ajouté', 'success')
+  } catch (e: any) {
+    const msg = e?.response?.data?.message ?? 'Échec de l\'ajout du tarif'
+    toast.value?.notify(msg, 'error')
+  } finally {
+    tierSaving.value = false
+  }
+}
+
+async function removeTier(item: any) {
+  if (!confirm('Supprimer ce tarif ?')) return
+  tierDeletingId.value = item.id
+  try {
+    await http.delete(`/price-lists/${item.price_list_id}/items/${item.id}`)
+    priceListItems.value = priceListItems.value.filter((i: any) => i.id !== item.id)
+    toast.value?.notify('Tarif supprimé', 'success')
+  } catch (e: any) {
+    const msg = e?.response?.data?.message ?? 'Échec de la suppression'
+    toast.value?.notify(msg, 'error')
+  } finally {
+    tierDeletingId.value = null
+  }
+}
 
 // ── Server-side filters + pagination ─────────────────────────────────────
 function buildParams(): Record<string, string> {
@@ -1020,6 +1186,7 @@ async function doDeleteImage(img) {
 onMounted(() => {
   categoryStore.fetchAll()
   brandStore.fetchAll()
+  priceListStore.fetchAll()
   loadPage()
 })
 </script>
