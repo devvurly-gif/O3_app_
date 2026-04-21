@@ -65,7 +65,7 @@ class ProductImageController extends Controller
         return response()->json($image);
     }
 
-    public function destroy(ProductImage $image): JsonResponse
+    public function destroy(Product $product, ProductImage $image): JsonResponse
     {
         $this->imageService->delete($image);
 
