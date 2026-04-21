@@ -203,89 +203,93 @@
 
         <!-- Tab: Info -->
         <div v-if="currentTab === 0" class="space-y-4">
-          <!-- Title -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-              >{{ $t('common.name') }} <span class="text-red-500">*</span></label
-            >
-            <input
-              v-model="form.p_title"
-              type="text"
-              required
-              :placeholder="$t('products.titlePlaceholder')"
-              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              @input="generateSlugFromTitle"
-            />
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Title (full row) -->
+            <div class="sm:col-span-2 lg:col-span-3">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >{{ $t('common.name') }} <span class="text-red-500">*</span></label
+              >
+              <input
+                v-model="form.p_title"
+                type="text"
+                required
+                :placeholder="$t('products.titlePlaceholder')"
+                class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                @input="generateSlugFromTitle"
+              />
+            </div>
+
+            <!-- Code -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.code') }}</label>
+              <input
+                v-model="form.p_code"
+                type="text"
+                :placeholder="$t('products.codePlaceholder')"
+                class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+
+            <!-- SKU -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.sku') }}</label>
+              <input
+                v-model="form.p_sku"
+                type="text"
+                :placeholder="$t('products.skuPlaceholder')"
+                class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{ $t('products.skuAuto') ?? 'Auto-generated if empty' }}</p>
+            </div>
+
+            <!-- EAN13 -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.ean') }}</label>
+              <input
+                v-model="form.p_ean13"
+                type="text"
+                :placeholder="$t('products.eanPlaceholder')"
+                class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+
+            <!-- IMEI -->
+            <div class="sm:col-span-2 lg:col-span-3">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">IMEI</label>
+              <input
+                v-model="form.p_imei"
+                type="text"
+                placeholder="Device IMEI..."
+                class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
           </div>
 
-          <!-- Code -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.code') }}</label>
-            <input
-              v-model="form.p_code"
-              type="text"
-              :placeholder="$t('products.codePlaceholder')"
-              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Description -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.description') }}</label>
+              <textarea
+                v-model="form.p_description"
+                rows="3"
+                placeholder="…"
+                class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+
+            <!-- Long Description (E-commerce) -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.longDescription') ?? 'Long Description' }}</label>
+              <textarea
+                v-model="form.p_long_description"
+                rows="3"
+                placeholder="E-commerce description…"
+                class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
           </div>
 
-          <!-- SKU -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.sku') }}</label>
-            <input
-              v-model="form.p_sku"
-              type="text"
-              :placeholder="$t('products.skuPlaceholder')"
-              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-            <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{ $t('products.skuAuto') ?? 'Auto-generated if empty' }}</p>
-          </div>
-
-          <!-- EAN13 -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.ean') }}</label>
-            <input
-              v-model="form.p_ean13"
-              type="text"
-              :placeholder="$t('products.eanPlaceholder')"
-              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-
-          <!-- IMEI (NEW) -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">IMEI</label>
-            <input
-              v-model="form.p_imei"
-              type="text"
-              placeholder="Device IMEI..."
-              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-
-          <!-- Description -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.description') }}</label>
-            <textarea
-              v-model="form.p_description"
-              rows="2"
-              placeholder="…"
-              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-
-          <!-- Long Description (E-commerce) -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.longDescription') ?? 'Long Description' }}</label>
-            <textarea
-              v-model="form.p_long_description"
-              rows="2"
-              placeholder="E-commerce description…"
-              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-
-          <!-- Notes (NEW) -->
+          <!-- Notes -->
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
             <textarea
@@ -314,7 +318,7 @@
           <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg space-y-4">
             <h4 class="font-semibold text-gray-900 dark:text-white text-sm">Master Prices</h4>
 
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <!-- Purchase Price -->
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
@@ -373,17 +377,17 @@
                   class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
-            </div>
 
-            <!-- Unit -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.unit') }}</label>
-              <input
-                v-model="form.p_unit"
-                type="text"
-                :placeholder="$t('products.unitPlaceholder')"
-                class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+              <!-- Unit -->
+              <div class="sm:col-span-2 lg:col-span-1">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.unit') }}</label>
+                <input
+                  v-model="form.p_unit"
+                  type="text"
+                  :placeholder="$t('products.unitPlaceholder')"
+                  class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
             </div>
 
             <!-- Margin Indicator -->
@@ -426,9 +430,9 @@
             </div>
           </div>
 
-          <!-- Category & Brand -->
+          <!-- Category / Brand / Slug -->
           <div class="pt-4 border-t border-gray-200 dark:border-gray-700 space-y-4">
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <!-- Category -->
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.category') }}</label>
@@ -456,17 +460,17 @@
                   </option>
                 </select>
               </div>
-            </div>
 
-            <!-- E-commerce Slug -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.slug') ?? 'Slug' }}</label>
-              <input
-                v-model="form.p_slug"
-                type="text"
-                :placeholder="$t('products.slugPlaceholder') ?? 'Auto-generated from title'"
-                class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+              <!-- E-commerce Slug -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.slug') ?? 'Slug' }}</label>
+                <input
+                  v-model="form.p_slug"
+                  type="text"
+                  :placeholder="$t('products.slugPlaceholder') ?? 'Auto-generated from title'"
+                  class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
             </div>
 
             <!-- E-commerce Toggle -->
@@ -486,7 +490,7 @@
         <div v-if="currentTab === 2" class="space-y-4">
           <div v-if="editTarget" class="space-y-4">
             <!-- Summary Cards -->
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
                 <p class="text-xs text-blue-600 dark:text-blue-400 font-medium">Total Stock</p>
                 <p class="text-lg font-bold text-blue-900 dark:text-blue-200">{{ editTarget.total_stock ?? 0 }}</p>
@@ -555,7 +559,7 @@
             <!-- Sales Metrics -->
             <div class="space-y-2">
               <h4 class="font-semibold text-gray-900 dark:text-white text-sm">Sales Metrics</h4>
-              <div class="grid grid-cols-2 gap-3">
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 <div class="bg-purple-50 dark:bg-purple-900/20 p-3 rounded border border-purple-200 dark:border-purple-800">
                   <p class="text-xs text-purple-600 dark:text-purple-400 font-medium">Total Units Sold</p>
                   <p class="text-lg font-bold text-purple-900 dark:text-purple-200">{{ statistics?.sales?.total_units ?? 0 }}</p>
@@ -578,7 +582,7 @@
             <!-- Purchase Metrics -->
             <div class="space-y-2 pt-4 border-t border-gray-200 dark:border-gray-700">
               <h4 class="font-semibold text-gray-900 dark:text-white text-sm">Purchase Metrics</h4>
-              <div class="grid grid-cols-2 gap-3">
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 <div class="bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded border border-emerald-200 dark:border-emerald-800">
                   <p class="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Total Units Purchased</p>
                   <p class="text-lg font-bold text-emerald-900 dark:text-emerald-200">{{ statistics?.purchases?.total_units ?? 0 }}</p>
@@ -606,193 +610,87 @@
         <!-- Tab: Gallery -->
         <div v-if="currentTab === 4" class="space-y-4">
           <div v-if="editTarget">
-            <!-- Upload Area -->
-            <label class="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 cursor-pointer hover:border-blue-400 transition">
-              <svg v-if="!uploadingImage" class="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
-              <svg v-else class="w-6 h-6 animate-spin text-blue-500 mb-2" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-              </svg>
-              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
-                {{ uploadingImage ? 'Uploading...' : 'Drag images here or click to select' }}
-              </span>
-              <input
-                type="file"
-                multiple
-                accept="image/*"
-                class="hidden"
-                :disabled="uploadingImage"
-                @change="handleImageUpload"
-              />
-            </label>
-
-            <!-- Images Grid -->
-            <div v-if="editImages.length" class="grid grid-cols-4 gap-3">
+            <!-- Unified grid: images + upload tile -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
               <div
                 v-for="img in editImages"
                 :key="img.id"
                 class="relative group rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 aspect-square bg-gray-50 dark:bg-gray-900"
               >
                 <img :src="img.url" :alt="img.title" class="w-full h-full object-cover" />
-                <span v-if="img.isPrimary" class="absolute top-1 left-1 text-[10px] font-bold bg-blue-600 text-white px-1.5 py-0.5 rounded">
-                  PRIMARY
+                <span
+                  v-if="img.isPrimary"
+                  class="absolute top-1 left-1 text-[10px] font-bold bg-blue-600 text-white px-1.5 py-0.5 rounded"
+                >
+                  {{ $t('products.primary') }}
                 </span>
                 <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2">
                   <button
                     v-if="!img.isPrimary"
                     type="button"
                     class="p-1.5 bg-white dark:bg-gray-800 rounded-lg text-blue-600 hover:bg-blue-50 transition"
+                    :title="$t('products.setPrimary')"
                     @click="doSetPrimary(img)"
                   >
-                    ⭐
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                      />
+                    </svg>
                   </button>
                   <button
                     type="button"
                     class="p-1.5 bg-white dark:bg-gray-800 rounded-lg text-red-500 hover:bg-red-50 transition"
+                    :title="$t('common.delete')"
                     @click="doDeleteImage(img)"
                   >
-                    🗑️
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      />
+                    </svg>
                   </button>
                 </div>
               </div>
+
+              <!-- Upload tile -->
+              <label
+                class="aspect-square rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-blue-400 bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center cursor-pointer transition text-gray-400 dark:text-gray-500 hover:text-blue-500"
+              >
+                <svg v-if="!uploadingImage" class="w-7 h-7 mb-1" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                <svg v-else class="w-6 h-6 animate-spin mb-1" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                </svg>
+                <span class="text-xs font-medium text-center px-2">
+                  {{ uploadingImage ? $t('products.uploadingImage') : $t('products.addImage') }}
+                </span>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  class="hidden"
+                  :disabled="uploadingImage"
+                  @change="handleImageUpload"
+                />
+              </label>
             </div>
-            <div v-else class="text-sm text-gray-500 dark:text-gray-400 text-center py-8">
-              No images yet. Upload images to get started.
-            </div>
+
+            <p v-if="!editImages.length" class="text-xs text-gray-400 dark:text-gray-500 text-center mt-2">
+              {{ $t('products.noImages') }}
+            </p>
           </div>
-          <div v-else class="text-sm text-gray-500 dark:text-gray-400">
-            Gallery available after saving the product.
+          <div v-else class="text-sm text-gray-500 dark:text-gray-400 text-center py-8">
+            {{ $t('products.stockAfterSave') ?? 'Gallery available after saving the product.' }}
           </div>
         </div>
       </form>
-
-      <!-- Images Section (always shown when editing) -->
-      <div v-if="editTarget" class="border-t border-gray-100 dark:border-gray-700 pt-4 space-y-3">
-        <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">
-          {{ $t('products.images') }}
-        </h3>
-
-        <!-- Existing images grid -->
-        <div v-if="editImages.length" class="grid grid-cols-4 gap-3">
-          <div
-            v-for="img in editImages"
-            :key="img.id"
-            class="relative group rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 aspect-square bg-gray-50 dark:bg-gray-900"
-          >
-            <img :src="img.url" :alt="img.title" class="w-full h-full object-cover" />
-
-            <!-- Primary badge -->
-            <span
-              v-if="img.isPrimary"
-              class="absolute top-1 left-1 text-[10px] font-bold bg-blue-600 text-white px-1.5 py-0.5 rounded"
-            >
-              {{ $t('products.primary') }}
-            </span>
-
-            <!-- Hover actions -->
-            <div
-              class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2"
-            >
-              <button
-                v-if="!img.isPrimary"
-                type="button"
-                class="p-1.5 bg-white dark:bg-gray-800 rounded-lg text-blue-600 hover:bg-blue-50 transition"
-                :title="$t('products.setPrimary')"
-                @click="doSetPrimary(img)"
-              >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
-                  />
-                </svg>
-              </button>
-              <button
-                type="button"
-                class="p-1.5 bg-white dark:bg-gray-800 rounded-lg text-red-500 hover:bg-red-50 transition"
-                :title="$t('common.delete')"
-                @click="doDeleteImage(img)"
-              >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                  />
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          <!-- Upload tile -->
-          <label
-            class="aspect-square rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-blue-400 bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center cursor-pointer transition text-gray-400 dark:text-gray-500 hover:text-blue-500"
-          >
-            <svg
-              v-if="!uploadingImage"
-              class="w-6 h-6 mb-1"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.5"
-              viewBox="0 0 24 24"
-            >
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-            <svg v-else class="w-5 h-5 animate-spin mb-1" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-            </svg>
-            <span class="text-xs font-medium">{{
-              uploadingImage ? $t('products.uploadingImage') : $t('products.addImage')
-            }}</span>
-            <input
-              type="file"
-              multiple
-              accept="image/*"
-              class="hidden"
-              :disabled="uploadingImage"
-              @change="handleImageUpload"
-            />
-          </label>
-        </div>
-
-        <!-- Empty state + upload -->
-        <div v-else class="flex items-center gap-4">
-          <p class="text-sm text-gray-400 dark:text-gray-500">
-            {{ $t('products.noImages') }}
-          </p>
-          <label
-            class="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50 cursor-pointer transition"
-          >
-            <svg
-              v-if="!uploadingImage"
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              viewBox="0 0 24 24"
-            >
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-            <svg v-else class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-            </svg>
-            {{ uploadingImage ? $t('products.uploadingImage') : $t('products.addImage') }}
-            <input
-              type="file"
-              multiple
-              accept="image/*"
-              class="hidden"
-              :disabled="uploadingImage"
-              @change="handleImageUpload"
-            />
-          </label>
-        </div>
-      </div>
 
       <template #footer>
         <button
