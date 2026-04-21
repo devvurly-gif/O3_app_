@@ -102,6 +102,20 @@ function selectPendingProduct(product: Product) {
   showPendingDropdown.value = false
 }
 
+function stockForWarehouse(p: any, whId: number | null): number {
+  if (!p?.warehouseStocks?.length) return 0
+  if (whId) {
+    const hit = p.warehouseStocks.find((ws: any) => Number(ws.warehouse_id) === Number(whId))
+    return Number(hit?.stockLevel ?? 0)
+  }
+  return p.warehouseStocks.reduce((sum: number, ws: any) => sum + Number(ws.stockLevel ?? 0), 0)
+}
+
+const selectedWarehouseName = computed(() => {
+  if (!form.warehouse_id) return ''
+  return warehouses.value.find((w: any) => Number(w.id) === Number(form.warehouse_id))?.wh_title ?? ''
+})
+
 const filteredPendingProducts = computed(() => {
   const q = pendingSearch.value.toLowerCase().trim()
   const filtered = !q
@@ -110,12 +124,9 @@ const filteredPendingProducts = computed(() => {
         .filter((p) => p.p_title.toLowerCase().includes(q) || p.p_code.toLowerCase().includes(q))
         .slice(0, 15)
 
-  // Attach warehouse stock info if warehouse selected
-  if (!form.warehouse_id) return filtered
-
   return filtered.map((p: any) => ({
     ...p,
-    warehouse_stock: p.warehouseStocks?.find((ws: any) => ws.warehouse_id === form.warehouse_id)?.stockLevel ?? 0,
+    warehouse_stock: stockForWarehouse(p, form.warehouse_id),
   }))
 })
 
@@ -522,8 +533,13 @@ function getStockClass(stock: number): string {
                 <span class="flex-1">
                   <span class="font-medium dark:text-gray-200">{{ p.p_title }}</span>
                   <span class="text-gray-400 dark:text-gray-500 text-xs ml-1">[{{ p.p_code }}]</span>
-                  <span v-if="form.warehouse_id" :class="getStockClass(p.warehouse_stock)" class="ml-2 text-xs font-medium">
-                    Stock: {{ p.warehouse_stock ?? 0 }} {{ p.p_unit ?? 'pcs' }}
+                  <span :class="getStockClass(p.warehouse_stock)" class="ml-2 text-xs font-medium">
+                    <template v-if="form.warehouse_id">
+                      Stock ({{ selectedWarehouseName }}): {{ Number(p.warehouse_stock ?? 0).toFixed(2) }} {{ p.p_unit ?? 'pcs' }}
+                    </template>
+                    <template v-else>
+                      Stock total: {{ Number(p.warehouse_stock ?? 0).toFixed(2) }} {{ p.p_unit ?? 'pcs' }}
+                    </template>
                   </span>
                 </span>
                 <span class="text-gray-500 dark:text-gray-400 text-xs"
@@ -624,9 +640,18 @@ function getStockClass(stock: number): string {
                     class="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 dark:hover:bg-blue-900/30 transition flex justify-between items-center"
                     @mousedown.prevent="selectProduct(line, p); closeProductDropdown()"
                   >
-                    <span>
+                    <span class="flex-1">
                       <span class="font-medium dark:text-gray-200">{{ p.p_title }}</span>
                       <span class="text-gray-400 dark:text-gray-500 text-xs ml-1">[{{ p.p_code }}]</span>
+                      <span :class="getStockClass(stockForWarehouse(p, form.warehouse_id))" class="ml-2 text-xs font-medium">
+                        <template v-if="form.warehouse_id">
+                          Stock ({{ selectedWarehouseName }}): {{ stockForWarehouse(p, form.warehouse_id).toFixed(2) }}
+                        </template>
+                        <template v-else>
+                          Stock total: {{ stockForWarehouse(p, form.warehouse_id).toFixed(2) }}
+                        </template>
+                        {{ p.p_unit ?? 'pcs' }}
+                      </span>
                     </span>
                     <span class="text-gray-500 dark:text-gray-400 text-xs"
                       >{{ domain === 'vente' ? p.p_salePrice : p.p_purchasePrice }} DH</span
