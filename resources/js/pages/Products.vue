@@ -183,22 +183,24 @@
     <!-- Create / Edit Modal with Tabs -->
     <BaseModal v-model="showModal" :title="editTarget ? $t('products.editTitle') : $t('products.addTitle')" size="2xl">
       <form class="space-y-5" @submit.prevent="submit">
-        <!-- Tab Navigation -->
-        <div class="flex border-b border-gray-200 dark:border-gray-700">
-          <button
-            v-for="(tab, idx) in tabs"
-            :key="idx"
-            type="button"
-            class="flex-1 py-3 px-4 text-center font-medium text-sm transition border-b-2"
-            :class="
-              currentTab === idx
-                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300'
-            "
-            @click="currentTab = idx"
-          >
-            {{ tab.label }}
-          </button>
+        <!-- Tab Navigation (sticky) -->
+        <div class="sticky top-0 z-10 -mx-4 sm:-mx-6 -mt-4 px-4 sm:px-6 pt-1 pb-0 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700">
+          <div class="flex gap-1 overflow-x-auto scrollbar-thin">
+            <button
+              v-for="(tab, idx) in tabs"
+              :key="idx"
+              type="button"
+              class="relative whitespace-nowrap py-2.5 px-3 sm:px-4 text-sm font-medium transition-colors border-b-2 -mb-px"
+              :class="
+                currentTab === idx
+                  ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+              "
+              @click="currentTab = idx"
+            >
+              {{ tab.label }}
+            </button>
+          </div>
         </div>
 
         <!-- Tab: Info -->
