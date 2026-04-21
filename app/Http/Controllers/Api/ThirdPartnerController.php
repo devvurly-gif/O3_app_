@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
+use App\Models\Setting;
 use App\Models\ThirdPartner;
 use App\Repositories\Contracts\ThirdPartnerRepositoryInterface;
 use App\Services\CacheService;
@@ -128,8 +129,13 @@ class ThirdPartnerController extends Controller
         ]);
 
         // Get all unpaid invoices for this partner, oldest first
+        $payableTypes = ['InvoiceSale', 'InvoicePurchase'];
+        if (Setting::get('ventes', 'paiement_sur_bl', 'false') === 'true') {
+            $payableTypes[] = 'DeliveryNote';
+        }
+
         $unpaidDocs = $thirdPartner->documentHeaders()
-            ->whereIn('document_type', ['InvoiceSale', 'InvoicePurchase'])
+            ->whereIn('document_type', $payableTypes)
             ->whereHas('footer', fn ($q) => $q->where('amount_due', '>', 0))
             ->with('footer')
             ->orderBy('issued_at', 'asc')

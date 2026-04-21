@@ -1418,6 +1418,7 @@ import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useThirdPartnerStore } from '@/stores/thirdPartner'
 import { usePriceListStore } from '@/stores/priceList'
+import { useSettingStore } from '@/stores/setting'
 import { useExcelExport } from '@/composables/useExcelExport'
 import http from '@/services/http'
 import BaseTable from '@/components/BaseTable.vue'
@@ -1430,6 +1431,15 @@ const store = useThirdPartnerStore()
 const { items } = storeToRefs(store)
 const priceListStore = usePriceListStore()
 const { items: priceLists } = storeToRefs(priceListStore)
+const settingStore = useSettingStore()
+const paiementSurBl = computed(
+  () => settingStore.settings?.ventes?.paiement_sur_bl === 'true',
+)
+const payableDocTypes = computed(() => {
+  const types = ['InvoiceSale', 'InvoicePurchase']
+  if (paiementSurBl.value) types.push('DeliveryNote')
+  return types
+})
 
 const { exporting, exportExcel } = useExcelExport()
 
@@ -1660,16 +1670,16 @@ const paymentUnpaidDocs = computed(() => {
   if (!paymentDetail.value?.document_headers) return []
   return paymentDetail.value.document_headers
     .filter(
-      (d: any) => ['InvoiceSale', 'InvoicePurchase'].includes(d.document_type) && Number(d.footer?.amount_due ?? 0) > 0,
+      (d: any) => payableDocTypes.value.includes(d.document_type) && Number(d.footer?.amount_due ?? 0) > 0,
     )
     .sort((a: any, b: any) => new Date(a.issued_at).getTime() - new Date(b.issued_at).getTime())
 })
 
-// All payable documents (invoices, any amount_due) — used as fallback when no unpaid docs
+// All payable documents (any amount_due) — used as fallback when no unpaid docs
 const paymentPayableDocs = computed(() => {
   if (!paymentDetail.value?.document_headers) return []
   return paymentDetail.value.document_headers
-    .filter((d: any) => ['InvoiceSale', 'InvoicePurchase'].includes(d.document_type))
+    .filter((d: any) => payableDocTypes.value.includes(d.document_type))
     .sort((a: any, b: any) => new Date(b.issued_at).getTime() - new Date(a.issued_at).getTime())
 })
 
@@ -2005,5 +2015,6 @@ async function doDelete() {
 onMounted(() => {
   loadPage()
   if (!priceLists.value.length) priceListStore.fetchAll()
+  if (!settingStore.settings?.ventes) settingStore.fetchAll()
 })
 </script>
