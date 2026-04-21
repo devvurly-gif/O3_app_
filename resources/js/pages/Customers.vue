@@ -532,6 +532,22 @@
 
         <!-- TAB: Paiements -->
         <div v-show="activeTab === 'paiements'">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Historique des paiements
+            </h3>
+            <button
+              v-if="editTarget"
+              type="button"
+              class="flex items-center gap-2 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition"
+              @click="openBulkPayment(editTarget)"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              Enregistrer un paiement
+            </button>
+          </div>
           <div v-if="loadingDetail" class="flex items-center justify-center py-12">
             <svg class="w-6 h-6 animate-spin text-blue-500" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
@@ -944,6 +960,22 @@
 
         <!-- TAB: Paiements -->
         <div v-show="showActiveTab === 'paiements'">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Historique des paiements
+            </h3>
+            <button
+              v-if="showTarget"
+              type="button"
+              class="flex items-center gap-2 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition"
+              @click="openBulkPayment(showTarget)"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              Enregistrer un paiement
+            </button>
+          </div>
           <div v-if="showLoadingDetail" class="flex items-center justify-center py-12">
             <svg class="w-6 h-6 animate-spin text-blue-500" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
@@ -1590,6 +1622,13 @@ async function submitBulkPayment() {
     paymentForm.amount = 0
     // Refresh main list
     loadPage(store.meta.current_page)
+    // Refresh detail panels if their modals are open for the same customer
+    if (showModal.value && editTarget.value?.id === paymentTarget.value.id) {
+      customerDetail.value = refreshed
+    }
+    if (showShowModal.value && showTarget.value?.id === paymentTarget.value.id) {
+      showDetail.value = refreshed
+    }
   } catch (err: unknown) {
     const e = err as { response?: { data?: { message?: string } } }
     ;(toast.value as any)?.notify(e.response?.data?.message ?? 'Erreur lors du paiement', 'error')
