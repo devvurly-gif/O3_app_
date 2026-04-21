@@ -134,9 +134,10 @@ class GeneratePeriodicInvoices extends Command
                         $bl->update(['status' => 'delivered']);
                     }
 
-                    // Increment encours for credit payment
+                    // Recalculate encours authoritatively
+                    // (BLs are now invoiced → they stop counting, invoice takes over)
                     if ($totalTtc > 0) {
-                        $partner->increment('encours_actuel', $totalTtc);
+                        $partner->recalculateEncours();
                     }
 
                     $invoiceCount++;

@@ -155,10 +155,9 @@ class DocumentVenteController extends Controller
             $bl->update(['status' => 'confirmed']);
 
             if (Setting::get('ventes', 'paiement_sur_bl', 'false') === 'true' && $bl->thirdPartner_id) {
-                $bl->loadMissing('footer');
-                if ($bl->footer?->total_ttc > 0) {
-                    ThirdPartner::where('id', $bl->thirdPartner_id)
-                        ->increment('encours_actuel', $bl->footer->total_ttc);
+                $bl->loadMissing('footer', 'thirdPartner');
+                if ($bl->thirdPartner && $bl->footer?->total_ttc > 0) {
+                    $bl->thirdPartner->recalculateEncours();
                 }
             }
         });
@@ -264,8 +263,9 @@ class DocumentVenteController extends Controller
                 ]);
 
                 if ($paymentMethod === 'credit' && $bl->thirdPartner_id && $bl->footer->total_ttc > 0) {
-                    ThirdPartner::where('id', $bl->thirdPartner_id)
-                        ->increment('encours_actuel', $bl->footer->total_ttc);
+                    // Recalculate: BL is now invoiced (counts as invoice, BL no longer counts)
+                    $bl->loadMissing('thirdPartner');
+                    $bl->thirdPartner?->recalculateEncours();
                 }
             }
 
@@ -411,14 +411,11 @@ class DocumentVenteController extends Controller
             $retour->load('lignes');
             $this->stockService->processDocument($retour);
 
-            // Decrement encours
+            // Recalculate encours authoritatively
             $retour->loadMissing('footer');
             if ($document->thirdPartner_id && $retour->footer?->total_ttc > 0) {
-                ThirdPartner::where('id', $document->thirdPartner_id)
-                    ->decrement('encours_actuel', $retour->footer->total_ttc);
-                ThirdPartner::where('id', $document->thirdPartner_id)
-                    ->where('encours_actuel', '<', 0)
-                    ->update(['encours_actuel' => 0]);
+                $document->loadMissing('thirdPartner');
+                $document->thirdPartner?->recalculateEncours();
             }
 
             return $retour;

@@ -71,14 +71,11 @@ class Payment extends Model
             $payment->document->footer->recalculateAmountDue();
             $payment->document->footer->syncHeaderStatus();
 
-            // Decrement partner encours_actuel
+            // Recalculate partner encours_actuel from source data
+            // (formula respects `ventes.paiement_sur_bl` setting)
             $partner = $payment->document->thirdPartner;
             if ($partner) {
-                $partner->decrement('encours_actuel', (float) $payment->amount);
-                // Never go below zero
-                if ($partner->encours_actuel < 0) {
-                    $partner->update(['encours_actuel' => 0]);
-                }
+                $partner->recalculateEncours();
             }
 
             // Dispatch notifications asynchronously (non-blocking)
@@ -127,10 +124,10 @@ class Payment extends Model
             $payment->document->footer->recalculateAmountDue();
             $payment->document->footer->syncHeaderStatus();
 
-            // Re-increment partner encours_actuel
+            // Recalculate partner encours_actuel from source data
             $partner = $payment->document->thirdPartner;
             if ($partner) {
-                $partner->increment('encours_actuel', (float) $payment->amount);
+                $partner->recalculateEncours();
             }
         });
     }

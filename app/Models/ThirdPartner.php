@@ -110,4 +110,92 @@ class ThirdPartner extends Model
             ->where('status', 'confirmed')
             ->whereDoesntHave('children', fn ($q) => $q->where('document_type', 'InvoiceSale'));
     }
+
+    /**
+     * Recalculate encours_actuel authoritatively from source data.
+     *
+     * Formula (sales side, when `ventes.paiement_sur_bl` active):
+     *   encours = TOTAL_FACTURES + TOTAL_BL_UNINVOICED
+     *           - TOTAL_PAIEMENTS - TOTAL_BONS_DE_RETOUR
+     *
+     * When `paiement_sur_bl` is OFF, BLs don't contribute (only the invoice does).
+     *
+     * Purchase side mirrors the same logic (InvoicePurchase / BR / ReturnPurchase).
+     *
+     * Never goes below zero. Persists when $persist is true (default) and returns the value.
+     */
+    public function recalculateEncours(bool $persist = true): float
+    {
+        $paiementSurBl = Setting::get('ventes', 'paiement_sur_bl', 'false') === 'true';
+
+        // ── Customer side ────────────────────────────────────────────
+        // TicketSale (POS) is always counted: credit-method payments on POS
+        // are IOUs (filtered out below), so the ticket's credit portion naturally
+        // remains as encours.
+        $salesIncoming = ['InvoiceSale', 'TicketSale'];
+        if ($paiementSurBl) {
+            // Only BLs not yet converted to an InvoiceSale
+            $salesIncoming[] = 'DeliveryNote';
+        }
+
+        // Sum total_ttc of non-draft / non-cancelled incoming sales docs
+        $invoicesAndBlTotal = (float) DocumentHeader::query()
+            ->where('thirdPartner_id', $this->id)
+            ->whereIn('document_type', $salesIncoming)
+            ->whereNotIn('status', ['draft', 'cancelled'])
+            // For BLs: exclude those already converted to an invoice to avoid double count
+            ->where(function ($q) {
+                $q->where('document_type', '!=', 'DeliveryNote')
+                  ->orWhereDoesntHave('children', fn ($c) => $c->where('document_type', 'InvoiceSale'));
+            })
+            ->join('document_footers', 'document_footers.document_header_id', '=', 'document_headers.id')
+            ->sum('document_footers.total_ttc');
+
+        $returnSalesTotal = (float) DocumentHeader::query()
+            ->where('thirdPartner_id', $this->id)
+            ->where('document_type', 'ReturnSale')
+            ->whereNotIn('status', ['draft', 'cancelled'])
+            ->join('document_footers', 'document_footers.document_header_id', '=', 'document_headers.id')
+            ->sum('document_footers.total_ttc');
+
+        // ── Supplier side (mirrors sales) ────────────────────────────
+        $purchaseIncoming = ['InvoicePurchase'];
+        // (No separate "paiement sur BR" setting today; keep receipt note excluded.)
+
+        $purchasesTotal = (float) DocumentHeader::query()
+            ->where('thirdPartner_id', $this->id)
+            ->whereIn('document_type', $purchaseIncoming)
+            ->whereNotIn('status', ['draft', 'cancelled'])
+            ->join('document_footers', 'document_footers.document_header_id', '=', 'document_headers.id')
+            ->sum('document_footers.total_ttc');
+
+        $returnPurchasesTotal = (float) DocumentHeader::query()
+            ->where('thirdPartner_id', $this->id)
+            ->where('document_type', 'ReturnPurchase')
+            ->whereNotIn('status', ['draft', 'cancelled'])
+            ->join('document_footers', 'document_footers.document_header_id', '=', 'document_headers.id')
+            ->sum('document_footers.total_ttc');
+
+        // ── Payments (both sides) ────────────────────────────────────
+        // Exclude POS "credit" payments — those are IOUs (promise to pay later),
+        // not actual cash received, so they must not reduce encours.
+        $paymentsTotal = (float) Payment::query()
+            ->whereHas('document', fn ($q) => $q->where('thirdPartner_id', $this->id))
+            ->where('method', '!=', 'credit')
+            ->sum('amount');
+
+        $encours = ($invoicesAndBlTotal - $returnSalesTotal)
+                 + ($purchasesTotal   - $returnPurchasesTotal)
+                 -  $paymentsTotal;
+
+        $encours = max(0.0, round($encours, 2));
+
+        if ($persist) {
+            // Persist without triggering activity log / observers
+            $this->forceFill(['encours_actuel' => $encours])->saveQuietly();
+            $this->encours_actuel = $encours;
+        }
+
+        return $encours;
+    }
 }

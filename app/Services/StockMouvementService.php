@@ -104,12 +104,13 @@ class StockMouvementService
             }
         }
 
-        // Encours: only increment for direct invoices (not BL)
+        // Encours: recalculate authoritatively from source data
+        // (covers InvoiceSale here; BL / return / payment paths trigger their own recalc)
         if (!$pending && $direction === 'out' && $document->thirdPartner_id
             && $document->document_type === 'InvoiceSale') {
             $document->loadMissing('footer', 'thirdPartner');
             if ($document->footer && $document->thirdPartner) {
-                $document->thirdPartner->increment('encours_actuel', $document->footer->total_ttc);
+                $document->thirdPartner->recalculateEncours();
             }
         }
     }

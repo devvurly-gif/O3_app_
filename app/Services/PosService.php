@@ -238,9 +238,9 @@ class PosService
                 Payment::$skipNotification = $oldSkip;
             }
 
-            // Update customer encours if credit was used
+            // Update customer encours if credit was used (recalculate from source data)
             if ($creditAmount > 0 && $customerId) {
-                ThirdPartner::where('id', $customerId)->increment('encours_actuel', $creditAmount);
+                ThirdPartner::find($customerId)?->recalculateEncours();
             }
 
             // Set document status
@@ -320,12 +320,10 @@ class PosService
                 ]);
             }
 
-            // Reverse customer encours if credit was used
-            $creditPayments = $ticket->payments()->where('method', 'credit')->sum('amount');
-            if ($creditPayments > 0 && $ticket->thirdPartner_id) {
-                ThirdPartner::where('id', $ticket->thirdPartner_id)
-                    ->decrement('encours_actuel', $creditPayments);
-            }
+            // Reverse customer encours: ticket is about to be cancelled, recalc
+            // after the status change below. Track whether we need to recalc.
+            $needsEncoursRecalc = $ticket->thirdPartner_id
+                && $ticket->payments()->where('method', 'credit')->exists();
 
             // Cancel the document
             $ticket->update(['status' => 'cancelled']);
@@ -342,6 +340,10 @@ class PosService
                 if ($associatedBl->footer) {
                     $associatedBl->footer->update(['amount_paid' => 0, 'amount_due' => 0]);
                 }
+            }
+
+            if ($needsEncoursRecalc) {
+                ThirdPartner::find($ticket->thirdPartner_id)?->recalculateEncours();
             }
 
             return $ticket->fresh(['lignes', 'footer']);

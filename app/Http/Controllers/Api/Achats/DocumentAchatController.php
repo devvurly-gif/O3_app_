@@ -250,8 +250,8 @@ class DocumentAchatController extends Controller
                 ]);
 
                 if ($paymentMethod === 'credit' && $br->thirdPartner_id && $br->footer->total_ttc > 0) {
-                    ThirdPartner::where('id', $br->thirdPartner_id)
-                        ->increment('encours_actuel', $br->footer->total_ttc);
+                    $br->loadMissing('thirdPartner');
+                    $br->thirdPartner?->recalculateEncours();
                 }
             }
 
@@ -398,14 +398,11 @@ class DocumentAchatController extends Controller
             $retour->load('lignes');
             $this->stockService->processDocument($retour);
 
-            // Decrement encours
+            // Recalculate encours authoritatively
             $retour->loadMissing('footer');
             if ($document->thirdPartner_id && $retour->footer?->total_ttc > 0) {
-                ThirdPartner::where('id', $document->thirdPartner_id)
-                    ->decrement('encours_actuel', $retour->footer->total_ttc);
-                ThirdPartner::where('id', $document->thirdPartner_id)
-                    ->where('encours_actuel', '<', 0)
-                    ->update(['encours_actuel' => 0]);
+                $document->loadMissing('thirdPartner');
+                $document->thirdPartner?->recalculateEncours();
             }
 
             return $retour;
