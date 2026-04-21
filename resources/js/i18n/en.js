@@ -35,6 +35,10 @@ export default {
     di_domain: 'Domain',
     title: 'Title',
     nextNum: 'Next #',
+    close: 'Close',
+    failedLoad: 'Failed to load.',
+    uploading: 'Uploading…',
+    addressPlaceholder: 'e.g. 123 Main Street',
   },
 
   // ── Auth ─────────────────────────────────────────────────────────────
@@ -48,6 +52,8 @@ export default {
     signIn: 'Sign in',
     signingIn: 'Signing in…',
     invalidCredentials: 'Invalid credentials. Please try again.',
+    demoMode: 'Demo mode',
+    fillDemo: 'Fill demo credentials',
   },
 
   // ── Nav / Sidebar ─────────────────────────────────────────────────────
@@ -151,6 +157,20 @@ export default {
     eanPlaceholder: 'e.g. 0194850834456',
     unitPlaceholder: 'e.g. pièce, kg, litre',
     imagesAfterSave: 'Images can be added after saving the product.',
+    tabInfo: 'Info',
+    tabTarifs: 'Pricing',
+    tabStock: 'Stock',
+    tabStatistics: 'Statistics',
+    tabGallery: 'Gallery',
+    codePlaceholder: 'e.g. PRD-0001',
+    costPrice: 'Cost Price',
+    ecommerce: 'E-commerce',
+    longDescription: 'Long Description',
+    noStock: 'No stock movements yet.',
+    skuAuto: 'Auto-generated if left empty',
+    slug: 'Slug',
+    slugPlaceholder: 'e.g. hp-probook-450',
+    stockAfterSave: 'Stock can be managed after saving the product.',
   },
 
   // ── Categories ────────────────────────────────────────────────────────
@@ -193,6 +213,7 @@ export default {
     importing: 'Importing…',
     importCreated: 'created',
     importUpdated: 'updated',
+    namePlaceholder: 'e.g. HP',
   },
 
   // ── Price Lists ───────────────────────────────────────────────────────
@@ -262,6 +283,7 @@ export default {
     currentBalance: 'Current Balance',
     creditLimit: 'Credit Limit',
     creditAvailable: 'Available Credit',
+    balanceAutoCalculated: 'Balance is automatically calculated from invoices and payments.',
   },
 
   // ── Suppliers ─────────────────────────────────────────────────────────
@@ -292,6 +314,7 @@ export default {
     balanceAutoCalculated: 'Automatically calculated from invoices and payments',
     creditLimit: 'Credit Limit',
     creditLimitPlaceholder: '0.00',
+    creditAvailable: 'Available Credit',
   },
 
   // ── Warehouses ────────────────────────────────────────────────────────
@@ -308,6 +331,7 @@ export default {
     updated: 'Warehouse updated.',
     created: 'Warehouse created.',
     deleted: 'Warehouse deleted.',
+    namePlaceholder: 'e.g. Main Warehouse',
   },
 
   // ── Users ─────────────────────────────────────────────────────────────
@@ -334,6 +358,7 @@ export default {
       cashier: 'Cashier',
       warehouse: 'Warehouse',
     },
+    namePlaceholder: 'Full name',
   },
 
   // ── Document Incrementors ─────────────────────────────────────────────
@@ -397,6 +422,9 @@ export default {
     created: 'Incrementor created.',
     deleted: 'Incrementor deleted.',
     templateHint: '{000} = zero-padded counter with that many digits',
+    modelPlaceholder: 'e.g. Category',
+    templatePlaceholder: 'e.g. CAT-{000}',
+    titlePlaceholder: 'e.g. Category Code',
   },
 
   // ── App Settings ──────────────────────────────────────────────────────
@@ -459,6 +487,17 @@ export default {
     show: 'Show',
     hide: 'Hide',
     none: 'None',
+    companyLogo: 'Company Logo',
+    uploadLogo: 'Upload Logo',
+    logoHint: 'PNG, JPG or SVG. Max 2 MB.',
+    paymentTerms: 'Payment Terms',
+    footerNotePlaceholder: 'Thank you for your business.',
+    ice: 'ICE',
+    icePlaceholder: 'Common business identifier',
+    if: 'IF',
+    ifPlaceholder: 'Tax identification',
+    rc: 'RC',
+    rcPlaceholder: 'Commercial register number',
   },
 
   // ── Purchases ─────────────────────────────────────────────────────────
