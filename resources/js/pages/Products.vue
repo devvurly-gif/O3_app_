@@ -182,15 +182,15 @@
 
     <!-- Create / Edit Modal with Tabs -->
     <BaseModal v-model="showModal" :title="editTarget ? $t('products.editTitle') : $t('products.addTitle')" size="2xl">
-      <form class="space-y-5" @submit.prevent="submit">
+      <form class="space-y-3" @submit.prevent="submit">
         <!-- Tab Navigation (sticky) -->
-        <div class="sticky top-0 z-10 -mx-4 sm:-mx-6 -mt-4 px-4 sm:px-6 pt-1 pb-0 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700">
+        <div class="sticky top-0 z-10 -mx-4 sm:-mx-5 -mt-3 px-4 sm:px-5 pt-0.5 pb-0 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700">
           <div class="flex gap-1 overflow-x-auto scrollbar-thin">
             <button
               v-for="(tab, idx) in tabs"
               :key="idx"
               type="button"
-              class="relative whitespace-nowrap py-2.5 px-3 sm:px-4 text-sm font-medium transition-colors border-b-2 -mb-px"
+              class="relative whitespace-nowrap py-2 px-3 text-sm font-medium transition-colors border-b-2 -mb-px"
               :class="
                 currentTab === idx
                   ? 'border-blue-600 text-blue-600 dark:text-blue-400'
@@ -204,8 +204,8 @@
         </div>
 
         <!-- Tab: Info -->
-        <div v-if="currentTab === 0" class="space-y-4">
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div v-if="currentTab === 0" class="space-y-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <!-- Title (full row) -->
             <div class="sm:col-span-2 lg:col-span-3">
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
@@ -216,7 +216,7 @@
                 type="text"
                 required
                 :placeholder="$t('products.titlePlaceholder')"
-                class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 @input="generateSlugFromTitle"
               />
             </div>
@@ -228,7 +228,7 @@
                 v-model="form.p_code"
                 type="text"
                 :placeholder="$t('products.codePlaceholder')"
-                class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
 
@@ -239,7 +239,7 @@
                 v-model="form.p_sku"
                 type="text"
                 :placeholder="$t('products.skuPlaceholder')"
-                class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
               <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{ $t('products.skuAuto') ?? 'Auto-generated if empty' }}</p>
             </div>
@@ -251,7 +251,7 @@
                 v-model="form.p_ean13"
                 type="text"
                 :placeholder="$t('products.eanPlaceholder')"
-                class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
 
@@ -262,12 +262,12 @@
                 v-model="form.p_imei"
                 type="text"
                 placeholder="Device IMEI..."
-                class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
             <!-- Description -->
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.description') }}</label>
@@ -275,7 +275,7 @@
                 v-model="form.p_description"
                 rows="3"
                 placeholder="…"
-                class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
 
@@ -286,7 +286,7 @@
                 v-model="form.p_long_description"
                 rows="3"
                 placeholder="E-commerce description…"
-                class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           </div>
@@ -298,19 +298,19 @@
               v-model="form.p_notes"
               rows="2"
               placeholder="Internal notes…"
-              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
           <!-- Category / Brand / Slug -->
-          <div class="pt-4 border-t border-gray-200 dark:border-gray-700 space-y-4">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div class="pt-3 border-t border-gray-200 dark:border-gray-700 space-y-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <!-- Category -->
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.category') }}</label>
                 <select
                   v-model="form.category_id"
-                  class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option :value="null">—</option>
                   <option v-for="cat in categories" :key="cat.id" :value="cat.id">
@@ -324,7 +324,7 @@
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.brand') }}</label>
                 <select
                   v-model="form.brand_id"
-                  class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option :value="null">—</option>
                   <option v-for="br in brands" :key="br.id" :value="br.id">
@@ -340,13 +340,13 @@
                   v-model="form.p_slug"
                   type="text"
                   :placeholder="$t('products.slugPlaceholder') ?? 'Auto-generated from title'"
-                  class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
             </div>
 
             <!-- E-commerce Toggle -->
-            <div class="flex items-center gap-2 pt-2">
+            <div class="flex items-center gap-2 pt-1">
               <input
                 id="product-ecom"
                 v-model="form.is_ecom"
@@ -358,7 +358,7 @@
           </div>
 
           <!-- Status -->
-          <div class="flex items-center gap-2 pt-2">
+          <div class="flex items-center gap-2 pt-1">
             <input
               id="product-status"
               v-model="form.p_status"
@@ -370,12 +370,12 @@
         </div>
 
         <!-- Tab: Tarifs (Pricing) -->
-        <div v-if="currentTab === 1" class="space-y-6">
+        <div v-if="currentTab === 1" class="space-y-4">
           <!-- Master Prices Section -->
-          <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg space-y-4">
+          <div class="bg-gray-50 dark:bg-gray-800/60 p-3 rounded-lg space-y-3">
             <h4 class="font-semibold text-gray-900 dark:text-white text-sm">Master Prices</h4>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <!-- Purchase Price -->
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
@@ -388,7 +388,7 @@
                   step="0.01"
                   required
                   placeholder="0.00"
-                  class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
 
@@ -404,7 +404,7 @@
                   step="0.01"
                   required
                   placeholder="0.00"
-                  class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
 
@@ -417,7 +417,7 @@
                   min="0"
                   step="0.01"
                   placeholder="0.00"
-                  class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
 
@@ -431,7 +431,7 @@
                   max="100"
                   step="0.01"
                   placeholder="20"
-                  class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
 
@@ -442,13 +442,13 @@
                   v-model="form.p_unit"
                   type="text"
                   :placeholder="$t('products.unitPlaceholder')"
-                  class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
             </div>
 
             <!-- Margin Indicator -->
-            <div v-if="form.p_salePrice > 0 && form.p_purchasePrice > 0" class="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded text-sm">
+            <div v-if="form.p_salePrice > 0 && form.p_purchasePrice > 0" class="px-3 py-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded text-sm">
               <p class="text-blue-800 dark:text-blue-200">
                 <span class="font-semibold">Margin:</span>
                 {{ marginPercent }}%
@@ -460,14 +460,14 @@
           </div>
 
           <!-- Price List Tiers Section -->
-          <div class="space-y-3">
+          <div class="space-y-2">
             <div class="flex items-center justify-between">
               <h4 class="font-semibold text-gray-900 dark:text-white text-sm">Tarifs par grille</h4>
               <button
                 v-if="editTarget"
                 type="button"
                 :disabled="tierAdding"
-                class="text-xs px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-medium transition disabled:opacity-50"
+                class="text-xs px-2.5 py-1 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-medium transition disabled:opacity-50"
                 @click="tierAdding = !tierAdding"
               >
                 {{ tierAdding ? 'Annuler' : '+ Ajouter un tarif' }}
@@ -477,13 +477,13 @@
             <!-- Inline add-tier form -->
             <div
               v-if="editTarget && tierAdding"
-              class="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg grid grid-cols-1 sm:grid-cols-4 gap-2"
+              class="p-2.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg grid grid-cols-1 sm:grid-cols-4 gap-2"
             >
               <div class="sm:col-span-2">
                 <label class="block text-[11px] font-medium text-gray-600 dark:text-gray-400 mb-1">Grille</label>
                 <select
                   v-model.number="newTier.price_list_id"
-                  class="w-full px-2 py-1.5 rounded-md border border-gray-300 dark:border-gray-600 text-sm bg-white dark:bg-gray-800"
+                  class="w-full px-2 py-1 rounded-md border border-gray-300 dark:border-gray-600 text-sm bg-white dark:bg-gray-800"
                 >
                   <option :value="null" disabled>— Choisir —</option>
                   <option
@@ -502,7 +502,7 @@
                   v-model.number="newTier.min_qty"
                   type="number"
                   min="1"
-                  class="w-full px-2 py-1.5 rounded-md border border-gray-300 dark:border-gray-600 text-sm font-mono bg-white dark:bg-gray-800"
+                  class="w-full px-2 py-1 rounded-md border border-gray-300 dark:border-gray-600 text-sm font-mono bg-white dark:bg-gray-800"
                 />
               </div>
               <div>
@@ -512,10 +512,10 @@
                   type="number"
                   min="0"
                   step="0.01"
-                  class="w-full px-2 py-1.5 rounded-md border border-gray-300 dark:border-gray-600 text-sm font-mono bg-white dark:bg-gray-800"
+                  class="w-full px-2 py-1 rounded-md border border-gray-300 dark:border-gray-600 text-sm font-mono bg-white dark:bg-gray-800"
                 />
               </div>
-              <div class="sm:col-span-4 flex items-center justify-between pt-1">
+              <div class="sm:col-span-4 flex items-center justify-between pt-0.5">
                 <p class="text-xs text-gray-600 dark:text-gray-400">
                   Prix TTC estimé :
                   <span class="font-mono font-semibold">{{ newTierTtc }} MAD</span>
@@ -523,7 +523,7 @@
                 <button
                   type="button"
                   :disabled="!canAddTier || tierSaving"
-                  class="text-xs px-3 py-1.5 rounded-md bg-green-600 hover:bg-green-700 text-white font-semibold disabled:opacity-50"
+                  class="text-xs px-2.5 py-1 rounded-md bg-green-600 hover:bg-green-700 text-white font-semibold disabled:opacity-50"
                   @click="addTier"
                 >
                   {{ tierSaving ? 'Enregistrement…' : 'Enregistrer' }}
@@ -535,20 +535,20 @@
               <table class="w-full text-sm">
                 <thead class="bg-gray-50 dark:bg-gray-700">
                   <tr>
-                    <th class="px-3 py-2 text-left text-gray-600 dark:text-gray-300 font-medium">Grille</th>
-                    <th class="px-3 py-2 text-right text-gray-600 dark:text-gray-300 font-medium">Qté min</th>
-                    <th class="px-3 py-2 text-right text-gray-600 dark:text-gray-300 font-medium">Prix HT</th>
-                    <th class="px-3 py-2 text-right text-gray-600 dark:text-gray-300 font-medium">Prix TTC</th>
-                    <th class="px-3 py-2 w-10"></th>
+                    <th class="px-2.5 py-1.5 text-left text-gray-600 dark:text-gray-300 font-medium">Grille</th>
+                    <th class="px-2.5 py-1.5 text-right text-gray-600 dark:text-gray-300 font-medium">Qté min</th>
+                    <th class="px-2.5 py-1.5 text-right text-gray-600 dark:text-gray-300 font-medium">Prix HT</th>
+                    <th class="px-2.5 py-1.5 text-right text-gray-600 dark:text-gray-300 font-medium">Prix TTC</th>
+                    <th class="px-2.5 py-1.5 w-8"></th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                   <tr v-for="item in priceListItems" :key="item.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                    <td class="px-3 py-2 text-gray-800 dark:text-gray-200">{{ item.price_list?.name ?? item.priceList?.name ?? '—' }}</td>
-                    <td class="px-3 py-2 text-right font-mono">{{ item.min_qty }}</td>
-                    <td class="px-3 py-2 text-right font-mono">{{ Number(item.price_ht).toFixed(2) }} MAD</td>
-                    <td class="px-3 py-2 text-right font-mono">{{ Number(item.price_ttc).toFixed(2) }} MAD</td>
-                    <td class="px-3 py-2 text-right">
+                    <td class="px-2.5 py-1.5 text-gray-800 dark:text-gray-200">{{ item.price_list?.name ?? item.priceList?.name ?? '—' }}</td>
+                    <td class="px-2.5 py-1.5 text-right font-mono">{{ item.min_qty }}</td>
+                    <td class="px-2.5 py-1.5 text-right font-mono">{{ Number(item.price_ht).toFixed(2) }} MAD</td>
+                    <td class="px-2.5 py-1.5 text-right font-mono">{{ Number(item.price_ttc).toFixed(2) }} MAD</td>
+                    <td class="px-2.5 py-1.5 text-right">
                       <button
                         type="button"
                         class="text-red-600 hover:text-red-800 dark:text-red-400 text-xs"
@@ -570,37 +570,37 @@
         </div>
 
         <!-- Tab: Stock -->
-        <div v-if="currentTab === 2" class="space-y-4">
-          <div v-if="editTarget" class="space-y-4">
+        <div v-if="currentTab === 2" class="space-y-3">
+          <div v-if="editTarget" class="space-y-3">
             <!-- Summary Cards -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div class="bg-blue-50 dark:bg-blue-900/20 px-3 py-2.5 rounded-lg border border-blue-200 dark:border-blue-800">
                 <p class="text-xs text-blue-600 dark:text-blue-400 font-medium">Total Stock</p>
-                <p class="text-lg font-bold text-blue-900 dark:text-blue-200">{{ editTarget.total_stock ?? 0 }}</p>
+                <p class="text-lg font-bold text-blue-900 dark:text-blue-200 leading-tight">{{ editTarget.total_stock ?? 0 }}</p>
               </div>
-              <div class="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg border border-green-200 dark:border-green-800">
+              <div class="bg-green-50 dark:bg-green-900/20 px-3 py-2.5 rounded-lg border border-green-200 dark:border-green-800">
                 <p class="text-xs text-green-600 dark:text-green-400 font-medium">Stock Value</p>
-                <p class="text-lg font-bold text-green-900 dark:text-green-200">{{ (Number(editTarget.total_stock ?? 0) * Number(form.p_cost || 0)).toFixed(2) }} MAD</p>
+                <p class="text-lg font-bold text-green-900 dark:text-green-200 leading-tight">{{ (Number(editTarget.total_stock ?? 0) * Number(form.p_cost || 0)).toFixed(2) }} MAD</p>
               </div>
             </div>
 
             <!-- Warehouse Breakdown -->
-            <div class="space-y-2">
+            <div class="space-y-1.5">
               <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Warehouse Breakdown</h3>
               <div v-if="editTarget.warehouseStocks && editTarget.warehouseStocks.length" class="overflow-x-auto">
                 <table class="w-full text-sm">
                   <thead class="bg-gray-50 dark:bg-gray-700">
                     <tr>
-                      <th class="px-3 py-2 text-left text-gray-600 dark:text-gray-300 font-medium">Warehouse</th>
-                      <th class="px-3 py-2 text-right text-gray-600 dark:text-gray-300 font-medium">Stock</th>
-                      <th class="px-3 py-2 text-center text-gray-600 dark:text-gray-300 font-medium">Status</th>
+                      <th class="px-2.5 py-1.5 text-left text-gray-600 dark:text-gray-300 font-medium">Warehouse</th>
+                      <th class="px-2.5 py-1.5 text-right text-gray-600 dark:text-gray-300 font-medium">Stock</th>
+                      <th class="px-2.5 py-1.5 text-center text-gray-600 dark:text-gray-300 font-medium">Status</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                     <tr v-for="ws in editTarget.warehouseStocks" :key="ws.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                      <td class="px-3 py-2 text-gray-800 dark:text-gray-200">{{ ws.warehouse?.wh_name ?? '—' }}</td>
-                      <td class="px-3 py-2 text-right font-mono">{{ Number(ws.stockLevel).toFixed(2) }} {{ editTarget.p_unit ?? 'pcs' }}</td>
-                      <td class="px-3 py-2 text-center">
+                      <td class="px-2.5 py-1.5 text-gray-800 dark:text-gray-200">{{ ws.warehouse?.wh_name ?? '—' }}</td>
+                      <td class="px-2.5 py-1.5 text-right font-mono">{{ Number(ws.stockLevel).toFixed(2) }} {{ editTarget.p_unit ?? 'pcs' }}</td>
+                      <td class="px-2.5 py-1.5 text-center">
                         <span
                           class="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
                           :class="Number(ws.stockLevel) > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
@@ -618,10 +618,10 @@
             </div>
 
             <!-- Recent Movements -->
-            <div class="space-y-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div class="space-y-1.5 pt-3 border-t border-gray-200 dark:border-gray-700">
               <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Recent Movements</h3>
-              <div v-if="stockMouvements.length" class="space-y-2 max-h-40 overflow-y-auto">
-                <div v-for="mov in stockMouvements" :key="mov.id" class="p-2 bg-gray-50 dark:bg-gray-700/50 rounded text-xs">
+              <div v-if="stockMouvements.length" class="space-y-1.5 max-h-40 overflow-y-auto">
+                <div v-for="mov in stockMouvements" :key="mov.id" class="px-2 py-1.5 bg-gray-50 dark:bg-gray-700/50 rounded text-xs">
                   <p class="font-mono text-gray-800 dark:text-gray-200">
                     {{ mov.direction === 'in' ? '➕' : '➖' }}
                     {{ mov.quantity }} on {{ new Date(mov.created_at).toLocaleDateString() }}
@@ -637,50 +637,50 @@
         </div>
 
         <!-- Tab: Statistics -->
-        <div v-if="currentTab === 3" class="space-y-4">
-          <div v-if="editTarget" class="space-y-4">
+        <div v-if="currentTab === 3" class="space-y-3">
+          <div v-if="editTarget" class="space-y-3">
             <!-- Sales Metrics -->
-            <div class="space-y-2">
+            <div class="space-y-1.5">
               <h4 class="font-semibold text-gray-900 dark:text-white text-sm">Sales Metrics</h4>
-              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                <div class="bg-purple-50 dark:bg-purple-900/20 p-3 rounded border border-purple-200 dark:border-purple-800">
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                <div class="bg-purple-50 dark:bg-purple-900/20 px-3 py-2 rounded border border-purple-200 dark:border-purple-800">
                   <p class="text-xs text-purple-600 dark:text-purple-400 font-medium">Total Units Sold</p>
-                  <p class="text-lg font-bold text-purple-900 dark:text-purple-200">{{ statistics?.sales?.total_units ?? 0 }}</p>
+                  <p class="text-lg font-bold text-purple-900 dark:text-purple-200 leading-tight">{{ statistics?.sales?.total_units ?? 0 }}</p>
                 </div>
-                <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded border border-blue-200 dark:border-blue-800">
+                <div class="bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded border border-blue-200 dark:border-blue-800">
                   <p class="text-xs text-blue-600 dark:text-blue-400 font-medium">Total Revenue</p>
-                  <p class="text-lg font-bold text-blue-900 dark:text-blue-200">{{ (statistics?.sales?.total_revenue ?? 0).toFixed(2) }} MAD</p>
+                  <p class="text-lg font-bold text-blue-900 dark:text-blue-200 leading-tight">{{ (statistics?.sales?.total_revenue ?? 0).toFixed(2) }} MAD</p>
                 </div>
-                <div class="bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded border border-indigo-200 dark:border-indigo-800">
+                <div class="bg-indigo-50 dark:bg-indigo-900/20 px-3 py-2 rounded border border-indigo-200 dark:border-indigo-800">
                   <p class="text-xs text-indigo-600 dark:text-indigo-400 font-medium">Avg Sale Price</p>
-                  <p class="text-lg font-bold text-indigo-900 dark:text-indigo-200">{{ (statistics?.sales?.avg_price ?? 0).toFixed(2) }} MAD</p>
+                  <p class="text-lg font-bold text-indigo-900 dark:text-indigo-200 leading-tight">{{ (statistics?.sales?.avg_price ?? 0).toFixed(2) }} MAD</p>
                 </div>
-                <div class="bg-pink-50 dark:bg-pink-900/20 p-3 rounded border border-pink-200 dark:border-pink-800">
+                <div class="bg-pink-50 dark:bg-pink-900/20 px-3 py-2 rounded border border-pink-200 dark:border-pink-800">
                   <p class="text-xs text-pink-600 dark:text-pink-400 font-medium">Sale Transactions</p>
-                  <p class="text-lg font-bold text-pink-900 dark:text-pink-200">{{ statistics?.sales?.count ?? 0 }}</p>
+                  <p class="text-lg font-bold text-pink-900 dark:text-pink-200 leading-tight">{{ statistics?.sales?.count ?? 0 }}</p>
                 </div>
               </div>
             </div>
 
             <!-- Purchase Metrics -->
-            <div class="space-y-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div class="space-y-1.5 pt-3 border-t border-gray-200 dark:border-gray-700">
               <h4 class="font-semibold text-gray-900 dark:text-white text-sm">Purchase Metrics</h4>
-              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                <div class="bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded border border-emerald-200 dark:border-emerald-800">
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                <div class="bg-emerald-50 dark:bg-emerald-900/20 px-3 py-2 rounded border border-emerald-200 dark:border-emerald-800">
                   <p class="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Total Units Purchased</p>
-                  <p class="text-lg font-bold text-emerald-900 dark:text-emerald-200">{{ statistics?.purchases?.total_units ?? 0 }}</p>
+                  <p class="text-lg font-bold text-emerald-900 dark:text-emerald-200 leading-tight">{{ statistics?.purchases?.total_units ?? 0 }}</p>
                 </div>
-                <div class="bg-teal-50 dark:bg-teal-900/20 p-3 rounded border border-teal-200 dark:border-teal-800">
+                <div class="bg-teal-50 dark:bg-teal-900/20 px-3 py-2 rounded border border-teal-200 dark:border-teal-800">
                   <p class="text-xs text-teal-600 dark:text-teal-400 font-medium">Total Cost</p>
-                  <p class="text-lg font-bold text-teal-900 dark:text-teal-200">{{ (statistics?.purchases?.total_cost ?? 0).toFixed(2) }} MAD</p>
+                  <p class="text-lg font-bold text-teal-900 dark:text-teal-200 leading-tight">{{ (statistics?.purchases?.total_cost ?? 0).toFixed(2) }} MAD</p>
                 </div>
-                <div class="bg-cyan-50 dark:bg-cyan-900/20 p-3 rounded border border-cyan-200 dark:border-cyan-800">
+                <div class="bg-cyan-50 dark:bg-cyan-900/20 px-3 py-2 rounded border border-cyan-200 dark:border-cyan-800">
                   <p class="text-xs text-cyan-600 dark:text-cyan-400 font-medium">Avg Purchase Price</p>
-                  <p class="text-lg font-bold text-cyan-900 dark:text-cyan-200">{{ (statistics?.purchases?.avg_price ?? 0).toFixed(2) }} MAD</p>
+                  <p class="text-lg font-bold text-cyan-900 dark:text-cyan-200 leading-tight">{{ (statistics?.purchases?.avg_price ?? 0).toFixed(2) }} MAD</p>
                 </div>
-                <div class="bg-orange-50 dark:bg-orange-900/20 p-3 rounded border border-orange-200 dark:border-orange-800">
+                <div class="bg-orange-50 dark:bg-orange-900/20 px-3 py-2 rounded border border-orange-200 dark:border-orange-800">
                   <p class="text-xs text-orange-600 dark:text-orange-400 font-medium">Purchase Transactions</p>
-                  <p class="text-lg font-bold text-orange-900 dark:text-orange-200">{{ statistics?.purchases?.count ?? 0 }}</p>
+                  <p class="text-lg font-bold text-orange-900 dark:text-orange-200 leading-tight">{{ statistics?.purchases?.count ?? 0 }}</p>
                 </div>
               </div>
             </div>
@@ -691,10 +691,10 @@
         </div>
 
         <!-- Tab: Gallery -->
-        <div v-if="currentTab === 4" class="space-y-4">
+        <div v-if="currentTab === 4" class="space-y-3">
           <div v-if="editTarget">
             <!-- Unified grid: images + upload tile -->
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
               <div
                 v-for="img in editImages"
                 :key="img.id"
@@ -777,13 +777,13 @@
 
       <template #footer>
         <button
-          class="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition"
+          class="px-3.5 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-md transition"
           @click="showModal = false"
         >
           {{ $t('common.cancel') }}
         </button>
         <button
-          class="px-4 py-2 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition disabled:opacity-60"
+          class="px-3.5 py-1.5 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-md transition disabled:opacity-60"
           :disabled="saving"
           @click="submit"
         >
