@@ -17,7 +17,7 @@ class PosCustomerController extends Controller
         $search = $request->input('search', '');
 
         $query = ThirdPartner::whereIn('tp_Role', ['customer', 'both'])
-            ->select(['id', 'tp_title', 'tp_phone', 'tp_email', 'type_compte', 'encours_actuel', 'seuil_credit']);
+            ->select(['id', 'tp_title', 'tp_phone', 'tp_email', 'type_compte', 'encours_actuel', 'seuil_credit', 'price_list_id']);
 
         if ($search) {
             $query->where(function ($q) use ($search) {
@@ -58,7 +58,7 @@ class PosCustomerController extends Controller
         ]);
 
         return response()->json($customer->only([
-            'id', 'tp_title', 'tp_phone', 'tp_email', 'type_compte', 'encours_actuel', 'seuil_credit',
+            'id', 'tp_title', 'tp_phone', 'tp_email', 'type_compte', 'encours_actuel', 'seuil_credit', 'price_list_id',
         ]), 201);
     }
 }

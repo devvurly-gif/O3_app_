@@ -51,7 +51,7 @@
             v-for="product in posStore.products"
             :key="product.id"
             class="flex flex-col bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-3 hover:border-blue-400 hover:shadow-md transition-all text-left group"
-            @click="posStore.addToCart(product)"
+            @click="addToCart(product)"
           >
             <div class="w-full aspect-square rounded-lg bg-gray-200 mb-2 overflow-hidden flex items-center justify-center">
               <img
@@ -121,7 +121,7 @@
               <span v-if="Number(selectedCustomer.seuil_credit) > 0"> / Plafond: {{ formatPrice(selectedCustomer.seuil_credit) }}</span>
             </p>
           </div>
-          <button class="p-1 text-gray-400 hover:text-red-500 transition" @click="selectedCustomer = null">
+          <button class="p-1 text-gray-400 hover:text-red-500 transition" @click="clearCustomer">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -384,6 +384,7 @@ interface PosCustomer {
   type_compte: 'normal' | 'en_compte'
   encours_actuel: number
   seuil_credit: number
+  price_list_id: number | null
 }
 
 const router = useRouter()
@@ -457,6 +458,14 @@ function selectCustomer(customer: PosCustomer) {
   customerSearch.value = ''
   customerResults.value = []
   showCustomerDropdown.value = false
+  // Re-price existing cart lines using the new customer's price list.
+  posStore.refreshPricesForCustomer(customer.id)
+}
+
+function clearCustomer() {
+  selectedCustomer.value = null
+  // Reset prices to the base (no customer → default/fallback).
+  posStore.refreshPricesForCustomer(null)
 }
 
 async function createCustomer() {
@@ -513,12 +522,25 @@ async function confirmPayment(payments: { amount: number; method: string }[]) {
 }
 
 // Barcode scanner
+/**
+ * Wrapper around posStore.addToCart that re-prices the line using the
+ * currently selected customer's price list (if any). Without this,
+ * lines added after a customer is picked would keep the product base
+ * price.
+ */
+function addToCart(product: Parameters<typeof posStore.addToCart>[0]) {
+  posStore.addToCart(product)
+  if (selectedCustomer.value) {
+    posStore.refreshPricesForCustomer(selectedCustomer.value.id)
+  }
+}
+
 useBarcodeScanner(async (code: string) => {
   posStore.searchQuery = code
   await posStore.fetchProducts()
   // Auto-add if exactly one match
   if (posStore.products.length === 1) {
-    posStore.addToCart(posStore.products[0])
+    addToCart(posStore.products[0])
     posStore.searchQuery = ''
   }
 })

@@ -282,6 +282,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Products (optimized search)
         Route::get('products',                 [PosProductController::class, 'index']);
+        Route::post('products/reprice',        [PosProductController::class, 'reprice']);
     });
 
     // ── Admin-only (users, settings, structures, incrementors, roles, modules) ──

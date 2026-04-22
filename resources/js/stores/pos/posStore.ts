@@ -168,6 +168,37 @@ export const usePosStore = defineStore('pos', () => {
     cart.value = []
   }
 
+  /**
+   * Re-price every line in the cart using the PriceResolver for the given
+   * customer (null = walk-in / no assigned price list). Quantities are
+   * preserved so tier-based pricing continues to match. Silently no-ops
+   * when the cart is empty.
+   */
+  async function refreshPricesForCustomer(customerId: number | null): Promise<void> {
+    if (!cart.value.length) return
+    try {
+      const { data } = await http.post<{
+        items: Array<{
+          product_id: number
+          unit_price: number
+          tax_percent: number
+        }>
+      }>('/pos/products/reprice', {
+        customer_id: customerId,
+        items: cart.value.map((i) => ({ product_id: i.product_id, quantity: i.quantity })),
+      })
+      const byId = new Map(data.items.map((r) => [r.product_id, r]))
+      for (const line of cart.value) {
+        const priced = byId.get(line.product_id)
+        if (!priced) continue
+        line.unit_price = priced.unit_price
+        line.tax_percent = priced.tax_percent
+      }
+    } catch {
+      // Leave cart untouched on failure — the UI will surface the error elsewhere.
+    }
+  }
+
   async function checkout(
     payments: { amount: number; method: string; reference?: string }[],
     customerId?: number | null,
@@ -222,6 +253,7 @@ export const usePosStore = defineStore('pos', () => {
     updateCartItemQty,
     removeFromCart,
     clearCart,
+    refreshPricesForCustomer,
     checkout,
     fetchTickets,
     voidTicket,
