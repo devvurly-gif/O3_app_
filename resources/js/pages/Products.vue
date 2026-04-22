@@ -204,7 +204,7 @@
         </div>
 
         <!-- Tab: Info -->
-        <div v-if="currentTab === 0" class="space-y-3">
+        <div v-if="currentTab === 0" ref="infoTabRef" class="space-y-3">
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <!-- Title (full row) -->
             <div class="sm:col-span-2 lg:col-span-3">
@@ -370,7 +370,7 @@
         </div>
 
         <!-- Tab: Tarifs (Pricing) -->
-        <div v-if="currentTab === 1" class="space-y-4">
+        <div v-if="currentTab === 1" class="space-y-4" :style="{ minHeight: tabMinHeight }">
           <!-- Master Prices Section -->
           <div class="bg-gray-50 dark:bg-gray-800/60 p-3 rounded-lg space-y-3">
             <h4 class="font-semibold text-gray-900 dark:text-white text-sm">Master Prices</h4>
@@ -570,7 +570,7 @@
         </div>
 
         <!-- Tab: Stock -->
-        <div v-if="currentTab === 2" class="space-y-3">
+        <div v-if="currentTab === 2" class="space-y-3" :style="{ minHeight: tabMinHeight }">
           <div v-if="editTarget" class="space-y-3">
             <!-- Summary Cards -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -637,7 +637,7 @@
         </div>
 
         <!-- Tab: Statistics -->
-        <div v-if="currentTab === 3" class="space-y-3">
+        <div v-if="currentTab === 3" class="space-y-3" :style="{ minHeight: tabMinHeight }">
           <div v-if="editTarget" class="space-y-3">
             <!-- Sales Metrics -->
             <div class="space-y-1.5">
@@ -691,7 +691,7 @@
         </div>
 
         <!-- Tab: Gallery -->
-        <div v-if="currentTab === 4" class="space-y-3">
+        <div v-if="currentTab === 4" class="space-y-3" :style="{ minHeight: tabMinHeight }">
           <div v-if="editTarget">
             <!-- Unified grid: images + upload tile -->
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
@@ -821,7 +821,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch, onMounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useProductStore } from '@/stores/product'
@@ -859,9 +859,34 @@ const statusFilter = ref('')
 const toast = ref(null)
 const currentTab = ref(0)
 
+// Template ref on the Info tab — its height is used as the min-height
+// for every other tab so the modal doesn't resize when switching tabs.
+const infoTabRef = ref<HTMLElement | null>(null)
+const tabMinHeight = ref<string>('')
+
+async function measureInfoTab() {
+  await nextTick()
+  if (infoTabRef.value) {
+    tabMinHeight.value = infoTabRef.value.offsetHeight + 'px'
+  }
+}
+
 let searchTimer = null
 
 const showModal = ref(false)
+
+watch(currentTab, (val) => {
+  if (val === 0) measureInfoTab()
+})
+
+watch(showModal, (val) => {
+  if (val) {
+    // Reset min-height so the first render on Info can measure fresh.
+    tabMinHeight.value = ''
+    measureInfoTab()
+  }
+})
+
 const showDelete = ref(false)
 const saving = ref(false)
 const deleting = ref(false)
