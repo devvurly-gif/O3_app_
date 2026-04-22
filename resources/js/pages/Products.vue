@@ -1088,21 +1088,25 @@ async function openEdit(row) {
     brand_id: row.brand_id ?? null,
   })
 
-  // Load additional data for tabs
+  // Load additional data for tabs — use the authenticated http client
+  // (bearer token is attached via interceptor). Native fetch() would
+  // return 401 silently and leave the arrays empty.
   try {
-    const [statsRes, stockRes, pricesRes] = await Promise.all([
-      fetch(`/api/products/${row.id}/statistics`),
-      fetch(`/api/products/${row.id}/stock-history?per_page=5`),
-      fetch(`/api/products/${row.id}/price-lists`),
+    const [statsRes, stockRes, pricesRes] = await Promise.allSettled([
+      http.get(`/products/${row.id}/statistics`),
+      http.get(`/products/${row.id}/stock-history`, { params: { per_page: 5 } }),
+      http.get(`/products/${row.id}/price-lists`),
     ])
 
-    if (statsRes.ok) statistics.value = await statsRes.json()
-    if (stockRes.ok) {
-      const data = await stockRes.json()
+    if (statsRes.status === 'fulfilled') {
+      statistics.value = statsRes.value.data
+    }
+    if (stockRes.status === 'fulfilled') {
+      const data = stockRes.value.data
       stockMouvements.value = Array.isArray(data) ? data : data.data ?? []
     }
-    if (pricesRes.ok) {
-      const data = await pricesRes.json()
+    if (pricesRes.status === 'fulfilled') {
+      const data = pricesRes.value.data
       priceListItems.value = Array.isArray(data) ? data : data.data ?? []
     }
   } catch (e) {
