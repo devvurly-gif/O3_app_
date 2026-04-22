@@ -182,15 +182,15 @@
 
     <!-- Create / Edit Modal with Tabs -->
     <BaseModal v-model="showModal" :title="editTarget ? $t('products.editTitle') : $t('products.addTitle')" size="2xl">
-      <form class="space-y-3" @submit.prevent="submit">
-        <!-- Tab Navigation (sticky) -->
-        <div class="sticky top-0 z-10 -mx-4 sm:-mx-5 -mt-3 px-4 sm:px-5 pt-0.5 pb-0 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700">
-          <div class="flex gap-1 overflow-x-auto scrollbar-thin">
+      <form class="space-y-0" @submit.prevent="submit">
+        <!-- Tab Navigation (sticky, flush to modal top) -->
+        <div class="sticky top-0 z-10 -mx-4 sm:-mx-5 -mt-3 mb-3 px-4 sm:px-5 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700">
+          <div class="flex gap-0.5 overflow-x-auto scrollbar-thin">
             <button
               v-for="(tab, idx) in tabs"
               :key="idx"
               type="button"
-              class="relative whitespace-nowrap py-2 px-3 text-sm font-medium transition-colors border-b-2 -mb-px"
+              class="relative whitespace-nowrap py-1.5 px-2.5 sm:px-3 text-sm font-medium transition-colors border-b-2 -mb-px"
               :class="
                 currentTab === idx
                   ? 'border-blue-600 text-blue-600 dark:text-blue-400'
