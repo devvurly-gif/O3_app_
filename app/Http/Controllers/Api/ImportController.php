@@ -154,9 +154,79 @@ class ImportController extends Controller
         }
 
         $headings = self::HEADINGS_MAP[$entity];
-        $export = new \App\Exports\ImportTemplateExport($headings);
+        $samples  = self::sampleRowsFor($entity);
+
+        $export = new \App\Exports\ImportTemplateExport($headings, $samples);
 
         return Excel::download($export, "modele_{$entity}.xlsx");
+    }
+
+    /**
+     * Representative sample rows shown in the downloaded template so users
+     * can see the expected format at a glance. Keys must match HEADINGS_MAP.
+     */
+    private static function sampleRowsFor(string $entity): array
+    {
+        return match ($entity) {
+            'products' => [
+                [
+                    'titre'          => 'Samsung Galaxy A15 128Go',
+                    'sku'            => 'SAM-A15-128',
+                    'ean13'          => '8806095000000',
+                    'imei'           => '',
+                    'categorie'      => 'Téléphones',
+                    'marque'         => 'Samsung',
+                    'description'    => 'Smartphone Samsung 6.5"',
+                    'notes'          => 'Stock initial en DP',
+                    'prix_achat'     => '1800,00',
+                    'prix_comptoir'  => '2400,00',
+                    'prix_revendeur' => '2200,00',
+                    'prix_grossiste' => '2050,00',
+                    'prix_vente'     => '',
+                    'quantite_dp'    => '10',
+                    'cout'           => '1800,00',
+                    'tva'            => '20',
+                    'unite'          => 'pcs',
+                ],
+                [
+                    'titre'          => 'Chargeur USB-C 20W',
+                    'sku'            => 'ACC-CH-20W',
+                    'ean13'          => '',
+                    'imei'           => '',
+                    'categorie'      => 'Accessoires',
+                    'marque'         => 'Generic',
+                    'description'    => '',
+                    'notes'          => '',
+                    'prix_achat'     => '35,00',
+                    'prix_comptoir'  => '79,00',
+                    'prix_revendeur' => '65,00',
+                    'prix_grossiste' => '55,00',
+                    'prix_vente'     => '',
+                    'quantite_dp'    => '50',
+                    'cout'           => '35,00',
+                    'tva'            => '20',
+                    'unite'          => 'pcs',
+                ],
+            ],
+            'customers', 'suppliers' => [
+                [
+                    'nom'          => 'Client Exemple SARL',
+                    'role'         => $entity === 'suppliers' ? 'supplier' : 'customer',
+                    'ice'          => '001234567890123',
+                    'rc'           => '12345',
+                    'patente'      => '12345678',
+                    'if'           => '12345678',
+                    'telephone'    => '+212 600 000 000',
+                    'email'        => 'contact@exemple.ma',
+                    'adresse'      => '123 Avenue Mohammed V',
+                    'ville'        => 'Casablanca',
+                    'seuil_credit' => '10000',
+                ],
+            ],
+            'categories' => [['nom' => 'Téléphones'], ['nom' => 'Accessoires']],
+            'brands'     => [['nom' => 'Samsung'], ['nom' => 'Apple']],
+            default      => [],
+        };
     }
 
     // ── Legacy endpoints (kept for backward compatibility) ───────────────
