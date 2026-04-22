@@ -204,7 +204,7 @@
         </div>
 
         <!-- Tab: Info -->
-        <div v-if="currentTab === 0" ref="infoTabRef" class="space-y-3">
+        <div v-if="currentTab === 0" ref="infoTabRef" class="space-y-3 py-2">
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <!-- Title (full row) -->
             <div class="sm:col-span-2 lg:col-span-3">
@@ -370,7 +370,7 @@
         </div>
 
         <!-- Tab: Tarifs (Pricing) -->
-        <div v-if="currentTab === 1" class="space-y-4" :style="{ minHeight: tabMinHeight }">
+        <div v-if="currentTab === 1" class="space-y-4 py-2" :style="{ minHeight: tabMinHeight }">
           <!-- Master Prices Section -->
           <div class="bg-gray-50 dark:bg-gray-800/60 p-3 rounded-lg space-y-3">
             <h4 class="font-semibold text-gray-900 dark:text-white text-sm">Master Prices</h4>
@@ -570,7 +570,7 @@
         </div>
 
         <!-- Tab: Stock -->
-        <div v-if="currentTab === 2" class="space-y-3" :style="{ minHeight: tabMinHeight }">
+        <div v-if="currentTab === 2" class="space-y-3 py-2" :style="{ minHeight: tabMinHeight }">
           <div v-if="editTarget" class="space-y-3">
             <!-- Summary Cards -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -637,7 +637,7 @@
         </div>
 
         <!-- Tab: Statistics -->
-        <div v-if="currentTab === 3" class="space-y-3" :style="{ minHeight: tabMinHeight }">
+        <div v-if="currentTab === 3" class="space-y-3 py-2" :style="{ minHeight: tabMinHeight }">
           <div v-if="editTarget" class="space-y-3">
             <!-- Sales Metrics -->
             <div class="space-y-1.5">
@@ -691,7 +691,7 @@
         </div>
 
         <!-- Tab: Gallery -->
-        <div v-if="currentTab === 4" class="space-y-3" :style="{ minHeight: tabMinHeight }">
+        <div v-if="currentTab === 4" class="space-y-3 py-2" :style="{ minHeight: tabMinHeight }">
           <div v-if="editTarget">
             <!-- Unified grid: images + upload tile -->
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
