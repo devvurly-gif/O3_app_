@@ -24,7 +24,16 @@ class ImportController extends Controller
     ];
 
     private const HEADINGS_MAP = [
-        'products'   => ['titre', 'sku', 'ean13', 'prix_achat', 'prix_vente', 'cout', 'tva', 'unite', 'categorie', 'marque'],
+        'products'   => [
+            'titre', 'sku', 'ean13', 'imei',
+            'categorie', 'marque',
+            'description', 'notes',
+            'prix_achat',
+            'prix_comptoir', 'prix_revendeur', 'prix_grossiste',
+            'prix_vente',
+            'quantite_dp',
+            'cout', 'tva', 'unite',
+        ],
         'customers'  => ['nom', 'role', 'ice', 'rc', 'patente', 'if', 'telephone', 'email', 'adresse', 'ville', 'seuil_credit'],
         'suppliers'  => ['nom', 'role', 'ice', 'rc', 'patente', 'if', 'telephone', 'email', 'adresse', 'ville', 'seuil_credit'],
         'categories' => ['nom'],
