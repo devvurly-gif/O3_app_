@@ -126,33 +126,25 @@ class ThirdPartner extends Model
      */
     public function recalculateEncours(bool $persist = true): float
     {
-        $paiementSurBl = Setting::get('ventes', 'paiement_sur_bl', 'false') === 'true';
-
         // ── Customer side ────────────────────────────────────────────
         // Which document types contribute to encours:
-        //   - InvoiceSale and TicketSale (POS cash/credit ticket): always
-        //   - DeliveryNote (BL):
-        //       * POS-originated BLs (pos_session_id set) always count —
-        //         a credit sale at the till is a confirmed, immutable
-        //         debt; waiting for an end-of-month invoice conversion
-        //         would leave the plafond untouched.
-        //       * Non-POS BLs count only when the global
-        //         `ventes.paiement_sur_bl` setting is on, matching the
-        //         previous behaviour.
-        //   BLs already converted to an InvoiceSale are excluded in both
-        //   cases to avoid double counting.
+        //   - InvoiceSale and TicketSale: always.
+        //   - DeliveryNote (BL): every confirmed BL that has not yet been
+        //     converted to an InvoiceSale. A confirmed BL represents a real
+        //     delivery → a real debt, regardless of whether it originated at
+        //     the POS or via the sales form. The previous `paiement_sur_bl`
+        //     setting has been retired to keep the "Reste dû" column of the
+        //     Documents tab and the Crédit tab perfectly aligned.
+        //     The whereDoesntHave(InvoiceSale) guard still prevents double
+        //     counting once a BL is billed.
         $invoicesAndBlTotal = (float) DocumentHeader::query()
             ->where('thirdPartner_id', $this->id)
             ->whereNotIn('status', ['draft', 'cancelled'])
-            ->where(function ($q) use ($paiementSurBl) {
+            ->where(function ($q) {
                 $q->whereIn('document_type', ['InvoiceSale', 'TicketSale'])
-                  ->orWhere(function ($sub) use ($paiementSurBl) {
+                  ->orWhere(function ($sub) {
                       $sub->where('document_type', 'DeliveryNote')
                           ->whereDoesntHave('children', fn ($c) => $c->where('document_type', 'InvoiceSale'));
-                      if (!$paiementSurBl) {
-                          // Setting off → only POS-originated BLs contribute.
-                          $sub->whereNotNull('pos_session_id');
-                      }
                   });
             })
             ->join('document_footers', 'document_footers.document_header_id', '=', 'document_headers.id')
