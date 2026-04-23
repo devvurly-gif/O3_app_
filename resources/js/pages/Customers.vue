@@ -512,7 +512,13 @@
               <tfoot>
                 <tr class="border-t-2 border-gray-200 dark:border-gray-700 font-semibold bg-gray-50 dark:bg-gray-900">
                   <td colspan="3" class="py-2.5 px-3 text-sm text-gray-600 dark:text-gray-400">
-                    {{ customerDocuments.length }} document(s)
+                    {{ countableDocuments.length }} document(s) comptabilisé(s)
+                    <span
+                      v-if="customerDocuments.length !== countableDocuments.length"
+                      class="text-xs font-normal text-gray-400 dark:text-gray-500 ml-1"
+                    >
+                      (sur {{ customerDocuments.length }} — devis et annulés exclus)
+                    </span>
                   </td>
                   <td class="py-2.5 px-3 text-right font-mono">
                     {{ formatNumber(totalInvoicesTTC) }} <span class="text-gray-400 dark:text-gray-500 text-xs">DH</span>
@@ -941,7 +947,15 @@
               </tbody>
               <tfoot>
                 <tr class="border-t-2 border-gray-200 dark:border-gray-700 font-semibold bg-gray-50 dark:bg-gray-900">
-                  <td colspan="3" class="py-2.5 px-3 text-sm text-gray-600 dark:text-gray-400">{{ showDocuments.length }} document(s)</td>
+                  <td colspan="3" class="py-2.5 px-3 text-sm text-gray-600 dark:text-gray-400">
+                    {{ countableShowDocuments.length }} document(s) comptabilisé(s)
+                    <span
+                      v-if="showDocuments.length !== countableShowDocuments.length"
+                      class="text-xs font-normal text-gray-400 dark:text-gray-500 ml-1"
+                    >
+                      (sur {{ showDocuments.length }} — devis et annulés exclus)
+                    </span>
+                  </td>
                   <td class="py-2.5 px-3 text-right font-mono">
                     {{ formatNumber(showTotalTTC) }} <span class="text-gray-400 dark:text-gray-500 text-xs">DH</span>
                   </td>
@@ -1546,12 +1560,25 @@ const customerPayments = computed(() => {
   return payments.sort((a, b) => new Date(b.paid_at).getTime() - new Date(a.paid_at).getTime())
 })
 
+// Documents that should weigh in on the cumulative totals shown in the modal
+// footer. Quotes (Devis = QuoteSale) are not financial commitments yet, and
+// cancelled/draft documents never actually posted to the books — so all three
+// are excluded from the sum. They remain visible in the table for history.
+const countableDocuments = computed(() =>
+  customerDocuments.value.filter(
+    (inv: any) =>
+      inv.document_type !== 'QuoteSale' &&
+      inv.status !== 'cancelled' &&
+      inv.status !== 'draft',
+  ),
+)
+
 const totalInvoicesTTC = computed(() =>
-  customerDocuments.value.reduce((sum: number, inv: any) => sum + Number(inv.footer?.total_ttc ?? 0), 0),
+  countableDocuments.value.reduce((sum: number, inv: any) => sum + Number(inv.footer?.total_ttc ?? 0), 0),
 )
 
 const totalInvoicesDue = computed(() =>
-  customerDocuments.value.reduce((sum: number, inv: any) => sum + Number(inv.footer?.amount_due ?? 0), 0),
+  countableDocuments.value.reduce((sum: number, inv: any) => sum + Number(inv.footer?.amount_due ?? 0), 0),
 )
 
 const totalPayments = computed(() =>
@@ -1627,11 +1654,20 @@ const showPayments = computed(() => {
   return payments.sort((a, b) => new Date(b.paid_at).getTime() - new Date(a.paid_at).getTime())
 })
 
+// Same exclusion logic as the edit modal: ignore quotes, cancelled and drafts.
+const countableShowDocuments = computed(() =>
+  showDocuments.value.filter(
+    (inv: any) =>
+      inv.document_type !== 'QuoteSale' &&
+      inv.status !== 'cancelled' &&
+      inv.status !== 'draft',
+  ),
+)
 const showTotalTTC = computed(() =>
-  showDocuments.value.reduce((sum: number, inv: any) => sum + Number(inv.footer?.total_ttc ?? 0), 0),
+  countableShowDocuments.value.reduce((sum: number, inv: any) => sum + Number(inv.footer?.total_ttc ?? 0), 0),
 )
 const showTotalDue = computed(() =>
-  showDocuments.value.reduce((sum: number, inv: any) => sum + Number(inv.footer?.amount_due ?? 0), 0),
+  countableShowDocuments.value.reduce((sum: number, inv: any) => sum + Number(inv.footer?.amount_due ?? 0), 0),
 )
 const showTotalPayments = computed(() =>
   showPayments.value.reduce((sum: number, p: any) => sum + Number(p.amount ?? 0), 0),
