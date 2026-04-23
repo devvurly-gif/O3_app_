@@ -1,6 +1,25 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import http from '@/services/http'
+
+export interface DraftCustomer {
+  id: number
+  tp_title: string
+  tp_phone: string | null
+  tp_email: string | null
+  type_compte: 'normal' | 'en_compte'
+  encours_actuel: number
+  seuil_credit: number
+  price_list_id: number | null
+}
+
+export interface DraftTicket {
+  id: string
+  label: string
+  customer: DraftCustomer | null
+  cart: CartItem[]
+  created_at: string
+}
 
 export interface CartItem {
   product_id: number
@@ -65,6 +84,57 @@ export const usePosStore = defineStore('pos', () => {
   const selectedCategoryId = ref<number | null>(null)
   const loadingProducts = ref(false)
 
+  // ── Held / parked tickets (per-session, persisted in localStorage) ──────
+  const draftTickets = ref<DraftTicket[]>([])
+  const activeCustomer = ref<DraftCustomer | null>(null)
+  const draftCounter = ref(1)
+
+  function draftsStorageKey(): string | null {
+    const sid = currentSession.value?.id
+    return sid ? `pos.drafts.session.${sid}` : null
+  }
+
+  function persistDrafts(): void {
+    const key = draftsStorageKey()
+    if (!key) return
+    try {
+      const payload = {
+        drafts: draftTickets.value,
+        counter: draftCounter.value,
+      }
+      localStorage.setItem(key, JSON.stringify(payload))
+    } catch {
+      /* quota errors are non-fatal */
+    }
+  }
+
+  function loadDraftsFromStorage(): void {
+    const key = draftsStorageKey()
+    if (!key) {
+      draftTickets.value = []
+      draftCounter.value = 1
+      return
+    }
+    try {
+      const raw = localStorage.getItem(key)
+      if (!raw) {
+        draftTickets.value = []
+        draftCounter.value = 1
+        return
+      }
+      const parsed = JSON.parse(raw) as { drafts?: DraftTicket[]; counter?: number }
+      draftTickets.value = Array.isArray(parsed.drafts) ? parsed.drafts : []
+      draftCounter.value = typeof parsed.counter === 'number' ? parsed.counter : draftTickets.value.length + 1
+    } catch {
+      draftTickets.value = []
+      draftCounter.value = 1
+    }
+  }
+
+  // Keep storage in sync whenever drafts mutate.
+  watch(draftTickets, () => persistDrafts(), { deep: true })
+  watch(draftCounter, () => persistDrafts())
+
   // ── Getters ────────────────────────────────────────────────────
   const cartSubtotal = computed(() =>
     cart.value.reduce((sum, item) => {
@@ -93,9 +163,12 @@ export const usePosStore = defineStore('pos', () => {
       const session = resp.data && resp.data.id ? resp.data : null
       currentSession.value = session
       currentTerminal.value = session?.terminal ?? null
+      loadDraftsFromStorage()
     } catch {
       currentSession.value = null
       currentTerminal.value = null
+      draftTickets.value = []
+      draftCounter.value = 1
     }
   }
 
@@ -106,6 +179,7 @@ export const usePosStore = defineStore('pos', () => {
     })
     currentSession.value = data
     currentTerminal.value = data.terminal ?? null
+    loadDraftsFromStorage()
   }
 
   async function closeSession(closingCash: number, notes?: string): Promise<PosSessionData> {
@@ -199,6 +273,76 @@ export const usePosStore = defineStore('pos', () => {
     }
   }
 
+  // ── Held tickets: park / restore / discard ────────────────────────────
+
+  function generateDraftId(): string {
+    return 'drf_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8)
+  }
+
+  function buildDraftLabel(customer: DraftCustomer | null): string {
+    if (customer?.tp_title) return customer.tp_title
+    const n = draftCounter.value
+    draftCounter.value = n + 1
+    return `Ticket #${n}`
+  }
+
+  /**
+   * Park the current cart (and optional customer) as a held ticket, then
+   * empty the active cart so the cashier can start a new ticket. Returns
+   * the id of the saved draft, or null when there is nothing to park.
+   */
+  function parkCurrentTicket(customer: DraftCustomer | null = null): string | null {
+    if (!cart.value.length) return null
+    const effectiveCustomer = customer ?? activeCustomer.value
+    const draft: DraftTicket = {
+      id: generateDraftId(),
+      label: buildDraftLabel(effectiveCustomer),
+      customer: effectiveCustomer ? { ...effectiveCustomer } : null,
+      // Deep-copy the cart so later mutations on the live cart don't leak in.
+      cart: cart.value.map((line) => ({ ...line })),
+      created_at: new Date().toISOString(),
+    }
+    draftTickets.value.push(draft)
+    cart.value = []
+    activeCustomer.value = null
+    return draft.id
+  }
+
+  /**
+   * Load a held ticket into the active cart. Any current cart is parked
+   * first (so nothing is lost). Returns the restored draft (with its
+   * customer) so the UI can sync its local customer state, or null when
+   * the id does not exist.
+   */
+  function restoreDraftTicket(id: string): DraftTicket | null {
+    const idx = draftTickets.value.findIndex((d) => d.id === id)
+    if (idx === -1) return null
+
+    // If there's something in the active cart, park it first.
+    if (cart.value.length) {
+      parkCurrentTicket(activeCustomer.value)
+    }
+
+    const draft = draftTickets.value[idx]
+    cart.value = draft.cart.map((line) => ({ ...line }))
+    activeCustomer.value = draft.customer ? { ...draft.customer } : null
+    draftTickets.value.splice(idx, 1)
+    return draft
+  }
+
+  function discardDraftTicket(id: string): void {
+    draftTickets.value = draftTickets.value.filter((d) => d.id !== id)
+  }
+
+  function clearAllDrafts(): void {
+    draftTickets.value = []
+    draftCounter.value = 1
+    const key = draftsStorageKey()
+    if (key) {
+      try { localStorage.removeItem(key) } catch { /* noop */ }
+    }
+  }
+
   async function checkout(
     payments: { amount: number; method: string; reference?: string }[],
     customerId?: number | null,
@@ -218,6 +362,7 @@ export const usePosStore = defineStore('pos', () => {
       customer_id: customerId ?? null,
     })
     clearCart()
+    activeCustomer.value = null
     return data
   }
 
@@ -240,6 +385,8 @@ export const usePosStore = defineStore('pos', () => {
     searchQuery,
     selectedCategoryId,
     loadingProducts,
+    draftTickets,
+    activeCustomer,
     cartSubtotal,
     cartTax,
     cartTotal,
@@ -254,6 +401,10 @@ export const usePosStore = defineStore('pos', () => {
     removeFromCart,
     clearCart,
     refreshPricesForCustomer,
+    parkCurrentTicket,
+    restoreDraftTicket,
+    discardDraftTicket,
+    clearAllDrafts,
     checkout,
     fetchTickets,
     voidTicket,

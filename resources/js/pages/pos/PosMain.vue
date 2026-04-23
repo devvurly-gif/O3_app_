@@ -87,7 +87,79 @@
             {{ posStore.cartItemCount }}
           </span>
         </h2>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 relative">
+          <!-- Held tickets dropdown -->
+          <div class="relative">
+            <button
+              type="button"
+              class="flex items-center gap-1 text-xs px-2 py-1 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-900/40 dark:text-indigo-300 transition"
+              @click.stop="showHeldDropdown = !showHeldDropdown"
+              :title="posStore.draftTickets.length ? 'Tickets en attente' : 'Aucun ticket en attente'"
+            >
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+              <span>Tickets</span>
+              <span
+                v-if="posStore.draftTickets.length"
+                class="ml-0.5 text-[10px] bg-indigo-600 text-white px-1.5 py-0.5 rounded-full"
+              >
+                {{ posStore.draftTickets.length }}
+              </span>
+            </button>
+
+            <div
+              v-if="showHeldDropdown"
+              class="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-30 w-64 overflow-hidden"
+              @click.stop
+            >
+              <button
+                type="button"
+                class="w-full px-3 py-2 text-left text-xs font-medium text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 border-b border-gray-100 dark:border-gray-700 flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+                :disabled="!posStore.cart.length"
+                @click="parkCurrent"
+              >
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                Mettre en attente + nouveau ticket
+              </button>
+
+              <div v-if="!posStore.draftTickets.length" class="px-3 py-3 text-xs text-gray-400 text-center">
+                Aucun ticket en attente
+              </div>
+              <div v-else class="max-h-60 overflow-y-auto">
+                <div
+                  v-for="draft in posStore.draftTickets"
+                  :key="draft.id"
+                  class="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700/40 border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+                >
+                  <button
+                    type="button"
+                    class="flex-1 min-w-0 text-left"
+                    @click="switchToDraft(draft.id)"
+                  >
+                    <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ draft.label }}</p>
+                    <p class="text-[10px] text-gray-500 dark:text-gray-400">
+                      {{ draft.cart.length }} article{{ draft.cart.length > 1 ? 's' : '' }} ·
+                      {{ formatPrice(draftTotalTtc(draft)) }}
+                    </p>
+                  </button>
+                  <button
+                    type="button"
+                    class="p-1 text-gray-400 hover:text-red-500 transition"
+                    title="Supprimer ce ticket"
+                    @click="discardDraft(draft.id)"
+                  >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <router-link to="/pos/tickets" class="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 transition">
             Historique
           </router-link>
@@ -371,7 +443,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { usePosStore } from '@/stores/pos/posStore'
+import { usePosStore, type DraftTicket } from '@/stores/pos/posStore'
 import { useBarcodeScanner } from '@/composables/useBarcodeScanner'
 import http from '@/services/http'
 import PosCheckout from './PosCheckout.vue'
@@ -393,6 +465,7 @@ const posStore = usePosStore()
 const categories = ref<{ id: number; ctg_title: string }[]>([])
 const showCheckout = ref(false)
 const checkoutMethod = ref('cash')
+const showHeldDropdown = ref(false)
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
 
 // Customer state
@@ -455,6 +528,7 @@ async function searchCustomers() {
 
 function selectCustomer(customer: PosCustomer) {
   selectedCustomer.value = customer
+  posStore.activeCustomer = customer
   customerSearch.value = ''
   customerResults.value = []
   showCustomerDropdown.value = false
@@ -464,8 +538,38 @@ function selectCustomer(customer: PosCustomer) {
 
 function clearCustomer() {
   selectedCustomer.value = null
+  posStore.activeCustomer = null
   // Reset prices to the base (no customer → default/fallback).
   posStore.refreshPricesForCustomer(null)
+}
+
+// ── Held tickets ────────────────────────────────────────────────
+
+function draftTotalTtc(draft: DraftTicket): number {
+  return draft.cart.reduce((sum, item) => {
+    const ht = item.quantity * item.unit_price * (1 - item.discount_percent / 100)
+    return sum + ht * (1 + item.tax_percent / 100)
+  }, 0)
+}
+
+function parkCurrent() {
+  if (!posStore.cart.length) return
+  posStore.parkCurrentTicket(selectedCustomer.value)
+  selectedCustomer.value = null
+  showHeldDropdown.value = false
+}
+
+function switchToDraft(id: string) {
+  const draft = posStore.restoreDraftTicket(id)
+  if (draft) {
+    selectedCustomer.value = draft.customer as PosCustomer | null
+  }
+  showHeldDropdown.value = false
+}
+
+function discardDraft(id: string) {
+  if (!confirm('Supprimer ce ticket en attente ?')) return
+  posStore.discardDraftTicket(id)
 }
 
 async function createCustomer() {
@@ -550,6 +654,7 @@ function handleDocumentClick(e: MouseEvent) {
   const target = e.target as HTMLElement
   if (!target.closest('.relative')) {
     showCustomerDropdown.value = false
+    showHeldDropdown.value = false
   }
 }
 
