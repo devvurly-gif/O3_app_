@@ -504,7 +504,7 @@
                       class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
                       :class="statusClass(inv.status)"
                     >
-                      {{ statusLabel(inv.status) }}
+                      {{ statusLabel(inv.status, inv.document_type) }}
                     </span>
                   </td>
                 </tr>
@@ -940,7 +940,7 @@
                       class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
                       :class="statusClass(inv.status)"
                     >
-                      {{ statusLabel(inv.status) }}
+                      {{ statusLabel(inv.status, inv.document_type) }}
                     </span>
                   </td>
                 </tr>
@@ -1928,10 +1928,15 @@ function statusClass(status: string): string {
   return map[status] ?? 'bg-gray-100 text-gray-500'
 }
 
-function statusLabel(status: string): string {
+function statusLabel(status: string, documentType?: string): string {
+  // BL (DeliveryNote) — "confirmed" means the goods were delivered, not paid.
+  if (documentType === 'DeliveryNote' && status === 'confirmed') {
+    return 'Livré'
+  }
   const map: Record<string, string> = {
     paid: 'Payé',
     partial: 'Partiel',
+    pending: 'En attente',
     confirmed: 'Confirmé',
     draft: 'Brouillon',
     cancelled: 'Annulé',

@@ -73,6 +73,14 @@ const statusLabels: Record<string, string> = {
   cancelled: 'Annulé',
 }
 
+function statusLabel(status: string, documentType?: string): string {
+  // BL (DeliveryNote) — "confirmed" = livré, pas payé.
+  if (documentType === 'DeliveryNote' && status === 'confirmed') {
+    return 'Livré'
+  }
+  return statusLabels[status] ?? status
+}
+
 function viewDocument(doc: Record<string, unknown>) {
   router.push(`/ventes/documents/${doc.id}`)
 }
@@ -212,7 +220,7 @@ async function submitPayment() {
       </template>
 
       <template #cell-status="{ row }">
-        <span class="text-sm">{{ statusLabels[row.status] ?? row.status }}</span>
+        <span class="text-sm">{{ statusLabel(row.status, row.document_type) }}</span>
       </template>
 
       <template #cell-third_partner="{ row }">
