@@ -68,7 +68,7 @@ const form = reactive({
   issued_at: new Date().toISOString().split('T')[0],
   due_at: '',
   notes: '',
-  payment_method: 'credit' as string,
+  payment_method: 'cash' as string,
 })
 
 const lines = ref<LineItem[]>([])
@@ -447,7 +447,7 @@ onMounted(async () => {
     form.issued_at = d.issued_at ? String(d.issued_at).split('T')[0] : form.issued_at
     form.due_at = d.due_at ? String(d.due_at).split('T')[0] : ''
     form.notes = d.notes ?? ''
-    form.payment_method = d.footer?.payment_method ?? 'credit'
+    form.payment_method = d.footer?.payment_method ?? 'cash'
 
     const partner = partners.value.find((p) => p.id === form.thirdPartner_id)
     if (partner) partnerSearch.value = partner.tp_title
