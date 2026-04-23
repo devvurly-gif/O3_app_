@@ -108,15 +108,21 @@ class PosService
                 $customerId = $comptoir?->id;
             }
 
-            // Determine if this is a credit/encours sale
+            // Determine if this is a credit/encours sale.
+            // Credit sales are stored as DeliveryNote (BL is just the French
+            // label); using 'DeliveryNote' lets us reuse the existing
+            // DeliveryNote incrementor and stays consistent with the rest
+            // of the codebase (voidTicket queries document_type = 'DeliveryNote',
+            // and DocumentVenteController maps DeliveryNote => 'BL' for UI).
             $isCreditSale = collect($payments)->some(fn ($p) => $p['method'] === 'credit');
-            $documentType = $isCreditSale ? 'BL' : 'TicketSale';
+            $documentType = $isCreditSale ? 'DeliveryNote' : 'TicketSale';
             $documentTitle = $isCreditSale ? 'Bon de Livraison (POS)' : 'Ticket POS';
 
             // Find the appropriate incrementor
             $incrementor = $this->incrementors->findByModel($documentType);
             if (!$incrementor) {
-                abort(422, "Aucun numéroteur configuré pour les documents POS ({$documentType}).");
+                $label = $isCreditSale ? 'BL' : $documentType;
+                abort(422, "Aucun numéroteur configuré pour les documents POS ({$label}).");
             }
 
             $reference = $this->incrementorService->formatReference(
