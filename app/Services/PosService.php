@@ -250,7 +250,17 @@ class PosService
             }
 
             // Set document status
-            $status = $creditAmount <= 0 ? 'paid' : ($paidAmount > 0 ? 'partial' : 'pending');
+            //   - TicketSale (cash/mixed): paid / partial / pending based on amounts.
+            //   - DeliveryNote (POS credit sale): always 'confirmed' — the goods
+            //     are handed over to the customer immediately at the till, so the
+            //     BL represents a delivered (not pending) shipment even though the
+            //     invoice is still to come. Payment state is tracked on amount_due
+            //     of the footer, not on header status.
+            if ($documentType === 'DeliveryNote') {
+                $status = 'confirmed';
+            } else {
+                $status = $creditAmount <= 0 ? 'paid' : ($paidAmount > 0 ? 'partial' : 'pending');
+            }
             $document->update(['status' => $status]);
 
             return $document->load(['lignes', 'footer', 'payments']);

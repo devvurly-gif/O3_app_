@@ -106,6 +106,9 @@ function statusLabel(status: string): string {
     case 'cancelled': return 'Annulé'
     case 'partial': return 'Partiel'
     case 'pending': return 'En Compte'
+    // POS BLs are marked 'confirmed' the moment the customer walks out with
+    // the goods; the invoice is still owed but the delivery is done.
+    case 'confirmed': return 'Livré'
     default: return 'Payé'
   }
 }
@@ -115,6 +118,7 @@ function statusClass(status: string): string {
     case 'cancelled': return 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400'
     case 'partial': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400'
     case 'pending': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400'
+    case 'confirmed': return 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-400'
     default: return 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400'
   }
 }
