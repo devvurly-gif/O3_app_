@@ -45,8 +45,13 @@ class PosTicketController extends Controller
             return response()->json([]);
         }
 
+        // POS history surfaces three kinds of documents scoped to the
+        // current session:
+        //   - TicketSale (cash tickets)
+        //   - DeliveryNote (BL for en-compte credit sales)
+        //   - ReturnSale (BR created from a retour)
         $tickets = DocumentHeader::where('pos_session_id', $session->id)
-            ->where('document_type', 'TicketSale')
+            ->whereIn('document_type', ['TicketSale', 'DeliveryNote', 'ReturnSale'])
             ->with(['footer', 'payments', 'thirdPartner'])
             ->orderByDesc('created_at')
             ->get();
@@ -54,11 +59,28 @@ class PosTicketController extends Controller
         return response()->json($tickets);
     }
 
+    /**
+     * Kept for backward compatibility — still points at voidTicket, which
+     * only accepts TicketSale. New clients should call retour().
+     */
     public function void(DocumentHeader $ticket): JsonResponse
     {
         $ticket = $this->posService->voidTicket($ticket);
 
         return response()->json($ticket);
+    }
+
+    /**
+     * Process a POS return. Dispatches inside PosService: TicketSale is
+     * reversed (stock back, payments dropped, status → cancelled); a
+     * DeliveryNote spawns a linked ReturnSale (BR) that restores stock
+     * and recalculates encours so the customer's credit is freed.
+     */
+    public function retour(DocumentHeader $document): JsonResponse
+    {
+        $document = $this->posService->returnTicket($document);
+
+        return response()->json($document);
     }
 
     /**

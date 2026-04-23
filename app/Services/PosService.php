@@ -258,6 +258,23 @@ class PosService
     }
 
     /**
+     * Return (retour) a POS document. Dispatches by document type:
+     *   - TicketSale   → reverse stock & cancel (voidTicket).
+     *   - DeliveryNote → create a ReturnSale (BR) linked to the BL,
+     *     stock moves IN, customer encours is recalculated.
+     * Any other type is rejected so the POS UI can't accidentally
+     * mutate sales-module documents.
+     */
+    public function returnTicket(DocumentHeader $document): DocumentHeader
+    {
+        return match ($document->document_type) {
+            'TicketSale'   => $this->voidTicket($document),
+            'DeliveryNote' => $this->createReturnSaleFromDeliveryNote($document),
+            default        => abort(422, 'Type de document non pris en charge pour un retour POS.'),
+        };
+    }
+
+    /**
      * Void a ticket — cancel document, reverse stock, delete payments.
      */
     public function voidTicket(DocumentHeader $ticket): DocumentHeader
@@ -353,6 +370,102 @@ class PosService
             }
 
             return $ticket->fresh(['lignes', 'footer']);
+        });
+    }
+
+    /**
+     * Retour client (BL → BR): creates a ReturnSale linked to the given
+     * DeliveryNote, restores stock (direction IN via StockMouvementService)
+     * and refreshes the customer's encours so credit is released.
+     *
+     * The parent BL stays as-is; the BR is the counter-document that
+     * offsets it (matching the sales-module retour_client behaviour).
+     */
+    private function createReturnSaleFromDeliveryNote(DocumentHeader $bl): DocumentHeader
+    {
+        if ($bl->document_type !== 'DeliveryNote') {
+            abort(422, 'Seul un BL peut être converti en BR.');
+        }
+
+        if ($bl->status === 'cancelled') {
+            abort(422, 'Ce BL est annulé et ne peut pas faire l\'objet d\'un retour.');
+        }
+
+        $brIncrementor = $this->incrementors->findByModel('ReturnSale');
+        if (!$brIncrementor) {
+            abort(422, 'Aucun numéroteur configuré pour les Bons de Retour (BR).');
+        }
+
+        $bl->loadMissing(['lignes', 'footer']);
+
+        return DB::transaction(function () use ($bl, $brIncrementor) {
+            $now = now();
+
+            $reference = $this->incrementorService->formatReference(
+                $brIncrementor->template,
+                $brIncrementor->nextTrick
+            );
+            $brIncrementor->increment('nextTrick');
+
+            /** @var DocumentHeader $br */
+            $br = $this->documents->create([
+                'document_incrementor_id' => $brIncrementor->id,
+                'reference'               => $reference,
+                'document_type'           => 'ReturnSale',
+                'document_title'          => 'Bon de Retour Client (POS)',
+                'parent_id'               => $bl->id,
+                'thirdPartner_id'         => $bl->thirdPartner_id,
+                'company_role'            => $bl->company_role,
+                'user_id'                 => auth()->id() ?? $bl->user_id,
+                'warehouse_id'            => $bl->warehouse_id,
+                'pos_session_id'          => $bl->pos_session_id,
+                'status'                  => 'confirmed',
+                'issued_at'               => $now,
+                'notes'                   => 'Retour POS du BL ' . $bl->reference,
+            ]);
+
+            // Copy all lines from the BL onto the BR (full return).
+            $totalHt = 0;
+            $totalTax = 0;
+            foreach ($bl->lignes as $i => $ligne) {
+                $lineHt  = $ligne->quantity * $ligne->unit_price * (1 - ($ligne->discount_percent ?? 0) / 100);
+                $lineTax = $lineHt * (($ligne->tax_percent ?? 0) / 100);
+                $totalHt  += $lineHt;
+                $totalTax += $lineTax;
+
+                $this->lignes->createForDocument($br, [
+                    'sort_order'       => $i + 1,
+                    'product_id'       => $ligne->product_id,
+                    'line_type'        => $ligne->line_type ?? 'product',
+                    'designation'      => $ligne->designation,
+                    'reference'        => $ligne->reference,
+                    'quantity'         => $ligne->quantity,
+                    'unit'             => $ligne->unit ?? 'pcs',
+                    'unit_price'       => $ligne->unit_price,
+                    'discount_percent' => $ligne->discount_percent ?? 0,
+                    'tax_percent'      => $ligne->tax_percent ?? 0,
+                ]);
+            }
+
+            $this->footers->upsertForDocument($br, [
+                'total_ht'       => $totalHt,
+                'total_discount' => 0,
+                'total_tax'      => $totalTax,
+                'total_ttc'      => $totalHt + $totalTax,
+                'amount_paid'    => 0,
+                'amount_due'     => 0,
+            ]);
+
+            // Stock: ReturnSale direction = IN (goods come back).
+            $br->load('lignes');
+            $this->stockService->processDocument($br);
+
+            // Refresh the customer's encours so the BL amount is released.
+            if ($bl->thirdPartner_id) {
+                ThirdPartner::find($bl->thirdPartner_id)?->recalculateEncours();
+            }
+
+            return $br->fresh(['lignes', 'footer']);
         });
     }
 

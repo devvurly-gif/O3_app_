@@ -30,6 +30,12 @@
               </span>
               <span
                 class="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase"
+                :class="typeClass(ticket.document_type)"
+              >
+                {{ typeLabel(ticket.document_type) }}
+              </span>
+              <span
+                class="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase"
                 :class="statusClass(ticket.status)"
               >
                 {{ statusLabel(ticket.status) }}
@@ -46,9 +52,9 @@
             <span class="text-lg font-bold text-gray-900 dark:text-white">
               {{ ticket.footer ? Number(ticket.footer.total_ttc).toFixed(2) : '—' }} MAD
             </span>
-            <!-- Print button -->
+            <!-- Print button (not for already-created returns) -->
             <button
-              v-if="ticket.status !== 'cancelled'"
+              v-if="ticket.status !== 'cancelled' && ticket.document_type !== 'ReturnSale'"
               class="px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50 rounded-lg transition flex items-center gap-1"
               :disabled="printing === ticket.id"
               @click="printTicket(ticket.id, ticket.reference)"
@@ -58,13 +64,14 @@
               </svg>
               {{ printing === ticket.id ? '...' : 'Imprimer' }}
             </button>
-            <!-- Void button -->
+            <!-- Retour button: reverses a TicketSale or converts a BL into a BR -->
             <button
-              v-if="ticket.status !== 'cancelled'"
+              v-if="canReturn(ticket)"
               class="px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50 rounded-lg transition"
-              @click="voidTicket(ticket.id)"
+              :disabled="returning === ticket.id"
+              @click="returnTicket(ticket)"
             >
-              Annuler
+              {{ returning === ticket.id ? '...' : 'Retour' }}
             </button>
           </div>
         </div>
@@ -78,8 +85,21 @@ import { ref, onMounted } from 'vue'
 import { usePosStore } from '@/stores/pos/posStore'
 import http from '@/services/http'
 
+interface PosDocument {
+  id: number
+  reference: string
+  document_type: string
+  status: string
+  created_at: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  footer?: any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  third_partner?: any
+}
+
 const posStore = usePosStore()
 const printing = ref<number | null>(null)
+const returning = ref<number | null>(null)
 
 function statusLabel(status: string): string {
   switch (status) {
@@ -97,6 +117,30 @@ function statusClass(status: string): string {
     case 'pending': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400'
     default: return 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400'
   }
+}
+
+function typeLabel(type: string): string {
+  switch (type) {
+    case 'DeliveryNote': return 'BL'
+    case 'ReturnSale':   return 'BR'
+    default:             return 'Ticket'
+  }
+}
+
+function typeClass(type: string): string {
+  switch (type) {
+    case 'DeliveryNote': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400'
+    case 'ReturnSale':   return 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-400'
+    default:             return 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400'
+  }
+}
+
+/** A retour can be triggered on a TicketSale or a DeliveryNote, only
+ *  when the doc is still active. ReturnSale rows (BR) are the result
+ *  of a previous retour and cannot be returned again. */
+function canReturn(ticket: PosDocument): boolean {
+  if (ticket.status === 'cancelled') return false
+  return ticket.document_type === 'TicketSale' || ticket.document_type === 'DeliveryNote'
 }
 
 async function printTicket(id: number, reference: string) {
@@ -122,9 +166,20 @@ async function printTicket(id: number, reference: string) {
   }
 }
 
-async function voidTicket(id: number) {
-  if (!confirm('Êtes-vous sûr de vouloir annuler ce ticket ?')) return
-  await posStore.voidTicket(id)
+async function returnTicket(ticket: PosDocument) {
+  const label = ticket.document_type === 'DeliveryNote'
+    ? `Créer un Bon de Retour (BR) à partir du BL ${ticket.reference} ? Le stock sera restauré et le crédit client libéré.`
+    : `Effectuer un retour sur le ticket ${ticket.reference} ? Le stock sera restauré.`
+  if (!confirm(label)) return
+  returning.value = ticket.id
+  try {
+    await posStore.returnTicket(ticket.id)
+  } catch (err: unknown) {
+    const e = err as { response?: { data?: { message?: string } } }
+    alert(e.response?.data?.message ?? 'Erreur lors du retour')
+  } finally {
+    returning.value = null
+  }
 }
 
 onMounted(() => {

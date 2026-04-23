@@ -376,6 +376,18 @@ export const usePosStore = defineStore('pos', () => {
     await fetchTickets()
   }
 
+  /**
+   * Retour POS: the backend dispatches on document_type —
+   *   TicketSale   → reverse/cancel (same effect as void).
+   *   DeliveryNote → creates a linked ReturnSale (BR); stock goes back
+   *                  in and the customer's encours is recalculated.
+   * The tickets list is refreshed afterwards so any new BR appears.
+   */
+  async function returnTicket(documentId: number): Promise<void> {
+    await http.post(`/pos/tickets/${documentId}/retour`)
+    await fetchTickets()
+  }
+
   return {
     currentSession,
     currentTerminal,
@@ -408,5 +420,6 @@ export const usePosStore = defineStore('pos', () => {
     checkout,
     fetchTickets,
     voidTicket,
+    returnTicket,
   }
 })

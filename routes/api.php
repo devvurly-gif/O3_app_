@@ -268,6 +268,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('tickets',                 [PosTicketController::class, 'store']);
         Route::get('tickets',                  [PosTicketController::class, 'index']);
         Route::post('tickets/{ticket}/void',   [PosTicketController::class, 'void'])->middleware('permission:pos.void_ticket');
+        Route::post('tickets/{document}/retour', [PosTicketController::class, 'retour'])->middleware('permission:pos.void_ticket');
         Route::get('tickets/{ticket}/print',   [PosTicketController::class, 'print']);
 
         // Session closing report
