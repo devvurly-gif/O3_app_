@@ -7,8 +7,10 @@ use App\Models\Category;
 use App\Models\PriceList;
 use App\Models\PriceListItem;
 use App\Models\Product;
+use App\Models\StockMouvement;
 use App\Models\Warehouse;
 use App\Models\WarehouseHasStock;
+use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Concerns\Importable;
 use Maatwebsite\Excel\Concerns\OnEachRow;
 use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
@@ -183,10 +185,38 @@ class ProductsImport implements OnEachRow, WithHeadingRow, WithValidation, Skips
             return;
         }
 
+        // Capture the prior stock level so we can log an accurate movement.
+        $existing = WarehouseHasStock::where('warehouse_id', $warehouse->id)
+            ->where('product_id', $productId)
+            ->first();
+        $before = $existing ? (float) $existing->stockLevel : 0.0;
+
         WarehouseHasStock::updateOrCreate(
             ['warehouse_id' => $warehouse->id, 'product_id' => $productId],
             ['stockLevel' => $qty, 'stockAtTime' => now()]
         );
+
+        $delta = $qty - $before;
+        if (abs($delta) < 0.0001) {
+            return; // No change → no movement.
+        }
+
+        $isInitial = $before <= 0.0001 && $delta > 0;
+        $reason = $isInitial ? 'initial' : ($delta > 0 ? 'stock_entry' : 'stock_exit');
+
+        StockMouvement::create([
+            'product_id'         => $productId,
+            'warehouse_id'       => $warehouse->id,
+            'document_type'      => 'Import',
+            'direction'          => $delta > 0 ? 'in' : 'out',
+            'reason'             => $reason,
+            'quantity'           => abs(round($delta, 2)),
+            'stock_before'       => round($before, 2),
+            'stock_after'        => round($qty, 2),
+            'user_id'            => Auth::id(),
+            'status'             => 'applied',
+            'notes'              => 'Mouvement généré automatiquement lors de l\'import Excel.',
+        ]);
     }
 
     public function getCreatedCount(): int { return $this->created; }

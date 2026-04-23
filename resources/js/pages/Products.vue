@@ -587,7 +587,7 @@
             <!-- Warehouse Breakdown -->
             <div class="space-y-1.5">
               <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Warehouse Breakdown</h3>
-              <div v-if="editTarget.warehouseStocks && editTarget.warehouseStocks.length" class="overflow-x-auto">
+              <div v-if="warehouseStocksList.length" class="overflow-x-auto">
                 <table class="w-full text-sm">
                   <thead class="bg-gray-50 dark:bg-gray-700">
                     <tr>
@@ -597,15 +597,15 @@
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                    <tr v-for="ws in editTarget.warehouseStocks" :key="ws.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                      <td class="px-2.5 py-1.5 text-gray-800 dark:text-gray-200">{{ ws.warehouse?.wh_name ?? '—' }}</td>
-                      <td class="px-2.5 py-1.5 text-right font-mono">{{ Number(ws.stockLevel).toFixed(2) }} {{ editTarget.p_unit ?? 'pcs' }}</td>
+                    <tr v-for="ws in warehouseStocksList" :key="ws.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                      <td class="px-2.5 py-1.5 text-gray-800 dark:text-gray-200">{{ ws.warehouse?.wh_title ?? ws.warehouse?.wh_name ?? '—' }}</td>
+                      <td class="px-2.5 py-1.5 text-right font-mono">{{ Number(ws.stockLevel ?? ws.stock_level ?? 0).toFixed(2) }} {{ editTarget.p_unit ?? 'pcs' }}</td>
                       <td class="px-2.5 py-1.5 text-center">
                         <span
                           class="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
-                          :class="Number(ws.stockLevel) > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
+                          :class="Number(ws.stockLevel ?? ws.stock_level ?? 0) > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
                         >
-                          {{ Number(ws.stockLevel) > 0 ? 'In Stock' : 'Out' }}
+                          {{ Number(ws.stockLevel ?? ws.stock_level ?? 0) > 0 ? 'In Stock' : 'Out' }}
                         </span>
                       </td>
                     </tr>
@@ -902,6 +902,14 @@ const statistics = ref(null)
 const stockMouvements = ref([])
 const priceListItems = ref([])
 
+// Resolve warehouse stocks regardless of JSON casing (snake_case by default,
+// but left camelCase tolerant in case the serializer changes).
+const warehouseStocksList = computed(() => {
+  const t: any = editTarget.value
+  if (!t) return []
+  return t.warehouse_stocks ?? t.warehouseStocks ?? []
+})
+
 // Add-tier inline form state
 const tierAdding = ref(false)
 const tierSaving = ref(false)
@@ -1091,13 +1099,22 @@ async function openEdit(row) {
   // Load additional data for tabs — use the authenticated http client
   // (bearer token is attached via interceptor). Native fetch() would
   // return 401 silently and leave the arrays empty.
+  // Also reload the product itself via /products/{id} to get the full
+  // relation graph (warehouseStocks.warehouse, priceListItems, etc.)
+  // that the paginated list endpoint does not eager-load.
   try {
-    const [statsRes, stockRes, pricesRes] = await Promise.allSettled([
+    const [productRes, statsRes, stockRes, pricesRes] = await Promise.allSettled([
+      http.get(`/products/${row.id}`),
       http.get(`/products/${row.id}/statistics`),
       http.get(`/products/${row.id}/stock-history`, { params: { per_page: 5 } }),
       http.get(`/products/${row.id}/price-lists`),
     ])
 
+    if (productRes.status === 'fulfilled' && productRes.value.data) {
+      // Merge: preserve list-level computed fields (e.g. total_stock) if the
+      // show endpoint omits them, but prefer the fresh, fully-loaded relations.
+      editTarget.value = { ...row, ...productRes.value.data }
+    }
     if (statsRes.status === 'fulfilled') {
       statistics.value = statsRes.value.data
     }
