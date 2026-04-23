@@ -91,24 +91,103 @@ const pendingLine = reactive(createEmptyLine())
 const pendingSearch = ref('')
 const showPendingDropdown = ref(false)
 
-function selectPendingProduct(product: Product) {
+// Resolved display prices keyed by product_id. Populated once products are
+// loaded (as the comptoir tariff) and refreshed whenever the partner changes
+// so the product dropdown reflects the customer-specific price.
+const displayPrices = ref<Map<number, number>>(new Map())
+
+function displayPriceFor(p: any): number {
+  const resolved = displayPrices.value.get(Number(p.id))
+  if (typeof resolved === 'number') return resolved
+  return Number(props.domain === 'vente' ? (p.p_salePrice ?? 0) : (p.p_purchasePrice ?? 0))
+}
+
+async function refreshDisplayPrices() {
+  if (props.domain !== 'vente' || !products.value.length) {
+    displayPrices.value = new Map()
+    return
+  }
+  try {
+    const { data } = await http.post<{
+      items: Array<{ product_id: number; unit_price: number }>
+    }>('/products/reprice', {
+      customer_id: form.thirdPartner_id,
+      channel: 'all',
+      items: products.value.map((p) => ({ product_id: p.id, quantity: 1 })),
+    })
+    const next = new Map<number, number>()
+    for (const row of data.items) {
+      next.set(Number(row.product_id), Number(row.unit_price))
+    }
+    displayPrices.value = next
+  } catch {
+    /* keep previous map on failure */
+  }
+}
+
+/**
+ * Resolve the unit price (HT) and tax rate for a single product against the
+ * currently selected customer. Sales use the PriceResolver (channel 'all') so
+ * the price reflects the customer's assigned list, the default walk-in tariff,
+ * or finally p_salePrice. Purchases keep the raw p_purchasePrice.
+ */
+async function resolveSalePrice(
+  product: Product,
+  quantity: number,
+): Promise<{ unit_price: number; tax_percent: number }> {
+  const fallback = {
+    unit_price: Number(product.p_salePrice ?? 0),
+    tax_percent: Number(product.p_taxRate ?? 20),
+  }
+  try {
+    const { data } = await http.post<{
+      items: Array<{ product_id: number; unit_price: number; tax_percent: number }>
+    }>('/products/reprice', {
+      customer_id: form.thirdPartner_id,
+      channel: 'all',
+      items: [{ product_id: product.id, quantity: Math.max(1, Math.floor(quantity || 1)) }],
+    })
+    const row = data.items?.[0]
+    if (!row) return fallback
+    return {
+      unit_price: Number(row.unit_price ?? fallback.unit_price),
+      tax_percent: Number(row.tax_percent ?? fallback.tax_percent),
+    }
+  } catch {
+    return fallback
+  }
+}
+
+async function selectPendingProduct(product: Product) {
   pendingLine.product_id = product.id
   pendingLine.designation = product.p_title
   pendingLine.reference = product.p_code ?? ''
-  pendingLine.unit_price = props.domain === 'vente' ? product.p_salePrice : product.p_purchasePrice
   pendingLine.tax_percent = product.p_taxRate ?? 20
   pendingLine.unit = product.p_unit ?? 'pcs'
   pendingSearch.value = product.p_title
   showPendingDropdown.value = false
+
+  if (props.domain === 'vente') {
+    const { unit_price, tax_percent } = await resolveSalePrice(product, pendingLine.quantity)
+    pendingLine.unit_price = unit_price
+    pendingLine.tax_percent = tax_percent
+  } else {
+    pendingLine.unit_price = product.p_purchasePrice
+  }
 }
 
 function stockForWarehouse(p: any, whId: number | null): number {
-  if (!p?.warehouseStocks?.length) return 0
+  // Laravel serialises the `warehouseStocks` relation as `warehouse_stocks`
+  // (snake_case) but some call sites still read the raw camelCase form, so
+  // accept both. Pivot columns keep their raw names.
+  const list = p?.warehouse_stocks ?? p?.warehouseStocks ?? []
+  if (!list.length) return 0
+  const readLevel = (ws: any) => Number(ws.stockLevel ?? ws.stock_level ?? 0)
   if (whId) {
-    const hit = p.warehouseStocks.find((ws: any) => Number(ws.warehouse_id) === Number(whId))
-    return Number(hit?.stockLevel ?? 0)
+    const hit = list.find((ws: any) => Number(ws.warehouse_id) === Number(whId))
+    return readLevel(hit ?? {})
   }
-  return p.warehouseStocks.reduce((sum: number, ws: any) => sum + Number(ws.stockLevel ?? 0), 0)
+  return list.reduce((sum: number, ws: any) => sum + readLevel(ws), 0)
 }
 
 const selectedWarehouseName = computed(() => {
@@ -145,15 +224,63 @@ function removeLine(idx: number) {
   lines.value.splice(idx, 1)
 }
 
-function selectProduct(line: LineItem, product: Product) {
+async function selectProduct(line: LineItem, product: Product) {
   line.product_id = product.id
   line.designation = product.p_title
   line.reference = product.p_code ?? ''
-  line.unit_price = props.domain === 'vente' ? product.p_salePrice : product.p_purchasePrice
   line.tax_percent = product.p_taxRate ?? 20
   line.unit = product.p_unit ?? 'pcs'
   delete productSearches[line.key]
+
+  if (props.domain === 'vente') {
+    const { unit_price, tax_percent } = await resolveSalePrice(product, line.quantity)
+    line.unit_price = unit_price
+    line.tax_percent = tax_percent
+  } else {
+    line.unit_price = product.p_purchasePrice
+  }
 }
+
+/**
+ * Re-price every line already in the grid when the selected customer
+ * changes. Keeps existing quantities so tier-based pricing still applies.
+ */
+async function repriceAllLines() {
+  if (props.domain !== 'vente') return
+  const withProduct = lines.value.filter((l) => l.product_id)
+  if (!withProduct.length) return
+  try {
+    const { data } = await http.post<{
+      items: Array<{ product_id: number; unit_price: number; tax_percent: number }>
+    }>('/products/reprice', {
+      customer_id: form.thirdPartner_id,
+      channel: 'all',
+      items: withProduct.map((l) => ({
+        product_id: l.product_id,
+        quantity: Math.max(1, Math.floor(l.quantity || 1)),
+      })),
+    })
+    const byId = new Map(data.items.map((r) => [r.product_id, r]))
+    for (const line of lines.value) {
+      if (!line.product_id) continue
+      const priced = byId.get(line.product_id)
+      if (!priced) continue
+      line.unit_price = Number(priced.unit_price)
+      line.tax_percent = Number(priced.tax_percent)
+    }
+  } catch {
+    // Leave prices untouched on failure.
+  }
+}
+
+watch(
+  () => form.thirdPartner_id,
+  (newId, oldId) => {
+    if (newId === oldId) return
+    repriceAllLines()
+    refreshDisplayPrices()
+  },
+)
 
 function lineHt(line: LineItem): number {
   return line.quantity * line.unit_price * (1 - line.discount_percent / 100)
@@ -307,6 +434,9 @@ onMounted(async () => {
   partners.value = Array.isArray(partRes.data) ? partRes.data : ((partRes.data as any).data ?? [])
   warehouses.value = Array.isArray(whRes.data) ? whRes.data : ((whRes.data as any).data ?? [])
   products.value = Array.isArray(prodRes.data) ? prodRes.data : ((prodRes.data as any).data ?? [])
+
+  // Seed dropdown prices from the walk-in tariff (no customer yet). Sales only.
+  refreshDisplayPrices()
 
   if (props.initialData && props.editMode) {
     const d = props.initialData as any
@@ -543,7 +673,7 @@ function getStockClass(stock: number): string {
                   </span>
                 </span>
                 <span class="text-gray-500 dark:text-gray-400 text-xs"
-                  >{{ domain === 'vente' ? p.p_salePrice : p.p_purchasePrice }} DH</span
+                  >{{ fmt(displayPriceFor(p)) }} DH</span
                 >
               </button>
             </div>
@@ -654,7 +784,7 @@ function getStockClass(stock: number): string {
                       </span>
                     </span>
                     <span class="text-gray-500 dark:text-gray-400 text-xs"
-                      >{{ domain === 'vente' ? p.p_salePrice : p.p_purchasePrice }} DH</span
+                      >{{ fmt(displayPriceFor(p)) }} DH</span
                     >
                   </button>
                 </div>

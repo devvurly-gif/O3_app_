@@ -95,6 +95,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('categories',                         [CategoryController::class, 'index']);
     Route::get('categories/{category}',              [CategoryController::class, 'show']);
     Route::get('products',                           [ProductController::class, 'index']);
+    // Resolve unit prices for (product, quantity) pairs against the
+    // channel-aware PriceResolver (sales-document form, quick quotes, etc.).
+    Route::post('products/reprice',                  [ProductController::class, 'reprice']);
     Route::get('products/{product}',                 [ProductController::class, 'show']);
     Route::get('products/{product}/statistics',      [ProductController::class, 'statistics']);
     Route::get('products/{product}/stock-history',   [ProductController::class, 'stockHistory']);
