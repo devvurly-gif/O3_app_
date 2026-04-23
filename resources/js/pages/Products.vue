@@ -620,11 +620,87 @@
             <!-- Recent Movements -->
             <div class="space-y-1.5 pt-3 border-t border-gray-200 dark:border-gray-700">
               <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Recent Movements</h3>
-              <div v-if="stockMouvements.length" class="space-y-1.5 max-h-40 overflow-y-auto">
-                <div v-for="mov in stockMouvements" :key="mov.id" class="px-2 py-1.5 bg-gray-50 dark:bg-gray-700/50 rounded text-xs">
-                  <p class="font-mono text-gray-800 dark:text-gray-200">
-                    {{ mov.direction === 'in' ? '➕' : '➖' }}
-                    {{ mov.quantity }} on {{ new Date(mov.created_at).toLocaleDateString() }}
+              <div v-if="stockMouvements.length" class="space-y-1.5 max-h-80 overflow-y-auto pr-1">
+                <div
+                  v-for="mov in stockMouvements"
+                  :key="mov.id"
+                  class="px-2.5 py-2 bg-gray-50 dark:bg-gray-700/50 rounded border-l-4 text-xs"
+                  :class="mov.direction === 'in'
+                    ? 'border-green-500 dark:border-green-400'
+                    : 'border-red-500 dark:border-red-400'"
+                >
+                  <!-- Row 1: direction badge · quantity · reason · date -->
+                  <div class="flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-1.5 min-w-0">
+                      <span
+                        class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase"
+                        :class="mov.direction === 'in'
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300'
+                          : 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'"
+                      >
+                        {{ mov.direction === 'in' ? '↑ IN' : '↓ OUT' }}
+                      </span>
+                      <span class="font-mono font-semibold text-gray-900 dark:text-gray-100">
+                        {{ mov.direction === 'in' ? '+' : '−' }}{{ Number(mov.quantity).toFixed(2) }}
+                        <span class="text-gray-500 dark:text-gray-400 font-normal">{{ editTarget?.p_unit ?? 'pcs' }}</span>
+                      </span>
+                      <span v-if="mov.reason" class="px-1.5 py-0.5 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 rounded text-[10px] font-medium truncate">
+                        {{ mov.reason }}
+                      </span>
+                      <span
+                        v-if="mov.status && mov.status !== 'applied'"
+                        class="px-1.5 py-0.5 rounded text-[10px] font-medium"
+                        :class="mov.status === 'pending'
+                          ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'
+                          : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'"
+                      >
+                        {{ mov.status }}
+                      </span>
+                    </div>
+                    <span class="text-gray-500 dark:text-gray-400 whitespace-nowrap text-[10px]">
+                      {{ new Date(mov.created_at).toLocaleString() }}
+                    </span>
+                  </div>
+
+                  <!-- Row 2: document / warehouse / user -->
+                  <div class="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1 text-[11px] text-gray-600 dark:text-gray-300">
+                    <span v-if="mov.document_reference || mov.document_type" class="inline-flex items-center gap-1">
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                      <span class="font-mono">{{ mov.document_reference || mov.document_type }}</span>
+                    </span>
+                    <span v-if="mov.warehouse" class="inline-flex items-center gap-1">
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                      {{ mov.warehouse.wh_title ?? mov.warehouse.wh_code }}
+                    </span>
+                    <span v-if="mov.user" class="inline-flex items-center gap-1">
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                      {{ mov.user.name }}
+                    </span>
+                  </div>
+
+                  <!-- Row 3: balance + unit cost -->
+                  <div
+                    v-if="mov.stock_before !== null || mov.stock_after !== null || mov.unit_cost"
+                    class="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1 text-[11px] text-gray-600 dark:text-gray-400"
+                  >
+                    <span v-if="mov.stock_before !== null && mov.stock_after !== null" class="font-mono">
+                      <span class="text-gray-500">Solde:</span>
+                      {{ Number(mov.stock_before).toFixed(2) }}
+                      <span class="text-gray-400">→</span>
+                      <span class="font-semibold text-gray-800 dark:text-gray-200">{{ Number(mov.stock_after).toFixed(2) }}</span>
+                    </span>
+                    <span v-if="mov.unit_cost && Number(mov.unit_cost) > 0" class="font-mono">
+                      <span class="text-gray-500">PU:</span> {{ Number(mov.unit_cost).toFixed(2) }} MAD
+                    </span>
+                    <span v-if="mov.unit_cost && Number(mov.unit_cost) > 0" class="font-mono">
+                      <span class="text-gray-500">Total:</span>
+                      {{ (Number(mov.unit_cost) * Number(mov.quantity)).toFixed(2) }} MAD
+                    </span>
+                  </div>
+
+                  <!-- Row 4: notes -->
+                  <p v-if="mov.notes" class="mt-1 text-[11px] text-gray-500 dark:text-gray-400 italic truncate">
+                    {{ mov.notes }}
                   </p>
                 </div>
               </div>
@@ -1106,7 +1182,7 @@ async function openEdit(row) {
     const [productRes, statsRes, stockRes, pricesRes] = await Promise.allSettled([
       http.get(`/products/${row.id}`),
       http.get(`/products/${row.id}/statistics`),
-      http.get(`/products/${row.id}/stock-history`, { params: { per_page: 5 } }),
+      http.get(`/products/${row.id}/stock-history`, { params: { per_page: 20 } }),
       http.get(`/products/${row.id}/price-lists`),
     ])
 
