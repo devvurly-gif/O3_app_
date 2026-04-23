@@ -35,6 +35,30 @@ class PosProductController extends Controller
             $request->input('max_price') ? (float) $request->input('max_price') : null,
         );
 
+        // Override p_salePrice with the tariff resolved for the POS channel
+        // (no customer → default POS price list, falling back to the product's
+        // base sale price when no tariff is defined). This is what the
+        // cart will use as the default unit price until a customer is
+        // selected and reprice runs.
+        $productIds = array_map(static fn (array $p) => (int) $p['id'], $products);
+        $models = Product::whereIn('id', $productIds)->get()->keyBy('id');
+
+        foreach ($products as &$product) {
+            $model = $models->get($product['id']);
+            if (!$model) {
+                continue;
+            }
+            $resolved = $this->priceResolver->resolve($model, null, 1, 'pos');
+            // Keep the original base sale price available for UIs that want
+            // to show a "public price" strike-through.
+            $product['p_salePriceBase'] = (float) $product['p_salePrice'];
+            $product['p_salePrice']     = (float) $resolved['price_ht'];
+            $product['price_ttc']       = (float) $resolved['price_ttc'];
+            $product['price_list_id']   = $resolved['price_list_id'];
+            $product['price_source']    = $resolved['source'];
+        }
+        unset($product);
+
         return response()->json($products);
     }
 
