@@ -7,6 +7,21 @@ BRANCH="main"
 echo "=== O3 App Deployment ==="
 cd "$APP_DIR"
 
+# ── Pre-flight: refuse to deploy with dev-mode env (H4) ─────────────
+# APP_DEBUG=true renders Ignition stack traces (DB creds, env dump)
+# on any unhandled exception. APP_ENV=local disables prod-only
+# middlewares. Either one in production is a leak waiting to happen.
+if [ -f "$APP_DIR/.env" ]; then
+    if grep -qE '^APP_DEBUG=true' "$APP_DIR/.env"; then
+        echo "FATAL: APP_DEBUG=true in .env. Set APP_DEBUG=false before deploying." >&2
+        exit 1
+    fi
+    if grep -qE '^APP_ENV=local' "$APP_DIR/.env"; then
+        echo "FATAL: APP_ENV=local in .env. Set APP_ENV=production before deploying." >&2
+        exit 1
+    fi
+fi
+
 # Pull latest
 echo "[1/7] Pulling latest from $BRANCH..."
 git pull origin "$BRANCH"

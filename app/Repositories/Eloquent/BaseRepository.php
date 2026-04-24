@@ -13,8 +13,40 @@ abstract class BaseRepository implements BaseRepositoryInterface
     {
     }
 
+    /**
+     * Sanitize an `order by` column+direction pair before passing it
+     * to the query builder. Every controller that accepts `sort` /
+     * `direction` from the request eventually lands here, so this is
+     * the one chokepoint where user input hits `orderBy()`.
+     *
+     * SECURITY (H3):
+     *   - direction: hard-lock to asc|desc (else fallback asc).
+     *   - column:    only allow snake_case identifiers
+     *                (optionally dotted for table.col relations).
+     *                Anything else falls back to `id`.
+     *
+     * This is defense-in-depth; Laravel's grammar wraps the column
+     * in backticks, but a crafted value with backticks or parens
+     * could still leak schema or crash a query. No DB identifier we
+     * actually sort on contains anything outside `[A-Za-z0-9_.]`.
+     *
+     * @return array{0:string,1:string}
+     */
+    protected function sanitizeOrder(string $orderBy, string $direction): array
+    {
+        $direction = strtolower($direction);
+        if (!in_array($direction, ['asc', 'desc'], true)) {
+            $direction = 'asc';
+        }
+        if (!preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)?$/', $orderBy)) {
+            $orderBy = 'id';
+        }
+        return [$orderBy, $direction];
+    }
+
     public function all(array $with = [], string $orderBy = 'id', string $direction = 'asc'): Collection
     {
+        [$orderBy, $direction] = $this->sanitizeOrder($orderBy, $direction);
         return $this->model->with($with)->orderBy($orderBy, $direction)->get();
     }
 
@@ -55,6 +87,7 @@ abstract class BaseRepository implements BaseRepositoryInterface
             $query->where($key, $value);
         }
 
+        [$orderBy, $direction] = $this->sanitizeOrder($orderBy, $direction);
         return $query->orderBy($orderBy, $direction)->paginate($perPage);
     }
 

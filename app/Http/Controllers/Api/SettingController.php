@@ -13,6 +13,29 @@ use Illuminate\Support\Facades\Storage;
 
 class SettingController extends Controller
 {
+    /**
+     * Whitelist of legitimate (domain => [keys]) pairs.
+     *
+     * SECURITY (H2): without this whitelist, any admin (or attacker
+     * with an admin token) could write arbitrary keys — e.g. swap
+     * `email.mail_host` to an attacker-controlled SMTP and intercept
+     * password reset tokens, or poison `whatsapp.*` to redirect
+     * payment notifications. The list must match the keys the UI
+     * (AppSettings.vue) and the code (Setting::get) actually use.
+     * Adding a new setting = update BOTH the UI and this map.
+     */
+    private const ALLOWED_SETTINGS = [
+        'company'  => ['name', 'phone', 'email', 'ice', 'rc', 'if', 'patente', 'address', 'city', 'logo'],
+        'general'  => ['company_name', 'phone', 'email'],
+        'locale'   => ['currency', 'currency_symbol', 'timezone', 'date_format', 'language'],
+        'invoice'  => ['default_tax_rate', 'payment_terms_days', 'footer_note'],
+        'stock'    => ['autoriser_stock_negatif', 'seuil_alerte_stock'],
+        'ventes'   => ['paiement_sur_bl'],
+        'whatsapp' => ['twilio_sid', 'twilio_auth_token', 'twilio_whatsapp_from', 'whatsapp_enabled', 'enabled'],
+        'email'    => ['mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_encryption', 'mail_from_address', 'mail_from_name', 'mail_enabled'],
+        'mail'     => ['enabled'],
+    ];
+
     public function __construct(private SettingRepositoryInterface $settings)
     {
     }
@@ -24,11 +47,23 @@ class SettingController extends Controller
 
     public function upsert(Request $request): JsonResponse
     {
+        $allowedDomains = array_keys(self::ALLOWED_SETTINGS);
+
         $data = $request->validate([
-            'domain'     => ['required', 'string', 'max:100'],
+            'domain'     => ['required', 'string', 'in:' . implode(',', $allowedDomains)],
             'settings'   => ['required', 'array'],
             'settings.*' => ['nullable', 'string'],
         ]);
+
+        $allowedKeys = self::ALLOWED_SETTINGS[$data['domain']];
+        $unknown     = array_diff(array_keys($data['settings']), $allowedKeys);
+
+        if ($unknown !== []) {
+            return response()->json([
+                'message' => 'Unknown setting keys for this domain.',
+                'unknown' => array_values($unknown),
+            ], 422);
+        }
 
         foreach ($data['settings'] as $key => $value) {
             $this->settings->upsert($data['domain'], $key, $value);
@@ -39,12 +74,20 @@ class SettingController extends Controller
 
     public function destroy(Request $request): JsonResponse
     {
-        $request->validate([
-            'domain' => ['required', 'string'],
+        $allowedDomains = array_keys(self::ALLOWED_SETTINGS);
+
+        $data = $request->validate([
+            'domain' => ['required', 'string', 'in:' . implode(',', $allowedDomains)],
             'key'    => ['required', 'string'],
         ]);
 
-        $this->settings->deleteByDomainAndKey($request->domain, $request->key);
+        if (!in_array($data['key'], self::ALLOWED_SETTINGS[$data['domain']], true)) {
+            return response()->json([
+                'message' => 'Unknown setting key for this domain.',
+            ], 422);
+        }
+
+        $this->settings->deleteByDomainAndKey($data['domain'], $data['key']);
 
         return response()->json(null, 204);
     }

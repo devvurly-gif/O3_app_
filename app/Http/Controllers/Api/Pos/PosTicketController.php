@@ -19,6 +19,23 @@ class PosTicketController extends Controller
     ) {
     }
 
+    /**
+     * SECURITY (M1 — IDOR): a cashier can otherwise print / void /
+     * retour any ticket id via /api/pos/tickets/{ticket}/*, not just
+     * their own session's tickets. Allow the owner of the session
+     * that produced the ticket, or any admin/manager (both roles
+     * already have POS override powers elsewhere).
+     */
+    private function authorizeTicketAccess(DocumentHeader $ticket): void
+    {
+        $user = auth()->user();
+        if ($user?->isAdmin() || $user?->isManager()) {
+            return;
+        }
+        $sessionUserId = PosSession::whereKey($ticket->pos_session_id)->value('user_id');
+        abort_unless($sessionUserId === $user?->id, 403, 'Ce ticket appartient à une autre session.');
+    }
+
     public function store(CreateTicketRequest $request): JsonResponse
     {
         $session = PosSession::where('user_id', auth()->id())
@@ -65,6 +82,7 @@ class PosTicketController extends Controller
      */
     public function void(DocumentHeader $ticket): JsonResponse
     {
+        $this->authorizeTicketAccess($ticket);
         $ticket = $this->posService->voidTicket($ticket);
 
         return response()->json($ticket);
@@ -78,6 +96,7 @@ class PosTicketController extends Controller
      */
     public function retour(DocumentHeader $document): JsonResponse
     {
+        $this->authorizeTicketAccess($document);
         $document = $this->posService->returnTicket($document);
 
         return response()->json($document);
@@ -88,6 +107,7 @@ class PosTicketController extends Controller
      */
     public function print(DocumentHeader $ticket): Response
     {
+        $this->authorizeTicketAccess($ticket);
         $ticket->load(['lignes', 'footer', 'payments', 'thirdPartner', 'user', 'warehouse']);
 
         $company = $this->getCompanyInfo();
