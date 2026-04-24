@@ -73,9 +73,21 @@ class DocumentFooter extends Model
         ]);
     }
 
-    // Auto sync payment status to document header
+    // Auto sync payment status to document header.
+    //
+    // DeliveryNote (BL) is excluded: a BL's status reflects the *goods*
+    // lifecycle (draft → confirmed/livré → cancelled), not payment.
+    // Payment state is tracked separately via amount_paid / amount_due in
+    // the footer and surfaced in the credit/encours columns. This keeps
+    // the BL badge as "Livré" regardless of whether the customer paid
+    // cash at the till, on credit, or partially.
     public function syncHeaderStatus(): void
     {
+        $this->loadMissing('header');
+        if ($this->header?->document_type === 'DeliveryNote') {
+            return;
+        }
+
         $status = match(true) {
             $this->isPaid()    => 'paid',
             $this->isPartial() => 'partial',
