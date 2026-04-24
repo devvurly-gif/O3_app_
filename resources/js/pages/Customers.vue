@@ -1453,6 +1453,7 @@ import { ref, reactive, computed, watch, onMounted, h } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useThirdPartnerStore } from '@/stores/thirdPartner'
+import type { FrequenceFacturation } from '@/types'
 import { usePriceListStore } from '@/stores/priceList'
 import { useSettingStore } from '@/stores/setting'
 import { useExcelExport } from '@/composables/useExcelExport'
@@ -1920,7 +1921,7 @@ const emptyForm = () => ({
   encours_actuel: 0,
   seuil_credit: 0,
   type_compte: 'normal' as 'normal' | 'en_compte',
-  frequence_facturation: null as string | null,
+  frequence_facturation: null as FrequenceFacturation | null,
   price_list_id: null as number | null,
 })
 const form = reactive(emptyForm())

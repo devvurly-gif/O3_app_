@@ -935,7 +935,6 @@ import BaseTable from '@/components/BaseTable.vue'
 import BasePagination from '@/components/BasePagination.vue'
 import BaseModal from '@/components/BaseModal.vue'
 import BaseNotification from '@/components/BaseNotification.vue'
-import { Str } from '@/utils/helpers'
 
 const { t } = useI18n()
 const store = useProductStore()

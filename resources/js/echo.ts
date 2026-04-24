@@ -1,5 +1,6 @@
 import Echo from 'laravel-echo'
 import Pusher from 'pusher-js'
+import type { ChannelAuthorizationCallback } from 'pusher-js'
 
 declare global {
   interface Window {
@@ -20,7 +21,7 @@ window.Echo = new Echo({
   enabledTransports: ['ws', 'wss'],
   authEndpoint: '/broadcasting/auth',
   authorizer: (channel: { name: string }) => ({
-    authorize: (socketId: string, callback: (error: boolean, data: unknown) => void) => {
+    authorize: (socketId: string, callback: ChannelAuthorizationCallback) => {
       const token = localStorage.getItem('token')
       const headers: Record<string, string> = {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -38,8 +39,8 @@ window.Echo = new Echo({
           if (!res.ok) throw new Error(`Auth failed: ${res.status}`)
           return res.json()
         })
-        .then((data) => callback(false, data))
-        .catch((err) => callback(true, err))
+        .then((data) => callback(null, data))
+        .catch((err: unknown) => callback(err instanceof Error ? err : new Error(String(err)), null))
     },
   }),
 })

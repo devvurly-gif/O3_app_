@@ -89,10 +89,13 @@ jobs:
       - name: Install npm dependencies
         run: npm ci
 
+      - name: Type-check (vue-tsc)
+        # Cleaned up in commit 88de45f-follow-up (0 errors at activation).
+        # Catches type drift in stores / components before it ships.
+        run: npm run type-check
+
       - name: Build Vite bundle
         # Catches Vue template syntax errors, missing imports, and any
         # regression in `resources/js` that would break `npm run build`
-        # on the VPS before we deploy. (We don't run `vue-tsc` in CI yet
-        # — the codebase still has ~30 pre-existing TS errors to clean
-        # up before it can gate merges.)
+        # on the VPS before we deploy.
         run: npm run build

@@ -55,8 +55,8 @@
           >
             <div class="w-full aspect-square rounded-lg bg-gray-200 mb-2 overflow-hidden flex items-center justify-center">
               <img
-                v-if="product.primary_image?.url || product.images?.length"
-                :src="(product.primary_image || product.images[0]).url"
+                v-if="product.primary_image?.url"
+                :src="product.primary_image.url"
                 :alt="product.p_title"
                 class="w-full h-full object-cover"
                 @error="($event: Event) => (($event.target as HTMLImageElement).style.display = 'none')"

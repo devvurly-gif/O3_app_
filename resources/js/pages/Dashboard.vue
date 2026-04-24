@@ -381,7 +381,7 @@ const paymentColors: Record<string, string> = {
           <ul v-if="data?.top_products?.length" class="divide-y divide-gray-100 dark:divide-gray-700 max-h-64 overflow-y-auto">
             <li v-for="(p, idx) in (data?.top_products ?? [])" :key="p.product_id" class="flex items-center gap-3 px-5 py-2.5">
               <span class="w-6 h-6 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-bold flex items-center justify-center shrink-0">
-                {{ idx + 1 }}
+                {{ Number(idx) + 1 }}
               </span>
               <div class="flex-1 min-w-0">
                 <p class="text-sm text-gray-800 dark:text-gray-200 truncate">{{ p.designation }}</p>
@@ -461,7 +461,7 @@ const paymentColors: Record<string, string> = {
           <ul v-if="data?.top_clients?.length" class="divide-y divide-gray-100 dark:divide-gray-700">
             <li v-for="(client, idx) in (data?.top_clients ?? [])" :key="client.id" class="flex items-center gap-3 px-5 py-2.5">
               <span class="w-6 h-6 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center justify-center shrink-0">
-                {{ idx + 1 }}
+                {{ Number(idx) + 1 }}
               </span>
               <div class="flex-1 min-w-0">
                 <p class="text-sm text-gray-800 dark:text-gray-200 font-medium truncate">{{ client.tp_title }}</p>

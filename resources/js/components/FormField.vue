@@ -16,7 +16,7 @@
         :readonly="readonly"
         :required="required"
         :class="inputClasses"
-        @input="$emit('update:modelValue', $event.target.value)"
+        @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
         @blur="$emit('blur')"
       />
 
@@ -30,12 +30,12 @@
         :required="required"
         :rows="rows"
         :class="inputClasses"
-        @input="$emit('update:modelValue', $event.target.value)"
+        @input="$emit('update:modelValue', ($event.target as HTMLTextAreaElement).value)"
         @blur="$emit('blur')"
       />
 
       <div v-if="showCharCount && type === 'textarea'" class="char-count">
-        {{ modelValue?.length || 0 }} / {{ maxlength }}
+        {{ String(modelValue ?? '').length }} / {{ maxlength }}
       </div>
 
       <button
