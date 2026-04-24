@@ -66,7 +66,12 @@ use Illuminate\Support\Facades\Route;
 
 // ── Public ────────────────────────────────────────────────────────────────
 Route::prefix('auth')->group(function () {
-    Route::post('/login', [AuthController::class, 'login']);
+    // SECURITY: 5 attempts per IP per minute. Blocks credential-stuffing
+    // without hurting legitimate typos. AuthController re-checks creds,
+    // so a throttle hit just returns 429 — no side-channel leak about
+    // whether the email exists.
+    Route::post('/login', [AuthController::class, 'login'])
+        ->middleware('throttle:5,1');
 });
 
 // ── Protected (any authenticated user) ────────────────────────────────────

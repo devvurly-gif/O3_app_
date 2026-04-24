@@ -46,7 +46,11 @@ return [
     |
     */
 
-    'expiration' => null,
+    // SECURITY: 12h. Caps the blast radius of a leaked bearer token
+    // (browser history, captured log line, stolen dev laptop) without
+    // forcing users to re-login during a normal workday. Configurable
+    // per-env via SANCTUM_EXPIRATION if a longer window is needed.
+    'expiration' => env('SANCTUM_EXPIRATION', 60 * 12),
 
     /*
     |--------------------------------------------------------------------------

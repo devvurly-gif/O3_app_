@@ -19,9 +19,20 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['*'],
+    // SECURITY: whitelist instead of `['*']`. APP_URL covers local
+    // Laragon (http://o3app.test) and the central VPS, the regex
+    // covers every tenant subdomain on o3app.ma (https only). If a
+    // new origin is ever needed (e.g. a partner domain) add it here
+    // explicitly — never revert to `['*']` when `supports_credentials`
+    // is off, it still leaks response bodies to malicious pages.
+    'allowed_origins' => array_values(array_filter([
+        env('APP_URL'),
+        env('FRONTEND_URL'),
+    ])),
 
-    'allowed_origins_patterns' => [],
+    'allowed_origins_patterns' => [
+        '#^https://[a-z0-9-]+\.o3app\.ma$#',
+    ],
 
     'allowed_headers' => ['*'],
 

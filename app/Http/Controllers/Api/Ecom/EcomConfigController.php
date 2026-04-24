@@ -46,9 +46,19 @@ class EcomConfigController extends Controller
             // Settings table may not exist yet
         }
 
+        // SECURITY: `ecom_api_key` is NO LONGER returned here.
+        // This endpoint is unauthenticated (needs to be, since the shop
+        // frontend boots without any auth context), so exposing the
+        // tenant's API key turned the entire `ecom.key` middleware into
+        // security theater — anyone could fetch it and bypass all
+        // protected `/api/ecom/*` endpoints.
+        //
+        // The O3_ecom frontend must now receive its API key at build
+        // time via `VITE_ECOM_API_KEY`. On the VPS, set `ECOM_API_KEY`
+        // in the Laravel `.env` to the same value (middleware also
+        // accepts that global fallback via `config('services.ecom.api_key')`).
         return response()->json([
             'enabled'  => true,
-            'api_key'  => $tenant->ecom_api_key,
             'shop'     => [
                 'name'    => $companyName ?? $tenant->name,
                 'logo'    => $logo,

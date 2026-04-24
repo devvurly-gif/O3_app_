@@ -104,9 +104,14 @@ class PosTicketController extends Controller
 
         // 80mm receipt paper ≈ 226pts wide, variable height
         $pdf->setPaper([0, 0, 226, 800], 'portrait');
+        // SECURITY: isPhpEnabled=false. Receipt templates do not use
+        // `<script type="text/php">` (grep-verified), and enabling PHP
+        // evaluation inside dompdf would let any admin-writable Setting
+        // value (company name, address, footer…) trigger RCE as the
+        // web user.
         $pdf->setOptions([
             'dpi'               => 96,
-            'isPhpEnabled'      => true,
+            'isPhpEnabled'      => false,
             'isRemoteEnabled'   => false,
             'defaultFont'       => 'DejaVu Sans',
         ]);
