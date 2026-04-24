@@ -84,8 +84,16 @@ class DocumentFooter extends Model
     // Applies to every payable document type including BL: a BL that has
     // been fully paid (in cash/bank/cheque) becomes "Payé". A BL with only
     // an IOU "credit" payment stays "Livré" because the amount_paid is 0.
+    //
+    // When payments are deleted and the document is no longer paid/partial,
+    // the status is reverted to 'confirmed' (the normal pre-payment state)
+    // but ONLY if it was previously 'paid' or 'partial' — we never downgrade
+    // richer lifecycle states like 'converted', 'cancelled', etc.
     public function syncHeaderStatus(): void
     {
+        $header = $this->header;
+        if (!$header) return;
+
         $status = match(true) {
             $this->isPaid()    => 'paid',
             $this->isPartial() => 'partial',
@@ -93,7 +101,13 @@ class DocumentFooter extends Model
         };
 
         if ($status) {
-            $this->header()->update(['status' => $status]);
+            $header->update(['status' => $status]);
+            return;
+        }
+
+        // No payment state → revert 'paid'/'partial' back to 'confirmed'.
+        if (in_array($header->status, ['paid', 'partial'], true)) {
+            $header->update(['status' => 'confirmed']);
         }
     }
 }
