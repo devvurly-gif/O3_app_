@@ -15,7 +15,7 @@ const search = ref('')
 const typeFilter = ref('')
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 
-const saleTypes = ['QuoteSale', 'CustomerOrder', 'DeliveryNote', 'InvoiceSale', 'CreditNoteSale', 'ReturnSale']
+const saleTypes = ['QuoteSale', 'CustomerOrder', 'DeliveryNote', 'InvoiceSale', 'TicketSale', 'CreditNoteSale', 'ReturnSale']
 
 const { exporting, exportExcel } = useExcelExport()
 
@@ -58,6 +58,7 @@ const typeLabels: Record<string, string> = {
   CustomerOrder: 'Bon de Commande Client',
   DeliveryNote: 'Bon de Livraison',
   InvoiceSale: 'Facture',
+  TicketSale: 'Ticket POS',
   CreditNoteSale: 'Avoir',
   ReturnSale: 'Bon de Retour',
 }

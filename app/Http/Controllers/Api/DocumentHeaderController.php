@@ -26,7 +26,7 @@ class DocumentHeaderController extends Controller
     private const DOMAIN_TYPES = [
         'stock'     => ['StockEntry', 'StockExit', 'StockAdjustmentNote', 'StockTransfer'],
         'purchases' => ['PurchaseOrder', 'InvoicePurchase', 'ReceiptNotePurchase', 'CreditNotePurchase', 'ReturnPurchase'],
-        'sales'     => ['QuoteSale', 'CustomerOrder', 'DeliveryNote', 'InvoiceSale', 'CreditNoteSale', 'ReturnSale'],
+        'sales'     => ['QuoteSale', 'CustomerOrder', 'DeliveryNote', 'InvoiceSale', 'TicketSale', 'CreditNoteSale', 'ReturnSale'],
     ];
 
     public function index(Request $request): JsonResponse

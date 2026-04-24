@@ -10,6 +10,7 @@ export const allTypeLabels: Record<string, string> = {
   CustomerOrder: 'Bon de Commande Client',
   DeliveryNote: 'Bon de Livraison',
   InvoiceSale: 'Facture',
+  TicketSale: 'Ticket POS',
   CreditNoteSale: 'Avoir',
   ReturnSale: 'Bon de Retour',
   // Achats
@@ -30,6 +31,7 @@ export const saleTypeLabels: Record<string, string> = {
   CustomerOrder: 'Bon de Commande Client',
   DeliveryNote: 'Bon de Livraison',
   InvoiceSale: 'Facture',
+  TicketSale: 'Ticket POS',
   CreditNoteSale: 'Avoir',
   ReturnSale: 'Bon de Retour',
 }
