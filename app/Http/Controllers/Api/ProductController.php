@@ -77,38 +77,69 @@ class ProductController extends Controller
 
     public function statistics(Product $product): JsonResponse
     {
+        // ── Sales side ───────────────────────────────────────────────
+        // Counted lines:
+        //   - InvoiceSale and TicketSale: every active doc.
+        //   - DeliveryNote (BL): only BLs not yet converted to an
+        //     InvoiceSale (the children guard prevents double counting
+        //     once a BL is billed). Any confirmed BL = real revenue.
+        // Excluded: draft, cancelled.
         $sales = $product->documentLines()
             ->whereHas('document', function ($q) {
-                $q->whereIn('document_type', ['InvoiceSale', 'TicketSale']);
+                $q->whereNotIn('status', ['draft', 'cancelled'])
+                  ->where(function ($sub) {
+                      $sub->whereIn('document_type', ['InvoiceSale', 'TicketSale'])
+                          ->orWhere(function ($bl) {
+                              $bl->where('document_type', 'DeliveryNote')
+                                 ->whereDoesntHave('children', fn ($c) => $c->where('document_type', 'InvoiceSale'));
+                          });
+                  });
             })
-            ->with('document:id,issued_at')
+            ->with('document:id,issued_at,document_type,status')
             ->get();
 
+        // ── Purchase side (mirror) ───────────────────────────────────
+        // Counted lines:
+        //   - InvoicePurchase: every active doc.
+        //   - ReceiptNotePurchase: only those not yet billed
+        //     (whereDoesntHave InvoicePurchase child).
+        //   - StockEntry: direct stock additions with cost (initial
+        //     stock, manual replenishment) — standalone, always count
+        //     when active/applied.
+        // Excluded: draft, cancelled.
         $purchases = $product->documentLines()
             ->whereHas('document', function ($q) {
-                $q->whereIn('document_type', ['InvoicePurchase', 'ReceiptNotePurchase']);
+                $q->whereNotIn('status', ['draft', 'cancelled'])
+                  ->where(function ($sub) {
+                      $sub->whereIn('document_type', ['InvoicePurchase', 'StockEntry'])
+                          ->orWhere(function ($bl) {
+                              $bl->where('document_type', 'ReceiptNotePurchase')
+                                 ->whereDoesntHave('children', fn ($c) => $c->where('document_type', 'InvoicePurchase'));
+                          });
+                  });
             })
-            ->with('document:id,issued_at')
+            ->with('document:id,issued_at,document_type,status')
             ->get();
 
-        $totalUnitsSold = $sales->sum('quantity');
-        $totalRevenue = $sales->sum('total_ttc');
-        $totalUnitsPurchased = $purchases->sum('quantity');
-        $totalCost = $purchases->sum('total_ht');
+        $totalUnitsSold      = (float) $sales->sum('quantity');
+        $totalRevenue        = (float) $sales->sum('total_ttc');
+        $totalUnitsPurchased = (float) $purchases->sum('quantity');
+        // For purchases use HT (cost basis, before tax which is reclaimable).
+        $totalCost           = (float) $purchases->sum('total_ligne_ht');
 
         return response()->json([
             'sales' => [
-                'total_units' => $totalUnitsSold,
-                'total_revenue' => round($totalRevenue, 2),
-                'avg_price' => $totalUnitsSold > 0 ? round($totalRevenue / $totalUnitsSold, 2) : 0,
-                'count' => $sales->groupBy('document_header_id')->count(),
+                'total_units'    => $totalUnitsSold,
+                'total_revenue'  => round($totalRevenue, 2),
+                'avg_price'      => $totalUnitsSold > 0 ? round($totalRevenue / $totalUnitsSold, 2) : 0,
+                'count'          => $sales->groupBy('document_header_id')->count(),
                 'last_sale_date' => $sales->max(fn ($item) => $item->document?->issued_at),
             ],
             'purchases' => [
-                'total_units' => $totalUnitsPurchased,
-                'total_cost' => round($totalCost, 2),
-                'avg_price' => $totalUnitsPurchased > 0 ? round($totalCost / $totalUnitsPurchased, 2) : 0,
-                'count' => $purchases->groupBy('document_header_id')->count(),
+                'total_units'        => $totalUnitsPurchased,
+                'total_cost'         => round($totalCost, 2),
+                'avg_price'          => $totalUnitsPurchased > 0 ? round($totalCost / $totalUnitsPurchased, 2) : 0,
+                'count'              => $purchases->groupBy('document_header_id')->count(),
                 'last_purchase_date' => $purchases->max(fn ($item) => $item->document?->issued_at),
             ],
         ]);
