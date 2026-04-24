@@ -122,10 +122,15 @@ class ThirdPartnerController extends Controller
     public function bulkPayment(Request $request, ThirdPartner $thirdPartner): JsonResponse
     {
         $data = $request->validate([
-            'amount'    => ['required', 'numeric', 'min:0.01'],
-            'method'    => ['required', 'string', 'max:50'],
-            'reference' => ['nullable', 'string', 'max:100'],
-            'notes'     => ['nullable', 'string'],
+            'amount'        => ['required', 'numeric', 'min:0.01'],
+            'method'        => ['required', 'string', 'max:50'],
+            'reference'     => ['nullable', 'string', 'max:100'],
+            'notes'         => ['nullable', 'string'],
+            // Optional: restrict the allocation to specific document IDs
+            // (the UI lets the user tick which BLs/Factures this payment
+            // covers). When omitted, all unpaid payable docs are used.
+            'document_ids'  => ['nullable', 'array'],
+            'document_ids.*' => ['integer'],
         ]);
 
         // Get all unpaid invoices for this partner, oldest first
@@ -134,13 +139,18 @@ class ThirdPartnerController extends Controller
             $payableTypes[] = 'DeliveryNote';
         }
 
-        $unpaidDocs = $thirdPartner->documentHeaders()
+        $query = $thirdPartner->documentHeaders()
             ->whereIn('document_type', $payableTypes)
             ->whereHas('footer', fn ($q) => $q->where('amount_due', '>', 0))
             ->with('footer')
             ->orderBy('issued_at', 'asc')
-            ->orderBy('id', 'asc')
-            ->get();
+            ->orderBy('id', 'asc');
+
+        if (!empty($data['document_ids'])) {
+            $query->whereIn('id', $data['document_ids']);
+        }
+
+        $unpaidDocs = $query->get();
 
         if ($unpaidDocs->isEmpty()) {
             return response()->json(['message' => 'Aucune facture impayée trouvée.'], 422);

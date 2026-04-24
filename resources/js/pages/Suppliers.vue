@@ -1072,34 +1072,56 @@
       size="md"
     >
       <div class="space-y-5">
-        <!-- Unpaid invoices summary -->
+        <!-- Unpaid docs with checkboxes (BL + Factures fournisseurs) -->
         <div v-if="bulkPaymentUnpaidDocs.length > 0" class="bg-amber-50 border border-amber-200 rounded-xl p-4">
           <div class="flex items-center justify-between mb-2">
-            <p class="text-sm font-semibold text-amber-800">Factures impayées</p>
-            <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-700"
-              >{{ bulkPaymentUnpaidDocs.length }} facture(s)</span
+            <p class="text-sm font-semibold text-amber-800">Documents impayés (BL + Factures)</p>
+            <button
+              type="button"
+              class="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 hover:bg-amber-200"
+              @click="toggleBulkPaymentSelectAll"
             >
+              {{ bulkPaymentAllSelected ? 'Tout décocher' : 'Tout cocher' }}
+            </button>
           </div>
-          <div class="max-h-40 overflow-y-auto space-y-1">
-            <div
+          <div class="max-h-48 overflow-y-auto space-y-1">
+            <label
               v-for="doc in bulkPaymentUnpaidDocs"
               :key="doc.id"
-              class="flex items-center justify-between text-sm py-1 px-2 rounded hover:bg-amber-100/50"
+              class="flex items-center justify-between gap-2 text-sm py-1.5 px-2 rounded hover:bg-amber-100/50 cursor-pointer"
             >
-              <div class="flex items-center gap-2">
-                <span class="font-mono text-xs text-gray-600 dark:text-gray-400">{{ doc.reference }}</span>
+              <div class="flex items-center gap-2 min-w-0">
+                <input
+                  :checked="bulkPaymentSelectedIds.includes(doc.id)"
+                  type="checkbox"
+                  class="w-4 h-4 rounded border-amber-300 text-emerald-600 focus:ring-emerald-500"
+                  @change="toggleBulkPaymentDoc(doc.id)"
+                />
+                <span
+                  class="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase"
+                  :class="doc.document_type === 'DeliveryNote'
+                    ? 'bg-blue-100 text-blue-700'
+                    : doc.document_type === 'InvoicePurchase'
+                      ? 'bg-purple-100 text-purple-700'
+                      : 'bg-emerald-100 text-emerald-700'"
+                >
+                  {{ bulkDocTypeShort(doc.document_type) }}
+                </span>
+                <span class="font-mono text-xs text-gray-700 dark:text-gray-400">{{ doc.reference }}</span>
                 <span class="text-xs text-gray-400 dark:text-gray-500">{{ formatDate(doc.issued_at) }}</span>
               </div>
-              <span class="font-mono text-sm font-medium text-red-600"
+              <span class="font-mono text-sm font-medium text-red-600 whitespace-nowrap"
                 >{{ formatNumber(Number(doc.footer?.amount_due ?? 0)) }}
                 <span class="text-xs text-gray-400 dark:text-gray-500">DH</span></span
               >
-            </div>
+            </label>
           </div>
           <div class="mt-2 pt-2 border-t border-amber-200 flex items-center justify-between">
-            <span class="text-sm font-semibold text-amber-800">Total restant dû</span>
+            <span class="text-sm font-semibold text-amber-800">
+              {{ bulkPaymentSelectedIds.length }} sélectionné(s) / Total dû
+            </span>
             <span class="font-mono text-base font-bold text-red-600"
-              >{{ formatNumber(bulkPaymentTotalDue) }} <span class="text-xs text-gray-400 dark:text-gray-500">DH</span></span
+              >{{ formatNumber(bulkPaymentSelectedTotalDue) }} <span class="text-xs text-gray-400 dark:text-gray-500">DH</span></span
             >
           </div>
         </div>
@@ -1144,11 +1166,11 @@
               <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 dark:text-gray-500 font-medium">DH</span>
             </div>
             <p
-              v-if="bulkPaymentForm.amount > bulkPaymentTotalDue && bulkPaymentTotalDue > 0"
+              v-if="bulkPaymentForm.amount > bulkPaymentSelectedTotalDue && bulkPaymentSelectedTotalDue > 0"
               class="text-xs text-amber-600 mt-1"
             >
-              Le montant dépasse le total dû. L'excédent de
-              {{ formatNumber(bulkPaymentForm.amount - bulkPaymentTotalDue) }} DH ne sera pas affecté.
+              Le montant dépasse le total dû des documents cochés. L'excédent de
+              {{ formatNumber(bulkPaymentForm.amount - bulkPaymentSelectedTotalDue) }} DH ne sera pas affecté.
             </p>
           </div>
           <div>
@@ -1212,7 +1234,7 @@
         <button
           v-if="bulkPaymentUnpaidDocs.length > 0 && !bulkPaymentLoading"
           class="px-4 py-2 text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition disabled:opacity-60"
-          :disabled="bulkPaymentSaving || !bulkPaymentForm.amount || bulkPaymentForm.amount <= 0"
+          :disabled="bulkPaymentSaving || !bulkPaymentForm.amount || bulkPaymentForm.amount <= 0 || bulkPaymentSelectedIds.length === 0"
           @click="submitBulkPayment"
         >
           <svg
@@ -1523,16 +1545,56 @@ const bulkPaymentTotalDue = computed(() =>
   bulkPaymentUnpaidDocs.value.reduce((sum: number, d: any) => sum + Number(d.footer?.amount_due ?? 0), 0),
 )
 
+const bulkPaymentSelectedIds = ref<number[]>([])
+
+const bulkPaymentSelectedTotalDue = computed(() =>
+  bulkPaymentUnpaidDocs.value
+    .filter((d: any) => bulkPaymentSelectedIds.value.includes(d.id))
+    .reduce((sum: number, d: any) => sum + Number(d.footer?.amount_due ?? 0), 0),
+)
+
+const bulkPaymentAllSelected = computed(
+  () =>
+    bulkPaymentUnpaidDocs.value.length > 0 &&
+    bulkPaymentSelectedIds.value.length === bulkPaymentUnpaidDocs.value.length,
+)
+
+function toggleBulkPaymentDoc(id: number) {
+  const idx = bulkPaymentSelectedIds.value.indexOf(id)
+  if (idx >= 0) bulkPaymentSelectedIds.value.splice(idx, 1)
+  else bulkPaymentSelectedIds.value.push(id)
+}
+
+function toggleBulkPaymentSelectAll() {
+  if (bulkPaymentAllSelected.value) {
+    bulkPaymentSelectedIds.value = []
+  } else {
+    bulkPaymentSelectedIds.value = bulkPaymentUnpaidDocs.value.map((d: any) => d.id)
+  }
+}
+
+function bulkDocTypeShort(type: string): string {
+  const map: Record<string, string> = {
+    DeliveryNote: 'BL',
+    InvoiceSale: 'FAC',
+    InvoicePurchase: 'FACA',
+  }
+  return map[type] ?? type
+}
+
 async function openBulkPayment(row: any) {
   bulkPaymentTarget.value = row
   bulkPaymentResult.value = null
   Object.assign(bulkPaymentForm, { amount: 0, method: 'cash', reference: '', notes: '' })
   bulkPaymentDetail.value = null
+  bulkPaymentSelectedIds.value = []
   showBulkPaymentModal.value = true
   bulkPaymentLoading.value = true
   try {
     const { data } = await http.get(`/third-partners/${row.id}`)
     bulkPaymentDetail.value = data
+    bulkPaymentSelectedIds.value = bulkPaymentUnpaidDocs.value.map((d: any) => d.id)
+    bulkPaymentForm.amount = Number(bulkPaymentSelectedTotalDue.value.toFixed(2))
   } catch {
     bulkPaymentDetail.value = null
   } finally {
@@ -1550,6 +1612,7 @@ async function submitBulkPayment() {
       method: bulkPaymentForm.method,
       reference: bulkPaymentForm.reference || null,
       notes: bulkPaymentForm.notes || null,
+      document_ids: bulkPaymentSelectedIds.value.length > 0 ? bulkPaymentSelectedIds.value : undefined,
     })
     bulkPaymentResult.value = data
     ;(toast.value as any)?.notify(data.message, 'success')

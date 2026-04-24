@@ -63,31 +63,29 @@ class DocumentFooter extends Model
         return $this->amount_paid > 0 && $this->amount_due > 0;
     }
 
-    // Recalculate amount_due when a payment is added
+    // Recalculate amount_due when a payment is added.
+    //
+    // POS "credit" method payments are IOUs (promise to pay later), not
+    // actual cash received — they must NOT reduce amount_due or push
+    // documents to 'paid'. Only real payments (cash/bank_transfer/cheque
+    // /effet) count toward amount_paid.
     public function recalculateAmountDue(): void
     {
-        $totalPaid = $this->header->payments()->sum('amount');
+        $totalPaid = $this->header->payments()
+            ->where('method', '!=', 'credit')
+            ->sum('amount');
         $this->update([
             'amount_paid' => $totalPaid,
-            'amount_due'  => $this->total_ttc - $totalPaid,
+            'amount_due'  => max(0, $this->total_ttc - $totalPaid),
         ]);
     }
 
-    // Auto sync payment status to document header.
-    //
-    // DeliveryNote (BL) is excluded: a BL's status reflects the *goods*
-    // lifecycle (draft → confirmed/livré → cancelled), not payment.
-    // Payment state is tracked separately via amount_paid / amount_due in
-    // the footer and surfaced in the credit/encours columns. This keeps
-    // the BL badge as "Livré" regardless of whether the customer paid
-    // cash at the till, on credit, or partially.
+    // Auto sync payment status to document header based on real paid amount.
+    // Applies to every payable document type including BL: a BL that has
+    // been fully paid (in cash/bank/cheque) becomes "Payé". A BL with only
+    // an IOU "credit" payment stays "Livré" because the amount_paid is 0.
     public function syncHeaderStatus(): void
     {
-        $this->loadMissing('header');
-        if ($this->header?->document_type === 'DeliveryNote') {
-            return;
-        }
-
         $status = match(true) {
             $this->isPaid()    => 'paid',
             $this->isPartial() => 'partial',

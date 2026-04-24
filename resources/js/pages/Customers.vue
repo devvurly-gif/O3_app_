@@ -1157,34 +1157,56 @@
       size="md"
     >
       <div class="space-y-5">
-        <!-- Unpaid invoices summary -->
+        <!-- Unpaid docs with checkboxes (BL + Factures) -->
         <div v-if="paymentUnpaidDocs.length > 0" class="bg-amber-50 border border-amber-200 rounded-xl p-4">
           <div class="flex items-center justify-between mb-2">
-            <p class="text-sm font-semibold text-amber-800">Factures impayées</p>
-            <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-700"
-              >{{ paymentUnpaidDocs.length }} facture(s)</span
+            <p class="text-sm font-semibold text-amber-800">Documents impayés (BL + Factures)</p>
+            <button
+              type="button"
+              class="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 hover:bg-amber-200"
+              @click="togglePaymentSelectAll"
             >
+              {{ paymentAllSelected ? 'Tout décocher' : 'Tout cocher' }}
+            </button>
           </div>
-          <div class="max-h-40 overflow-y-auto space-y-1">
-            <div
+          <div class="max-h-48 overflow-y-auto space-y-1">
+            <label
               v-for="doc in paymentUnpaidDocs"
               :key="doc.id"
-              class="flex items-center justify-between text-sm py-1 px-2 rounded hover:bg-amber-100/50"
+              class="flex items-center justify-between gap-2 text-sm py-1.5 px-2 rounded hover:bg-amber-100/50 cursor-pointer"
             >
-              <div class="flex items-center gap-2">
-                <span class="font-mono text-xs text-gray-600 dark:text-gray-400">{{ doc.reference }}</span>
+              <div class="flex items-center gap-2 min-w-0">
+                <input
+                  :checked="paymentSelectedIds.includes(doc.id)"
+                  type="checkbox"
+                  class="w-4 h-4 rounded border-amber-300 text-emerald-600 focus:ring-emerald-500"
+                  @change="togglePaymentDoc(doc.id)"
+                />
+                <span
+                  class="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase"
+                  :class="doc.document_type === 'DeliveryNote'
+                    ? 'bg-blue-100 text-blue-700'
+                    : doc.document_type === 'InvoicePurchase'
+                      ? 'bg-purple-100 text-purple-700'
+                      : 'bg-emerald-100 text-emerald-700'"
+                >
+                  {{ docTypeShort(doc.document_type) }}
+                </span>
+                <span class="font-mono text-xs text-gray-700 dark:text-gray-400">{{ doc.reference }}</span>
                 <span class="text-xs text-gray-400 dark:text-gray-500">{{ formatDate(doc.issued_at) }}</span>
               </div>
-              <span class="font-mono text-sm font-medium text-red-600"
+              <span class="font-mono text-sm font-medium text-red-600 whitespace-nowrap"
                 >{{ formatNumber(Number(doc.footer?.amount_due ?? 0)) }}
                 <span class="text-xs text-gray-400 dark:text-gray-500">DH</span></span
               >
-            </div>
+            </label>
           </div>
           <div class="mt-2 pt-2 border-t border-amber-200 flex items-center justify-between">
-            <span class="text-sm font-semibold text-amber-800">Total restant dû</span>
+            <span class="text-sm font-semibold text-amber-800">
+              {{ paymentSelectedIds.length }} sélectionné(s) / Total dû
+            </span>
             <span class="font-mono text-base font-bold text-red-600"
-              >{{ formatNumber(paymentTotalDue) }} <span class="text-xs text-gray-400 dark:text-gray-500">DH</span></span
+              >{{ formatNumber(paymentSelectedTotalDue) }} <span class="text-xs text-gray-400 dark:text-gray-500">DH</span></span
             >
           </div>
         </div>
@@ -1297,9 +1319,9 @@
               />
               <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 dark:text-gray-500 font-medium">DH</span>
             </div>
-            <p v-if="paymentForm.amount > paymentTotalDue && paymentTotalDue > 0" class="text-xs text-amber-600 mt-1">
-              Le montant dépasse le total dû. L'excédent de {{ formatNumber(paymentForm.amount - paymentTotalDue) }} DH
-              ne sera pas affecté.
+            <p v-if="paymentForm.amount > paymentSelectedTotalDue && paymentSelectedTotalDue > 0" class="text-xs text-amber-600 mt-1">
+              Le montant dépasse le total dû des documents cochés. L'excédent de
+              {{ formatNumber(paymentForm.amount - paymentSelectedTotalDue) }} DH ne sera pas affecté.
             </p>
           </div>
           <div>
@@ -1363,7 +1385,7 @@
         <button
           v-if="paymentUnpaidDocs.length > 0 && !paymentLoading"
           class="px-4 py-2 text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition disabled:opacity-60"
-          :disabled="paymentSaving || !paymentForm.amount || paymentForm.amount <= 0"
+          :disabled="paymentSaving || !paymentForm.amount || paymentForm.amount <= 0 || paymentSelectedIds.length === 0"
           @click="submitBulkPayment"
         >
           <svg
@@ -1721,9 +1743,46 @@ const paymentPayableDocs = computed(() => {
 
 const paymentSelectedDocId = ref<number | null>(null)
 
+// Which unpaid docs the user has ticked (BL + Factures). Pre-filled with all
+// when the modal opens.
+const paymentSelectedIds = ref<number[]>([])
+
 const paymentTotalDue = computed(() =>
   paymentUnpaidDocs.value.reduce((sum: number, d: any) => sum + Number(d.footer?.amount_due ?? 0), 0),
 )
+
+const paymentSelectedTotalDue = computed(() =>
+  paymentUnpaidDocs.value
+    .filter((d: any) => paymentSelectedIds.value.includes(d.id))
+    .reduce((sum: number, d: any) => sum + Number(d.footer?.amount_due ?? 0), 0),
+)
+
+const paymentAllSelected = computed(
+  () => paymentUnpaidDocs.value.length > 0 && paymentSelectedIds.value.length === paymentUnpaidDocs.value.length,
+)
+
+function togglePaymentDoc(id: number) {
+  const idx = paymentSelectedIds.value.indexOf(id)
+  if (idx >= 0) paymentSelectedIds.value.splice(idx, 1)
+  else paymentSelectedIds.value.push(id)
+}
+
+function togglePaymentSelectAll() {
+  if (paymentAllSelected.value) {
+    paymentSelectedIds.value = []
+  } else {
+    paymentSelectedIds.value = paymentUnpaidDocs.value.map((d: any) => d.id)
+  }
+}
+
+function docTypeShort(type: string): string {
+  const map: Record<string, string> = {
+    DeliveryNote: 'BL',
+    InvoiceSale: 'FAC',
+    InvoicePurchase: 'FACA',
+  }
+  return map[type] ?? type
+}
 
 async function openBulkPayment(row: any) {
   paymentTarget.value = row
@@ -1731,11 +1790,15 @@ async function openBulkPayment(row: any) {
   Object.assign(paymentForm, { amount: 0, method: 'cash', reference: '', notes: '' })
   paymentDetail.value = null
   paymentSelectedDocId.value = null
+  paymentSelectedIds.value = []
   showPaymentModal.value = true
   paymentLoading.value = true
   try {
     const { data } = await http.get(`/third-partners/${row.id}`)
     paymentDetail.value = data
+    // Tick every unpaid doc by default and pre-fill the amount with the total due
+    paymentSelectedIds.value = paymentUnpaidDocs.value.map((d: any) => d.id)
+    paymentForm.amount = Number(paymentSelectedTotalDue.value.toFixed(2))
   } catch {
     paymentDetail.value = null
   } finally {
@@ -1790,6 +1853,7 @@ async function submitBulkPayment() {
       method: paymentForm.method,
       reference: paymentForm.reference || null,
       notes: paymentForm.notes || null,
+      document_ids: paymentSelectedIds.value.length > 0 ? paymentSelectedIds.value : undefined,
     })
     paymentResult.value = data
     ;(toast.value as any)?.notify(data.message, 'success')
