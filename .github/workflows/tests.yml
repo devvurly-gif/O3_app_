@@ -1,0 +1,75 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  phpunit:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+          MYSQL_DATABASE: o3_app_testing
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, pdo_mysql, bcmath, intl, gd, zip, exif
+          coverage: none
+          tools: composer:v2
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Prepare testing env
+        run: |
+          cp .env.testing .env
+          php artisan key:generate --ansi
+
+      - name: Wait for MySQL
+        run: |
+          for i in {1..30}; do
+            if mysqladmin ping -h 127.0.0.1 -u root --silent; then
+              echo "MySQL is up"; break
+            fi
+            sleep 1
+          done
+
+      - name: Run money + stats guard suite
+        # The 4 files committed in 88de45f. These guard the accounting rules
+        # (IOU credit, bulk payment allocation, product statistics, stock
+        # filter) and must stay green. If later we want the whole Feature
+        # suite to gate merges, switch this to `php artisan test` and fix
+        # any pre-existing red tests first.
+        run: |
+          php artisan test \
+            tests/Feature/Api/CreditIouPaymentTest.php \
+            tests/Feature/Api/BulkPaymentTest.php \
+            tests/Feature/Api/ProductStatisticsTest.php \
+            tests/Feature/Api/ProductStockFilterTest.php \
+            tests/Feature/Api/PaymentWorkflowTest.php
