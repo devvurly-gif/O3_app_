@@ -35,7 +35,8 @@ class ProductController extends Controller
                     'category_id' => $request->category_id,
                     'brand_id'    => $request->brand_id,
                     'p_status'    => $request->has('status') ? $request->boolean('status') : null,
-                ])
+                    'in_stock'    => $request->has('in_stock') ? $request->boolean('in_stock') : null,
+                ], fn ($v) => $v !== null)
             )
         );
     }

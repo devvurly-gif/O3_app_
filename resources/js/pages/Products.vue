@@ -27,6 +27,15 @@
           <option value="1">{{ $t('common.active') }}</option>
           <option value="0">{{ $t('common.inactive') }}</option>
         </select>
+        <select
+          v-model="stockFilter"
+          class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          title="Filtrer par disponibilité du stock"
+        >
+          <option value="">Stock : tous</option>
+          <option value="1">En stock</option>
+          <option value="0">Rupture</option>
+        </select>
       </div>
       <div class="flex items-center gap-2">
         <button
@@ -948,6 +957,7 @@ function onExport() {
 // ── UI state ───────────────────────────────────────────────────────────────
 const search = ref('')
 const statusFilter = ref('')
+const stockFilter = ref('')
 const toast = ref(null)
 const currentTab = ref(0)
 
@@ -1136,6 +1146,7 @@ function buildParams(): Record<string, string> {
   const p: Record<string, string> = {}
   if (search.value.trim()) p.search = search.value.trim()
   if (statusFilter.value !== '') p.status = statusFilter.value
+  if (stockFilter.value !== '') p.in_stock = stockFilter.value
   return p
 }
 
@@ -1149,7 +1160,7 @@ function onPageChange(page) {
   loadPage(page)
 }
 
-watch([search, statusFilter], () => {
+watch([search, statusFilter, stockFilter], () => {
   clearTimeout(searchTimer)
   searchTimer = setTimeout(() => loadPage(1), 350)
 })
