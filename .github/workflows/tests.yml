@@ -73,3 +73,26 @@ jobs:
             tests/Feature/Api/ProductStatisticsTest.php \
             tests/Feature/Api/ProductStockFilterTest.php \
             tests/Feature/Api/PaymentWorkflowTest.php
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Build Vite bundle
+        # Catches Vue template syntax errors, missing imports, and any
+        # regression in `resources/js` that would break `npm run build`
+        # on the VPS before we deploy. (We don't run `vue-tsc` in CI yet
+        # — the codebase still has ~30 pre-existing TS errors to clean
+        # up before it can gate merges.)
+        run: npm run build
