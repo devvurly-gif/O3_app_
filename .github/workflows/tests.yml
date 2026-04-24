@@ -60,19 +60,12 @@ jobs:
             sleep 1
           done
 
-      - name: Run money + stats guard suite
-        # The 4 files committed in 88de45f. These guard the accounting rules
-        # (IOU credit, bulk payment allocation, product statistics, stock
-        # filter) and must stay green. If later we want the whole Feature
-        # suite to gate merges, switch this to `php artisan test` and fix
-        # any pre-existing red tests first.
-        run: |
-          php artisan test \
-            tests/Feature/Api/CreditIouPaymentTest.php \
-            tests/Feature/Api/BulkPaymentTest.php \
-            tests/Feature/Api/ProductStatisticsTest.php \
-            tests/Feature/Api/ProductStockFilterTest.php \
-            tests/Feature/Api/PaymentWorkflowTest.php
+      - name: Run full test suite
+        # Entire Unit + Feature suite must stay green. Triaged at 265 passing
+        # (616 assertions) before flipping the gate. The previous scoped list
+        # (5 files) is kept in git history at commit 88de45f if we ever need
+        # to regress it while a flaky/broken test is being fixed.
+        run: php artisan test
 
   frontend:
     runs-on: ubuntu-latest
