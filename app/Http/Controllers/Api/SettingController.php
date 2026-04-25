@@ -9,6 +9,7 @@ use App\Services\WhatsAppService;
 use App\Models\Setting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 
 class SettingController extends Controller
@@ -174,6 +175,19 @@ class SettingController extends Controller
             'message' => 'Logo uploaded successfully.',
             'url'     => $url,
         ]);
+    }
+
+    /**
+     * Flush the whole application cache.
+     *
+     * SECURITY (M4): used to be a bare closure in routes/api.php,
+     * which prevented `php artisan route:cache` from working. Moved
+     * here so routes are cacheable in production.
+     */
+    public function flushCache(): JsonResponse
+    {
+        Cache::flush();
+        return response()->json(['message' => 'Cache vidé avec succès.']);
     }
 
     /**

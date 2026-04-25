@@ -15,8 +15,13 @@ class ActivityLogController extends Controller
             ->latest();
 
         // Filter by subject type (e.g. "Product", "DocumentHeader")
+        // SECURITY (M3): escape LIKE wildcards `%` `_` (and `\`) so a
+        // crafted input like "_" doesn't match every row and leak
+        // schema info via timing. Still a partial suffix match on the
+        // fully-qualified class name (App\Models\Xxx).
         if ($request->query('subject_type')) {
-            $query->where('subject_type', 'like', '%' . $request->query('subject_type'));
+            $term = addcslashes((string) $request->query('subject_type'), '\\%_');
+            $query->where('subject_type', 'like', '%' . $term);
         }
 
         // Filter by causer (user)

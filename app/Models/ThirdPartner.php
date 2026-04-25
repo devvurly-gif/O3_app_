@@ -26,6 +26,13 @@ class ThirdPartner extends Model
 
     public string $codeField = 'tp_code';
 
+    // SECURITY (M2): `encours_actuel` is intentionally NOT fillable.
+    // It reflects the computed outstanding credit of a customer and
+    // must only be set by `recalculateEncours()` (via `forceFill`) or
+    // the payment flow — never by a mass-assigned request payload.
+    // DB default is 0, so create calls that used to pass 0 explicitly
+    // still work (the value is dropped silently by mass-assignment
+    // and the column default takes over).
     protected $fillable = [
         'tp_title',
         'tp_code',
@@ -39,7 +46,6 @@ class ThirdPartner extends Model
         'tp_email',
         'tp_address',
         'tp_city',
-        'encours_actuel',
         'seuil_credit',
         'type_compte',
         'frequence_facturation',

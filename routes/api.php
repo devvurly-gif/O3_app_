@@ -48,7 +48,6 @@ use App\Http\Controllers\Api\Ecom\EcomSlideController;
 use App\Http\Controllers\Api\Ecom\EcomConfigController;
 use App\Http\Controllers\Api\StorageGalleryController;
 use App\Services\CacheService;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -332,10 +331,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('settings/test-email',    [SettingController::class, 'testEmail']);
         Route::post('settings/test-whatsapp', [SettingController::class, 'testWhatsapp']);
 
-        Route::post('cache/flush', function () {
-            Cache::flush();
-            return response()->json(['message' => 'Cache vidé avec succès.']);
-        });
+        Route::post('cache/flush', [SettingController::class, 'flushCache']);
 
         // Activity Log (audit trail)
         Route::get('activity-log',              [ActivityLogController::class, 'index']);
