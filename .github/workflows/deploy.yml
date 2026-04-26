@@ -1,0 +1,62 @@
+name: Deploy to VPS
+
+# ─────────────────────────────────────────────────────────────────────────
+# Auto-deploy to teliphoni.o3app.ma when the Tests workflow turns green
+# on `main`. Also exposed as a manual dispatch for re-runs / hotfixes.
+#
+# Required GitHub repository secrets (Settings → Secrets and variables → Actions):
+#   VPS_HOST       hostname or IP of the VPS (e.g. 167.99.xxx.xxx)
+#   VPS_USER       SSH user (must own /var/www/O3_app and have NOPASSWD
+#                  sudo for the nginx/supervisor/chown commands deploy.sh
+#                  invokes; usually `root` or a dedicated `deploy` user)
+#   VPS_SSH_KEY    Private OpenSSH key (full PEM, including BEGIN/END
+#                  lines). The matching public key must be in
+#                  ~<VPS_USER>/.ssh/authorized_keys on the VPS.
+#   VPS_PORT       (optional) SSH port; defaults to 22.
+#
+# Safety rails:
+#   * Only fires after a successful `Tests` run on `main` — broken
+#     PHP / TS / build never reaches prod.
+#   * `concurrency` groups by ref + cancels the in-flight run, so a
+#     fast follow-up commit doesn't clash with a deploy already
+#     mid-flight.
+#   * `workflow_dispatch` lets us re-run without pushing (e.g. after
+#     fixing a .env on the VPS).
+# ─────────────────────────────────────────────────────────────────────────
+
+on:
+  workflow_run:
+    workflows: ["Tests"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: SSH deploy.sh
+    runs-on: ubuntu-latest
+
+    # When triggered by `workflow_run`, only proceed if Tests went green.
+    # `workflow_dispatch` has no `event.workflow_run`, so we always run.
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+
+    timeout-minutes: 15
+
+    steps:
+      - name: Run deploy.sh on VPS
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host:     ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key:      ${{ secrets.VPS_SSH_KEY }}
+          port:     ${{ secrets.VPS_PORT || 22 }}
+          # Stream output back to the Actions log line-by-line so a hang
+          # is visible. `set -e` is already inside deploy.sh; pass it
+          # through so the SSH step exits non-zero on any failed command.
+          script: |
+            cd /var/www/O3_app
+            bash deployment/deploy.sh
