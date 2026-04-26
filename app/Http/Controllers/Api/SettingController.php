@@ -162,8 +162,7 @@ class SettingController extends Controller
         // Delete old logo if exists
         $oldLogo = Setting::get('company', 'logo');
         if ($oldLogo) {
-            $oldPath = str_replace('/storage/', '', $oldLogo);
-            Storage::disk('public')->delete($oldPath);
+            $this->deleteLogoFile($oldLogo);
         }
 
         $path = $request->file('logo')->store('logos', 'public');
@@ -197,11 +196,30 @@ class SettingController extends Controller
     {
         $logo = Setting::get('company', 'logo');
         if ($logo) {
-            $path = str_replace('/storage/', '', $logo);
-            Storage::disk('public')->delete($path);
+            $this->deleteLogoFile($logo);
             $this->settings->upsert('company', 'logo', null);
         }
 
         return response()->json(['message' => 'Logo deleted.']);
+    }
+
+    /**
+     * Safely delete a stored logo file.
+     *
+     * SECURITY (L1): the legacy code did `str_replace('/storage/', '', $url)`
+     * then handed the result to `Storage::disk('public')->delete()`. If a
+     * Setting value was ever crafted as `/storage/../../private/secret.txt`,
+     * the resolved path escaped the public disk root. With H2 in place
+     * the value is whitelisted, but defense-in-depth: only delete files
+     * that match the exact shape this controller writes to —
+     * `logos/<basename>`.
+     */
+    private function deleteLogoFile(string $url): void
+    {
+        $path = str_replace('/storage/', '', $url);
+        if (!preg_match('#^logos/[A-Za-z0-9._\-]+$#', $path)) {
+            return;
+        }
+        Storage::disk('public')->delete($path);
     }
 }

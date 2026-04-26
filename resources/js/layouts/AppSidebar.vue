@@ -77,7 +77,7 @@
                 <span
                   v-if="item.groupIcon"
                   class="w-4 h-4 text-slate-600 group-hover:text-slate-400 transition-colors"
-                  v-html="item.groupIcon"
+                  v-html="safeIcon(item.groupIcon)"
                 />
                 <span
                   class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500 group-hover:text-slate-300 transition-colors"
@@ -120,7 +120,7 @@
             <span
               class="shrink-0 w-5 h-5 transition-transform duration-150 group-hover:scale-105"
               :class="isActive(item.to) ? 'text-white' : 'text-slate-500 group-hover:text-slate-300'"
-              v-html="item.icon"
+              v-html="safeIcon(item.icon)"
             />
             <Transition
               enter-active-class="transition duration-150 ease-out"
@@ -221,6 +221,20 @@ interface SidebarLink {
   adminOnly?: boolean
   centralOnly?: boolean
   badge?: string | number
+}
+
+// SECURITY (L2): defense-in-depth around v-html on icon props.
+// Today every icon is a static SVG literal compiled into the bundle,
+// but if a future change ever sources `item.icon` from API/DB this
+// guard prevents stored XSS. Render only strings that look like a
+// plain <svg>…</svg> with no event handlers, scripts, or dangerous
+// URI schemes; otherwise emit nothing.
+function safeIcon(html: string | undefined): string {
+  if (!html) return ''
+  const trimmed = html.trim()
+  if (!/^<svg[\s>]/i.test(trimmed)) return ''
+  if (/<script\b|on[a-z]+\s*=|javascript:/i.test(trimmed)) return ''
+  return trimmed
 }
 
 const props = defineProps<{

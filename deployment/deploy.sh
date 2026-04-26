@@ -20,6 +20,13 @@ if [ -f "$APP_DIR/.env" ]; then
         echo "FATAL: APP_ENV=local in .env. Set APP_ENV=production before deploying." >&2
         exit 1
     fi
+    # L3: without an explicit SANCTUM_STATEFUL_DOMAINS, the config
+    # falls back to a list that includes localhost / 127.0.0.1 —
+    # acceptable for dev, noise in prod. Warn loudly.
+    if ! grep -qE '^SANCTUM_STATEFUL_DOMAINS=.+' "$APP_DIR/.env"; then
+        echo "WARN: SANCTUM_STATEFUL_DOMAINS is not set. Falling back to a list that includes localhost." >&2
+        echo "      Add e.g. SANCTUM_STATEFUL_DOMAINS=teliphoni.o3app.ma to the prod .env." >&2
+    fi
 fi
 
 # Pull latest
