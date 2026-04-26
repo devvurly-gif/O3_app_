@@ -65,21 +65,28 @@ if [ ! -f /etc/nginx/sites-enabled/o3app.conf ]; then
     sudo nginx -t && sudo systemctl reload nginx
 fi
 
-# Setup Supervisor (first deploy only)
-if [ ! -f /etc/supervisor/conf.d/o3-queue-worker.conf ]; then
-    echo "[*] Installing Supervisor config..."
-    sudo cp "$APP_DIR/deployment/supervisor/o3-queue-worker.conf" /etc/supervisor/conf.d/
-    sudo supervisorctl reread
-    sudo supervisorctl update
+# Setup Supervisor — only if supervisorctl is installed on this VPS.
+# Some VPS use systemd or a separate orchestrator for queue workers;
+# don't fail the whole deploy just because supervisor is absent.
+if command -v supervisorctl >/dev/null 2>&1 && [ -d /etc/supervisor/conf.d ]; then
+    if [ ! -f /etc/supervisor/conf.d/o3-queue-worker.conf ]; then
+        echo "[*] Installing Supervisor config..."
+        sudo cp "$APP_DIR/deployment/supervisor/o3-queue-worker.conf" /etc/supervisor/conf.d/
+        sudo supervisorctl reread
+        sudo supervisorctl update
+    fi
+    sudo supervisorctl start o3-queue-worker:* || true
+else
+    echo "[*] Supervisor non installé sur ce VPS — étape ignorée."
+    echo "    (queue workers à gérer via systemd ou autre)"
 fi
-
-# Ensure supervisor is running
-sudo supervisorctl start o3-queue-worker:*
 
 echo "[7/7] Setting permissions..."
 chown -R www-data:www-data "$APP_DIR/storage" "$APP_DIR/bootstrap/cache"
 chmod -R 775 "$APP_DIR/storage" "$APP_DIR/bootstrap/cache"
 
 echo "=== Deployment complete! ==="
-echo "Queue workers status:"
-sudo supervisorctl status o3-queue-worker:*
+if command -v supervisorctl >/dev/null 2>&1; then
+    echo "Queue workers status:"
+    sudo supervisorctl status o3-queue-worker:* 2>/dev/null || true
+fi
