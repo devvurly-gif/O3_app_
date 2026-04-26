@@ -5,9 +5,11 @@ This folder is everything the VPS needs to run / update O3_app.
 ```
 deploy.sh             ← idempotent update script (run on every deploy)
 nginx/                ← nginx site config
-supervisor/           ← queue worker + reverb supervisor configs
+supervisor/           ← (legacy) supervisor configs — only used if supervisor is installed
 reverb.service        ← systemd unit for Laravel Reverb
 setup-reverb.sh       ← one-time Reverb bootstrap
+o3-queue.service      ← systemd unit for the Laravel queue worker
+setup-queue.sh        ← one-time queue-worker bootstrap
 ```
 
 ## How a deploy fires
@@ -64,6 +66,26 @@ Repo → **Settings → Secrets and variables → Actions → New repository sec
 # /etc/sudoers.d/o3app-deploy  (use `visudo -f` to edit)
 deploy ALL=(ALL) NOPASSWD: /bin/cp, /bin/ln, /bin/rm, /usr/bin/chown, /usr/bin/chmod, /usr/sbin/nginx, /bin/systemctl reload nginx, /usr/bin/supervisorctl
 ```
+
+## Queue worker (one-time)
+
+The Laravel queue worker runs as a systemd service (`o3-queue`). Bootstrap once per VPS:
+
+```bash
+sudo bash deployment/setup-queue.sh
+```
+
+Useful afterwards:
+
+```bash
+systemctl status o3-queue          # one-shot status
+journalctl -u o3-queue -f          # tail logs
+php artisan queue:restart          # graceful reload (also called by deploy.sh)
+```
+
+The unit uses `--max-time=3600` so the worker self-exits every hour and
+systemd restarts it — sidesteps memory leaks and makes `queue:restart`
+take effect within at most one loop window.
 
 ## Manual deploy (unchanged)
 

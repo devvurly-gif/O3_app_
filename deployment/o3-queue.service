@@ -1,0 +1,32 @@
+[Unit]
+Description=O3 App Laravel Queue Worker
+After=network.target mysql.service
+# If MySQL is on a different unit, this still doesn't block startup —
+# the worker reconnects on its own. Listed for ordering only.
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/O3_app
+
+# `--max-time=3600` makes the worker exit cleanly after 1h so systemd
+# restarts it — avoids memory leaks and lets `queue:restart` (sent by
+# deploy.sh) pick up new code within the next loop window.
+ExecStart=/usr/bin/php artisan queue:work database --sleep=3 --tries=3 --backoff=60 --max-time=3600
+
+# Send SIGTERM so the worker finishes the current job before dying
+# (queue:work catches it and aborts the wait, finishing the job in
+# flight). 3600s is the safety upper bound.
+KillSignal=SIGTERM
+TimeoutStopSec=3600
+
+Restart=always
+RestartSec=5
+
+# Logs to journald (view with: journalctl -u o3-queue -f)
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
