@@ -10,6 +10,9 @@ reverb.service        ← systemd unit for Laravel Reverb
 setup-reverb.sh       ← one-time Reverb bootstrap
 o3-queue.service      ← systemd unit for the Laravel queue worker
 setup-queue.sh        ← one-time queue-worker bootstrap
+o3-scheduler.service  ← systemd unit for `php artisan schedule:run` (oneshot)
+o3-scheduler.timer    ← timer firing the scheduler every minute
+setup-scheduler.sh    ← one-time scheduler bootstrap
 ```
 
 ## How a deploy fires
@@ -86,6 +89,27 @@ php artisan queue:restart          # graceful reload (also called by deploy.sh)
 The unit uses `--max-time=3600` so the worker self-exits every hour and
 systemd restarts it — sidesteps memory leaks and makes `queue:restart`
 take effect within at most one loop window.
+
+## Scheduler / cron (one-time)
+
+Laravel's `app/Console/Kernel.php` registers daily tasks (low-stock notifications,
+due-invoice reminders, periodic invoice generation). They only fire if a system
+process triggers `php artisan schedule:run` every minute.
+
+Instead of a crontab, we use a systemd timer (`o3-scheduler.timer`) that fires the
+oneshot service `o3-scheduler.service` once a minute. Bootstrap once per VPS:
+
+```bash
+sudo bash deployment/setup-scheduler.sh
+```
+
+Useful afterwards:
+
+```bash
+systemctl status o3-scheduler.timer  # state + next firing
+journalctl -u o3-scheduler -f        # tail every minute's run
+php artisan schedule:list            # show registered tasks
+```
 
 ## Manual deploy (unchanged)
 

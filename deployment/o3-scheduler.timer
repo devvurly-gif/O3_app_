@@ -1,0 +1,18 @@
+[Unit]
+Description=Run O3 App Laravel Scheduler every minute
+Requires=o3-scheduler.service
+
+[Timer]
+# Fire every minute, exactly on the second-00 boundary.
+# Equivalent to a `* * * * *` crontab entry.
+OnCalendar=minutely
+AccuracySec=1s
+
+# Catch up on missed runs after downtime (don't fire 60 backlog jobs;
+# scheduler is idempotent on the same minute, but this keeps logs clean).
+Persistent=false
+
+Unit=o3-scheduler.service
+
+[Install]
+WantedBy=timers.target
