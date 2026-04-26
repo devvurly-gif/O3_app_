@@ -51,6 +51,7 @@ for db in "${DBS[@]}"; do
         --single-transaction \
         --quick \
         --skip-lock-tables \
+        --no-tablespaces \
         --routines \
         --triggers \
         --events \
