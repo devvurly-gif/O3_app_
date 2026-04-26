@@ -1,0 +1,20 @@
+[Unit]
+Description=O3 App MySQL Daily Backup (one-shot, fired by o3-backup.timer)
+After=network.target mysql.service
+Wants=mysql.service
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+# Auth via /root/.my.cnf (mode 600). See setup-backup.sh.
+WorkingDirectory=/var/www/O3_app
+ExecStart=/bin/bash /var/www/O3_app/deployment/backup-db.sh
+
+# Logs to journald (view with: journalctl -u o3-backup -f)
+StandardOutput=journal
+StandardError=journal
+
+# Be polite to the system: low priority, don't compete with prod traffic.
+Nice=10
+IOSchedulingClass=idle

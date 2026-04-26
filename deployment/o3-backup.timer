@@ -1,0 +1,15 @@
+[Unit]
+Description=Run O3 App MySQL backup daily
+Requires=o3-backup.service
+
+[Timer]
+# Daily at 03:30 server time. Late enough that the 01:00 periodic-invoice
+# job is long done, early enough that traffic is minimal.
+OnCalendar=*-*-* 03:30:00
+AccuracySec=1m
+# Catch up on a missed run after downtime — better a late backup than none.
+Persistent=true
+Unit=o3-backup.service
+
+[Install]
+WantedBy=timers.target

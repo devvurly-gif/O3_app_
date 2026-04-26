@@ -13,6 +13,10 @@ setup-queue.sh        ← one-time queue-worker bootstrap
 o3-scheduler.service  ← systemd unit for `php artisan schedule:run` (oneshot)
 o3-scheduler.timer    ← timer firing the scheduler every minute
 setup-scheduler.sh    ← one-time scheduler bootstrap
+backup-db.sh          ← daily mysqldump + gzip + 14-day retention
+o3-backup.service     ← systemd unit running backup-db.sh
+o3-backup.timer       ← timer firing the backup at 03:30 daily
+setup-backup.sh       ← one-time backup bootstrap (writes /root/.my.cnf)
 ```
 
 ## How a deploy fires
@@ -110,6 +114,40 @@ systemctl status o3-scheduler.timer  # state + next firing
 journalctl -u o3-scheduler -f        # tail every minute's run
 php artisan schedule:list            # show registered tasks
 ```
+
+## Backups DB (one-time)
+
+Daily MySQL backups go to `/var/backups/o3_app/YYYY-MM-DD/`, one gzipped
+`.sql.gz` per database (central + every tenant DB, autodiscovered).
+Retention: 14 days local. Bootstrap once per VPS:
+
+```bash
+sudo bash deployment/setup-backup.sh
+```
+
+This reads DB creds from `.env` and writes `/root/.my.cnf` (mode 600) so
+`mysqldump` authenticates without leaking credentials in process lists.
+
+Useful afterwards:
+
+```bash
+systemctl status o3-backup.timer       # timer state + next run
+journalctl -u o3-backup -f             # tail backup runs
+systemctl start o3-backup              # run a backup right now (manual trigger)
+bash deployment/backup-db.sh --dry-run # see what would be dumped
+ls -la /var/backups/o3_app/            # list dated folders
+```
+
+**Restore one database** (example: tenant `teliphoni` from yesterday):
+
+```bash
+zcat /var/backups/o3_app/2026-04-25/tenantteliphoni-*.sql.gz \
+  | mysql tenantteliphoni
+```
+
+**Off-site copy** (recommended): rsync the `/var/backups/o3_app/` tree to
+another server / S3 / Backblaze B2 nightly. Not configured yet — local-only
+backups die with the VPS.
 
 ## Manual deploy (unchanged)
 
