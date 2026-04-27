@@ -160,6 +160,23 @@
             </div>
           </div>
 
+          <button
+            type="button"
+            class="flex items-center gap-1 text-xs px-2 py-1 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/40 dark:text-blue-300 transition"
+            title="Ventes par mode de paiement"
+            @click="openSessionStats"
+          >
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 3v18h18M7 14l3-3 4 4 6-6" />
+            </svg>
+            <span>Ventes</span>
+            <span
+              v-if="(sessionStats?.total_tickets ?? 0) > 0"
+              class="ml-0.5 text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded-full"
+            >
+              {{ sessionStats?.total_tickets }}
+            </span>
+          </button>
           <router-link to="/pos/tickets" class="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 transition">
             Historique
           </router-link>
@@ -294,65 +311,6 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
-        </div>
-      </div>
-
-      <!-- Live session stats (ventes par mode de paiement) -->
-      <div class="border-t border-gray-200 dark:border-gray-700 px-5 py-2 shrink-0 bg-gray-50 dark:bg-gray-900/40">
-        <button
-          type="button"
-          class="w-full flex items-center justify-between gap-2 text-xs font-medium text-gray-600 dark:text-gray-300 py-1"
-          @click="showSessionStats = !showSessionStats"
-        >
-          <span class="flex items-center gap-2">
-            <svg class="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M3 3v18h18M7 14l3-3 4 4 6-6" />
-            </svg>
-            Ventes session
-            <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
-              {{ sessionStats?.total_tickets ?? 0 }} ticket{{ (sessionStats?.total_tickets ?? 0) > 1 ? 's' : '' }}
-            </span>
-          </span>
-          <span class="flex items-center gap-1">
-            <span class="font-semibold text-gray-900 dark:text-white">{{ formatPrice(sessionStats?.total_ttc ?? 0) }}</span>
-            <svg
-              class="w-3 h-3 transition-transform"
-              :class="showSessionStats ? 'rotate-180' : ''"
-              fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
-            >
-              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
-          </span>
-        </button>
-
-        <div v-if="showSessionStats" class="mt-2 space-y-1 pb-1">
-          <div
-            v-for="m in paymentMethodRows"
-            :key="m.method"
-            class="flex items-center justify-between text-xs px-2 py-1.5 rounded-lg"
-            :class="m.bg"
-          >
-            <span class="flex items-center gap-2">
-              <span class="w-2 h-2 rounded-full" :class="m.dot"></span>
-              <span class="font-medium" :class="m.label">{{ m.title }}</span>
-              <span class="text-[10px]" :class="m.muted">
-                {{ m.count }} ticket{{ m.count > 1 ? 's' : '' }}
-              </span>
-            </span>
-            <span class="font-semibold tabular-nums" :class="m.label">{{ formatPrice(m.amount) }}</span>
-          </div>
-
-          <div v-if="!hasAnySales" class="text-[11px] text-gray-400 dark:text-gray-500 text-center py-2">
-            Aucune vente enregistrée pour le moment.
-          </div>
-
-          <div
-            v-if="hasAnySales"
-            class="flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400 px-2 pt-1 border-t border-gray-200 dark:border-gray-700"
-          >
-            <span>Total encaissé</span>
-            <span class="font-semibold tabular-nums">{{ formatPrice(sessionStats?.total_paid ?? 0) }}</span>
-          </div>
         </div>
       </div>
 
@@ -496,6 +454,126 @@
         </div>
       </div>
     </div>
+
+    <!-- Session Stats Modal: ventes par mode de paiement -->
+    <div
+      v-if="showSessionStats"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      @click.self="showSessionStats = false"
+    >
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 3v18h18M7 14l3-3 4 4 6-6" />
+              </svg>
+              Ventes de la session
+            </h3>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              Détail par mode de paiement
+            </p>
+          </div>
+          <button
+            type="button"
+            class="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+            @click="showSessionStats = false"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Summary header -->
+        <div class="grid grid-cols-2 gap-2 mb-4">
+          <div class="bg-gray-50 dark:bg-gray-900 rounded-xl p-3">
+            <p class="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400 font-medium">Tickets</p>
+            <p class="text-xl font-bold text-gray-900 dark:text-white mt-0.5">
+              {{ sessionStats?.total_tickets ?? 0 }}
+            </p>
+            <p v-if="(sessionStats?.cancelled_tickets ?? 0) > 0" class="text-[10px] text-red-500 mt-0.5">
+              {{ sessionStats?.cancelled_tickets }} annulé{{ (sessionStats?.cancelled_tickets ?? 0) > 1 ? 's' : '' }}
+            </p>
+          </div>
+          <div class="bg-gray-50 dark:bg-gray-900 rounded-xl p-3">
+            <p class="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400 font-medium">Total TTC</p>
+            <p class="text-xl font-bold text-gray-900 dark:text-white mt-0.5">
+              {{ formatPrice(sessionStats?.total_ttc ?? 0) }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Payment method breakdown -->
+        <div class="space-y-2">
+          <p class="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+            Modes de paiement
+          </p>
+
+          <div v-if="!hasAnySales" class="text-sm text-gray-400 dark:text-gray-500 text-center py-6 bg-gray-50 dark:bg-gray-900 rounded-xl">
+            Aucune vente enregistrée pour le moment.
+          </div>
+
+          <template v-else>
+            <div
+              v-for="m in paymentMethodRows"
+              :key="m.method"
+              class="flex items-center justify-between p-3 rounded-xl"
+              :class="m.bg"
+            >
+              <span class="flex items-center gap-2.5">
+                <span class="w-2.5 h-2.5 rounded-full" :class="m.dot"></span>
+                <span class="text-sm font-semibold" :class="m.label">{{ m.title }}</span>
+                <span class="text-[11px] px-1.5 py-0.5 rounded-full bg-white/60 dark:bg-black/20" :class="m.muted">
+                  {{ m.count }} ticket{{ m.count > 1 ? 's' : '' }}
+                </span>
+              </span>
+              <span class="text-sm font-bold tabular-nums" :class="m.label">
+                {{ formatPrice(m.amount) }}
+              </span>
+            </div>
+          </template>
+        </div>
+
+        <!-- Totals -->
+        <div v-if="hasAnySales" class="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700 space-y-1.5 text-sm">
+          <div class="flex justify-between">
+            <span class="text-gray-600 dark:text-gray-400">Total encaissé</span>
+            <span class="font-semibold text-gray-900 dark:text-white tabular-nums">
+              {{ formatPrice(sessionStats?.total_paid ?? 0) }}
+            </span>
+          </div>
+          <div v-if="(sessionStats?.total_credit ?? 0) > 0" class="flex justify-between">
+            <span class="text-amber-600 dark:text-amber-400">Dont en compte (à recouvrer)</span>
+            <span class="font-semibold text-amber-700 dark:text-amber-400 tabular-nums">
+              {{ formatPrice(sessionStats?.total_credit ?? 0) }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Footer actions -->
+        <div class="mt-5 flex gap-2">
+          <button
+            type="button"
+            class="flex-1 py-2.5 rounded-xl text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition flex items-center justify-center gap-1.5"
+            :disabled="refreshingStats"
+            @click="refreshSessionStats"
+          >
+            <svg class="w-4 h-4" :class="refreshingStats ? 'animate-spin' : ''" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            {{ refreshingStats ? 'Actualisation...' : 'Actualiser' }}
+          </button>
+          <button
+            type="button"
+            class="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition"
+            @click="showSessionStats = false"
+          >
+            Fermer
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -540,7 +618,8 @@ interface SessionStats {
   tickets_count_by_method: Record<string, number>
 }
 const sessionStats = ref<SessionStats | null>(null)
-const showSessionStats = ref(true)
+const showSessionStats = ref(false)
+const refreshingStats = ref(false)
 
 const PAYMENT_METHOD_META: Record<string, { title: string; bg: string; dot: string; label: string; muted: string }> = {
   cash:   { title: 'Espèces',   bg: 'bg-green-50 dark:bg-green-900/20',   dot: 'bg-green-500',   label: 'text-green-700 dark:text-green-400',   muted: 'text-green-600/70 dark:text-green-400/60' },
@@ -583,6 +662,21 @@ async function fetchSessionStats(): Promise<void> {
     sessionStats.value = data?.stats ?? null
   } catch {
     // Non-fatal — leave previous stats in place.
+  }
+}
+
+function openSessionStats(): void {
+  showSessionStats.value = true
+  // Refresh on open so the cashier always sees current numbers.
+  fetchSessionStats()
+}
+
+async function refreshSessionStats(): Promise<void> {
+  refreshingStats.value = true
+  try {
+    await fetchSessionStats()
+  } finally {
+    refreshingStats.value = false
   }
 }
 
