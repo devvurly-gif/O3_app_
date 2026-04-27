@@ -210,11 +210,6 @@ const routes: RouteRecordRaw[] = [
     meta: { layout: 'app', title: 'App Settings', breadcrumb: 'Paramètres', adminOnly: true },
   },
   {
-    path: '/settings/modules',
-    component: () => import('../pages/settings/Modules.vue'),
-    meta: { layout: 'app', title: 'Modules', breadcrumb: 'Modules', adminOnly: true },
-  },
-  {
     path: '/settings/pos-terminals',
     component: () => import('../pages/settings/PosTerminals.vue'),
     meta: { layout: 'app', title: 'Terminaux POS', breadcrumb: 'Terminaux POS', adminOnly: true },

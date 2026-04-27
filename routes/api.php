@@ -31,7 +31,6 @@ use App\Http\Controllers\Api\ExportController;
 use App\Http\Controllers\Api\ImportController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\ActivityLogController;
-use App\Http\Controllers\Api\ModuleController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\Pos\PosProductController;
 use App\Http\Controllers\Api\Pos\PosSessionController;
@@ -253,8 +252,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('stock-mouvements',                                               [StockMouvementController::class, 'store']);
     });
 
-    // ── POS (module-gated) ──────────────────────────────────────────────────
-    Route::middleware(['module:pos', 'permission:pos.access'])->prefix('pos')->group(function () {
+    // ── POS (gated on tenant feature flag) ─────────────────────────────────
+    Route::middleware(['feature:pos', 'permission:pos.access'])->prefix('pos')->group(function () {
         // Terminals (admin/manager)
         Route::middleware('role:admin,manager,cashier')->group(function () {
             Route::get('terminals',              [PosTerminalController::class, 'index']);
@@ -293,7 +292,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('products/reprice',        [PosProductController::class, 'reprice']);
     });
 
-    // ── Admin-only (users, settings, structures, incrementors, roles, modules) ──
+    // ── Admin-only (users, settings, structures, incrementors, roles) ─────
     Route::middleware('role:admin')->group(function () {
         Route::get('users',              [UserController::class, 'index']);
         Route::post('users',             [UserController::class, 'store']);
@@ -319,10 +318,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('document-incrementors/{document_incrementor}',       [DocumentIncrementorController::class, 'show']);
         Route::put('document-incrementors/{document_incrementor}',       [DocumentIncrementorController::class, 'update']);
         Route::delete('document-incrementors/{document_incrementor}',    [DocumentIncrementorController::class, 'destroy']);
-
-        // Modules
-        Route::get('modules',                  [ModuleController::class, 'index']);
-        Route::patch('modules/{module}',       [ModuleController::class, 'update']);
 
         Route::post('settings',   [SettingController::class, 'upsert']);
         Route::delete('settings', [SettingController::class, 'destroy']);

@@ -117,18 +117,6 @@ class TenantController extends Controller
             // Seed structure incrementors
             (new \Database\Seeders\StructureIncrementorSeeder())->run();
 
-            // Seed modules and activate based on tenant flags
-            (new \Database\Seeders\ModuleSeeder())->run();
-            if ($tenant->pos_enabled) {
-                \App\Models\Module::where('name', 'pos')->update(['is_active' => true]);
-            }
-            if ($tenant->ecom_enabled) {
-                \App\Models\Module::updateOrCreate(
-                    ['name' => 'ecom'],
-                    ['display_name' => 'E-Commerce', 'description' => 'Boutique en ligne', 'is_active' => true]
-                );
-            }
-
             // Seed default operational data
             $this->seedDefaultData($tenant);
         });
@@ -202,50 +190,28 @@ class TenantController extends Controller
         }
         $tenant->save();
 
-        // Sync modules & settings inside the tenant's database
+        // Sync tenant-side settings & seed POS terminal when toggling pos_enabled.
+        // (Feature gating itself reads tenant flags directly — no in-tenant module table.)
         $syncNeeded = array_key_exists('pos_enabled', $validated)
-            || array_key_exists('ecom_enabled', $validated)
             || array_key_exists('paiement_bl_enabled', $validated);
 
         if ($syncNeeded) {
-            $tenant->run(function () use ($validated, $tenant) {
-                // Sync POS module
-                if (array_key_exists('pos_enabled', $validated)) {
-                    \App\Models\Module::where('name', 'pos')
-                        ->update(['is_active' => (bool) $validated['pos_enabled']]);
-                    \App\Models\Module::clearCache('pos');
-
-                    // Seed POS terminal if enabling for first time
-                    if ($validated['pos_enabled']) {
-                        $warehouse = \App\Models\Warehouse::first();
-                        if ($warehouse) {
-                            \App\Models\PosTerminal::firstOrCreate(
-                                ['code' => 'POS_1'],
-                                ['name' => 'POS_1', 'warehouse_id' => $warehouse->id, 'is_active' => true]
-                            );
-                        }
+            $tenant->run(function () use ($validated) {
+                // Seed POS terminal if enabling POS for first time
+                if (! empty($validated['pos_enabled'])) {
+                    $warehouse = \App\Models\Warehouse::first();
+                    if ($warehouse) {
+                        \App\Models\PosTerminal::firstOrCreate(
+                            ['code' => 'POS_1'],
+                            ['name' => 'POS_1', 'warehouse_id' => $warehouse->id, 'is_active' => true]
+                        );
                     }
-                }
-
-                // Sync Ecom module
-                if (array_key_exists('ecom_enabled', $validated)) {
-                    \App\Models\Module::updateOrCreate(
-                        ['name' => 'ecom'],
-                        [
-                            'display_name' => 'E-Commerce',
-                            'description'  => 'Boutique en ligne',
-                            'is_active'    => (bool) $validated['ecom_enabled'],
-                        ]
-                    );
-                    \App\Models\Module::clearCache('ecom');
                 }
 
                 // Sync paiement_sur_bl setting
                 if (array_key_exists('paiement_bl_enabled', $validated)) {
                     \App\Models\Setting::set('ventes', 'paiement_sur_bl', $validated['paiement_bl_enabled'] ? 'true' : 'false');
                 }
-
-                \App\Models\Module::clearAllCache();
             });
         }
 
@@ -340,18 +306,6 @@ class TenantController extends Controller
             \App\Models\Setting::set('general', 'company_name', $tenant->name);
             \App\Models\Setting::set('company', 'name', $tenant->name);
             \App\Models\Setting::set('company', 'email', $tenant->email);
-
-            // Seed modules and activate based on tenant flags
-            (new \Database\Seeders\ModuleSeeder())->run();
-            if ($tenant->pos_enabled) {
-                \App\Models\Module::where('name', 'pos')->update(['is_active' => true]);
-            }
-            if ($tenant->ecom_enabled) {
-                \App\Models\Module::updateOrCreate(
-                    ['name' => 'ecom'],
-                    ['display_name' => 'E-Commerce', 'description' => 'Boutique en ligne', 'is_active' => true]
-                );
-            }
 
             // Seed default operational data
             $this->seedDefaultData($tenant);

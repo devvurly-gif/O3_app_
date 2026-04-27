@@ -67,7 +67,7 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'role'       => \App\Http\Middleware\CheckRole::class,
         'permission' => \App\Http\Middleware\CheckPermission::class,
-        'module'     => \App\Http\Middleware\CheckModuleActive::class,
+        'feature'    => \App\Http\Middleware\CheckTenantFeature::class,
         'ecom.key'   => \App\Http\Middleware\EcomApiKey::class,
     ];
 }

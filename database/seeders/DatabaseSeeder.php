@@ -49,9 +49,6 @@ class DatabaseSeeder extends Seeder
 
             // ── 8. Documents ──────────────────────────────────────
             DocumentSeeder::class,
-
-            // ── 9. Modules ────────────────────────────────────────
-            ModuleSeeder::class,
         ]);
 
         $this->command->info('');

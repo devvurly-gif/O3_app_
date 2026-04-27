@@ -487,13 +487,6 @@ const tenantNavItems = computed((): SidebarLink[] => {
       groupKey_ref: 'nav.settings',
     },
     {
-      to: '/settings/modules',
-      label: 'Modules',
-      icon: icons.modules,
-      adminOnly: true,
-      groupKey_ref: 'nav.settings',
-    },
-    {
       to: '/settings/imports',
       labelKey: 'imports.title',
       icon: icons.stock,

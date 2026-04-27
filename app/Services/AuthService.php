@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\Module;
 use App\Models\User;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use Illuminate\Support\Facades\Hash;
@@ -36,9 +35,9 @@ class AuthService
             ]);
         }
 
-        if ($user->isCashier() && !Module::where('name', 'pos')->where('is_active', true)->exists()) {
+        if ($user->isCashier() && !$this->tenantFeatures()['pos']) {
             throw ValidationException::withMessages([
-                'email' => ['Le module POS n\'est pas activé. Contactez votre administrateur.'],
+                'email' => ['La fonctionnalité POS n\'est pas activée pour ce compte. Contactez votre administrateur.'],
             ]);
         }
 
@@ -64,6 +63,8 @@ class AuthService
 
     private function formatProfile(User $user): array
     {
+        $features = $this->tenantFeatures();
+
         return [
             'id'          => $user->id,
             'name'        => $user->name,
@@ -72,7 +73,24 @@ class AuthService
             'role_id'     => $user->role_id,
             'permissions' => $user->role?->permissions->pluck('name')->toArray() ?? [],
             'avatar'         => $user->avatar,
-            'active_modules' => Module::allActiveNames(),
+            // Frontend uses these slugs for sidebar/route gating (auth.hasModule('pos'/'ecom')).
+            // Source of truth: tenant flags in central tenants table.
+            'active_modules' => array_keys(array_filter($features)),
+        ];
+    }
+
+    /**
+     * Read tenant feature flags from central tenants table.
+     *
+     * @return array{pos: bool, ecom: bool}
+     */
+    private function tenantFeatures(): array
+    {
+        $tenant = function_exists('tenant') ? tenant() : null;
+
+        return [
+            'pos'  => (bool) ($tenant?->pos_enabled  ?? false),
+            'ecom' => (bool) ($tenant?->ecom_enabled ?? false),
         ];
     }
 }
