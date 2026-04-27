@@ -3,12 +3,15 @@
 namespace App\Http\Controllers\Api\Central;
 
 use App\Http\Controllers\Controller;
+use App\Mail\TenantContractMail;
 use App\Models\Tenant;
 use App\Services\ProductScraperService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class TenantController extends Controller
 {
@@ -670,6 +673,95 @@ class TenantController extends Controller
 
         \Illuminate\Support\Facades\Log::warning("Image fallback to external URL for product #{$product->id}: {$url}");
         return false;
+    }
+
+    /**
+     * GET /api/central/tenants/{tenant}/contract
+     *
+     * Download the SaaS service contract template (.docx) for a given tenant.
+     * Currently serves the canonical template from docs/legal/. Pre-filling
+     * with tenant-specific data is intentionally NOT done here so that admins
+     * can edit freely in Word before sending for e-signature.
+     *
+     * Optional query: ?doc=fiche  → serves the intake form instead.
+     */
+    public function downloadContract(Request $request, Tenant $tenant): BinaryFileResponse
+    {
+        $which = $request->query('doc') === 'fiche' ? 'fiche' : 'contrat';
+        $file = $which === 'fiche'
+            ? base_path('docs/legal/fiche-souscription-client.docx')
+            : base_path('docs/legal/contrat-services-saas.docx');
+
+        abort_unless(is_file($file), 404, 'Document non disponible. Régénérer via docs/legal/build/md_to_docx.py.');
+
+        $slug = Str::slug($tenant->name ?: $tenant->id);
+        $stem = $which === 'fiche' ? 'fiche-souscription' : 'contrat-services';
+        $name = "{$stem}-{$slug}.docx";
+
+        return response()->download($file, $name, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        ]);
+    }
+
+    /**
+     * POST /api/central/tenants/{tenant}/contract/send
+     *
+     * Email the contract (and optionally the intake form) to a recipient.
+     * Defaults: recipient = tenant.email, both attachments included.
+     *
+     * Body:
+     * {
+     *   "to":          "client@exemple.ma",   // optional, defaults to tenant.email
+     *   "cc":          ["copie@exemple.ma"],  // optional
+     *   "message":     "...",                  // optional free-text intro
+     *   "include_intake_form": true            // optional, default true
+     * }
+     */
+    public function sendContract(Request $request, Tenant $tenant): JsonResponse
+    {
+        $validated = $request->validate([
+            'to'                  => 'nullable|email|max:255',
+            'cc'                  => 'nullable|array',
+            'cc.*'                => 'email|max:255',
+            'message'             => 'nullable|string|max:2000',
+            'include_intake_form' => 'nullable|boolean',
+        ]);
+
+        $to = $validated['to'] ?? $tenant->email;
+        if (!$to) {
+            return response()->json([
+                'message' => 'Aucun destinataire défini : renseignez l\'email du tenant ou indiquez "to".',
+            ], 422);
+        }
+
+        $mailable = new TenantContractMail(
+            tenant: $tenant,
+            customMessage: $validated['message'] ?? null,
+            includeIntakeForm: (bool) ($validated['include_intake_form'] ?? true),
+        );
+
+        $sender = Mail::to($to);
+        if (!empty($validated['cc'])) {
+            $sender->cc($validated['cc']);
+        }
+
+        try {
+            $sender->send($mailable);
+        } catch (\Throwable $e) {
+            \Log::error('TenantContractMail failed: ' . $e->getMessage(), [
+                'tenant_id' => $tenant->id,
+                'to'        => $to,
+            ]);
+            return response()->json([
+                'message' => 'Échec de l\'envoi du contrat par email : ' . $e->getMessage(),
+            ], 500);
+        }
+
+        return response()->json([
+            'message' => "Contrat envoyé à {$to}.",
+            'to'      => $to,
+            'cc'      => $validated['cc'] ?? [],
+        ]);
     }
 
     /**

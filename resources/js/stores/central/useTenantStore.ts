@@ -102,5 +102,50 @@ export const useTenantStore = defineStore('tenant', () => {
     return data
   }
 
-  return { items, loading, error, fetchAll, fetchOne, create, update, remove, resetPassword, resetDatabase, purgeFiles, scrapeProducts, importProducts }
+  /**
+   * Download the SaaS service contract template (.docx) for the given tenant.
+   * Triggers a browser download — does NOT return parsed data.
+   *
+   * @param doc 'contrat' (default) or 'fiche' for the subscription intake form.
+   */
+  async function downloadContract(id: string, doc: 'contrat' | 'fiche' = 'contrat'): Promise<void> {
+    const response = await http.get(`/central/tenants/${id}/contract`, {
+      params: { doc: doc === 'fiche' ? 'fiche' : undefined },
+      responseType: 'blob',
+    })
+    const blob = new Blob([response.data as BlobPart], {
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    // Try to honor the Content-Disposition filename, fallback to a safe default.
+    const cd = (response.headers as Record<string, string>)['content-disposition'] || ''
+    const match = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(cd)
+    a.download = match?.[1] ? decodeURIComponent(match[1]) : `${doc}-${id}.docx`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    window.URL.revokeObjectURL(url)
+  }
+
+  /**
+   * Send the contract (and optionally the intake form) by email to the tenant
+   * (or to a custom recipient).
+   */
+  async function sendContract(
+    id: string,
+    payload: { to?: string; cc?: string[]; message?: string; include_intake_form?: boolean } = {},
+  ): Promise<{ message: string; to: string; cc: string[] }> {
+    const { data } = await http.post(`/central/tenants/${id}/contract/send`, payload)
+    return data
+  }
+
+  return {
+    items, loading, error,
+    fetchAll, fetchOne, create, update, remove,
+    resetPassword, resetDatabase, purgeFiles,
+    scrapeProducts, importProducts,
+    downloadContract, sendContract,
+  }
 })

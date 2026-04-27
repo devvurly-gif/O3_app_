@@ -24,4 +24,8 @@ Route::prefix('api/central')->middleware(['api', 'auth:sanctum', 'role:admin'])-
     Route::post('tenants/{tenant}/purge-files',    [TenantController::class, 'purgeFiles']);
     Route::post('tenants/scrape-products',          [TenantController::class, 'scrapeProducts']);
     Route::post('tenants/{tenant}/import-products', [TenantController::class, 'importProducts']);
+
+    // Service contract: download template + send by email for e-signature
+    Route::get('tenants/{tenant}/contract',         [TenantController::class, 'downloadContract']);
+    Route::post('tenants/{tenant}/contract/send',   [TenantController::class, 'sendContract']);
 });

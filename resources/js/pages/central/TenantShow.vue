@@ -248,6 +248,64 @@ async function deleteTenant() {
   } catch { /* interceptor */ }
 }
 
+// ── Contrat de services ─────────────────────────────────────────
+const downloadingContract = ref(false)
+const showSendContractModal = ref(false)
+const sendingContract = ref(false)
+const sendContractForm = reactive({
+  to: '',
+  cc: '',
+  message: '',
+  include_intake_form: true,
+})
+
+async function downloadContract(doc: 'contrat' | 'fiche' = 'contrat') {
+  if (!tenant.value) return
+  downloadingContract.value = true
+  try {
+    await store.downloadContract(tenant.value.id, doc)
+    toast.success(doc === 'fiche' ? 'Fiche téléchargée.' : 'Contrat téléchargé.')
+  } catch (err: any) {
+    toast.error(err?.response?.data?.message || 'Erreur lors du téléchargement.')
+  }
+  downloadingContract.value = false
+}
+
+function openSendContractModal() {
+  if (!tenant.value) return
+  sendContractForm.to = tenant.value.email || ''
+  sendContractForm.cc = ''
+  sendContractForm.message = ''
+  sendContractForm.include_intake_form = true
+  showSendContractModal.value = true
+}
+
+async function sendContract() {
+  if (!tenant.value) return
+  if (!sendContractForm.to) {
+    toast.error('Renseignez l\'email du destinataire.')
+    return
+  }
+  sendingContract.value = true
+  try {
+    const cc = sendContractForm.cc
+      .split(/[,;\s]+/)
+      .map(s => s.trim())
+      .filter(Boolean)
+    const result = await store.sendContract(tenant.value.id, {
+      to: sendContractForm.to,
+      cc: cc.length ? cc : undefined,
+      message: sendContractForm.message || undefined,
+      include_intake_form: sendContractForm.include_intake_form,
+    })
+    toast.success(result.message)
+    showSendContractModal.value = false
+  } catch (err: any) {
+    toast.error(err?.response?.data?.message || 'Erreur lors de l\'envoi.')
+  }
+  sendingContract.value = false
+}
+
 function formatDate(d: string) {
   return new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
 }
@@ -838,6 +896,60 @@ function getPlanColor(plan: string) {
         </div>
       </div>
 
+      <!-- Contrat de services -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl border border-blue-200 dark:border-blue-900/50 p-5">
+        <div class="flex items-center gap-2 mb-3">
+          <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+          </svg>
+          <h3 class="text-sm font-semibold text-blue-700 dark:text-blue-400">Contrat de services</h3>
+        </div>
+        <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">
+          Document à transmettre au client pour signature électronique avant la mise en service du tenant.
+        </p>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            :disabled="downloadingContract"
+            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-300 rounded-lg transition disabled:opacity-50"
+            @click="downloadContract('contrat')"
+          >
+            <svg v-if="downloadingContract" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+            </svg>
+            <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            Consulter le contrat
+          </button>
+
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 rounded-lg transition"
+            @click="downloadContract('fiche')"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
+            </svg>
+            Fiche de souscription
+          </button>
+
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition ml-auto"
+            @click="openSendContractModal"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.125A59.769 59.769 0 0121.485 12 59.768 59.768 0 013.27 20.875L5.999 12zm0 0h7.5" />
+            </svg>
+            Envoyer au client
+          </button>
+        </div>
+      </div>
+
       <!-- Actions -->
       <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
         <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-4">Actions</h3>
@@ -870,5 +982,107 @@ function getPlanColor(plan: string) {
         </div>
       </div>
     </template>
+
+    <!-- Send Contract Modal -->
+    <div
+      v-if="showSendContractModal"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      @click.self="showSendContractModal = false"
+    >
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.125A59.769 59.769 0 0121.485 12 59.768 59.768 0 013.27 20.875L5.999 12zm0 0h7.5" />
+              </svg>
+              Envoyer le contrat
+            </h3>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              Le contrat et la fiche seront joints à l'email.
+            </p>
+          </div>
+          <button
+            type="button"
+            class="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+            @click="showSendContractModal = false"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="space-y-4">
+          <div>
+            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Destinataire *</label>
+            <input
+              v-model="sendContractForm.to"
+              type="email"
+              required
+              placeholder="contact@exemple.ma"
+              class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Copie (Cc)</label>
+            <input
+              v-model="sendContractForm.cc"
+              type="text"
+              placeholder="email1@exemple.ma, email2@exemple.ma"
+              class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <p class="mt-1 text-[11px] text-gray-400">Séparer plusieurs emails par virgule ou espace.</p>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Message personnalisé (optionnel)</label>
+            <textarea
+              v-model="sendContractForm.message"
+              rows="4"
+              placeholder="Ajoutez un mot personnel à l'attention du client..."
+              class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            />
+          </div>
+
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input
+              v-model="sendContractForm.include_intake_form"
+              type="checkbox"
+              class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <span class="text-sm text-gray-700 dark:text-gray-300">
+              Inclure la <strong>fiche de souscription</strong> en pièce jointe
+            </span>
+          </label>
+        </div>
+
+        <div class="mt-6 flex gap-2">
+          <button
+            type="button"
+            class="flex-1 py-2.5 rounded-xl text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition"
+            @click="showSendContractModal = false"
+          >
+            Annuler
+          </button>
+          <button
+            type="button"
+            :disabled="sendingContract || !sendContractForm.to"
+            class="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            @click="sendContract"
+          >
+            <svg v-if="sendingContract" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+            </svg>
+            <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.125A59.769 59.769 0 0121.485 12 59.768 59.768 0 013.27 20.875L5.999 12zm0 0h7.5" />
+            </svg>
+            {{ sendingContract ? 'Envoi en cours...' : 'Envoyer' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
