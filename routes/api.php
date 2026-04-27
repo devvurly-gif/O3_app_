@@ -270,6 +270,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('sessions/{session}/force-close', [PosSessionController::class, 'forceClose'])->middleware('role:admin,manager');
         Route::get('sessions/current',          [PosSessionController::class, 'current']);
 
+        // Live session stats (sales by payment method, refreshed during the session)
+        Route::get('sessions/{session}/live-stats', [PosSessionController::class, 'liveStats']);
+
         // Tickets
         Route::post('tickets',                 [PosTicketController::class, 'store']);
         Route::get('tickets',                  [PosTicketController::class, 'index']);

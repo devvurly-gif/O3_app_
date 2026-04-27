@@ -297,6 +297,65 @@
         </div>
       </div>
 
+      <!-- Live session stats (ventes par mode de paiement) -->
+      <div class="border-t border-gray-200 dark:border-gray-700 px-5 py-2 shrink-0 bg-gray-50 dark:bg-gray-900/40">
+        <button
+          type="button"
+          class="w-full flex items-center justify-between gap-2 text-xs font-medium text-gray-600 dark:text-gray-300 py-1"
+          @click="showSessionStats = !showSessionStats"
+        >
+          <span class="flex items-center gap-2">
+            <svg class="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 3v18h18M7 14l3-3 4 4 6-6" />
+            </svg>
+            Ventes session
+            <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+              {{ sessionStats?.total_tickets ?? 0 }} ticket{{ (sessionStats?.total_tickets ?? 0) > 1 ? 's' : '' }}
+            </span>
+          </span>
+          <span class="flex items-center gap-1">
+            <span class="font-semibold text-gray-900 dark:text-white">{{ formatPrice(sessionStats?.total_ttc ?? 0) }}</span>
+            <svg
+              class="w-3 h-3 transition-transform"
+              :class="showSessionStats ? 'rotate-180' : ''"
+              fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </span>
+        </button>
+
+        <div v-if="showSessionStats" class="mt-2 space-y-1 pb-1">
+          <div
+            v-for="m in paymentMethodRows"
+            :key="m.method"
+            class="flex items-center justify-between text-xs px-2 py-1.5 rounded-lg"
+            :class="m.bg"
+          >
+            <span class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full" :class="m.dot"></span>
+              <span class="font-medium" :class="m.label">{{ m.title }}</span>
+              <span class="text-[10px]" :class="m.muted">
+                {{ m.count }} ticket{{ m.count > 1 ? 's' : '' }}
+              </span>
+            </span>
+            <span class="font-semibold tabular-nums" :class="m.label">{{ formatPrice(m.amount) }}</span>
+          </div>
+
+          <div v-if="!hasAnySales" class="text-[11px] text-gray-400 dark:text-gray-500 text-center py-2">
+            Aucune vente enregistrée pour le moment.
+          </div>
+
+          <div
+            v-if="hasAnySales"
+            class="flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400 px-2 pt-1 border-t border-gray-200 dark:border-gray-700"
+          >
+            <span>Total encaissé</span>
+            <span class="font-semibold tabular-nums">{{ formatPrice(sessionStats?.total_paid ?? 0) }}</span>
+          </div>
+        </div>
+      </div>
+
       <!-- Totals + Payment -->
       <div class="border-t border-gray-200 dark:border-gray-700 px-5 py-4 space-y-3 shrink-0">
         <div class="flex justify-between text-sm text-gray-500 dark:text-gray-400">
@@ -441,7 +500,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePosStore, type DraftTicket } from '@/stores/pos/posStore'
 import { useBarcodeScanner } from '@/composables/useBarcodeScanner'
@@ -467,6 +526,67 @@ const showCheckout = ref(false)
 const checkoutMethod = ref('cash')
 const showHeldDropdown = ref(false)
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
+
+// ── Live session stats (ventes par mode de paiement) ────────────
+interface SessionStats {
+  total_tickets: number
+  cancelled_tickets: number
+  total_ttc: number
+  total_ht: number
+  total_tax: number
+  total_paid: number
+  total_credit: number
+  payments_by_method: Record<string, number>
+  tickets_count_by_method: Record<string, number>
+}
+const sessionStats = ref<SessionStats | null>(null)
+const showSessionStats = ref(true)
+
+const PAYMENT_METHOD_META: Record<string, { title: string; bg: string; dot: string; label: string; muted: string }> = {
+  cash:   { title: 'Espèces',   bg: 'bg-green-50 dark:bg-green-900/20',   dot: 'bg-green-500',   label: 'text-green-700 dark:text-green-400',   muted: 'text-green-600/70 dark:text-green-400/60' },
+  card:   { title: 'Carte',     bg: 'bg-blue-50 dark:bg-blue-900/20',     dot: 'bg-blue-500',    label: 'text-blue-700 dark:text-blue-400',     muted: 'text-blue-600/70 dark:text-blue-400/60' },
+  credit: { title: 'En compte', bg: 'bg-amber-50 dark:bg-amber-900/20',   dot: 'bg-amber-500',   label: 'text-amber-700 dark:text-amber-400',   muted: 'text-amber-600/70 dark:text-amber-400/60' },
+  cheque: { title: 'Chèque',    bg: 'bg-purple-50 dark:bg-purple-900/20', dot: 'bg-purple-500',  label: 'text-purple-700 dark:text-purple-400', muted: 'text-purple-600/70 dark:text-purple-400/60' },
+  virement: { title: 'Virement', bg: 'bg-indigo-50 dark:bg-indigo-900/20', dot: 'bg-indigo-500', label: 'text-indigo-700 dark:text-indigo-400', muted: 'text-indigo-600/70 dark:text-indigo-400/60' },
+}
+
+const paymentMethodRows = computed(() => {
+  const amounts = sessionStats.value?.payments_by_method ?? {}
+  const counts = sessionStats.value?.tickets_count_by_method ?? {}
+  // Always show cash/card/credit (the three primary buttons), plus any other method observed.
+  const keys = new Set<string>(['cash', 'card', 'credit'])
+  Object.keys(amounts).forEach((k) => keys.add(k))
+  return Array.from(keys).map((method) => {
+    const meta = PAYMENT_METHOD_META[method] ?? {
+      title: method, bg: 'bg-gray-50 dark:bg-gray-900/40', dot: 'bg-gray-400',
+      label: 'text-gray-700 dark:text-gray-300', muted: 'text-gray-500',
+    }
+    return {
+      method,
+      ...meta,
+      amount: amounts[method] ?? 0,
+      count: counts[method] ?? 0,
+    }
+  })
+})
+
+const hasAnySales = computed(() => (sessionStats.value?.total_tickets ?? 0) > 0)
+
+async function fetchSessionStats(): Promise<void> {
+  const sid = posStore.currentSession?.id
+  if (!sid) {
+    sessionStats.value = null
+    return
+  }
+  try {
+    const { data } = await http.get<{ stats: SessionStats }>(`/pos/sessions/${sid}/live-stats`)
+    sessionStats.value = data?.stats ?? null
+  } catch {
+    // Non-fatal — leave previous stats in place.
+  }
+}
+
+let statsInterval: ReturnType<typeof setInterval> | null = null
 
 // Customer state
 const selectedCustomer = ref<PosCustomer | null>(null)
@@ -619,6 +739,9 @@ async function confirmPayment(payments: { amount: number; method: string }[]) {
     await posStore.checkout(payments, selectedCustomer.value?.id)
     showCheckout.value = false
     selectedCustomer.value = null
+    // Refresh the live "ventes par mode de paiement" panel so the
+    // cashier sees the new ticket immediately reflected in the totals.
+    fetchSessionStats()
   } catch (err: unknown) {
     const e = err as { response?: { data?: { message?: string } } }
     alert(e.response?.data?.message ?? 'Erreur lors du paiement')
@@ -673,6 +796,19 @@ onMounted(async () => {
 
   await posStore.fetchProducts()
 
+  // Initial load + periodic refresh of the live session stats panel,
+  // so the cashier always has up-to-date "ventes par mode de paiement".
+  fetchSessionStats()
+  statsInterval = setInterval(fetchSessionStats, 30_000)
+
   document.addEventListener('click', handleDocumentClick)
+})
+
+onBeforeUnmount(() => {
+  if (statsInterval) {
+    clearInterval(statsInterval)
+    statsInterval = null
+  }
+  document.removeEventListener('click', handleDocumentClick)
 })
 </script>

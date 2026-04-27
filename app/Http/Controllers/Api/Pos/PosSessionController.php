@@ -137,7 +137,7 @@ class PosSessionController extends Controller
     }
 
     /**
-     * Build statistics for a closed session.
+     * Build statistics for a session (open or closed).
      */
     private function buildSessionStats(PosSession $session): array
     {
@@ -145,12 +145,18 @@ class PosSessionController extends Controller
 
         $activeTickets = $tickets->where('status', '!=', 'cancelled');
 
-        // Sum payments by method
+        // Sum payments by method (amount) + count of distinct tickets touching each method.
         $paymentsByMethod = [];
+        $ticketsCountByMethod = [];
         foreach ($activeTickets as $t) {
+            $methodsOnTicket = [];
             foreach ($t->payments as $p) {
                 $method = $p->method;
-                $paymentsByMethod[$method] = ($paymentsByMethod[$method] ?? 0) + $p->amount;
+                $paymentsByMethod[$method] = ($paymentsByMethod[$method] ?? 0) + (float) $p->amount;
+                $methodsOnTicket[$method] = true;
+            }
+            foreach (array_keys($methodsOnTicket) as $m) {
+                $ticketsCountByMethod[$m] = ($ticketsCountByMethod[$m] ?? 0) + 1;
             }
         }
 
@@ -158,15 +164,49 @@ class PosSessionController extends Controller
         $totalCredit = $paymentsByMethod['credit'] ?? 0;
 
         return [
-            'total_tickets'      => $activeTickets->count(),
-            'cancelled_tickets'  => $tickets->where('status', 'cancelled')->count(),
-            'total_ttc'          => $activeTickets->sum(fn ($t) => $t->footer?->total_ttc ?? 0),
-            'total_ht'           => $activeTickets->sum(fn ($t) => $t->footer?->total_ht ?? 0),
-            'total_tax'          => $activeTickets->sum(fn ($t) => $t->footer?->total_tax ?? 0),
-            'total_paid'         => $totalPaid,
-            'total_credit'       => $totalCredit,
-            'payments_by_method' => $paymentsByMethod,
+            'total_tickets'           => $activeTickets->count(),
+            'cancelled_tickets'       => $tickets->where('status', 'cancelled')->count(),
+            'total_ttc'               => $activeTickets->sum(fn ($t) => $t->footer?->total_ttc ?? 0),
+            'total_ht'                => $activeTickets->sum(fn ($t) => $t->footer?->total_ht ?? 0),
+            'total_tax'               => $activeTickets->sum(fn ($t) => $t->footer?->total_tax ?? 0),
+            'total_paid'              => $totalPaid,
+            'total_credit'            => $totalCredit,
+            'payments_by_method'      => $paymentsByMethod,
+            'tickets_count_by_method' => $ticketsCountByMethod,
         ];
+    }
+
+    /**
+     * GET /api/pos/sessions/{session}/live-stats
+     *
+     * Returns running stats for a session (works for open or closed sessions).
+     * Cashiers can only view their own session; admin/manager can view any.
+     * Used by the POS UI to show a live "ventes par mode de paiement" panel.
+     */
+    public function liveStats(PosSession $session): JsonResponse
+    {
+        $user = auth()->user();
+        $roleName = $user?->role?->name;
+        $isPrivileged = in_array($roleName, ['admin', 'manager'], true);
+
+        if (!$isPrivileged && $session->user_id !== $user?->id) {
+            return response()->json(['message' => 'Accès refusé.'], 403);
+        }
+
+        $session->load(['terminal', 'user:id,name']);
+        $stats = $this->buildSessionStats($session);
+
+        return response()->json([
+            'session' => [
+                'id'           => $session->id,
+                'opened_at'    => $session->opened_at,
+                'closed_at'    => $session->closed_at,
+                'opening_cash' => (float) $session->opening_cash,
+                'terminal'     => $session->terminal?->name,
+                'user'         => $session->user?->name,
+            ],
+            'stats' => $stats,
+        ]);
     }
 
     /**

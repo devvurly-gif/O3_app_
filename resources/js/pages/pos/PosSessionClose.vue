@@ -7,7 +7,7 @@
       </div>
 
       <!-- Session summary -->
-      <div v-if="posStore.currentSession" class="bg-gray-50 dark:bg-gray-900 rounded-xl p-4 mb-6 space-y-2 text-sm">
+      <div v-if="posStore.currentSession" class="bg-gray-50 dark:bg-gray-900 rounded-xl p-4 mb-4 space-y-2 text-sm">
         <div class="flex justify-between">
           <span class="text-gray-500 dark:text-gray-400">Terminal</span>
           <span class="font-medium text-gray-900 dark:text-white">{{ posStore.currentTerminal?.name }}</span>
@@ -21,6 +21,54 @@
         <div class="flex justify-between">
           <span class="text-gray-500 dark:text-gray-400">Fond de caisse initial</span>
           <span class="font-medium text-gray-900 dark:text-white">{{ Number(posStore.currentSession.opening_cash).toFixed(2) }} MAD</span>
+        </div>
+      </div>
+
+      <!-- Pre-close: ventes par mode de paiement -->
+      <div v-if="liveStats" class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-6 space-y-2">
+        <div class="flex items-center justify-between text-sm">
+          <span class="font-semibold text-gray-900 dark:text-white">Ventes de la session</span>
+          <span class="text-xs text-gray-500 dark:text-gray-400">
+            {{ liveStats.total_tickets }} ticket{{ liveStats.total_tickets > 1 ? 's' : '' }}
+            <span v-if="liveStats.cancelled_tickets" class="ml-1 text-red-500">
+              · {{ liveStats.cancelled_tickets }} annulé{{ liveStats.cancelled_tickets > 1 ? 's' : '' }}
+            </span>
+          </span>
+        </div>
+
+        <div
+          v-for="row in paymentMethodRows"
+          :key="row.method"
+          class="flex items-center justify-between text-xs px-2 py-1.5 rounded-lg"
+          :class="row.bg"
+        >
+          <span class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full" :class="row.dot"></span>
+            <span class="font-medium" :class="row.label">{{ row.title }}</span>
+            <span class="text-[10px]" :class="row.muted">
+              {{ row.count }} ticket{{ row.count > 1 ? 's' : '' }}
+            </span>
+          </span>
+          <span class="font-semibold tabular-nums" :class="row.label">{{ Number(row.amount).toFixed(2) }} MAD</span>
+        </div>
+
+        <div class="flex justify-between text-xs pt-1 border-t border-gray-200 dark:border-gray-700">
+          <span class="text-gray-600 dark:text-gray-400">Total TTC</span>
+          <span class="font-semibold text-gray-900 dark:text-white tabular-nums">
+            {{ Number(liveStats.total_ttc).toFixed(2) }} MAD
+          </span>
+        </div>
+        <div class="flex justify-between text-xs">
+          <span class="text-gray-600 dark:text-gray-400">Total encaissé</span>
+          <span class="font-semibold text-gray-900 dark:text-white tabular-nums">
+            {{ Number(liveStats.total_paid).toFixed(2) }} MAD
+          </span>
+        </div>
+        <div v-if="Number(liveStats.total_credit) > 0" class="flex justify-between text-xs">
+          <span class="text-amber-600 dark:text-amber-400">Dont en compte</span>
+          <span class="font-semibold text-amber-700 dark:text-amber-400 tabular-nums">
+            {{ Number(liveStats.total_credit).toFixed(2) }} MAD
+          </span>
         </div>
       </div>
 
@@ -122,7 +170,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePosStore, type PosSessionData } from '@/stores/pos/posStore'
 import http from '@/services/http'
@@ -137,13 +185,68 @@ const downloading = ref(false)
 const error = ref('')
 const result = ref<PosSessionData | null>(null)
 
+// Live stats — fetched once on mount so the cashier sees the
+// "ventes par mode de paiement" breakdown before confirming closure.
+interface SessionStats {
+  total_tickets: number
+  cancelled_tickets: number
+  total_ttc: number
+  total_ht: number
+  total_tax: number
+  total_paid: number
+  total_credit: number
+  payments_by_method: Record<string, number>
+  tickets_count_by_method: Record<string, number>
+}
+const liveStats = ref<SessionStats | null>(null)
+
+const PAYMENT_METHOD_META: Record<string, { title: string; bg: string; dot: string; label: string; muted: string }> = {
+  cash:   { title: 'Espèces',   bg: 'bg-green-50 dark:bg-green-900/20',   dot: 'bg-green-500',   label: 'text-green-700 dark:text-green-400',   muted: 'text-green-600/70 dark:text-green-400/60' },
+  card:   { title: 'Carte',     bg: 'bg-blue-50 dark:bg-blue-900/20',     dot: 'bg-blue-500',    label: 'text-blue-700 dark:text-blue-400',     muted: 'text-blue-600/70 dark:text-blue-400/60' },
+  credit: { title: 'En compte', bg: 'bg-amber-50 dark:bg-amber-900/20',   dot: 'bg-amber-500',   label: 'text-amber-700 dark:text-amber-400',   muted: 'text-amber-600/70 dark:text-amber-400/60' },
+  cheque: { title: 'Chèque',    bg: 'bg-purple-50 dark:bg-purple-900/20', dot: 'bg-purple-500',  label: 'text-purple-700 dark:text-purple-400', muted: 'text-purple-600/70 dark:text-purple-400/60' },
+  virement: { title: 'Virement', bg: 'bg-indigo-50 dark:bg-indigo-900/20', dot: 'bg-indigo-500', label: 'text-indigo-700 dark:text-indigo-400', muted: 'text-indigo-600/70 dark:text-indigo-400/60' },
+}
+
+const paymentMethodRows = computed(() => {
+  const amounts = liveStats.value?.payments_by_method ?? {}
+  const counts = liveStats.value?.tickets_count_by_method ?? {}
+  const keys = new Set<string>(['cash', 'card', 'credit'])
+  Object.keys(amounts).forEach((k) => keys.add(k))
+  return Array.from(keys).map((method) => {
+    const meta = PAYMENT_METHOD_META[method] ?? {
+      title: method, bg: 'bg-gray-50 dark:bg-gray-900/40', dot: 'bg-gray-400',
+      label: 'text-gray-700 dark:text-gray-300', muted: 'text-gray-500',
+    }
+    return {
+      method,
+      ...meta,
+      amount: amounts[method] ?? 0,
+      count: counts[method] ?? 0,
+    }
+  })
+})
+
+async function fetchLiveStats(): Promise<void> {
+  const sid = posStore.currentSession?.id
+  if (!sid) return
+  try {
+    const { data } = await http.get<{ stats: SessionStats }>(`/pos/sessions/${sid}/live-stats`)
+    liveStats.value = data?.stats ?? null
+  } catch {
+    liveStats.value = null
+  }
+}
+
 onMounted(async () => {
   if (!posStore.hasOpenSession) {
     await posStore.fetchCurrentSession()
     if (!posStore.hasOpenSession) {
       router.replace('/pos')
+      return
     }
   }
+  await fetchLiveStats()
 })
 
 async function close() {
