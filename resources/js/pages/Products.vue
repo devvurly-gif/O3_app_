@@ -342,27 +342,38 @@
                 </select>
               </div>
 
-              <!-- E-commerce Slug -->
-              <div>
+              <!-- E-commerce Slug — only when ecom module is enabled AND product is flagged for the store -->
+              <div v-if="ecomEnabled && form.is_ecom">
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.slug') ?? 'Slug' }}</label>
                 <input
                   v-model="form.p_slug"
                   type="text"
-                  :placeholder="$t('products.slugPlaceholder') ?? 'Auto-generated from title'"
+                  :placeholder="$t('products.slugPlaceholder') ?? 'Auto-généré depuis le titre'"
                   class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
+                <p class="mt-1 text-[11px] text-gray-400">URL de la fiche produit dans la boutique en ligne.</p>
               </div>
             </div>
 
-            <!-- E-commerce Toggle -->
-            <div class="flex items-center gap-2 pt-1">
+            <!-- Publish to Online Store — only visible when the tenant has the ecom module enabled -->
+            <div v-if="ecomEnabled" class="flex items-start gap-2 pt-1 p-3 rounded-lg bg-indigo-50/50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800">
               <input
                 id="product-ecom"
                 v-model="form.is_ecom"
                 type="checkbox"
-                class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
+                class="mt-0.5 w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500"
               />
-              <label for="product-ecom" class="text-sm text-gray-700 dark:text-gray-300">{{ $t('products.ecommerce') ?? 'E-commerce Product' }}</label>
+              <label for="product-ecom" class="flex-1 cursor-pointer">
+                <span class="text-sm font-medium text-indigo-900 dark:text-indigo-200 flex items-center gap-1.5">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.016A3.001 3.001 0 0021 9.349m-18 0h18" />
+                  </svg>
+                  Publier dans la boutique en ligne
+                </span>
+                <p class="text-[11px] text-indigo-700/70 dark:text-indigo-300/70 mt-0.5">
+                  Le produit sera visible et achetable sur shop.{{ tenantDomain || '[domaine]' }}.
+                </p>
+              </label>
             </div>
           </div>
 
@@ -929,6 +940,7 @@ import { useProductStore } from '@/stores/product'
 import { useCategoryStore } from '@/stores/category'
 import { useBrandStore } from '@/stores/brand'
 import { usePriceListStore } from '@/stores/priceList'
+import { useAuthStore } from '@/stores/authStore'
 import http from '@/services/http'
 import { useExcelExport } from '@/composables/useExcelExport'
 import BaseTable from '@/components/BaseTable.vue'
@@ -941,6 +953,19 @@ const store = useProductStore()
 const categoryStore = useCategoryStore()
 const brandStore = useBrandStore()
 const priceListStore = usePriceListStore()
+const auth = useAuthStore()
+
+// E-commerce module gating: the "Publier dans la boutique" toggle and slug
+// field only appear when the tenant has the ecom feature enabled (driven
+// by the central tenants.ecom_enabled flag, surfaced via auth.hasModule).
+const ecomEnabled = computed(() => auth.hasModule('ecom'))
+// Best-effort hint for the storefront URL shown beside the toggle.
+const tenantDomain = computed(() => {
+  if (typeof window === 'undefined') return ''
+  // Strip a leading "shop." if we're already on the storefront, then drop
+  // any "www." for cleanliness — yields e.g. "teliphoni.o3app.ma".
+  return window.location.hostname.replace(/^shop\./, '').replace(/^www\./, '')
+})
 
 const { items } = storeToRefs(store)
 const { items: categories } = storeToRefs(categoryStore)

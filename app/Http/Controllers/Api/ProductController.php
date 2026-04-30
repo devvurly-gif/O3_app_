@@ -10,6 +10,7 @@ use App\Services\CacheService;
 use App\Services\PriceResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class ProductController extends Controller
 {
@@ -44,21 +45,30 @@ class ProductController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'p_title'         => ['required', 'string', 'max:255'],
-            'p_description'   => ['nullable', 'string'],
-            'p_sku'           => ['nullable', 'string', 'max:100'],
-            'p_ean13'         => ['nullable', 'string', 'max:13'],
-            'p_imei'          => ['nullable', 'string', 'max:50'],
-            'p_purchasePrice' => ['required', 'numeric', 'min:0'],
-            'p_salePrice'     => ['required', 'numeric', 'min:0'],
-            'p_cost'          => ['nullable', 'numeric', 'min:0'],
-            'p_taxRate'       => ['nullable', 'numeric', 'min:0'],
-            'p_unit'          => ['nullable', 'string', 'max:50'],
-            'p_status'        => ['boolean'],
-            'p_notes'         => ['nullable', 'string'],
-            'category_id'     => ['nullable', 'integer', 'exists:categories,id'],
-            'brand_id'        => ['nullable', 'integer', 'exists:brands,id'],
+            'p_title'              => ['required', 'string', 'max:255'],
+            'p_description'        => ['nullable', 'string'],
+            'p_long_description'   => ['nullable', 'string'],
+            'p_sku'                => ['nullable', 'string', 'max:100'],
+            'p_ean13'              => ['nullable', 'string', 'max:13'],
+            'p_imei'               => ['nullable', 'string', 'max:50'],
+            'p_purchasePrice'      => ['required', 'numeric', 'min:0'],
+            'p_salePrice'          => ['required', 'numeric', 'min:0'],
+            'p_cost'               => ['nullable', 'numeric', 'min:0'],
+            'p_taxRate'            => ['nullable', 'numeric', 'min:0'],
+            'p_unit'               => ['nullable', 'string', 'max:50'],
+            'p_status'             => ['boolean'],
+            'p_notes'              => ['nullable', 'string'],
+            'category_id'          => ['nullable', 'integer', 'exists:categories,id'],
+            'brand_id'             => ['nullable', 'integer', 'exists:brands,id'],
+            // E-commerce: only honored when the tenant has the ecom feature
+            // enabled. Silently ignored otherwise.
+            'is_ecom'              => ['sometimes', 'boolean'],
+            'p_slug'               => ['nullable', 'string', 'max:255', 'unique:products,p_slug'],
         ]);
+
+        if (!$this->ecomEnabled()) {
+            unset($data['is_ecom'], $data['p_slug'], $data['p_long_description']);
+        }
 
         $product = $this->products->create($data);
         CacheService::flushProducts();
@@ -228,26 +238,49 @@ class ProductController extends Controller
     public function update(Request $request, Product $product): JsonResponse
     {
         $data = $request->validate([
-            'p_title'         => ['sometimes', 'string', 'max:255'],
-            'p_description'   => ['nullable', 'string'],
-            'p_sku'           => ['nullable', 'string', 'max:100'],
-            'p_ean13'         => ['nullable', 'string', 'max:13'],
-            'p_imei'          => ['nullable', 'string', 'max:50'],
-            'p_purchasePrice' => ['sometimes', 'numeric', 'min:0'],
-            'p_salePrice'     => ['sometimes', 'numeric', 'min:0'],
-            'p_cost'          => ['nullable', 'numeric', 'min:0'],
-            'p_taxRate'       => ['nullable', 'numeric', 'min:0'],
-            'p_unit'          => ['nullable', 'string', 'max:50'],
-            'p_status'        => ['sometimes', 'boolean'],
-            'p_notes'         => ['nullable', 'string'],
-            'category_id'     => ['nullable', 'integer', 'exists:categories,id'],
-            'brand_id'        => ['nullable', 'integer', 'exists:brands,id'],
+            'p_title'              => ['sometimes', 'string', 'max:255'],
+            'p_description'        => ['nullable', 'string'],
+            'p_long_description'   => ['nullable', 'string'],
+            'p_sku'                => ['nullable', 'string', 'max:100'],
+            'p_ean13'              => ['nullable', 'string', 'max:13'],
+            'p_imei'               => ['nullable', 'string', 'max:50'],
+            'p_purchasePrice'      => ['sometimes', 'numeric', 'min:0'],
+            'p_salePrice'          => ['sometimes', 'numeric', 'min:0'],
+            'p_cost'               => ['nullable', 'numeric', 'min:0'],
+            'p_taxRate'            => ['nullable', 'numeric', 'min:0'],
+            'p_unit'               => ['nullable', 'string', 'max:50'],
+            'p_status'             => ['sometimes', 'boolean'],
+            'p_notes'              => ['nullable', 'string'],
+            'category_id'          => ['nullable', 'integer', 'exists:categories,id'],
+            'brand_id'             => ['nullable', 'integer', 'exists:brands,id'],
+            // E-commerce — only honored when ecom feature is enabled
+            'is_ecom'              => ['sometimes', 'boolean'],
+            'p_slug'               => [
+                'nullable', 'string', 'max:255',
+                Rule::unique('products', 'p_slug')->ignore($product->id),
+            ],
         ]);
+
+        if (!$this->ecomEnabled()) {
+            unset($data['is_ecom'], $data['p_slug'], $data['p_long_description']);
+        }
 
         $this->products->update($product, $data);
         CacheService::flushProducts();
 
         return response()->json($product->load(['category', 'brand']));
+    }
+
+    /**
+     * Whether the current tenant has the e-commerce module enabled.
+     * Reads the central `tenants.ecom_enabled` flag via the tenancy helper.
+     * Returns false in central context (no tenant) — products created
+     * centrally never have store-side fields populated.
+     */
+    private function ecomEnabled(): bool
+    {
+        $t = function_exists('tenant') ? tenant() : null;
+        return (bool) ($t?->ecom_enabled ?? false);
     }
 
     public function destroy(Product $product): JsonResponse
