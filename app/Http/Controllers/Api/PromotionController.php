@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Product;
 use App\Models\Promotion;
 use App\Models\Slide;
+use App\Services\CacheService;
 use App\Services\PromotionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -82,13 +84,9 @@ class PromotionController extends Controller
 
         $promotion = Promotion::create($validated);
 
-        // Attach products
+        // Attach products + auto-publish them on the storefront
         if (!empty($validated['product_ids'])) {
-            $syncData = [];
-            foreach ($validated['product_ids'] as $item) {
-                $syncData[$item['id']] = ['promo_price' => $item['promo_price'] ?? null];
-            }
-            $promotion->products()->sync($syncData);
+            $this->syncProductsAndAutoPublish($promotion, $validated['product_ids']);
         }
 
         // Auto-create a hero slide if banner_image is set
@@ -147,11 +145,7 @@ class PromotionController extends Controller
         $promotion->update($validated);
 
         if (array_key_exists('product_ids', $validated)) {
-            $syncData = [];
-            foreach ($validated['product_ids'] ?? [] as $item) {
-                $syncData[$item['id']] = ['promo_price' => $item['promo_price'] ?? null];
-            }
-            $promotion->products()->sync($syncData);
+            $this->syncProductsAndAutoPublish($promotion, $validated['product_ids'] ?? []);
         }
 
         // Auto-sync linked slide
@@ -195,5 +189,43 @@ class PromotionController extends Controller
         $this->promotionService->clearCache();
 
         return response()->json(['message' => 'Promotion supprimée.']);
+    }
+
+    /**
+     * Sync the products attached to a promotion AND make sure each
+     * attached product is published on the storefront (is_ecom = true).
+     *
+     * Why auto-publish: an admin who attaches a product to a promotion
+     * implicitly wants that product to appear in the public store.
+     * Forgetting the separate "Publier dans la boutique" toggle on the
+     * product page made the promo page appear empty even when products
+     * were correctly attached — confusing UX. Match the behavior of
+     * Shopify / WooCommerce / PrestaShop.
+     *
+     * Brand- and category-level `is_ecom` flags are NOT touched: those
+     * represent a deliberate "hide this whole bucket from the store"
+     * decision and should be respected.
+     *
+     * @param  array<int, array{id:int, promo_price?:float|null}>  $items
+     */
+    private function syncProductsAndAutoPublish(Promotion $promotion, array $items): void
+    {
+        $syncData = [];
+        foreach ($items as $item) {
+            $syncData[$item['id']] = ['promo_price' => $item['promo_price'] ?? null];
+        }
+
+        $promotion->products()->sync($syncData);
+
+        $productIds = array_keys($syncData);
+        if (!empty($productIds)) {
+            // Force-publish every product that ended up in the promotion.
+            // Targeted update — won't touch unrelated rows.
+            Product::whereIn('id', $productIds)
+                ->where('is_ecom', false)
+                ->update(['is_ecom' => true]);
+
+            CacheService::flushProducts();
+        }
     }
 }
