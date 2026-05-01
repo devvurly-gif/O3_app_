@@ -30,8 +30,13 @@ return [
         env('FRONTEND_URL'),
     ])),
 
+    // Match any number of subdomain levels under o3app.ma:
+    //   tenant.o3app.ma         → app principal du tenant
+    //   shop.tenant.o3app.ma    → boutique e-com du tenant
+    //   admin.tenant.o3app.ma   → futurs sous-portails
+    // The previous single-level pattern silently broke the storefront.
     'allowed_origins_patterns' => [
-        '#^https://[a-z0-9-]+\.o3app\.ma$#',
+        '#^https://([a-z0-9-]+\.)+o3app\.ma$#',
     ],
 
     'allowed_headers' => ['*'],
