@@ -43,7 +43,10 @@ return [
 
     'exposed_headers' => [],
 
-    'max_age' => 0,
+    // Cache preflight responses for 24h in the browser. The CORS policy
+    // is static (whitelist + regex), so there's no reason to re-issue an
+    // OPTIONS round-trip on every page transition of the storefront.
+    'max_age' => 86400,
 
     'supports_credentials' => false,
 
