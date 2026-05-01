@@ -12,6 +12,28 @@ class PromotionService
     private const CACHE_TTL = 120; // 2 minutes
 
     /**
+     * Base query for products visible on the storefront.
+     *
+     * Visibility chain: product is published AND active, AND its
+     * category is published (or null), AND its brand is published
+     * (or null). Mirrors EcomCatalogueController so promo / new /
+     * standard listings stay consistent.
+     */
+    private function visibleEcomQuery()
+    {
+        return Product::where('is_ecom', true)
+            ->where('p_status', true)
+            ->where(function ($q) {
+                $q->whereNull('category_id')
+                  ->orWhereHas('category', fn ($c) => $c->where('is_ecom', true));
+            })
+            ->where(function ($q) {
+                $q->whereNull('brand_id')
+                  ->orWhereHas('brand', fn ($b) => $b->where('is_ecom', true));
+            });
+    }
+
+    /**
      * Get active promotions (cached).
      */
     public function getActivePromotions(): Collection
@@ -89,8 +111,7 @@ class PromotionService
                 return collect();
             }
 
-            return Product::where('is_ecom', true)
-                ->where('p_status', true)
+            return $this->visibleEcomQuery()
                 ->whereHas('promotions', fn ($q) => $q->whereIn('promotions.id', $activePromoIds))
                 ->with(['primaryImage', 'category', 'brand', 'warehouseStocks', 'promotions' => fn ($q) => $q->active()])
                 ->limit($limit)
@@ -104,8 +125,7 @@ class PromotionService
     public function getNewProducts(int $days = 30, int $limit = 20): Collection
     {
         return Cache::remember("ecom.new_products.{$days}.{$limit}", self::CACHE_TTL, function () use ($days, $limit) {
-            return Product::where('is_ecom', true)
-                ->where('p_status', true)
+            return $this->visibleEcomQuery()
                 ->where('created_at', '>=', now()->subDays($days))
                 ->with(['primaryImage', 'category', 'brand', 'warehouseStocks'])
                 ->orderByDesc('created_at')

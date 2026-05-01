@@ -14,11 +14,14 @@ class Brand extends Model
 
     public string $codeField = 'br_code';
 
-    protected $fillable = ['br_title', 'br_code', 'br_status', 'structure_id'];
+    protected $fillable = ['br_title', 'br_code', 'br_status', 'is_ecom', 'structure_id'];
 
     protected function casts(): array
     {
-        return ['br_status' => 'boolean'];
+        return [
+            'br_status' => 'boolean',
+            'is_ecom'   => 'boolean',
+        ];
     }
 
     public function structure(): BelongsTo

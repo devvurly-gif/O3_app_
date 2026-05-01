@@ -31,7 +31,12 @@ class CategoryController extends Controller
         $data = $request->validate([
             'ctg_title'  => ['required', 'string', 'max:255'],
             'ctg_status' => ['boolean'],
+            'is_ecom'    => ['sometimes', 'boolean'],
         ]);
+
+        if (!$this->ecomEnabled()) {
+            unset($data['is_ecom']);
+        }
 
         $category = $this->categories->create($data);
         CacheService::flushCategories();
@@ -49,12 +54,28 @@ class CategoryController extends Controller
         $data = $request->validate([
             'ctg_title'  => ['sometimes', 'string', 'max:255'],
             'ctg_status' => ['sometimes', 'boolean'],
+            'is_ecom'    => ['sometimes', 'boolean'],
         ]);
+
+        if (!$this->ecomEnabled()) {
+            unset($data['is_ecom']);
+        }
 
         $this->categories->update($category, $data);
         CacheService::flushCategories();
 
         return response()->json($category);
+    }
+
+    /**
+     * Whether the current tenant has the e-commerce module enabled.
+     * Defense in depth: drop is_ecom server-side when feature is off,
+     * even if a client manages to post it.
+     */
+    private function ecomEnabled(): bool
+    {
+        $t = function_exists('tenant') ? tenant() : null;
+        return (bool) ($t?->ecom_enabled ?? false);
     }
 
     public function destroy(Category $category): JsonResponse

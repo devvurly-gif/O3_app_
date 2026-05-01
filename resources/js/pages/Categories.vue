@@ -120,6 +120,27 @@
           />
           <label for="cat-status" class="text-sm text-gray-700 dark:text-gray-300">{{ $t('common.active') }}</label>
         </div>
+
+        <!-- Publier dans la boutique en ligne — visible uniquement si module ecom activé -->
+        <div
+          v-if="ecomEnabled"
+          class="flex items-start gap-2 p-3 rounded-lg bg-indigo-50/50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800"
+        >
+          <input
+            id="cat-ecom"
+            v-model="form.is_ecom"
+            type="checkbox"
+            class="mt-0.5 w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500"
+          />
+          <label for="cat-ecom" class="flex-1 cursor-pointer">
+            <span class="text-sm font-medium text-indigo-900 dark:text-indigo-200">
+              Publier dans la boutique en ligne
+            </span>
+            <p class="text-[11px] text-indigo-700/70 dark:text-indigo-300/70 mt-0.5">
+              Si décoché, la catégorie et tous ses produits sont masqués dans le storefront.
+            </p>
+          </label>
+        </div>
       </form>
       <template #footer>
         <button
@@ -170,6 +191,7 @@ import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useCategoryStore } from '@/stores/category'
+import { useAuthStore } from '@/stores/authStore'
 import BaseTable from '@/components/BaseTable.vue'
 import BasePagination from '@/components/BasePagination.vue'
 import BaseModal from '@/components/BaseModal.vue'
@@ -177,7 +199,12 @@ import BaseNotification from '@/components/BaseNotification.vue'
 
 const { t } = useI18n()
 const store = useCategoryStore()
+const auth = useAuthStore()
 const { items } = storeToRefs(store)
+
+// Toggle "Publier dans la boutique" only matters when the tenant has the
+// e-commerce module activated (driven by central tenants.ecom_enabled).
+const ecomEnabled = computed(() => auth.hasModule('ecom'))
 
 // ── UI state ──────────────────────────────────────────────────────────────
 const search = ref('')
@@ -193,7 +220,7 @@ const deleting = ref(false)
 const editTarget = ref(null)
 const deleteTarget = ref(null)
 
-const form = reactive({ ctg_title: '', ctg_status: true })
+const form = reactive({ ctg_title: '', ctg_status: true, is_ecom: true })
 
 const columns = computed(() => [
   { key: 'ctg_code', label: t('common.code') },
@@ -227,6 +254,7 @@ function openCreate() {
   editTarget.value = null
   form.ctg_title = ''
   form.ctg_status = true
+  form.is_ecom = true
   showModal.value = true
 }
 
@@ -234,6 +262,7 @@ function openEdit(row) {
   editTarget.value = row
   form.ctg_title = row.ctg_title
   form.ctg_status = row.ctg_status
+  form.is_ecom = row.is_ecom !== undefined ? row.is_ecom : true
   showModal.value = true
 }
 

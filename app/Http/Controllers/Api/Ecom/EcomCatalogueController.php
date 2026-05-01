@@ -22,8 +22,22 @@ class EcomCatalogueController extends Controller
      */
     public function products(Request $request): JsonResponse
     {
+        // Visibility chain: a product appears on the storefront only if
+        //   - the product itself is published (is_ecom + p_status)
+        //   - AND its category is published (or no category at all)
+        //   - AND its brand is published (or no brand at all)
+        // Categories/brands left NULL are treated as "no constraint" so
+        // products without a category/brand still appear.
         $query = Product::where('is_ecom', true)
             ->where('p_status', true)
+            ->where(function ($q) {
+                $q->whereNull('category_id')
+                  ->orWhereHas('category', fn ($c) => $c->where('is_ecom', true));
+            })
+            ->where(function ($q) {
+                $q->whereNull('brand_id')
+                  ->orWhereHas('brand', fn ($b) => $b->where('is_ecom', true));
+            })
             ->with(['primaryImage', 'images', 'category', 'brand', 'warehouseStocks']);
 
         // Filter: promo only
@@ -96,9 +110,19 @@ class EcomCatalogueController extends Controller
      */
     public function product(string $slug): JsonResponse
     {
+        // Same visibility chain as in products(): hide products whose
+        // category or brand has been unpublished from the storefront.
         $product = Product::where('p_slug', $slug)
             ->where('is_ecom', true)
             ->where('p_status', true)
+            ->where(function ($q) {
+                $q->whereNull('category_id')
+                  ->orWhereHas('category', fn ($c) => $c->where('is_ecom', true));
+            })
+            ->where(function ($q) {
+                $q->whereNull('brand_id')
+                  ->orWhereHas('brand', fn ($b) => $b->where('is_ecom', true));
+            })
             ->with(['primaryImage', 'images', 'category', 'brand', 'warehouseStocks'])
             ->firstOrFail();
 
@@ -111,9 +135,12 @@ class EcomCatalogueController extends Controller
      */
     public function categories(): JsonResponse
     {
-        $categories = Category::whereHas('products', function ($q) {
-            $q->where('is_ecom', true)->where('p_status', true);
-        })
+        // Storefront category list = categories themselves marked
+        // is_ecom = true AND containing at least one published product.
+        $categories = Category::where('is_ecom', true)
+            ->whereHas('products', function ($q) {
+                $q->where('is_ecom', true)->where('p_status', true);
+            })
             ->withCount(['products' => fn ($q) => $q->where('is_ecom', true)->where('p_status', true)])
             ->orderBy('ctg_title')
             ->get()

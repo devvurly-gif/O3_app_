@@ -31,7 +31,12 @@ class BrandController extends Controller
         $data = $request->validate([
             'br_title'  => ['required', 'string', 'max:255'],
             'br_status' => ['boolean'],
+            'is_ecom'   => ['sometimes', 'boolean'],
         ]);
+
+        if (!$this->ecomEnabled()) {
+            unset($data['is_ecom']);
+        }
 
         $brand = $this->brands->create($data);
         CacheService::flushBrands();
@@ -49,12 +54,28 @@ class BrandController extends Controller
         $data = $request->validate([
             'br_title'  => ['sometimes', 'string', 'max:255'],
             'br_status' => ['sometimes', 'boolean'],
+            'is_ecom'   => ['sometimes', 'boolean'],
         ]);
+
+        if (!$this->ecomEnabled()) {
+            unset($data['is_ecom']);
+        }
 
         $this->brands->update($brand, $data);
         CacheService::flushBrands();
 
         return response()->json($brand);
+    }
+
+    /**
+     * Whether the current tenant has the e-commerce module enabled.
+     * Same defense-in-depth pattern as ProductController: even if the
+     * client posts is_ecom, we drop it server-side when the feature is off.
+     */
+    private function ecomEnabled(): bool
+    {
+        $t = function_exists('tenant') ? tenant() : null;
+        return (bool) ($t?->ecom_enabled ?? false);
     }
 
     public function destroy(Brand $brand): JsonResponse
