@@ -13,6 +13,15 @@ const tenant = ref<Tenant | null>(null)
 const loading = ref(true)
 const saving = ref(false)
 
+// Build a tenant URL using the SAME protocol as the central admin page.
+// In production (central is on https) → returns https://tenant.o3app.ma
+// In local dev (Laragon http) → returns http://tenant.o3app.test
+// This avoids hardcoding "http://" which broke the link in prod.
+function tenantUrl(domain: string, prefix = ''): string {
+  const proto = typeof window !== 'undefined' ? window.location.protocol : 'https:'
+  return `${proto}//${prefix}${domain}`
+}
+
 // Editable fields
 const editForm = reactive({
   name: '',
@@ -363,7 +372,7 @@ function getPlanColor(plan: string) {
           </div>
           <a
             v-if="tenant.domains?.length"
-            :href="'http://' + tenant.domains[0].domain"
+            :href="tenantUrl(tenant.domains[0].domain)"
             target="_blank"
             class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition"
           >
@@ -581,7 +590,7 @@ function getPlanColor(plan: string) {
             <div class="flex items-center gap-2 py-2 pl-3">
               <span class="text-xs text-gray-500 dark:text-gray-400">URL Boutique :</span>
               <a
-                :href="'http://shop.' + tenant.domains[0].domain"
+                :href="tenantUrl(tenant.domains[0].domain, 'shop.')"
                 target="_blank"
                 class="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
               >

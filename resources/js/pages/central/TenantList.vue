@@ -11,6 +11,13 @@ const toast = useToastStore()
 const search = ref('')
 const planFilter = ref('')
 
+// Build a tenant URL using the SAME protocol as the central admin page.
+// In production (https) → https://tenant.o3app.ma. In local dev (http) → http://tenant.o3app.test.
+function tenantUrl(domain: string, prefix = ''): string {
+  const proto = typeof window !== 'undefined' ? window.location.protocol : 'https:'
+  return `${proto}//${prefix}${domain}`
+}
+
 onMounted(() => store.fetchAll())
 
 const filtered = computed(() => {
@@ -200,7 +207,7 @@ function formatDate(d: string) {
             <td class="px-6 py-4">
               <a
                 v-if="tenant.domains?.length"
-                :href="'http://' + tenant.domains[0].domain"
+                :href="tenantUrl(tenant.domains[0].domain)"
                 target="_blank"
                 class="text-sm text-blue-600 hover:underline"
               >
