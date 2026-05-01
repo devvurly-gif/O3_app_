@@ -37,9 +37,15 @@ git pull origin "$BRANCH"
 echo "[2/7] Installing composer dependencies..."
 composer install --no-dev --optimize-autoloader --no-interaction
 
-# Run migrations
+# Run migrations (central + tenant DBs)
 echo "[3/7] Running migrations..."
 php artisan migrate --force
+php artisan tenants:migrate --force
+
+# Flush application cache so stale Eloquent rows (categories, brands,
+# settings, etc.) don't survive a schema change from this very deploy.
+# Config/route/view caches are rebuilt right after.
+php artisan cache:clear
 
 # Cache config, routes, views
 echo "[4/7] Caching configuration..."
