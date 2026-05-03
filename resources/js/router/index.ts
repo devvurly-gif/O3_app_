@@ -18,6 +18,11 @@ const routes: RouteRecordRaw[] = [
   { path: '/landing', component: () => import('../pages/LandingPage.vue'), meta: { guest: true, layout: 'none' } },
   { path: '/login', component: () => import('../pages/auth/Login.vue'), meta: { guest: true } },
 
+  // ── Public registration funnel (central domain) ──────────────────
+  { path: '/register',          component: () => import('../pages/auth/Register.vue'),         meta: { guest: true, layout: 'none' } },
+  { path: '/register/sent',     component: () => import('../pages/auth/RegisterSent.vue'),     meta: { guest: true, layout: 'none' } },
+  { path: '/register/verified', component: () => import('../pages/auth/RegisterVerified.vue'), meta: { guest: true, layout: 'none' } },
+
   {
     path: '/dashboard',
     component: () => import('../pages/Dashboard.vue'),
