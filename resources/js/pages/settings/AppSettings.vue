@@ -433,15 +433,31 @@ const inputClass = 'w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:
 const btnClass = 'px-4 py-2 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition disabled:opacity-60'
 const toggleClass = 'w-11 h-6 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[\'\'] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 dark:after:border-gray-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600'
 
+/**
+ * Merge a settings payload into a reactive form object, but ONLY for keys
+ * that already exist on the form. Stops legacy/extraneous DB rows
+ * (e.g. company.iden_fiscal) from polluting the form and being posted
+ * back on save — the backend whitelist would reject them with 422
+ * "Unknown setting keys for this domain."
+ */
+function mergeKnownKeys<T extends Record<string, unknown>>(target: T, source: Record<string, unknown> | null | undefined): void {
+  if (!source) return
+  for (const key of Object.keys(target)) {
+    if (key in source && source[key] != null) {
+      (target as Record<string, unknown>)[key] = source[key]
+    }
+  }
+}
+
 function applySettings() {
   const s = store.settings
-  Object.assign(company, s.company ?? {})
-  Object.assign(locale, s.locale ?? {})
-  Object.assign(invoice, s.invoice ?? {})
-  Object.assign(stock, s.stock ?? {})
-  Object.assign(ventes, s.ventes ?? {})
-  Object.assign(whatsapp, s.whatsapp ?? {})
-  Object.assign(email, s.email ?? {})
+  mergeKnownKeys(company, s.company)
+  mergeKnownKeys(locale, s.locale)
+  mergeKnownKeys(invoice, s.invoice)
+  mergeKnownKeys(stock, s.stock)
+  mergeKnownKeys(ventes, s.ventes)
+  mergeKnownKeys(whatsapp, s.whatsapp)
+  mergeKnownKeys(email, s.email)
 }
 
 watch(() => store.settings, applySettings, { deep: true })
