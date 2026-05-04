@@ -192,9 +192,11 @@ class PublicRegistrationController extends Controller
         }
 
         try {
+            // Read from config() (NOT env() at runtime — env() returns null
+            // when config is cached in prod, which silently rerouted the
+            // admin notification to mail.from.address on 2026-05-03).
             $adminEmail = config('mail.admin_notification_to')
-                ?? env('ADMIN_NOTIFICATION_EMAIL')
-                ?? config('mail.from.address');
+                ?: config('mail.from.address');
             if ($adminEmail) {
                 Mail::to($adminEmail)->send(
                     new TenantSignupNotificationMail(

@@ -119,6 +119,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Admin Notification Recipient
+    |--------------------------------------------------------------------------
+    |
+    | Email address that receives system-level notifications, e.g. the
+    | "new tenant signed up" alert from PublicRegistrationController.
+    | Reading via config() (not env() at runtime) so it survives
+    | `php artisan config:cache` — env() returns null in cached prod.
+    | Falls back to mail.from.address if not set.
+    |
+    */
+
+    'admin_notification_to' => env('ADMIN_NOTIFICATION_EMAIL'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Markdown Mail Settings
     |--------------------------------------------------------------------------
     |

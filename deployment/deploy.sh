@@ -45,13 +45,20 @@ php artisan tenants:migrate --force
 # Flush application cache so stale Eloquent rows (categories, brands,
 # settings, etc.) don't survive a schema change from this very deploy.
 # Config/route/view caches are rebuilt right after.
-php artisan cache:clear
+#
+# IMPORTANT: cache write commands MUST run as www-data, the user that
+# owns bootstrap/cache/. Running them as root either fails silently
+# (file not created, Laravel falls back to defaults — bug we hit on
+# 2026-05-03 with mail config) or creates files root-owned that
+# php-fpm later refuses to read. The migrations above stay as the
+# invoking user (typically root) since they only need DB access.
+sudo -u www-data php artisan cache:clear
 
 # Cache config, routes, views
 echo "[4/7] Caching configuration..."
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
+sudo -u www-data php artisan config:cache
+sudo -u www-data php artisan route:cache
+sudo -u www-data php artisan view:cache
 
 # Build frontend
 echo "[5/7] Building frontend assets..."

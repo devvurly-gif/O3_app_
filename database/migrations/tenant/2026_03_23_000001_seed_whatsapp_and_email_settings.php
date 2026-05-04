@@ -14,12 +14,14 @@ return new class extends Migration
             ['st_domain' => 'whatsapp', 'st_key' => 'twilio_whatsapp_from',  'st_value' => ''],
             ['st_domain' => 'whatsapp', 'st_key' => 'whatsapp_enabled',      'st_value' => 'false'],
 
-            // Email (SMTP) defaults
-            ['st_domain' => 'email', 'st_key' => 'mail_host',         'st_value' => 'smtp.gmail.com'],
-            ['st_domain' => 'email', 'st_key' => 'mail_port',         'st_value' => '465'],
+            // Email (SMTP) defaults — Brevo on port 2525 (DigitalOcean
+            // blocks 25/465/587 outbound). 2026_05_04_000001 normalizes
+            // any pre-existing Gmail-on-465 rows from before this update.
+            ['st_domain' => 'email', 'st_key' => 'mail_host',         'st_value' => 'smtp-relay.brevo.com'],
+            ['st_domain' => 'email', 'st_key' => 'mail_port',         'st_value' => '2525'],
             ['st_domain' => 'email', 'st_key' => 'mail_username',     'st_value' => ''],
             ['st_domain' => 'email', 'st_key' => 'mail_password',     'st_value' => ''],
-            ['st_domain' => 'email', 'st_key' => 'mail_encryption',   'st_value' => 'ssl'],
+            ['st_domain' => 'email', 'st_key' => 'mail_encryption',   'st_value' => 'tls'],
             ['st_domain' => 'email', 'st_key' => 'mail_from_address', 'st_value' => ''],
             ['st_domain' => 'email', 'st_key' => 'mail_from_name',    'st_value' => ''],
             ['st_domain' => 'email', 'st_key' => 'mail_enabled',      'st_value' => 'false'],
