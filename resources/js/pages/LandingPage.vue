@@ -263,9 +263,9 @@ const stepColors = ['from-orange-500 to-orange-600', 'from-gray-700 to-gray-800'
 </script>
 
 <template>
-  <div class="min-h-screen bg-white">
+  <div class="min-h-screen bg-gray-950">
     <!-- Navbar -->
-    <nav class="fixed top-0 w-full bg-white/80 backdrop-blur-lg border-b border-gray-100 z-50">
+    <nav class="fixed top-0 w-full bg-gray-950/80 backdrop-blur-lg border-b border-gray-800 z-50">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16">
           <!-- Logo -->
@@ -275,24 +275,24 @@ const stepColors = ['from-orange-500 to-orange-600', 'from-gray-700 to-gray-800'
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
               </svg>
             </div>
-            <span class="text-xl font-bold text-gray-900">O3 <span class="text-orange-500">App</span></span>
+            <span class="text-xl font-bold text-white">O3 <span class="text-orange-500">App</span></span>
           </div>
 
           <!-- Nav Links -->
           <div class="hidden md:flex items-center gap-8">
-            <a href="#features" class="text-sm text-gray-600 hover:text-gray-900 transition">{{ l.nav.features }}</a>
-            <a href="#pricing" class="text-sm text-gray-600 hover:text-gray-900 transition">{{ l.nav.pricing }}</a>
-            <a href="#contact" class="text-sm text-gray-600 hover:text-gray-900 transition">{{ l.nav.contact }}</a>
+            <a href="#features" class="text-sm text-gray-400 hover:text-white transition">{{ l.nav.features }}</a>
+            <a href="#pricing" class="text-sm text-gray-400 hover:text-white transition">{{ l.nav.pricing }}</a>
+            <a href="#contact" class="text-sm text-gray-400 hover:text-white transition">{{ l.nav.contact }}</a>
           </div>
 
           <!-- Actions -->
           <div class="flex items-center gap-3">
             <!-- Lang switch -->
-            <div class="flex items-center bg-gray-100 rounded-lg p-0.5">
-              <button @click="switchLang('fr')" :class="['px-2.5 py-1 text-xs font-medium rounded-md transition', currentLang === 'fr' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500']">FR</button>
-              <button @click="switchLang('en')" :class="['px-2.5 py-1 text-xs font-medium rounded-md transition', currentLang === 'en' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500']">EN</button>
+            <div class="flex items-center bg-gray-800 rounded-lg p-0.5">
+              <button @click="switchLang('fr')" :class="['px-2.5 py-1 text-xs font-medium rounded-md transition', currentLang === 'fr' ? 'bg-gray-700 text-white shadow-sm' : 'text-gray-400']">FR</button>
+              <button @click="switchLang('en')" :class="['px-2.5 py-1 text-xs font-medium rounded-md transition', currentLang === 'en' ? 'bg-gray-700 text-white shadow-sm' : 'text-gray-400']">EN</button>
             </div>
-            <a href="/login" class="text-sm font-medium text-gray-700 hover:text-gray-900 transition">{{ l.nav.login }}</a>
+            <a href="/login" class="text-sm font-medium text-gray-300 hover:text-white transition">{{ l.nav.login }}</a>
             <a href="/register" class="hidden sm:inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-orange-500 rounded-lg hover:bg-orange-600 transition shadow-sm">{{ l.nav.demo }}</a>
           </div>
         </div>
@@ -300,22 +300,22 @@ const stepColors = ['from-orange-500 to-orange-600', 'from-gray-700 to-gray-800'
     </nav>
 
     <!-- Hero Section with Dashboard Mockup -->
-    <section class="pt-32 pb-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
+    <section class="pt-32 pb-20 px-4 sm:px-6 lg:px-8 overflow-hidden bg-gray-950">
       <div class="max-w-7xl mx-auto">
         <div class="grid lg:grid-cols-2 gap-12 items-center">
           <!-- Left: Text -->
           <div class="text-center lg:text-left">
-            <span class="inline-flex items-center gap-2 px-4 py-1.5 bg-orange-50 text-orange-600 text-sm font-medium rounded-full mb-6">
+            <span class="inline-flex items-center gap-2 px-4 py-1.5 bg-orange-500/10 text-orange-400 text-sm font-medium rounded-full mb-6 border border-orange-500/20">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               {{ l.hero.badge }}
             </span>
-            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 tracking-tight leading-tight">
+            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white tracking-tight leading-tight">
               {{ l.hero.title }}<br>
               <span class="bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">{{ l.hero.titleHighlight }}</span>
             </h1>
-            <p class="mt-6 text-lg text-gray-500 max-w-xl leading-relaxed">
+            <p class="mt-6 text-lg text-gray-400 max-w-xl leading-relaxed">
               {{ l.hero.subtitle }}
             </p>
             <div class="mt-10 flex flex-col sm:flex-row items-center lg:items-start justify-center lg:justify-start gap-4">
@@ -325,7 +325,7 @@ const stepColors = ['from-orange-500 to-orange-600', 'from-gray-700 to-gray-800'
                   <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                 </svg>
               </a>
-              <a :href="demoUrl" target="_blank" class="inline-flex items-center gap-2 px-8 py-3.5 text-base font-semibold text-gray-700 bg-white border-2 border-gray-200 rounded-xl hover:border-gray-300 hover:bg-gray-50 transition">
+              <a :href="demoUrl" target="_blank" class="inline-flex items-center gap-2 px-8 py-3.5 text-base font-semibold text-white bg-gray-800 border-2 border-gray-700 rounded-xl hover:border-gray-600 hover:bg-gray-700 transition">
                 <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   <path stroke-linecap="round" stroke-linejoin="round" d="M15.91 11.672a.375.375 0 010 .656l-5.603 3.113a.375.375 0 01-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112z" />
@@ -333,7 +333,7 @@ const stepColors = ['from-orange-500 to-orange-600', 'from-gray-700 to-gray-800'
                 {{ l.hero.demo }}
               </a>
             </div>
-            <p class="mt-4 text-sm text-gray-400">{{ l.hero.ctaSub }}</p>
+            <p class="mt-4 text-sm text-gray-500">{{ l.hero.ctaSub }}</p>
 
             <!-- Trust avatars -->
             <div class="mt-8 flex items-center gap-3 justify-center lg:justify-start">
@@ -350,7 +350,7 @@ const stepColors = ['from-orange-500 to-orange-600', 'from-gray-700 to-gray-800'
                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                   </svg>
                 </div>
-                <p class="text-xs text-gray-500 mt-0.5">{{ currentLang === 'fr' ? '+150 entreprises marocaines' : '+150 Moroccan businesses' }}</p>
+                <p class="text-xs text-gray-400 mt-0.5">{{ currentLang === 'fr' ? '+150 entreprises marocaines' : '+150 Moroccan businesses' }}</p>
               </div>
             </div>
           </div>
@@ -358,18 +358,18 @@ const stepColors = ['from-orange-500 to-orange-600', 'from-gray-700 to-gray-800'
           <!-- Right: Dashboard Mockup Illustration -->
           <div class="relative lg:pl-8">
             <!-- Glow effect -->
-            <div class="absolute -inset-4 bg-gradient-to-r from-orange-100 to-amber-50 rounded-3xl blur-2xl opacity-60"></div>
+            <div class="absolute -inset-4 bg-gradient-to-r from-orange-500/20 to-amber-500/10 rounded-3xl blur-2xl opacity-60"></div>
 
             <!-- Dashboard mockup -->
-            <div class="relative bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
+            <div class="relative bg-gray-900 rounded-2xl shadow-2xl border border-gray-700 overflow-hidden">
               <!-- Browser bar -->
-              <div class="flex items-center gap-2 px-4 py-3 bg-gray-50 border-b border-gray-200">
+              <div class="flex items-center gap-2 px-4 py-3 bg-gray-800 border-b border-gray-700">
                 <div class="flex gap-1.5">
                   <div class="w-3 h-3 rounded-full bg-red-400"></div>
                   <div class="w-3 h-3 rounded-full bg-yellow-400"></div>
                   <div class="w-3 h-3 rounded-full bg-green-400"></div>
                 </div>
-                <div class="flex-1 mx-4 bg-white rounded-lg px-3 py-1.5 text-xs text-gray-400 border border-gray-200">
+                <div class="flex-1 mx-4 bg-gray-900 rounded-lg px-3 py-1.5 text-xs text-gray-500 border border-gray-700">
                   mon-entreprise.o3app.ma/dashboard
                 </div>
               </div>
@@ -378,33 +378,33 @@ const stepColors = ['from-orange-500 to-orange-600', 'from-gray-700 to-gray-800'
               <div class="p-5">
                 <!-- Top stats row -->
                 <div class="grid grid-cols-4 gap-3 mb-4">
-                  <div class="bg-orange-50 rounded-xl p-3 text-center">
-                    <p class="text-xs text-orange-500 font-medium">{{ currentLang === 'fr' ? 'Ventes' : 'Sales' }}</p>
-                    <p class="text-lg font-bold text-gray-900 mt-1">124,500</p>
-                    <p class="text-xs text-green-500 font-medium">+12.5%</p>
+                  <div class="bg-orange-500/10 rounded-xl p-3 text-center">
+                    <p class="text-xs text-orange-400 font-medium">{{ currentLang === 'fr' ? 'Ventes' : 'Sales' }}</p>
+                    <p class="text-lg font-bold text-white mt-1">124,500</p>
+                    <p class="text-xs text-green-400 font-medium">+12.5%</p>
                   </div>
-                  <div class="bg-emerald-50 rounded-xl p-3 text-center">
-                    <p class="text-xs text-emerald-600 font-medium">{{ currentLang === 'fr' ? 'Commandes' : 'Orders' }}</p>
-                    <p class="text-lg font-bold text-gray-900 mt-1">89</p>
-                    <p class="text-xs text-green-500 font-medium">+8.3%</p>
+                  <div class="bg-emerald-500/10 rounded-xl p-3 text-center">
+                    <p class="text-xs text-emerald-400 font-medium">{{ currentLang === 'fr' ? 'Commandes' : 'Orders' }}</p>
+                    <p class="text-lg font-bold text-white mt-1">89</p>
+                    <p class="text-xs text-green-400 font-medium">+8.3%</p>
                   </div>
-                  <div class="bg-gray-50 rounded-xl p-3 text-center">
-                    <p class="text-xs text-gray-600 font-medium">{{ currentLang === 'fr' ? 'Clients' : 'Clients' }}</p>
-                    <p class="text-lg font-bold text-gray-900 mt-1">342</p>
-                    <p class="text-xs text-green-500 font-medium">+5.7%</p>
+                  <div class="bg-gray-800 rounded-xl p-3 text-center">
+                    <p class="text-xs text-gray-400 font-medium">{{ currentLang === 'fr' ? 'Clients' : 'Clients' }}</p>
+                    <p class="text-lg font-bold text-white mt-1">342</p>
+                    <p class="text-xs text-green-400 font-medium">+5.7%</p>
                   </div>
-                  <div class="bg-amber-50 rounded-xl p-3 text-center">
-                    <p class="text-xs text-amber-600 font-medium">{{ currentLang === 'fr' ? 'Produits' : 'Products' }}</p>
-                    <p class="text-lg font-bold text-gray-900 mt-1">1,256</p>
+                  <div class="bg-amber-500/10 rounded-xl p-3 text-center">
+                    <p class="text-xs text-amber-400 font-medium">{{ currentLang === 'fr' ? 'Produits' : 'Products' }}</p>
+                    <p class="text-lg font-bold text-white mt-1">1,256</p>
                     <p class="text-xs text-orange-400 font-medium">Active</p>
                   </div>
                 </div>
 
                 <!-- Chart area -->
-                <div class="bg-gray-50 rounded-xl p-4 mb-4">
+                <div class="bg-gray-800 rounded-xl p-4 mb-4">
                   <div class="flex items-center justify-between mb-3">
-                    <p class="text-sm font-semibold text-gray-700">{{ currentLang === 'fr' ? 'Chiffre d\'affaires' : 'Revenue' }}</p>
-                    <span class="text-xs text-gray-400">{{ currentLang === 'fr' ? 'Ce mois' : 'This month' }}</span>
+                    <p class="text-sm font-semibold text-gray-300">{{ currentLang === 'fr' ? 'Chiffre d\'affaires' : 'Revenue' }}</p>
+                    <span class="text-xs text-gray-500">{{ currentLang === 'fr' ? 'Ce mois' : 'This month' }}</span>
                   </div>
                   <!-- SVG Chart -->
                   <svg class="w-full h-24" viewBox="0 0 400 100" fill="none">
@@ -427,21 +427,21 @@ const stepColors = ['from-orange-500 to-orange-600', 'from-gray-700 to-gray-800'
                 </div>
 
                 <!-- Recent orders table -->
-                <div class="bg-white rounded-xl border border-gray-100">
-                  <div class="px-4 py-2 border-b border-gray-100">
-                    <p class="text-sm font-semibold text-gray-700">{{ currentLang === 'fr' ? 'Dernières commandes' : 'Recent orders' }}</p>
+                <div class="bg-gray-800/50 rounded-xl border border-gray-700">
+                  <div class="px-4 py-2 border-b border-gray-700">
+                    <p class="text-sm font-semibold text-gray-300">{{ currentLang === 'fr' ? 'Dernières commandes' : 'Recent orders' }}</p>
                   </div>
-                  <div class="divide-y divide-gray-50">
+                  <div class="divide-y divide-gray-700/50">
                     <div class="flex items-center justify-between px-4 py-2.5">
                       <div class="flex items-center gap-3">
                         <div class="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-amber-400 flex items-center justify-center text-white text-xs font-bold">AM</div>
                         <div>
-                          <p class="text-sm font-medium text-gray-800">Ahmed M.</p>
+                          <p class="text-sm font-medium text-gray-200">Ahmed M.</p>
                           <p class="text-xs text-gray-400">#ORD-2024-089</p>
                         </div>
                       </div>
                       <div class="text-right">
-                        <p class="text-sm font-semibold text-gray-900">4,250 MAD</p>
+                        <p class="text-sm font-semibold text-white">4,250 MAD</p>
                         <span class="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">{{ currentLang === 'fr' ? 'Payée' : 'Paid' }}</span>
                       </div>
                     </div>
@@ -449,12 +449,12 @@ const stepColors = ['from-orange-500 to-orange-600', 'from-gray-700 to-gray-800'
                       <div class="flex items-center gap-3">
                         <div class="w-8 h-8 rounded-full bg-gradient-to-br from-pink-500 to-rose-400 flex items-center justify-center text-white text-xs font-bold">SB</div>
                         <div>
-                          <p class="text-sm font-medium text-gray-800">Sara B.</p>
+                          <p class="text-sm font-medium text-gray-200">Sara B.</p>
                           <p class="text-xs text-gray-400">#ORD-2024-088</p>
                         </div>
                       </div>
                       <div class="text-right">
-                        <p class="text-sm font-semibold text-gray-900">1,890 MAD</p>
+                        <p class="text-sm font-semibold text-white">1,890 MAD</p>
                         <span class="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-medium">{{ currentLang === 'fr' ? 'En cours' : 'Pending' }}</span>
                       </div>
                     </div>
@@ -462,12 +462,12 @@ const stepColors = ['from-orange-500 to-orange-600', 'from-gray-700 to-gray-800'
                       <div class="flex items-center gap-3">
                         <div class="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-400 flex items-center justify-center text-white text-xs font-bold">KT</div>
                         <div>
-                          <p class="text-sm font-medium text-gray-800">Khalid T.</p>
+                          <p class="text-sm font-medium text-gray-200">Khalid T.</p>
                           <p class="text-xs text-gray-400">#ORD-2024-087</p>
                         </div>
                       </div>
                       <div class="text-right">
-                        <p class="text-sm font-semibold text-gray-900">7,620 MAD</p>
+                        <p class="text-sm font-semibold text-white">7,620 MAD</p>
                         <span class="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">{{ currentLang === 'fr' ? 'Payée' : 'Paid' }}</span>
                       </div>
                     </div>
@@ -477,26 +477,26 @@ const stepColors = ['from-orange-500 to-orange-600', 'from-gray-700 to-gray-800'
             </div>
 
             <!-- Floating notification cards -->
-            <div class="absolute -left-6 top-1/4 bg-white rounded-xl shadow-lg border border-gray-100 p-3 flex items-center gap-3 animate-bounce" style="animation-duration: 3s;">
-              <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+            <div class="absolute -left-6 top-1/4 bg-gray-800 rounded-xl shadow-lg border border-gray-700 p-3 flex items-center gap-3 animate-bounce" style="animation-duration: 3s;">
+              <div class="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
                 <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                 </svg>
               </div>
               <div>
-                <p class="text-xs font-semibold text-gray-800">{{ currentLang === 'fr' ? 'Vente confirmée' : 'Sale confirmed' }}</p>
+                <p class="text-xs font-semibold text-white">{{ currentLang === 'fr' ? 'Vente confirmée' : 'Sale confirmed' }}</p>
                 <p class="text-xs text-gray-400">+3,200 MAD</p>
               </div>
             </div>
 
-            <div class="absolute -right-4 bottom-1/4 bg-white rounded-xl shadow-lg border border-gray-100 p-3 flex items-center gap-3 animate-bounce" style="animation-duration: 4s; animation-delay: 1s;">
-              <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+            <div class="absolute -right-4 bottom-1/4 bg-gray-800 rounded-xl shadow-lg border border-gray-700 p-3 flex items-center gap-3 animate-bounce" style="animation-duration: 4s; animation-delay: 1s;">
+              <div class="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center">
                 <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
                 </svg>
               </div>
               <div>
-                <p class="text-xs font-semibold text-gray-800">{{ currentLang === 'fr' ? 'Nouveau client' : 'New client' }}</p>
+                <p class="text-xs font-semibold text-white">{{ currentLang === 'fr' ? 'Nouveau client' : 'New client' }}</p>
                 <p class="text-xs text-gray-400">Boutique Atlas</p>
               </div>
             </div>
@@ -506,11 +506,11 @@ const stepColors = ['from-orange-500 to-orange-600', 'from-gray-700 to-gray-800'
     </section>
 
     <!-- Stats Bar with Icons -->
-    <section class="py-10 bg-gray-50 border-y border-gray-100">
+    <section class="py-10 bg-gray-900 border-y border-gray-800">
       <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
           <div v-for="stat in l.stats" :key="stat.label" class="text-center">
-            <div class="w-12 h-12 mx-auto mb-3 rounded-2xl bg-white shadow-sm border border-gray-100 flex items-center justify-center">
+            <div class="w-12 h-12 mx-auto mb-3 rounded-2xl bg-gray-800 shadow-sm border border-gray-700 flex items-center justify-center">
               <!-- Server -->
               <svg v-if="stat.icon === 'server'" class="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 17.25v-.228a4.5 4.5 0 00-.12-1.03l-2.268-9.64a3.375 3.375 0 00-3.285-2.602H7.923a3.375 3.375 0 00-3.285 2.602l-2.268 9.64a4.5 4.5 0 00-.12 1.03v.228m19.5 0a3 3 0 01-3 3H5.25a3 3 0 01-3-3m19.5 0a3 3 0 00-3-3H5.25a3 3 0 00-3 3m16.5 0h.008v.008h-.008v-.008zm-3 0h.008v.008h-.008v-.008z" />
@@ -528,27 +528,27 @@ const stepColors = ['from-orange-500 to-orange-600', 'from-gray-700 to-gray-800'
                 <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 01-.825-.242m9.345-8.334a2.126 2.126 0 00-.476-.095 48.64 48.64 0 00-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0011.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155" />
               </svg>
             </div>
-            <p class="text-2xl font-bold text-gray-900">{{ stat.value }}</p>
-            <p class="text-sm text-gray-500 mt-1">{{ stat.label }}</p>
+            <p class="text-2xl font-bold text-white">{{ stat.value }}</p>
+            <p class="text-sm text-gray-400 mt-1">{{ stat.label }}</p>
           </div>
         </div>
       </div>
     </section>
 
     <!-- How It Works Section -->
-    <section class="py-24 px-4 sm:px-6 lg:px-8 bg-white">
+    <section class="py-24 px-4 sm:px-6 lg:px-8 bg-gray-950">
       <div class="max-w-5xl mx-auto">
         <div class="text-center mb-16">
-          <span class="inline-flex items-center px-3 py-1 bg-orange-50 text-orange-600 text-xs font-semibold rounded-full mb-4">
+          <span class="inline-flex items-center px-3 py-1 bg-orange-500/10 text-orange-400 text-xs font-semibold rounded-full mb-4 border border-orange-500/20">
             {{ currentLang === 'fr' ? 'COMMENT CA MARCHE' : 'HOW IT WORKS' }}
           </span>
-          <h2 class="text-3xl sm:text-4xl font-bold text-gray-900">{{ l.howItWorks.title }}</h2>
-          <p class="mt-4 text-lg text-gray-500 max-w-2xl mx-auto">{{ l.howItWorks.subtitle }}</p>
+          <h2 class="text-3xl sm:text-4xl font-bold text-white">{{ l.howItWorks.title }}</h2>
+          <p class="mt-4 text-lg text-gray-400 max-w-2xl mx-auto">{{ l.howItWorks.subtitle }}</p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
           <!-- Connector line -->
-          <div class="hidden md:block absolute top-20 left-1/6 right-1/6 h-0.5 bg-gradient-to-r from-orange-200 via-gray-200 to-orange-200"></div>
+          <div class="hidden md:block absolute top-20 left-1/6 right-1/6 h-0.5 bg-gradient-to-r from-orange-500/30 via-gray-700 to-orange-500/30"></div>
 
           <div v-for="(step, index) in l.howItWorks.steps" :key="step.number" class="relative text-center">
             <!-- Step circle with icon -->
@@ -558,11 +558,11 @@ const stepColors = ['from-orange-500 to-orange-600', 'from-gray-700 to-gray-800'
                   <path stroke-linecap="round" stroke-linejoin="round" :d="getStepIcon(index)" />
                 </svg>
               </div>
-              <span class="absolute -top-2 -right-2 w-8 h-8 bg-white rounded-full border-2 border-gray-200 flex items-center justify-center text-sm font-bold text-gray-700 shadow-sm">{{ step.number }}</span>
+              <span class="absolute -top-2 -right-2 w-8 h-8 bg-gray-800 rounded-full border-2 border-gray-600 flex items-center justify-center text-sm font-bold text-white shadow-sm">{{ step.number }}</span>
             </div>
 
             <!-- Illustration below icon -->
-            <div class="mb-4 mx-auto w-full max-w-[200px] h-32 rounded-xl bg-gray-50 border border-gray-100 overflow-hidden flex items-center justify-center">
+            <div class="mb-4 mx-auto w-full max-w-[200px] h-32 rounded-xl bg-gray-900 border border-gray-800 overflow-hidden flex items-center justify-center">
               <!-- Step 1: Account creation form illustration -->
               <svg v-if="index === 0" class="w-full h-full p-4" viewBox="0 0 180 100" fill="none">
                 <rect x="20" y="10" width="140" height="80" rx="8" fill="white" stroke="#E5E7EB" stroke-width="1.5" />
@@ -605,31 +605,31 @@ const stepColors = ['from-orange-500 to-orange-600', 'from-gray-700 to-gray-800'
               </svg>
             </div>
 
-            <h3 class="text-lg font-bold text-gray-900 mb-2">{{ step.title }}</h3>
-            <p class="text-sm text-gray-500 leading-relaxed max-w-xs mx-auto">{{ step.desc }}</p>
+            <h3 class="text-lg font-bold text-white mb-2">{{ step.title }}</h3>
+            <p class="text-sm text-gray-400 leading-relaxed max-w-xs mx-auto">{{ step.desc }}</p>
           </div>
         </div>
       </div>
     </section>
 
     <!-- Features Section with Illustrations -->
-    <section id="features" class="py-24 px-4 sm:px-6 lg:px-8 bg-gray-50">
+    <section id="features" class="py-24 px-4 sm:px-6 lg:px-8 bg-gray-900">
       <div class="max-w-6xl mx-auto">
         <div class="text-center mb-16">
-          <span class="inline-flex items-center px-3 py-1 bg-orange-50 text-orange-600 text-xs font-semibold rounded-full mb-4">
+          <span class="inline-flex items-center px-3 py-1 bg-orange-500/10 text-orange-400 text-xs font-semibold rounded-full mb-4 border border-orange-500/20">
             {{ currentLang === 'fr' ? 'FONCTIONNALITES' : 'FEATURES' }}
           </span>
-          <h2 class="text-3xl sm:text-4xl font-bold text-gray-900">{{ l.features.title }}</h2>
-          <p class="mt-4 text-lg text-gray-500 max-w-2xl mx-auto">{{ l.features.subtitle }}</p>
+          <h2 class="text-3xl sm:text-4xl font-bold text-white">{{ l.features.title }}</h2>
+          <p class="mt-4 text-lg text-gray-400 max-w-2xl mx-auto">{{ l.features.subtitle }}</p>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           <div
             v-for="(feature, idx) in l.features.items"
             :key="feature.title"
-            class="group bg-white p-6 rounded-2xl border border-gray-100 hover:border-orange-200 hover:shadow-xl transition-all duration-300"
+            class="group bg-gray-800/50 p-6 rounded-2xl border border-gray-700 hover:border-orange-500/50 hover:shadow-xl hover:shadow-orange-500/5 transition-all duration-300"
           >
             <!-- Feature mini illustration -->
-            <div class="w-full h-36 mb-5 rounded-xl bg-gradient-to-br from-gray-50 to-orange-50 border border-gray-100 overflow-hidden flex items-center justify-center">
+            <div class="w-full h-36 mb-5 rounded-xl bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 overflow-hidden flex items-center justify-center">
               <!-- Sales illustration -->
               <svg v-if="feature.icon === 'sales'" class="w-full h-full p-5" viewBox="0 0 200 120" fill="none">
                 <rect x="10" y="10" width="120" height="100" rx="8" fill="white" stroke="#E5E7EB" stroke-width="1.5" />
@@ -786,14 +786,14 @@ const stepColors = ['from-orange-500 to-orange-600', 'from-gray-700 to-gray-800'
             </div>
 
             <div class="flex items-start gap-4">
-              <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-orange-200 transition">
+              <div class="w-12 h-12 bg-orange-500/10 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-orange-500/20 transition">
                 <svg class="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" :d="getFeatureIcon(feature.icon)" />
                 </svg>
               </div>
               <div>
-                <h3 class="text-lg font-semibold text-gray-900 mb-1">{{ feature.title }}</h3>
-                <p class="text-sm text-gray-500 leading-relaxed">{{ feature.desc }}</p>
+                <h3 class="text-lg font-semibold text-white mb-1">{{ feature.title }}</h3>
+                <p class="text-sm text-gray-400 leading-relaxed">{{ feature.desc }}</p>
               </div>
             </div>
           </div>
@@ -802,34 +802,34 @@ const stepColors = ['from-orange-500 to-orange-600', 'from-gray-700 to-gray-800'
     </section>
 
     <!-- Testimonials Section -->
-    <section class="py-24 px-4 sm:px-6 lg:px-8 bg-white">
+    <section class="py-24 px-4 sm:px-6 lg:px-8 bg-gray-950">
       <div class="max-w-6xl mx-auto">
         <div class="text-center mb-16">
-          <span class="inline-flex items-center px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-semibold rounded-full mb-4">
+          <span class="inline-flex items-center px-3 py-1 bg-emerald-500/10 text-emerald-400 text-xs font-semibold rounded-full mb-4 border border-emerald-500/20">
             {{ currentLang === 'fr' ? 'TEMOIGNAGES' : 'TESTIMONIALS' }}
           </span>
-          <h2 class="text-3xl sm:text-4xl font-bold text-gray-900">{{ l.testimonials.title }}</h2>
-          <p class="mt-4 text-lg text-gray-500 max-w-2xl mx-auto">{{ l.testimonials.subtitle }}</p>
+          <h2 class="text-3xl sm:text-4xl font-bold text-white">{{ l.testimonials.title }}</h2>
+          <p class="mt-4 text-lg text-gray-400 max-w-2xl mx-auto">{{ l.testimonials.subtitle }}</p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div
             v-for="(testimonial, idx) in l.testimonials.items"
             :key="testimonial.name"
-            class="bg-white rounded-2xl border border-gray-100 p-8 hover:shadow-xl transition-all duration-300 relative"
+            class="bg-gray-900 rounded-2xl border border-gray-800 p-8 hover:shadow-xl hover:shadow-orange-500/5 transition-all duration-300 relative"
           >
             <!-- Quote icon -->
-            <svg class="w-10 h-10 text-orange-200 mb-4" fill="currentColor" viewBox="0 0 24 24">
+            <svg class="w-10 h-10 text-gray-700 mb-4" fill="currentColor" viewBox="0 0 24 24">
               <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10H14.017zM0 21v-7.391c0-5.704 3.731-9.57 8.983-10.609L9.978 5.151c-2.432.917-3.995 3.638-3.995 5.849h4V21H0z" />
             </svg>
-            <p class="text-gray-600 leading-relaxed mb-6 text-sm">{{ testimonial.text }}</p>
+            <p class="text-gray-400 leading-relaxed mb-6 text-sm">{{ testimonial.text }}</p>
             <div class="flex items-center gap-4">
               <!-- Avatar -->
               <div :class="['w-12 h-12 rounded-full bg-gradient-to-br flex items-center justify-center text-white text-lg font-bold shadow-md', avatarColors[idx]]">
                 {{ testimonial.avatar }}
               </div>
               <div>
-                <p class="font-semibold text-gray-900 text-sm">{{ testimonial.name }}</p>
+                <p class="font-semibold text-white text-sm">{{ testimonial.name }}</p>
                 <p class="text-xs text-gray-500">{{ testimonial.role }}</p>
               </div>
             </div>
@@ -845,22 +845,22 @@ const stepColors = ['from-orange-500 to-orange-600', 'from-gray-700 to-gray-800'
     </section>
 
     <!-- Pricing Section -->
-    <section id="pricing" class="py-24 px-4 sm:px-6 lg:px-8 bg-gray-50">
+    <section id="pricing" class="py-24 px-4 sm:px-6 lg:px-8 bg-gray-900">
       <div class="max-w-6xl mx-auto">
         <div class="text-center mb-16">
-          <span class="inline-flex items-center px-3 py-1 bg-orange-50 text-orange-600 text-xs font-semibold rounded-full mb-4">
+          <span class="inline-flex items-center px-3 py-1 bg-orange-500/10 text-orange-400 text-xs font-semibold rounded-full mb-4 border border-orange-500/20">
             {{ currentLang === 'fr' ? 'TARIFICATION' : 'PRICING' }}
           </span>
-          <h2 class="text-3xl sm:text-4xl font-bold text-gray-900">{{ l.pricing.title }}</h2>
-          <p class="mt-4 text-lg text-gray-500 max-w-2xl mx-auto">{{ l.pricing.subtitle }}</p>
+          <h2 class="text-3xl sm:text-4xl font-bold text-white">{{ l.pricing.title }}</h2>
+          <p class="mt-4 text-lg text-gray-400 max-w-2xl mx-auto">{{ l.pricing.subtitle }}</p>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
           <div
             v-for="plan in l.pricing.plans"
             :key="plan.name"
             :class="[
-              'relative bg-white rounded-2xl p-8 transition-all duration-300',
-              plan.popular ? 'border-2 border-orange-500 shadow-xl shadow-orange-100 scale-105' : 'border border-gray-200 hover:shadow-lg',
+              'relative bg-gray-800/50 rounded-2xl p-8 transition-all duration-300',
+              plan.popular ? 'border-2 border-orange-500 shadow-xl shadow-orange-500/10 scale-105 bg-gray-800' : 'border border-gray-700 hover:shadow-lg',
             ]"
           >
             <span
@@ -871,33 +871,33 @@ const stepColors = ['from-orange-500 to-orange-600', 'from-gray-700 to-gray-800'
             </span>
 
             <!-- Plan icon -->
-            <div :class="['w-14 h-14 rounded-2xl flex items-center justify-center mb-4', plan.popular ? 'bg-orange-100' : 'bg-gray-100']">
+            <div :class="['w-14 h-14 rounded-2xl flex items-center justify-center mb-4', plan.popular ? 'bg-orange-500/10' : 'bg-gray-700']">
               <!-- Starter: single user -->
-              <svg v-if="plan.name === 'Starter'" :class="['w-7 h-7', plan.popular ? 'text-orange-500' : 'text-gray-600']" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+              <svg v-if="plan.name === 'Starter'" :class="['w-7 h-7', plan.popular ? 'text-orange-500' : 'text-gray-400']" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
               </svg>
               <!-- Business: building -->
-              <svg v-if="plan.name === 'Business'" :class="['w-7 h-7', plan.popular ? 'text-orange-500' : 'text-gray-600']" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+              <svg v-if="plan.name === 'Business'" :class="['w-7 h-7', plan.popular ? 'text-orange-500' : 'text-gray-400']" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
               </svg>
               <!-- Enterprise: rocket -->
-              <svg v-if="plan.name === 'Enterprise'" :class="['w-7 h-7', plan.popular ? 'text-orange-500' : 'text-gray-600']" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+              <svg v-if="plan.name === 'Enterprise'" :class="['w-7 h-7', plan.popular ? 'text-orange-500' : 'text-gray-400']" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.58-5.84a14.927 14.927 0 00-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 01-2.448-2.448 14.9 14.9 0 01.06-.312m-2.24 2.39a4.493 4.493 0 00-1.757 4.306 4.493 4.493 0 004.306-1.758M16.5 9a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
               </svg>
             </div>
 
-            <h3 class="text-xl font-bold text-gray-900">{{ plan.name }}</h3>
-            <p class="text-sm text-gray-500 mt-1">{{ plan.desc }}</p>
+            <h3 class="text-xl font-bold text-white">{{ plan.name }}</h3>
+            <p class="text-sm text-gray-400 mt-1">{{ plan.desc }}</p>
             <div class="mt-6 mb-6">
-              <span class="text-4xl font-extrabold text-gray-900">{{ plan.price }}</span>
-              <span class="text-base text-gray-500 ml-1">{{ plan.period }}</span>
+              <span class="text-4xl font-extrabold text-white">{{ plan.price }}</span>
+              <span class="text-base text-gray-400 ml-1">{{ plan.period }}</span>
             </div>
             <ul class="space-y-3 mb-8">
               <li v-for="f in plan.features" :key="f" class="flex items-start gap-3">
                 <svg class="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                 </svg>
-                <span class="text-sm text-gray-600">{{ f }}</span>
+                <span class="text-sm text-gray-300">{{ f }}</span>
               </li>
             </ul>
             <a
@@ -906,7 +906,7 @@ const stepColors = ['from-orange-500 to-orange-600', 'from-gray-700 to-gray-800'
                 'block text-center w-full py-3 text-sm font-semibold rounded-xl transition',
                 plan.popular
                   ? 'bg-orange-500 text-white hover:bg-orange-600 shadow-lg shadow-orange-500/25'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200',
+                  : 'bg-gray-700 text-gray-200 hover:bg-gray-600',
               ]"
             >
               {{ plan.cta }}
