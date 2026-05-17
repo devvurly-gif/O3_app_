@@ -83,8 +83,8 @@ function viewDocument(doc: Record<string, unknown>) {
 
 <template>
   <div class="max-w-9xl mx-auto py-4 sm:py-6 px-3 sm:px-4">
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-      <h1 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Documents d'Achat</h1>
+    <div class="flex items-center justify-between gap-3 mb-6">
+      <h1 class="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">Documents d'Achat</h1>
       <div class="flex items-center gap-3">
         <button
           class="flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition"
