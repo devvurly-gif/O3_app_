@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDocumentVenteStore } from '@/stores/ventes/useDocumentVenteStore'
@@ -50,7 +50,7 @@ function onCancel() {
   <div class="max-w-9xl mx-auto py-6 px-4">
     <div v-if="initialLoading" class="flex items-center justify-center py-24">
       <div class="flex flex-col items-center gap-3">
-        <svg class="w-8 h-8 animate-spin text-blue-500" fill="none" viewBox="0 0 24 24">
+        <svg class="w-8 h-8 animate-spin text-orange-500" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
         </svg>
@@ -62,7 +62,7 @@ function onCancel() {
       <div class="mb-6">
         <router-link
           :to="`/ventes/documents/${doc.id}`"
-          class="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+          class="text-sm text-orange-500 dark:text-orange-400 hover:underline"
         >
           &larr; Retour au document
         </router-link>
@@ -88,7 +88,7 @@ function onCancel() {
 
     <div v-else class="text-center py-24 text-gray-400 dark:text-gray-500">
       <p class="text-lg font-medium">Document introuvable</p>
-      <router-link to="/ventes/documents" class="text-sm text-blue-600 dark:text-blue-400 hover:underline mt-2">
+      <router-link to="/ventes/documents" class="text-sm text-orange-500 dark:text-orange-400 hover:underline mt-2">
         Retour à la liste
       </router-link>
     </div>

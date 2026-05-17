@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useDocumentStockStore } from '@/stores/stock/useDocumentStockStore'
@@ -28,7 +28,7 @@ const typeColors: Record<string, string> = {
   StockEntry: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
   StockExit: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
   StockAdjustmentNote: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400',
-  StockTransfer: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+  StockTransfer: 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400',
 }
 
 const statusLabels: Record<string, string> = {
@@ -40,7 +40,7 @@ const statusLabels: Record<string, string> = {
 
 const statusColors: Record<string, string> = {
   draft: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
-  confirmed: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+  confirmed: 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400',
   applied: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
   cancelled: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
 }

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, watch } from 'vue'
 import BaseModal from '@/components/BaseModal.vue'
 
@@ -100,7 +100,7 @@ function onSubmit() {
           step="0.01"
           min="0.01"
           required
-          class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
         />
       </div>
       <div>
@@ -108,7 +108,7 @@ function onSubmit() {
         <select
           v-model="form.method"
           required
-          class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
         >
           <option value="cash">Espèces</option>
           <option value="bank_transfer">Virement</option>
@@ -122,7 +122,7 @@ function onSubmit() {
         <input
           v-model="form.paid_at"
           type="date"
-          class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
         />
       </div>
       <div>
@@ -131,7 +131,7 @@ function onSubmit() {
           v-model="form.reference"
           type="text"
           placeholder="N° chèque, virement..."
-          class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
         />
       </div>
       <div>
@@ -140,7 +140,7 @@ function onSubmit() {
           v-model="form.notes"
           rows="2"
           placeholder="Notes..."
-          class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
         ></textarea>
       </div>
     </form>

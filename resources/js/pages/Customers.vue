@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="space-y-5">
     <!-- Header -->
     <div class="flex items-center justify-between">
@@ -22,7 +22,7 @@
           {{ exporting ? 'Export...' : 'Export' }}
         </button>
         <button
-          class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition"
+          class="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition"
           @click="openCreate"
         >
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -39,11 +39,11 @@
         v-model="search"
         type="text"
         :placeholder="$t('customers.search')"
-        class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64"
+        class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent w-64"
       />
       <select
         v-model="statusFilter"
-        class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
       >
         <option value="">{{ $t('common.allStatus') }}</option>
         <option value="1">{{ $t('common.active') }}</option>
@@ -117,7 +117,7 @@
             </svg>
           </button>
           <button
-            class="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition"
+            class="p-1.5 rounded-lg text-orange-500 hover:bg-orange-50 transition"
             :title="$t('common.update')"
             @click="openEdit(row)"
           >
@@ -167,7 +167,7 @@
             class="flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap"
             :class="
               activeTab === tab.key
-                ? 'border-blue-600 text-blue-600'
+                ? 'border-orange-500 text-orange-500'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             "
             @click="activeTab = tab.key"
@@ -177,7 +177,7 @@
             <span
               v-if="tab.badge !== undefined && tab.badge > 0"
               class="ml-1 inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-xs font-semibold leading-none"
-              :class="activeTab === tab.key ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'"
+              :class="activeTab === tab.key ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-600'"
             >
               {{ tab.badge }}
             </span>
@@ -202,7 +202,7 @@
                     type="text"
                     required
                     :placeholder="$t('customers.namePlaceholder')"
-                    class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   />
                 </div>
               </div>
@@ -217,7 +217,7 @@
                     v-model="form.tp_phone"
                     type="text"
                     placeholder="+212..."
-                    class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -226,7 +226,7 @@
                     v-model="form.tp_email"
                     type="email"
                     placeholder="contact@example.com"
-                    class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -235,7 +235,7 @@
                     v-model="form.tp_city"
                     type="text"
                     placeholder="Casablanca"
-                    class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   />
                 </div>
                 <div class="sm:col-span-2">
@@ -244,7 +244,7 @@
                     v-model="form.tp_address"
                     rows="2"
                     :placeholder="$t('common.addressPlaceholder')"
-                    class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                    class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
                   ></textarea>
                 </div>
               </div>
@@ -256,7 +256,7 @@
                 id="cust-status"
                 v-model="form.tp_status"
                 type="checkbox"
-                class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
+                class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-orange-500 focus:ring-orange-500"
               />
               <label for="cust-status" class="text-sm text-gray-700 dark:text-gray-300">{{ $t('common.active') }}</label>
             </div>
@@ -273,7 +273,7 @@
                   v-model="form.tp_Ice_Number"
                   type="text"
                   :placeholder="$t('customers.icePlaceholder')"
-                  class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 />
               </div>
               <div>
@@ -282,7 +282,7 @@
                   v-model="form.tp_Rc_Number"
                   type="text"
                   :placeholder="$t('customers.rcPlaceholder')"
-                  class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 />
               </div>
               <div>
@@ -291,7 +291,7 @@
                   v-model="form.tp_patente_Number"
                   type="text"
                   :placeholder="$t('customers.patentePlaceholder')"
-                  class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 />
               </div>
               <div>
@@ -300,7 +300,7 @@
                   v-model="form.tp_IdenFiscal"
                   type="text"
                   :placeholder="$t('customers.ifPlaceholder')"
-                  class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 />
               </div>
             </div>
@@ -387,7 +387,7 @@
                       min="0"
                       step="0.01"
                       placeholder="0.00"
-                      class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-12"
+                      class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent pr-12"
                     />
                     <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 dark:text-gray-500 font-medium"
                       >DH</span
@@ -402,7 +402,7 @@
                   <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type de compte</label>
                   <select
                     v-model="form.type_compte"
-                    class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   >
                     <option value="normal">Normal</option>
                     <option value="en_compte">En Compte</option>
@@ -413,7 +413,7 @@
                   <select
                     v-model="form.frequence_facturation"
                     :disabled="form.type_compte !== 'en_compte'"
-                    class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:text-gray-400"
+                    class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-100 disabled:text-gray-400"
                   >
                     <option :value="null">—</option>
                     <option value="mensuelle">Mensuelle</option>
@@ -430,7 +430,7 @@
                 </label>
                 <select
                   v-model="form.price_list_id"
-                  class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 >
                   <option :value="null">{{ $t('pricelists.selectList') }}</option>
                   <option v-for="pl in priceLists" :key="pl.id" :value="pl.id">
@@ -445,7 +445,7 @@
         <!-- TAB: Factures -->
         <div v-show="activeTab === 'factures'">
           <div v-if="loadingDetail" class="flex items-center justify-center py-12">
-            <svg class="w-6 h-6 animate-spin text-blue-500" fill="none" viewBox="0 0 24 24">
+            <svg class="w-6 h-6 animate-spin text-orange-500" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
             </svg>
@@ -479,8 +479,22 @@
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-                <tr v-for="inv in customerDocuments" :key="inv.id" class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                  <td class="py-2.5 px-3 font-mono text-xs">{{ inv.reference }}</td>
+                <tr
+                  v-for="inv in customerDocuments"
+                  :key="inv.id"
+                  class="hover:bg-gray-50 dark:hover:bg-gray-700"
+                  :class="isBilledBl(inv) ? 'opacity-60 bg-gray-50/40 dark:bg-gray-900/40' : ''"
+                >
+                  <td class="py-2.5 px-3 font-mono text-xs">
+                    {{ inv.reference }}
+                    <span
+                      v-if="isBilledBl(inv)"
+                      class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                      :title="'Ce BL a été converti en facture' + (billedToReference(inv) ? ' (' + billedToReference(inv) + ')' : '') + ' — non comptabilisé'"
+                    >
+                      Facturé{{ billedToReference(inv) ? ' → ' + billedToReference(inv) : '' }}
+                    </span>
+                  </td>
                   <td class="py-2.5 px-3 text-gray-600 dark:text-gray-400">{{ formatDate(inv.issued_at) }}</td>
                   <td class="py-2.5 px-3">
                     <span
@@ -495,9 +509,12 @@
                   </td>
                   <td
                     class="py-2.5 px-3 text-right font-mono font-medium"
-                    :class="(inv.footer?.amount_due ?? 0) > 0 ? 'text-red-600' : 'text-emerald-600'"
+                    :class="isBilledBl(inv) ? 'text-gray-400' : ((inv.footer?.amount_due ?? 0) > 0 ? 'text-red-600' : 'text-emerald-600')"
                   >
-                    {{ formatNumber(inv.footer?.amount_due ?? 0) }} <span class="text-gray-400 dark:text-gray-500 text-xs">DH</span>
+                    <template v-if="isBilledBl(inv)">—</template>
+                    <template v-else>
+                      {{ formatNumber(inv.footer?.amount_due ?? 0) }} <span class="text-gray-400 dark:text-gray-500 text-xs">DH</span>
+                    </template>
                   </td>
                   <td class="py-2.5 px-3 text-center">
                     <span
@@ -555,7 +572,7 @@
             </button>
           </div>
           <div v-if="loadingDetail" class="flex items-center justify-center py-12">
-            <svg class="w-6 h-6 animate-spin text-blue-500" fill="none" viewBox="0 0 24 24">
+            <svg class="w-6 h-6 animate-spin text-orange-500" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
             </svg>
@@ -591,7 +608,7 @@
               <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                 <tr v-for="pay in customerPayments" :key="pay.id" class="hover:bg-gray-50 dark:hover:bg-gray-700">
                   <td class="py-2.5 px-3 font-mono text-xs">{{ pay.payment_code }}</td>
-                  <td class="py-2.5 px-3 font-mono text-xs text-blue-600">{{ pay._doc_code }}</td>
+                  <td class="py-2.5 px-3 font-mono text-xs text-orange-500">{{ pay._doc_code }}</td>
                   <td class="py-2.5 px-3 text-gray-600 dark:text-gray-400">{{ formatDate(pay.paid_at) }}</td>
                   <td class="py-2.5 px-3">
                     <span
@@ -624,15 +641,15 @@
         <!-- TAB: Statistiques -->
         <div v-show="activeTab === 'statistiques'">
           <div v-if="loadingDetail" class="flex items-center justify-center py-12">
-            <svg class="w-6 h-6 animate-spin text-blue-500" fill="none" viewBox="0 0 24 24">
+            <svg class="w-6 h-6 animate-spin text-orange-500" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
             </svg>
           </div>
           <div v-else class="grid grid-cols-2 sm:grid-cols-3 gap-4">
             <!-- Total documents -->
-            <div class="bg-blue-50 rounded-xl p-4 border border-blue-100">
-              <p class="text-xs text-blue-600 font-medium mb-1">Total documents</p>
+            <div class="bg-orange-50 rounded-xl p-4 border border-blue-100">
+              <p class="text-xs text-orange-500 font-medium mb-1">Total documents</p>
               <p class="text-2xl font-bold text-blue-900">{{ customerDocuments.length }}</p>
             </div>
             <!-- Documents impayés -->
@@ -698,7 +715,7 @@
           {{ $t('common.cancel') }}
         </button>
         <button
-          class="px-4 py-2 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition disabled:opacity-60"
+          class="px-4 py-2 text-sm font-semibold bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition disabled:opacity-60"
           :disabled="saving"
           @click="submit"
         >
@@ -718,7 +735,7 @@
             class="flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap"
             :class="
               showActiveTab === tab.key
-                ? 'border-blue-600 text-blue-600'
+                ? 'border-orange-500 text-orange-500'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             "
             @click="showActiveTab = tab.key"
@@ -728,7 +745,7 @@
             <span
               v-if="tab.badge !== undefined && tab.badge > 0"
               class="ml-1 inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-xs font-semibold leading-none"
-              :class="showActiveTab === tab.key ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'"
+              :class="showActiveTab === tab.key ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-600'"
             >
               {{ tab.badge }}
             </span>
@@ -881,7 +898,7 @@
         <!-- TAB: Factures -->
         <div v-show="showActiveTab === 'factures'">
           <div v-if="showLoadingDetail" class="flex items-center justify-center py-12">
-            <svg class="w-6 h-6 animate-spin text-blue-500" fill="none" viewBox="0 0 24 24">
+            <svg class="w-6 h-6 animate-spin text-orange-500" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
             </svg>
@@ -991,7 +1008,7 @@
             </button>
           </div>
           <div v-if="showLoadingDetail" class="flex items-center justify-center py-12">
-            <svg class="w-6 h-6 animate-spin text-blue-500" fill="none" viewBox="0 0 24 24">
+            <svg class="w-6 h-6 animate-spin text-orange-500" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
             </svg>
@@ -1027,7 +1044,7 @@
               <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                 <tr v-for="pay in showPayments" :key="pay.id" class="hover:bg-gray-50 dark:hover:bg-gray-700">
                   <td class="py-2.5 px-3 font-mono text-xs">{{ pay.payment_code }}</td>
-                  <td class="py-2.5 px-3 font-mono text-xs text-blue-600">{{ pay._doc_code }}</td>
+                  <td class="py-2.5 px-3 font-mono text-xs text-orange-500">{{ pay._doc_code }}</td>
                   <td class="py-2.5 px-3 text-gray-600 dark:text-gray-400">{{ formatDate(pay.paid_at) }}</td>
                   <td class="py-2.5 px-3">
                     <span
@@ -1058,14 +1075,14 @@
         <!-- TAB: Statistiques -->
         <div v-show="showActiveTab === 'statistiques'">
           <div v-if="showLoadingDetail" class="flex items-center justify-center py-12">
-            <svg class="w-6 h-6 animate-spin text-blue-500" fill="none" viewBox="0 0 24 24">
+            <svg class="w-6 h-6 animate-spin text-orange-500" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
             </svg>
           </div>
           <div v-else class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            <div class="bg-blue-50 rounded-xl p-4 border border-blue-100">
-              <p class="text-xs text-blue-600 font-medium mb-1">Total documents</p>
+            <div class="bg-orange-50 rounded-xl p-4 border border-blue-100">
+              <p class="text-xs text-orange-500 font-medium mb-1">Total documents</p>
               <p class="text-2xl font-bold text-blue-900">{{ showDocuments.length }}</p>
             </div>
             <div class="bg-red-50 rounded-xl p-4 border border-red-100">
@@ -1129,7 +1146,7 @@
           Fermer
         </button>
         <button
-          class="px-4 py-2 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
+          class="px-4 py-2 text-sm font-semibold bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition"
           @click="showShowModal = false; openEdit(showTarget)"
         >
           <svg
@@ -1185,7 +1202,7 @@
                 <span
                   class="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase"
                   :class="doc.document_type === 'DeliveryNote'
-                    ? 'bg-blue-100 text-blue-700'
+                    ? 'bg-orange-100 text-orange-600'
                     : doc.document_type === 'InvoicePurchase'
                       ? 'bg-purple-100 text-purple-700'
                       : 'bg-emerald-100 text-emerald-700'"
@@ -1296,7 +1313,7 @@
           </div>
         </div>
         <div v-if="paymentLoading" class="flex items-center justify-center py-8">
-          <svg class="w-6 h-6 animate-spin text-blue-500" fill="none" viewBox="0 0 24 24">
+          <svg class="w-6 h-6 animate-spin text-orange-500" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
           </svg>
@@ -1586,13 +1603,16 @@ const customerPayments = computed(() => {
 // Documents that should weigh in on the cumulative totals shown in the modal
 // footer. Quotes (Devis = QuoteSale) are not financial commitments yet, and
 // cancelled/draft documents never actually posted to the books — so all three
-// are excluded from the sum. They remain visible in the table for history.
+// are excluded from the sum. Billed BLs (converted to invoice) are also
+// excluded to prevent double-counting: the invoice carries the amount, not
+// the BL. They remain visible in the table for history.
 const countableDocuments = computed(() =>
   customerDocuments.value.filter(
     (inv: any) =>
       inv.document_type !== 'QuoteSale' &&
       inv.status !== 'cancelled' &&
-      inv.status !== 'draft',
+      inv.status !== 'draft' &&
+      !isBilledBl(inv),
   ),
 )
 
@@ -1940,6 +1960,25 @@ function creditAvailable(row: any): number {
   return (row.seuil_credit ?? 0) - (row.encours_actuel ?? 0)
 }
 
+/**
+ * Whether a document is a BL that has already been converted to an invoice.
+ * Uses status === 'converted' (set since 2026-05-06) with a fallback for
+ * historical BLs that have an InvoiceSale child but no 'converted' status.
+ */
+function isBilledBl(doc: any): boolean {
+  if (doc.document_type !== 'DeliveryNote') return false
+  if (doc.status === 'converted') return true
+  return (doc.children ?? []).some((c: any) => c.document_type === 'InvoiceSale')
+}
+
+/**
+ * Return the invoice reference a billed BL was converted to, if available.
+ */
+function billedToReference(doc: any): string | null {
+  const invoice = (doc.children ?? []).find((c: any) => c.document_type === 'InvoiceSale')
+  return invoice?.reference ?? null
+}
+
 function formatNumber(n: number): string {
   return n.toLocaleString('fr-MA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
@@ -1968,7 +2007,7 @@ function docTypeLabel(type: string): string {
 
 function docTypeClass(type: string): string {
   const map: Record<string, string> = {
-    InvoiceSale: 'bg-blue-100 text-blue-700',
+    InvoiceSale: 'bg-orange-100 text-orange-600',
     CreditNoteSale: 'bg-orange-100 text-orange-700',
     InvoicePurchase: 'bg-violet-100 text-violet-700',
     DeliveryNote: 'bg-emerald-100 text-emerald-700',
@@ -1986,7 +2025,7 @@ function statusClass(status: string): string {
   const map: Record<string, string> = {
     paid: 'bg-emerald-100 text-emerald-700',
     partial: 'bg-amber-100 text-amber-700',
-    confirmed: 'bg-blue-100 text-blue-700',
+    confirmed: 'bg-orange-100 text-orange-600',
     draft: 'bg-gray-100 text-gray-500',
     cancelled: 'bg-red-100 text-red-600',
   }

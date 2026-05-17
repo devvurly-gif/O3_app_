@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
 import { useStockOperationStore } from '@/stores/stock/useStockOperationStore'
 import { useExcelExport } from '@/composables/useExcelExport'
@@ -121,7 +121,7 @@ onMounted(() => loadPage())
       </div>
       <select
         v-model="dirFilter"
-        class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500"
       >
         <option value="">Toutes directions</option>
         <option value="in">Entrée</option>
@@ -129,7 +129,7 @@ onMounted(() => loadPage())
       </select>
       <select
         v-model="reasonFilter"
-        class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500"
       >
         <option value="">Tous motifs</option>
         <option v-for="[key, label] in reasonOptions" :key="key" :value="key">{{ label }}</option>

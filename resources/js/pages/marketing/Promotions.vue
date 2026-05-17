@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="space-y-5">
     <!-- Header -->
     <div class="flex items-center justify-between">
@@ -7,7 +7,7 @@
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Gérez vos promotions et bannières du site eCom</p>
       </div>
       <button
-        class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition"
+        class="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition"
         @click="activeTab === 'promos' ? openCreatePromo() : openCreateSlide()"
       >
         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
@@ -23,7 +23,7 @@
         :class="activeTab === 'promos' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'"
       >
         Promotions
-        <span v-if="promotions.length" class="ml-1.5 px-1.5 py-0.5 text-xs rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">{{ pagination.total || promotions.length }}</span>
+        <span v-if="promotions.length" class="ml-1.5 px-1.5 py-0.5 text-xs rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-300">{{ pagination.total || promotions.length }}</span>
       </button>
       <button
         @click="activeTab = 'slides'"
@@ -31,7 +31,7 @@
         :class="activeTab === 'slides' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'"
       >
         Bannières
-        <span v-if="slides.length" class="ml-1.5 px-1.5 py-0.5 text-xs rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">{{ slides.length }}</span>
+        <span v-if="slides.length" class="ml-1.5 px-1.5 py-0.5 text-xs rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-300">{{ slides.length }}</span>
       </button>
     </div>
 
@@ -45,11 +45,11 @@
           v-model="search"
           type="text"
           placeholder="Rechercher une promotion..."
-          class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
+          class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 w-64"
         />
         <select
           v-model="statusFilter"
-          class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
         >
           <option value="">Tous</option>
           <option value="active">Actives</option>
@@ -100,7 +100,7 @@
                 <span v-else class="text-gray-400">Permanente</span>
               </td>
               <td class="px-4 py-3 text-center">
-                <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 text-xs font-bold">
+                <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-300 text-xs font-bold">
                   {{ promo.products_count }}
                 </span>
               </td>
@@ -112,7 +112,7 @@
               </td>
               <td class="px-4 py-3 text-right">
                 <div class="flex items-center justify-end gap-1">
-                  <button @click="openEditPromo(promo)" class="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition" title="Modifier">
+                  <button @click="openEditPromo(promo)" class="p-1.5 rounded-lg text-orange-500 hover:bg-orange-50 dark:hover:bg-blue-900/20 transition" title="Modifier">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                   </button>
                   <button @click="toggleActive(promo)" class="p-1.5 rounded-lg transition" :class="promo.is_active ? 'text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900/20' : 'text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20'" :title="promo.is_active ? 'Désactiver' : 'Activer'">
@@ -137,7 +137,7 @@
           <button v-for="p in pagination.last_page" :key="p"
             @click="page = p"
             class="px-3 py-1.5 text-sm rounded-lg transition"
-            :class="p === page ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'">
+            :class="p === page ? 'bg-orange-500 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'">
             {{ p }}
           </button>
         </div>
@@ -153,7 +153,7 @@
         <button v-for="pos in positions" :key="pos.value"
           @click="positionFilter = pos.value"
           class="px-4 py-2 text-sm font-medium rounded-lg transition"
-          :class="positionFilter === pos.value ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'"
+          :class="positionFilter === pos.value ? 'bg-orange-500 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'"
         >
           {{ pos.label }}
         </button>
@@ -190,14 +190,14 @@
               :class="slide.is_active ? 'bg-green-500 text-white' : 'bg-gray-500 text-white'">
               {{ slide.is_active ? 'Actif' : 'Inactif' }}
             </span>
-            <span v-if="slide.link_type !== 'none'" class="absolute bottom-2 left-2 px-2 py-0.5 text-xs font-medium rounded bg-blue-600 text-white">
+            <span v-if="slide.link_type !== 'none'" class="absolute bottom-2 left-2 px-2 py-0.5 text-xs font-medium rounded bg-orange-500 text-white">
               {{ linkTypeLabels[slide.link_type] || slide.link_type }}
             </span>
           </div>
           <div class="p-4">
             <h4 class="font-semibold text-gray-900 dark:text-white text-sm truncate">{{ slide.title }}</h4>
             <p v-if="slide.subtitle" class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">{{ slide.subtitle }}</p>
-            <p v-if="slide.button_text" class="text-xs text-blue-600 dark:text-blue-400 mt-1">{{ slide.button_text }}</p>
+            <p v-if="slide.button_text" class="text-xs text-orange-500 dark:text-orange-400 mt-1">{{ slide.button_text }}</p>
             <div v-if="slide.starts_at || slide.ends_at" class="text-xs text-gray-400 mt-2">
               <span v-if="slide.starts_at">Du {{ formatDate(slide.starts_at) }}</span>
               <span v-if="slide.ends_at"> au {{ formatDate(slide.ends_at) }}</span>
@@ -209,7 +209,7 @@
               <button @click="moveDown(slide)" class="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
               </button>
-              <button @click="openEditSlide(slide)" class="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition">
+              <button @click="openEditSlide(slide)" class="p-1.5 rounded-lg text-orange-500 hover:bg-orange-50 dark:hover:bg-blue-900/20 transition">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
               </button>
               <button @click="confirmDeleteSlide(slide)" class="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition">
@@ -253,7 +253,7 @@
               :class="promoStep === 'products' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400'">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
               Produits
-              <span v-if="promoForm.product_ids.length" class="px-1.5 py-0.5 text-xs rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">{{ promoForm.product_ids.length }}</span>
+              <span v-if="promoForm.product_ids.length" class="px-1.5 py-0.5 text-xs rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-300">{{ promoForm.product_ids.length }}</span>
             </button>
           </div>
 
@@ -262,11 +262,11 @@
             <div class="grid grid-cols-2 gap-4">
               <div class="col-span-2">
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nom *</label>
-                <input v-model="promoForm.name" type="text" required class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500" placeholder="Ex: Soldes d'été -20%">
+                <input v-model="promoForm.name" type="text" required class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500" placeholder="Ex: Soldes d'été -20%">
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type *</label>
-                <select v-model="promoForm.type" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+                <select v-model="promoForm.type" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
                   <option value="percentage">Pourcentage (%)</option>
                   <option value="fixed_amount">Montant fixe (MAD)</option>
                 </select>
@@ -274,35 +274,35 @@
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Valeur *</label>
                 <div class="relative">
-                  <input v-model.number="promoForm.value" type="number" step="0.01" min="0" required class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+                  <input v-model.number="promoForm.value" type="number" step="0.01" min="0" required class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
                   <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">{{ promoForm.type === 'percentage' ? '%' : 'MAD' }}</span>
                 </div>
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date début</label>
                 <div class="flex gap-2">
-                  <input :value="promoForm.starts_at?.slice(0, 10)" @input="promoForm.starts_at = ($event.target as HTMLInputElement).value + 'T' + (promoForm.starts_at?.slice(11, 16) || '00:00')" type="date" class="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
-                  <input :value="promoForm.starts_at?.slice(11, 16)" @input="promoForm.starts_at = (promoForm.starts_at?.slice(0, 10) || '') + 'T' + ($event.target as HTMLInputElement).value" type="time" class="w-28 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+                  <input :value="promoForm.starts_at?.slice(0, 10)" @input="promoForm.starts_at = ($event.target as HTMLInputElement).value + 'T' + (promoForm.starts_at?.slice(11, 16) || '00:00')" type="date" class="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
+                  <input :value="promoForm.starts_at?.slice(11, 16)" @input="promoForm.starts_at = (promoForm.starts_at?.slice(0, 10) || '') + 'T' + ($event.target as HTMLInputElement).value" type="time" class="w-28 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
                 </div>
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date fin</label>
                 <div class="flex gap-2">
-                  <input :value="promoForm.ends_at?.slice(0, 10)" @input="promoForm.ends_at = ($event.target as HTMLInputElement).value + 'T' + (promoForm.ends_at?.slice(11, 16) || '23:59')" type="date" class="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
-                  <input :value="promoForm.ends_at?.slice(11, 16)" @input="promoForm.ends_at = (promoForm.ends_at?.slice(0, 10) || '') + 'T' + ($event.target as HTMLInputElement).value" type="time" class="w-28 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+                  <input :value="promoForm.ends_at?.slice(0, 10)" @input="promoForm.ends_at = ($event.target as HTMLInputElement).value + 'T' + (promoForm.ends_at?.slice(11, 16) || '23:59')" type="date" class="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
+                  <input :value="promoForm.ends_at?.slice(11, 16)" @input="promoForm.ends_at = (promoForm.ends_at?.slice(0, 10) || '') + 'T' + ($event.target as HTMLInputElement).value" type="time" class="w-28 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
                 </div>
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Remise max (MAD)</label>
-                <input v-model.number="promoForm.max_discount" type="number" step="0.01" min="0" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500" placeholder="Optionnel">
+                <input v-model.number="promoForm.max_discount" type="number" step="0.01" min="0" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500" placeholder="Optionnel">
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Priorité</label>
-                <input v-model.number="promoForm.priority" type="number" min="0" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500" placeholder="0">
+                <input v-model.number="promoForm.priority" type="number" min="0" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500" placeholder="0">
               </div>
               <div class="col-span-2">
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
-                <textarea v-model="promoForm.description" rows="2" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500" placeholder="Description optionnelle..."></textarea>
+                <textarea v-model="promoForm.description" rows="2" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500" placeholder="Description optionnelle..."></textarea>
               </div>
             </div>
           </div>
@@ -314,7 +314,7 @@
             <!-- File upload -->
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Télécharger une image</label>
-              <label class="flex items-center justify-center gap-2 px-4 py-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl cursor-pointer hover:border-blue-400 dark:hover:border-blue-500 transition bg-gray-50 dark:bg-gray-900/30">
+              <label class="flex items-center justify-center gap-2 px-4 py-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl cursor-pointer hover:border-blue-400 dark:hover:border-orange-500 transition bg-gray-50 dark:bg-gray-900/30">
                 <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>
                 <span class="text-sm text-gray-500 dark:text-gray-400">{{ promoBannerFile ? promoBannerFile.name : 'Cliquez pour choisir une image (JPG, PNG, WebP)' }}</span>
                 <input type="file" accept="image/*" class="hidden" @change="onPromoBannerSelected">
@@ -336,7 +336,7 @@
               <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-200 dark:border-gray-700"></div></div>
               <div class="relative flex justify-center"><span class="px-3 bg-white dark:bg-gray-800 text-xs text-gray-400 uppercase">ou coller une URL</span></div>
             </div>
-            <input v-model="promoForm.banner_image" type="text" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500" placeholder="https://exemple.com/banner.jpg">
+            <input v-model="promoForm.banner_image" type="text" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500" placeholder="https://exemple.com/banner.jpg">
           </div>
 
           <!-- ── Step 3: Produits ── -->
@@ -347,7 +347,7 @@
                 v-model="productSearch"
                 type="text"
                 placeholder="Rechercher un produit à ajouter..."
-                class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500"
+                class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500"
                 @input="searchProducts"
               />
               <div v-if="productResults.length" class="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto">
@@ -355,7 +355,7 @@
                   v-for="p in productResults"
                   :key="p.id"
                   type="button"
-                  class="w-full px-3 py-2 text-left text-sm hover:bg-blue-50 dark:hover:bg-blue-900/20 flex items-center justify-between"
+                  class="w-full px-3 py-2 text-left text-sm hover:bg-orange-50 dark:hover:bg-blue-900/20 flex items-center justify-between"
                   @click="addProduct(p)"
                 >
                   <span class="text-gray-900 dark:text-white">{{ p.p_title }}</span>
@@ -380,7 +380,7 @@
           <!-- ── Footer actions ── -->
           <div class="flex items-center justify-end gap-3 pt-5 mt-5 border-t border-gray-200 dark:border-gray-700">
             <button type="button" @click="showPromoModal = false" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition">Annuler</button>
-            <button type="submit" :disabled="saving" class="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition disabled:opacity-50">
+            <button type="submit" :disabled="saving" class="px-4 py-2 text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 rounded-lg transition disabled:opacity-50">
               {{ saving ? 'Enregistrement...' : (editingPromo ? 'Mettre à jour' : 'Créer') }}
             </button>
           </div>
@@ -403,15 +403,15 @@
           <div class="grid grid-cols-2 gap-4">
             <div class="col-span-2">
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Titre *</label>
-              <input v-model="slideForm.title" type="text" required class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+              <input v-model="slideForm.title" type="text" required class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
             </div>
             <div class="col-span-2">
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sous-titre</label>
-              <input v-model="slideForm.subtitle" type="text" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+              <input v-model="slideForm.subtitle" type="text" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
             </div>
             <div class="col-span-2">
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Image *</label>
-              <label class="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:border-blue-400 dark:hover:border-blue-500 transition">
+              <label class="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:border-blue-400 dark:hover:border-orange-500 transition">
                 <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                 <span class="text-sm text-gray-500 dark:text-gray-400">{{ imageFile ? imageFile.name : 'Choisir une image...' }}</span>
                 <input type="file" accept="image/*" class="hidden" @change="onFileSelected">
@@ -422,11 +422,11 @@
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Texte bouton</label>
-              <input v-model="slideForm.button_text" type="text" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500" placeholder="Voir les offres">
+              <input v-model="slideForm.button_text" type="text" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500" placeholder="Voir les offres">
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Position *</label>
-              <select v-model="slideForm.position" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+              <select v-model="slideForm.position" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
                 <option value="hero">Hero (principal)</option>
                 <option value="sidebar">Sidebar</option>
                 <option value="popup">Popup</option>
@@ -434,7 +434,7 @@
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type de lien</label>
-              <select v-model="slideForm.link_type" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+              <select v-model="slideForm.link_type" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
                 <option value="none">Aucun</option>
                 <option value="promotion">Promotion</option>
                 <option value="category">Catégorie</option>
@@ -444,46 +444,46 @@
             </div>
             <div v-if="slideForm.link_type === 'url'">
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">URL</label>
-              <input v-model="slideForm.link_url" type="text" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500" placeholder="https://...">
+              <input v-model="slideForm.link_url" type="text" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500" placeholder="https://...">
             </div>
             <div v-if="slideForm.link_type === 'promotion'">
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Promotion</label>
-              <select v-model.number="slideForm.link_id" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+              <select v-model.number="slideForm.link_id" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
                 <option :value="null">-- Sélectionner --</option>
                 <option v-for="pr in linkPromotions" :key="pr.id" :value="pr.id">{{ pr.name }}</option>
               </select>
             </div>
             <div v-if="slideForm.link_type === 'category'">
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Catégorie</label>
-              <select v-model.number="slideForm.link_id" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+              <select v-model.number="slideForm.link_id" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
                 <option :value="null">-- Sélectionner --</option>
                 <option v-for="c in linkCategories" :key="c.id" :value="c.id">{{ c.name }}</option>
               </select>
             </div>
             <div v-if="slideForm.link_type === 'product'">
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Produit</label>
-              <select v-model.number="slideForm.link_id" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+              <select v-model.number="slideForm.link_id" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
                 <option :value="null">-- Sélectionner --</option>
                 <option v-for="p in linkProducts" :key="p.id" :value="p.id">{{ p.p_name }} ({{ p.p_code }})</option>
               </select>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ordre</label>
-              <input v-model.number="slideForm.sort_order" type="number" min="0" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+              <input v-model.number="slideForm.sort_order" type="number" min="0" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date début</label>
-              <input v-model="slideForm.starts_at" type="date" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+              <input v-model="slideForm.starts_at" type="date" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date fin</label>
-              <input v-model="slideForm.ends_at" type="date" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+              <input v-model="slideForm.ends_at" type="date" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
             </div>
           </div>
 
           <div class="flex items-center justify-end gap-3 pt-3 border-t border-gray-200 dark:border-gray-700">
             <button type="button" @click="showSlideModal = false" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition">Annuler</button>
-            <button type="submit" :disabled="saving" class="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition disabled:opacity-50">
+            <button type="submit" :disabled="saving" class="px-4 py-2 text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 rounded-lg transition disabled:opacity-50">
               {{ saving ? 'Enregistrement...' : (editingSlide ? 'Mettre à jour' : 'Créer') }}
             </button>
           </div>

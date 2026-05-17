@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useDocumentAchatStore } from '@/stores/achats/useDocumentAchatStore'
@@ -118,11 +118,11 @@ function viewDocument(doc: Record<string, unknown>) {
         v-model="search"
         type="text"
         placeholder="Rechercher référence..."
-        class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-200 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64"
+        class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-200 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 w-full sm:w-64"
       />
       <select
         v-model="typeFilter"
-        class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500"
       >
         <option value="">Tous types</option>
         <option v-for="t in purchaseTypes" :key="t" :value="t">{{ typeLabels[t] }}</option>
@@ -146,7 +146,7 @@ function viewDocument(doc: Record<string, unknown>) {
 
       <template #actions="{ row }">
         <button
-          class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm font-medium"
+          class="text-orange-500 dark:text-orange-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm font-medium"
           @click="viewDocument(row)"
         >
           Voir

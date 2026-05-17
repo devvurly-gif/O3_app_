@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="space-y-5">
     <!-- Header -->
     <div class="flex items-center justify-between">
@@ -13,10 +13,10 @@
           v-model="search"
           type="text"
           placeholder="Rechercher..."
-          class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64"
+          class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent w-64"
         />
         <label
-          class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg cursor-pointer transition"
+          class="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg cursor-pointer transition"
           :class="{ 'opacity-60 cursor-not-allowed': uploading }"
         >
           <svg v-if="!uploading" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -55,15 +55,15 @@
     <!-- Selection toolbar -->
     <div
       v-if="selected.size > 0"
-      class="flex items-center gap-4 px-4 py-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-xl"
+      class="flex items-center gap-4 px-4 py-3 bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800 rounded-xl"
     >
-      <span class="text-sm font-medium text-blue-700 dark:text-blue-300">
+      <span class="text-sm font-medium text-orange-600 dark:text-orange-300">
         {{ selected.size }} image(s) sélectionnée(s)
       </span>
       <div class="flex-1 flex items-center gap-3">
         <select
           v-model="selectedProductId"
-          class="px-3 py-1.5 text-sm rounded-lg border border-blue-300 dark:border-blue-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[250px]"
+          class="px-3 py-1.5 text-sm rounded-lg border border-blue-300 dark:border-orange-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 min-w-[250px]"
         >
           <option :value="null" disabled>-- Choisir un produit --</option>
           <option v-for="p in products" :key="p.id" :value="p.id">
@@ -73,7 +73,7 @@
         <button
           :disabled="!selectedProductId || assigning"
           @click="assignToProduct"
-          class="flex items-center gap-2 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg transition"
+          class="flex items-center gap-2 px-4 py-1.5 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg transition"
         >
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m9.686-5.749a4.5 4.5 0 00-6.364-6.364L4.5 8.25" />
@@ -83,7 +83,7 @@
       </div>
       <button
         @click="selected.clear()"
-        class="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+        class="text-sm text-orange-500 dark:text-orange-400 hover:underline"
       >
         Désélectionner tout
       </button>
@@ -111,7 +111,7 @@
         v-for="img in filtered"
         :key="img.name"
         class="group bg-white dark:bg-gray-800 rounded-xl border-2 overflow-hidden hover:shadow-lg transition cursor-pointer"
-        :class="selected.has(img.name) ? 'border-blue-500 ring-2 ring-blue-200 dark:ring-blue-800' : 'border-gray-200 dark:border-gray-700'"
+        :class="selected.has(img.name) ? 'border-orange-500 ring-2 ring-blue-200 dark:ring-blue-800' : 'border-gray-200 dark:border-gray-700'"
         @click="toggleSelect(img)"
       >
         <div class="relative aspect-square bg-gray-100 dark:bg-gray-900 overflow-hidden">
@@ -124,7 +124,7 @@
           <!-- Selection checkbox -->
           <div
             class="absolute top-2 left-2 w-6 h-6 rounded-md border-2 flex items-center justify-center transition"
-            :class="selected.has(img.name) ? 'bg-blue-600 border-blue-600' : 'bg-white/80 border-gray-300 group-hover:border-blue-400'"
+            :class="selected.has(img.name) ? 'bg-orange-500 border-orange-500' : 'bg-white/80 border-gray-300 group-hover:border-blue-400'"
           >
             <svg v-if="selected.has(img.name)" class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
@@ -158,7 +158,7 @@
                 :checked="allFilteredSelected"
                 :indeterminate="someFilteredSelected && !allFilteredSelected"
                 @change="toggleSelectAll"
-                class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                class="rounded border-gray-300 text-orange-500 focus:ring-orange-500"
               />
             </th>
             <th class="px-4 py-3 text-left">Image</th>
@@ -172,7 +172,7 @@
             v-for="img in filtered"
             :key="img.name"
             class="hover:bg-gray-50 dark:hover:bg-gray-700/30 cursor-pointer transition"
-            :class="selected.has(img.name) ? 'bg-blue-50 dark:bg-blue-900/20' : ''"
+            :class="selected.has(img.name) ? 'bg-orange-50 dark:bg-orange-900/20' : ''"
             @click="toggleSelect(img)"
           >
             <td class="px-4 py-2" @click.stop>
@@ -180,7 +180,7 @@
                 type="checkbox"
                 :checked="selected.has(img.name)"
                 @change="toggleSelect(img)"
-                class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                class="rounded border-gray-300 text-orange-500 focus:ring-orange-500"
               />
             </td>
             <td class="px-4 py-2">
@@ -200,7 +200,7 @@
               </button>
               <button
                 @click.stop="copyUrl(img.url)"
-                class="text-blue-600 hover:text-blue-800 dark:text-blue-400 text-xs"
+                class="text-orange-500 hover:text-blue-800 dark:text-orange-400 text-xs"
               >
                 Copier URL
               </button>

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTenantStore } from '@/stores/central/useTenantStore'
@@ -72,7 +72,7 @@ async function deleteTenant(tenant: any) {
 function getPlanColor(plan: string) {
   return {
     starter: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
-    business: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
+    business: 'bg-orange-100 text-orange-600 dark:bg-orange-900 dark:text-orange-300',
     enterprise: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
   }[plan] || 'bg-gray-100 text-gray-700'
 }
@@ -92,7 +92,7 @@ function formatDate(d: string) {
       </div>
       <button
         @click="router.push('/central/tenants/create')"
-        class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition"
+        class="inline-flex items-center gap-2 px-4 py-2.5 bg-orange-500 text-white text-sm font-medium rounded-lg hover:bg-orange-600 transition"
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -117,7 +117,7 @@ function formatDate(d: string) {
       </div>
       <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
         <p class="text-sm text-gray-500 dark:text-gray-400">Business</p>
-        <p class="text-2xl font-bold text-blue-600">{{ stats.business }}</p>
+        <p class="text-2xl font-bold text-orange-500">{{ stats.business }}</p>
       </div>
       <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
         <p class="text-sm text-gray-500 dark:text-gray-400">Enterprise</p>
@@ -151,7 +151,7 @@ function formatDate(d: string) {
           v-model="search"
           type="text"
           placeholder="Rechercher par nom, email ou ID..."
-          class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
         />
       </div>
       <select
@@ -168,7 +168,7 @@ function formatDate(d: string) {
     <!-- Table -->
     <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
       <div v-if="store.loading" class="flex items-center justify-center py-12">
-        <svg class="animate-spin h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24">
+        <svg class="animate-spin h-8 w-8 text-orange-500" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
         </svg>
@@ -209,7 +209,7 @@ function formatDate(d: string) {
                 v-if="tenant.domains?.length"
                 :href="tenantUrl(tenant.domains[0].domain)"
                 target="_blank"
-                class="text-sm text-blue-600 hover:underline"
+                class="text-sm text-orange-500 hover:underline"
               >
                 {{ tenant.domains[0].domain }}
               </a>
@@ -239,7 +239,7 @@ function formatDate(d: string) {
                   :class="[
                     'inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full',
                     tenant.pos_enabled
-                      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
+                      ? 'bg-orange-100 text-orange-600 dark:bg-orange-900 dark:text-orange-300'
                       : 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500'
                   ]"
                   :title="tenant.pos_enabled ? 'POS activé' : 'POS désactivé'"
@@ -289,7 +289,7 @@ function formatDate(d: string) {
               <div class="flex items-center justify-end gap-2">
                 <button
                   @click="router.push(`/central/tenants/${tenant.id}`)"
-                  class="p-1.5 text-gray-400 hover:text-blue-600 transition"
+                  class="p-1.5 text-gray-400 hover:text-orange-500 transition"
                   title="Voir"
                 >
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">

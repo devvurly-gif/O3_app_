@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useTenantStore, type Tenant } from '@/stores/central/useTenantStore'
@@ -322,7 +322,7 @@ function formatDate(d: string) {
 function getPlanColor(plan: string) {
   return {
     starter: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
-    business: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
+    business: 'bg-orange-100 text-orange-600 dark:bg-orange-900 dark:text-orange-300',
     enterprise: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
   }[plan] || 'bg-gray-100 text-gray-700'
 }
@@ -331,7 +331,7 @@ function getPlanColor(plan: string) {
 <template>
   <div class="max-w-3xl mx-auto space-y-6">
     <!-- Back -->
-    <button @click="router.push('/central/tenants')" class="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700">
+    <button @click="router.push('/central/tenants')" class="inline-flex items-center gap-1 text-sm text-orange-500 hover:text-orange-600">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
       </svg>
@@ -340,7 +340,7 @@ function getPlanColor(plan: string) {
 
     <!-- Loading -->
     <div v-if="loading" class="flex items-center justify-center py-20">
-      <svg class="animate-spin h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24">
+      <svg class="animate-spin h-8 w-8 text-orange-500" fill="none" viewBox="0 0 24 24">
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
       </svg>
@@ -374,7 +374,7 @@ function getPlanColor(plan: string) {
             v-if="tenant.domains?.length"
             :href="tenantUrl(tenant.domains[0].domain)"
             target="_blank"
-            class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition"
+            class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-orange-500 border border-blue-300 rounded-lg hover:bg-orange-50 dark:hover:bg-blue-900/20 transition"
           >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
@@ -392,7 +392,7 @@ function getPlanColor(plan: string) {
             <button
               v-if="!editingInfo"
               @click="startEditInfo"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 dark:text-blue-400 rounded-lg transition"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-orange-500 bg-orange-50 hover:bg-orange-100 dark:bg-orange-900/20 dark:hover:bg-blue-900/40 dark:text-orange-400 rounded-lg transition"
             >
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
@@ -432,7 +432,7 @@ function getPlanColor(plan: string) {
               <input
                 v-model="editForm.name"
                 type="text"
-                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
               />
             </div>
             <div>
@@ -440,7 +440,7 @@ function getPlanColor(plan: string) {
               <input
                 v-model="editForm.email"
                 type="email"
-                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
               />
             </div>
             <div>
@@ -449,7 +449,7 @@ function getPlanColor(plan: string) {
                 v-model="editForm.domain"
                 type="text"
                 placeholder="tenant.o3app.ma"
-                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
               />
             </div>
             <div class="flex justify-between text-xs text-gray-400 dark:text-gray-500">
@@ -460,7 +460,7 @@ function getPlanColor(plan: string) {
               <button
                 @click="saveInfo"
                 :disabled="savingInfo"
-                class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition disabled:opacity-50"
+                class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-orange-500 hover:bg-orange-600 rounded-lg transition disabled:opacity-50"
               >
                 <svg v-if="savingInfo" class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
@@ -494,7 +494,7 @@ function getPlanColor(plan: string) {
               :class="[
                 'w-full flex items-center justify-between px-4 py-3 rounded-lg border-2 text-sm font-medium transition',
                 tenant.plan === plan
-                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                  ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-300'
                   : 'border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-400 cursor-pointer',
                 saving ? 'opacity-50' : ''
               ]"
@@ -513,8 +513,8 @@ function getPlanColor(plan: string) {
           <!-- POS Toggle -->
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-lg flex items-center justify-center" :class="tenant.pos_enabled ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-gray-100 dark:bg-gray-700'">
-                <svg :class="['w-5 h-5', tenant.pos_enabled ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400']" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <div class="w-10 h-10 rounded-lg flex items-center justify-center" :class="tenant.pos_enabled ? 'bg-orange-100 dark:bg-orange-900/30' : 'bg-gray-100 dark:bg-gray-700'">
+                <svg :class="['w-5 h-5', tenant.pos_enabled ? 'text-orange-500 dark:text-orange-400' : 'text-gray-400']" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                 </svg>
               </div>
@@ -531,7 +531,7 @@ function getPlanColor(plan: string) {
                 class="sr-only peer"
                 :disabled="saving"
               />
-              <div class="w-11 h-6 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 dark:after:border-gray-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+              <div class="w-11 h-6 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-orange-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 dark:after:border-gray-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
             </label>
           </div>
 
@@ -556,7 +556,7 @@ function getPlanColor(plan: string) {
                 class="sr-only peer"
                 :disabled="saving"
               />
-              <div class="w-11 h-6 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 dark:after:border-gray-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+              <div class="w-11 h-6 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-orange-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 dark:after:border-gray-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
             </label>
           </div>
 
@@ -581,7 +581,7 @@ function getPlanColor(plan: string) {
                 class="sr-only peer"
                 :disabled="saving"
               />
-              <div class="w-11 h-6 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 dark:after:border-gray-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+              <div class="w-11 h-6 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-orange-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 dark:after:border-gray-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
             </label>
           </div>
 
@@ -618,7 +618,7 @@ function getPlanColor(plan: string) {
                 v-model="newPassword"
                 :type="showPassword ? 'text' : 'password'"
                 placeholder="Min. 6 caractères"
-                class="w-full px-3 py-2 pr-10 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                class="w-full px-3 py-2 pr-10 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
                 @keyup.enter="resetPassword"
               />
               <button
@@ -742,7 +742,7 @@ function getPlanColor(plan: string) {
                   class="w-4 h-4 text-red-600 bg-gray-100 border-gray-300 rounded focus:ring-red-500 dark:bg-gray-700 dark:border-gray-600"
                 />
                 <span class="text-sm text-gray-700 dark:text-gray-300">
-                  <svg class="w-4 h-4 inline text-blue-500 mr-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <svg class="w-4 h-4 inline text-orange-500 mr-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5a1.5 1.5 0 001.5-1.5v-13.5a1.5 1.5 0 00-1.5-1.5H3.75a1.5 1.5 0 00-1.5 1.5v13.5a1.5 1.5 0 001.5 1.5z" />
                   </svg>
                   Images (produits, photos)
@@ -781,12 +781,12 @@ function getPlanColor(plan: string) {
       </div>
 
       <!-- Import Products from URL -->
-      <div class="bg-white dark:bg-gray-800 rounded-xl border border-blue-200 dark:border-blue-900/50 p-5">
+      <div class="bg-white dark:bg-gray-800 rounded-xl border border-orange-200 dark:border-blue-900/50 p-5">
         <div class="flex items-center gap-2 mb-4">
-          <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
           </svg>
-          <h3 class="text-sm font-semibold text-blue-600 dark:text-blue-400">Importer des produits depuis un site e-commerce</h3>
+          <h3 class="text-sm font-semibold text-orange-500 dark:text-orange-400">Importer des produits depuis un site e-commerce</h3>
         </div>
 
         <!-- Step 1: URL Input -->
@@ -796,13 +796,13 @@ function getPlanColor(plan: string) {
               v-model="scrapeUrl"
               type="url"
               placeholder="https://example.com/collections/smartphones"
-              class="flex-1 px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+              class="flex-1 px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
               @keyup.enter="scrapeProducts"
             />
             <button
               @click="scrapeProducts"
               :disabled="scraping || !scrapeUrl"
-              class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+              class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
             >
               <svg v-if="scraping" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
@@ -827,12 +827,12 @@ function getPlanColor(plan: string) {
                 {{ scrapedProducts.length }} produit(s) trouvé(s)
                 <span class="text-xs text-gray-400"> — {{ scrapedSource }}</span>
               </span>
-              <label class="flex items-center gap-1.5 cursor-pointer text-xs text-blue-600 dark:text-blue-400">
-                <input type="checkbox" :checked="selectedProducts.size === scrapedProducts.length" @change="toggleAllProducts" class="w-3.5 h-3.5 text-blue-600 rounded" />
+              <label class="flex items-center gap-1.5 cursor-pointer text-xs text-orange-500 dark:text-orange-400">
+                <input type="checkbox" :checked="selectedProducts.size === scrapedProducts.length" @change="toggleAllProducts" class="w-3.5 h-3.5 text-orange-500 rounded" />
                 Tout sélectionner
               </label>
             </div>
-            <span class="text-xs font-medium text-blue-600 dark:text-blue-400">
+            <span class="text-xs font-medium text-orange-500 dark:text-orange-400">
               {{ selectedProducts.size }} sélectionné(s)
             </span>
           </div>
@@ -844,7 +844,7 @@ function getPlanColor(plan: string) {
               v-model="scrapeCategory"
               type="text"
               placeholder="Smartphones"
-              class="w-48 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              class="w-48 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 transition"
             />
           </div>
 
@@ -857,11 +857,11 @@ function getPlanColor(plan: string) {
               :class="[
                 'flex items-center gap-3 p-2.5 cursor-pointer transition',
                 selectedProducts.has(i)
-                  ? 'bg-blue-50 dark:bg-blue-900/20'
+                  ? 'bg-orange-50 dark:bg-orange-900/20'
                   : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
               ]"
             >
-              <input type="checkbox" :checked="selectedProducts.has(i)" class="w-4 h-4 text-blue-600 rounded pointer-events-none" />
+              <input type="checkbox" :checked="selectedProducts.has(i)" class="w-4 h-4 text-orange-500 rounded pointer-events-none" />
               <img
                 v-if="p.image"
                 :src="p.image"
@@ -906,12 +906,12 @@ function getPlanColor(plan: string) {
       </div>
 
       <!-- Contrat de services -->
-      <div class="bg-white dark:bg-gray-800 rounded-xl border border-blue-200 dark:border-blue-900/50 p-5">
+      <div class="bg-white dark:bg-gray-800 rounded-xl border border-orange-200 dark:border-blue-900/50 p-5">
         <div class="flex items-center gap-2 mb-3">
-          <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
           </svg>
-          <h3 class="text-sm font-semibold text-blue-700 dark:text-blue-400">Contrat de services</h3>
+          <h3 class="text-sm font-semibold text-orange-600 dark:text-orange-400">Contrat de services</h3>
         </div>
         <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">
           Document à transmettre au client pour signature électronique avant la mise en service du tenant.
@@ -921,7 +921,7 @@ function getPlanColor(plan: string) {
           <button
             type="button"
             :disabled="downloadingContract"
-            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-300 rounded-lg transition disabled:opacity-50"
+            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-orange-600 bg-orange-50 hover:bg-orange-100 dark:bg-orange-900/30 dark:text-orange-300 rounded-lg transition disabled:opacity-50"
             @click="downloadContract('contrat')"
           >
             <svg v-if="downloadingContract" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -948,7 +948,7 @@ function getPlanColor(plan: string) {
 
           <button
             type="button"
-            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition ml-auto"
+            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 rounded-lg transition ml-auto"
             @click="openSendContractModal"
           >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -1002,7 +1002,7 @@ function getPlanColor(plan: string) {
         <div class="flex items-center justify-between mb-4">
           <div>
             <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.125A59.769 59.769 0 0121.485 12 59.768 59.768 0 013.27 20.875L5.999 12zm0 0h7.5" />
               </svg>
               Envoyer le contrat
@@ -1030,7 +1030,7 @@ function getPlanColor(plan: string) {
               type="email"
               required
               placeholder="contact@exemple.ma"
-              class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
           </div>
 
@@ -1040,7 +1040,7 @@ function getPlanColor(plan: string) {
               v-model="sendContractForm.cc"
               type="text"
               placeholder="email1@exemple.ma, email2@exemple.ma"
-              class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
             <p class="mt-1 text-[11px] text-gray-400">Séparer plusieurs emails par virgule ou espace.</p>
           </div>
@@ -1051,7 +1051,7 @@ function getPlanColor(plan: string) {
               v-model="sendContractForm.message"
               rows="4"
               placeholder="Ajoutez un mot personnel à l'attention du client..."
-              class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
             />
           </div>
 
@@ -1059,7 +1059,7 @@ function getPlanColor(plan: string) {
             <input
               v-model="sendContractForm.include_intake_form"
               type="checkbox"
-              class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+              class="w-4 h-4 text-orange-500 bg-gray-100 border-gray-300 rounded focus:ring-orange-500"
             />
             <span class="text-sm text-gray-700 dark:text-gray-300">
               Inclure la <strong>fiche de souscription</strong> en pièce jointe
@@ -1078,7 +1078,7 @@ function getPlanColor(plan: string) {
           <button
             type="button"
             :disabled="sendingContract || !sendContractForm.to"
-            class="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            class="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             @click="sendContract"
           >
             <svg v-if="sendingContract" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">

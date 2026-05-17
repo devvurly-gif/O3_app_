@@ -1,8 +1,8 @@
-<template>
+﻿<template>
   <div class="flex items-center justify-center h-full bg-gray-100 dark:bg-gray-700">
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 w-full max-w-md">
       <div class="text-center mb-8">
-        <div class="w-16 h-16 mx-auto rounded-2xl bg-blue-600 flex items-center justify-center mb-4">
+        <div class="w-16 h-16 mx-auto rounded-2xl bg-orange-500 flex items-center justify-center mb-4">
           <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m-6 4h6m-2 8l-4-4H7a2 2 0 01-2-2V5a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2h-2l-4 4z" />
           </svg>
@@ -15,7 +15,7 @@
 
       <!-- Existing session: resume -->
       <div v-if="existingSession" class="space-y-4">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm space-y-1">
+        <div class="bg-orange-50 border border-orange-200 rounded-xl p-4 text-sm space-y-1">
           <div class="flex justify-between">
             <span class="text-gray-600 dark:text-gray-400">Terminal</span>
             <span class="font-medium text-gray-900 dark:text-white">{{ existingSession.terminal?.name }}</span>
@@ -40,7 +40,7 @@
           <select
             v-model="terminalId"
             required
-            class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
           >
             <option :value="null" disabled>-- Sélectionner un terminal --</option>
             <option v-for="t in terminals" :key="t.id" :value="t.id" :disabled="!t.is_active">
@@ -59,14 +59,14 @@
             min="0"
             required
             placeholder="0.00"
-            class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
           />
         </div>
 
         <button
           type="submit"
           :disabled="loading || !terminalId"
-          class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed"
+          class="w-full py-3 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {{ loading ? 'Ouverture...' : 'Ouvrir la session' }}
         </button>

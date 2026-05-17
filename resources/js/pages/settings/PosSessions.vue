@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="space-y-5">
     <!-- Header -->
     <div class="flex items-center justify-between">
@@ -12,7 +12,7 @@
     <div class="flex flex-wrap items-center gap-3">
       <select
         v-model="filterStatus"
-        class="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        class="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
         @change="fetchSessions()"
       >
         <option value="">Toutes les sessions</option>
@@ -22,7 +22,7 @@
 
       <select
         v-model="filterTerminal"
-        class="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        class="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
         @change="fetchSessions()"
       >
         <option value="">Tous les terminaux</option>

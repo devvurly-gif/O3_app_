@@ -1,66 +1,70 @@
-<template>
+﻿<template>
   <div class="space-y-5">
     <!-- Header -->
-    <div class="flex items-center justify-between">
-      <div class="flex-1">
-        <h2 class="text-xl font-bold text-gray-900 dark:text-white">
-          {{ $t('products.title') }}
-        </h2>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-          {{ $t('products.subtitle') }}
-        </p>
+    <div class="space-y-3">
+      <div class="flex items-center justify-between gap-3">
+        <div class="min-w-0">
+          <h2 class="text-xl font-bold text-gray-900 dark:text-white truncate">
+            {{ $t('products.title') }}
+          </h2>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5 hidden sm:block">
+            {{ $t('products.subtitle') }}
+          </p>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <button
+            class="flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+            :disabled="exporting"
+            @click="onExport"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+            <span class="hidden sm:inline">{{ exporting ? 'Export...' : 'Export' }}</span>
+          </button>
+          <button
+            class="flex items-center gap-2 px-3 sm:px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition"
+            @click="openCreate"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            <span class="hidden sm:inline">{{ $t('products.add') }}</span>
+          </button>
+        </div>
       </div>
 
-      <!-- Filters -->
-      <div class="flex flex-wrap items-center gap-3 mr-1">
+      <!-- Filters — stacked on mobile -->
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
         <input
           v-model="search"
           type="text"
           :placeholder="$t('products.search')"
-          class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64"
+          class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent w-full sm:w-64"
         />
-        <select
-          v-model="statusFilter"
-          class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        >
-          <option value="">{{ $t('common.allStatus') }}</option>
-          <option value="1">{{ $t('common.active') }}</option>
-          <option value="0">{{ $t('common.inactive') }}</option>
-        </select>
-        <select
-          v-model="stockFilter"
-          class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          title="Filtrer par disponibilité du stock"
-        >
-          <option value="">Stock : tous</option>
-          <option value="1">En stock</option>
-          <option value="0">Rupture</option>
-        </select>
-      </div>
-      <div class="flex items-center gap-2">
-        <button
-          class="flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-          :disabled="exporting"
-          @click="onExport"
-        >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-            />
-          </svg>
-          {{ exporting ? 'Export...' : 'Export' }}
-        </button>
-        <button
-          class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition"
-          @click="openCreate"
-        >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-          </svg>
-          {{ $t('products.add') }}
-        </button>
+        <div class="flex gap-2">
+          <select
+            v-model="statusFilter"
+            class="flex-1 sm:flex-none px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          >
+            <option value="">{{ $t('common.allStatus') }}</option>
+            <option value="1">{{ $t('common.active') }}</option>
+            <option value="0">{{ $t('common.inactive') }}</option>
+          </select>
+          <select
+            v-model="stockFilter"
+            class="flex-1 sm:flex-none px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            title="Filtrer par disponibilité du stock"
+          >
+            <option value="">Stock : tous</option>
+            <option value="1">En stock</option>
+            <option value="0">Rupture</option>
+          </select>
+        </div>
       </div>
     </div>
 
@@ -150,7 +154,7 @@
       <template #actions="{ row }">
         <div class="flex items-center justify-end gap-2">
           <button
-            class="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition"
+            class="p-1.5 rounded-lg text-orange-500 hover:bg-orange-50 transition"
             :title="$t('common.update')"
             @click="openEdit(row)"
           >
@@ -202,7 +206,7 @@
               class="relative whitespace-nowrap py-1.5 px-2.5 sm:px-3 text-sm font-medium transition-colors border-b-2 -mb-px"
               :class="
                 currentTab === idx
-                  ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                  ? 'border-orange-500 text-orange-500 dark:text-orange-400'
                   : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
               "
               @click="currentTab = idx"
@@ -225,7 +229,7 @@
                 type="text"
                 required
                 :placeholder="$t('products.titlePlaceholder')"
-                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 @input="generateSlugFromTitle"
               />
             </div>
@@ -237,7 +241,7 @@
                 v-model="form.p_code"
                 type="text"
                 :placeholder="$t('products.codePlaceholder')"
-                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               />
             </div>
 
@@ -248,7 +252,7 @@
                 v-model="form.p_sku"
                 type="text"
                 :placeholder="$t('products.skuPlaceholder')"
-                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               />
               <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{ $t('products.skuAuto') ?? 'Auto-generated if empty' }}</p>
             </div>
@@ -260,7 +264,7 @@
                 v-model="form.p_ean13"
                 type="text"
                 :placeholder="$t('products.eanPlaceholder')"
-                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               />
             </div>
 
@@ -271,7 +275,7 @@
                 v-model="form.p_imei"
                 type="text"
                 placeholder="Device IMEI..."
-                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               />
             </div>
           </div>
@@ -284,7 +288,7 @@
                 v-model="form.p_description"
                 rows="3"
                 placeholder="…"
-                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               />
             </div>
 
@@ -295,7 +299,7 @@
                 v-model="form.p_long_description"
                 rows="3"
                 placeholder="E-commerce description…"
-                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               />
             </div>
           </div>
@@ -307,7 +311,7 @@
               v-model="form.p_notes"
               rows="2"
               placeholder="Internal notes…"
-              class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             />
           </div>
 
@@ -319,7 +323,7 @@
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.category') }}</label>
                 <select
                   v-model="form.category_id"
-                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 >
                   <option :value="null">—</option>
                   <option v-for="cat in categories" :key="cat.id" :value="cat.id">
@@ -333,7 +337,7 @@
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.brand') }}</label>
                 <select
                   v-model="form.brand_id"
-                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 >
                   <option :value="null">—</option>
                   <option v-for="br in brands" :key="br.id" :value="br.id">
@@ -349,7 +353,7 @@
                   v-model="form.p_slug"
                   type="text"
                   :placeholder="$t('products.slugPlaceholder') ?? 'Auto-généré depuis le titre'"
-                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 />
                 <p class="mt-1 text-[11px] text-gray-400">URL de la fiche produit dans la boutique en ligne.</p>
               </div>
@@ -383,7 +387,7 @@
               id="product-status"
               v-model="form.p_status"
               type="checkbox"
-              class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
+              class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-orange-500 focus:ring-orange-500"
             />
             <label for="product-status" class="text-sm text-gray-700 dark:text-gray-300">{{ $t('common.active') }}</label>
           </div>
@@ -408,7 +412,7 @@
                   step="0.01"
                   required
                   placeholder="0.00"
-                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 />
               </div>
 
@@ -424,7 +428,7 @@
                   step="0.01"
                   required
                   placeholder="0.00"
-                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 />
               </div>
 
@@ -437,7 +441,7 @@
                   min="0"
                   step="0.01"
                   placeholder="0.00"
-                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 />
               </div>
 
@@ -451,7 +455,7 @@
                   max="100"
                   step="0.01"
                   placeholder="20"
-                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 />
               </div>
 
@@ -462,13 +466,13 @@
                   v-model="form.p_unit"
                   type="text"
                   :placeholder="$t('products.unitPlaceholder')"
-                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 />
               </div>
             </div>
 
             <!-- Margin Indicator -->
-            <div v-if="form.p_salePrice > 0 && form.p_purchasePrice > 0" class="px-3 py-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded text-sm">
+            <div v-if="form.p_salePrice > 0 && form.p_purchasePrice > 0" class="px-3 py-2 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded text-sm">
               <p class="text-blue-800 dark:text-blue-200">
                 <span class="font-semibold">Margin:</span>
                 {{ marginPercent }}%
@@ -487,7 +491,7 @@
                 v-if="editTarget"
                 type="button"
                 :disabled="tierAdding"
-                class="text-xs px-2.5 py-1 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-medium transition disabled:opacity-50"
+                class="text-xs px-2.5 py-1 rounded-md bg-orange-500 hover:bg-orange-600 text-white font-medium transition disabled:opacity-50"
                 @click="tierAdding = !tierAdding"
               >
                 {{ tierAdding ? 'Annuler' : '+ Ajouter un tarif' }}
@@ -497,7 +501,7 @@
             <!-- Inline add-tier form -->
             <div
               v-if="editTarget && tierAdding"
-              class="p-2.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg grid grid-cols-1 sm:grid-cols-4 gap-2"
+              class="p-2.5 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg grid grid-cols-1 sm:grid-cols-4 gap-2"
             >
               <div class="sm:col-span-2">
                 <label class="block text-[11px] font-medium text-gray-600 dark:text-gray-400 mb-1">Grille</label>
@@ -594,8 +598,8 @@
           <div v-if="editTarget" class="space-y-3">
             <!-- Summary Cards -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              <div class="bg-blue-50 dark:bg-blue-900/20 px-3 py-2.5 rounded-lg border border-blue-200 dark:border-blue-800">
-                <p class="text-xs text-blue-600 dark:text-blue-400 font-medium">Total Stock</p>
+              <div class="bg-orange-50 dark:bg-orange-900/20 px-3 py-2.5 rounded-lg border border-orange-200 dark:border-orange-800">
+                <p class="text-xs text-orange-500 dark:text-orange-400 font-medium">Total Stock</p>
                 <p class="text-lg font-bold text-blue-900 dark:text-blue-200 leading-tight">{{ editTarget.total_stock ?? 0 }}</p>
               </div>
               <div class="bg-green-50 dark:bg-green-900/20 px-3 py-2.5 rounded-lg border border-green-200 dark:border-green-800">
@@ -759,8 +763,8 @@
                   <p class="text-xs text-purple-600 dark:text-purple-400 font-medium">Total Units Sold</p>
                   <p class="text-lg font-bold text-purple-900 dark:text-purple-200 leading-tight">{{ statistics?.sales?.total_units ?? 0 }}</p>
                 </div>
-                <div class="bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded border border-blue-200 dark:border-blue-800">
-                  <p class="text-xs text-blue-600 dark:text-blue-400 font-medium">Total Revenue</p>
+                <div class="bg-orange-50 dark:bg-orange-900/20 px-3 py-2 rounded border border-orange-200 dark:border-orange-800">
+                  <p class="text-xs text-orange-500 dark:text-orange-400 font-medium">Total Revenue</p>
                   <p class="text-lg font-bold text-blue-900 dark:text-blue-200 leading-tight">{{ (statistics?.sales?.total_revenue ?? 0).toFixed(2) }} MAD</p>
                 </div>
                 <div class="bg-indigo-50 dark:bg-indigo-900/20 px-3 py-2 rounded border border-indigo-200 dark:border-indigo-800">
@@ -815,7 +819,7 @@
                 <img :src="img.url" :alt="img.title" class="w-full h-full object-cover" />
                 <span
                   v-if="img.isPrimary"
-                  class="absolute top-1 left-1 text-[10px] font-bold bg-blue-600 text-white px-1.5 py-0.5 rounded"
+                  class="absolute top-1 left-1 text-[10px] font-bold bg-orange-500 text-white px-1.5 py-0.5 rounded"
                 >
                   {{ $t('products.primary') }}
                 </span>
@@ -823,7 +827,7 @@
                   <button
                     v-if="!img.isPrimary"
                     type="button"
-                    class="p-1.5 bg-white dark:bg-gray-800 rounded-lg text-blue-600 hover:bg-blue-50 transition"
+                    class="p-1.5 bg-white dark:bg-gray-800 rounded-lg text-orange-500 hover:bg-orange-50 transition"
                     :title="$t('products.setPrimary')"
                     @click="doSetPrimary(img)"
                   >
@@ -854,7 +858,7 @@
 
               <!-- Upload tile -->
               <label
-                class="aspect-square rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-blue-400 bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center cursor-pointer transition text-gray-400 dark:text-gray-500 hover:text-blue-500"
+                class="aspect-square rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-blue-400 bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center cursor-pointer transition text-gray-400 dark:text-gray-500 hover:text-orange-500"
               >
                 <svg v-if="!uploadingImage" class="w-7 h-7 mb-1" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
@@ -895,7 +899,7 @@
           {{ $t('common.cancel') }}
         </button>
         <button
-          class="px-3.5 py-1.5 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-md transition disabled:opacity-60"
+          class="px-3.5 py-1.5 text-sm font-semibold bg-orange-500 hover:bg-orange-600 text-white rounded-md transition disabled:opacity-60"
           :disabled="saving"
           @click="submit"
         >

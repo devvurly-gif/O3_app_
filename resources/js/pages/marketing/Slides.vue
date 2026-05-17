@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="space-y-5">
     <!-- Header -->
     <div class="flex items-center justify-between">
@@ -6,7 +6,7 @@
         <h2 class="text-xl font-bold text-gray-900 dark:text-white">Slides & Bannières</h2>
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Gérez les carrousels et bannières du site eCom</p>
       </div>
-      <button @click="openCreate" class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition">
+      <button @click="openCreate" class="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
         Nouveau Slide
       </button>
@@ -17,7 +17,7 @@
       <button v-for="pos in positions" :key="pos.value"
         @click="positionFilter = pos.value"
         class="px-4 py-2 text-sm font-medium rounded-lg transition"
-        :class="positionFilter === pos.value ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'"
+        :class="positionFilter === pos.value ? 'bg-orange-500 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'"
       >
         {{ pos.label }}
       </button>
@@ -60,7 +60,7 @@
             {{ slide.is_active ? 'Actif' : 'Inactif' }}
           </span>
           <!-- Link type badge -->
-          <span v-if="slide.link_type !== 'none'" class="absolute bottom-2 left-2 px-2 py-0.5 text-xs font-medium rounded bg-blue-600 text-white">
+          <span v-if="slide.link_type !== 'none'" class="absolute bottom-2 left-2 px-2 py-0.5 text-xs font-medium rounded bg-orange-500 text-white">
             {{ linkTypeLabels[slide.link_type] || slide.link_type }}
           </span>
         </div>
@@ -69,7 +69,7 @@
         <div class="p-4">
           <h4 class="font-semibold text-gray-900 dark:text-white text-sm truncate">{{ slide.title }}</h4>
           <p v-if="slide.subtitle" class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">{{ slide.subtitle }}</p>
-          <p v-if="slide.button_text" class="text-xs text-blue-600 dark:text-blue-400 mt-1">{{ slide.button_text }}</p>
+          <p v-if="slide.button_text" class="text-xs text-orange-500 dark:text-orange-400 mt-1">{{ slide.button_text }}</p>
 
           <!-- Period -->
           <div v-if="slide.starts_at || slide.ends_at" class="text-xs text-gray-400 mt-2">
@@ -85,7 +85,7 @@
             <button @click="moveDown(slide)" class="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
             </button>
-            <button @click="openEdit(slide)" class="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition">
+            <button @click="openEdit(slide)" class="p-1.5 rounded-lg text-orange-500 hover:bg-orange-50 dark:hover:bg-blue-900/20 transition">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
             </button>
             <button @click="confirmDelete(slide)" class="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition">
@@ -109,16 +109,16 @@
           <div class="grid grid-cols-2 gap-4">
             <div class="col-span-2">
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Titre *</label>
-              <input v-model="form.title" type="text" required class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+              <input v-model="form.title" type="text" required class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
             </div>
             <div class="col-span-2">
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sous-titre</label>
-              <input v-model="form.subtitle" type="text" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+              <input v-model="form.subtitle" type="text" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
             </div>
             <div class="col-span-2">
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Image *</label>
               <div class="flex items-center gap-3">
-                <label class="flex-1 flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:border-blue-400 dark:hover:border-blue-500 transition">
+                <label class="flex-1 flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:border-blue-400 dark:hover:border-orange-500 transition">
                   <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                   <span class="text-sm text-gray-500 dark:text-gray-400">{{ imageFile ? imageFile.name : 'Choisir une image...' }}</span>
                   <input type="file" accept="image/*" class="hidden" @change="onFileSelected">
@@ -130,11 +130,11 @@
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Texte bouton</label>
-              <input v-model="form.button_text" type="text" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500" placeholder="Voir les offres">
+              <input v-model="form.button_text" type="text" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500" placeholder="Voir les offres">
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Position *</label>
-              <select v-model="form.position" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+              <select v-model="form.position" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
                 <option value="hero">Hero (principal)</option>
                 <option value="sidebar">Sidebar</option>
                 <option value="popup">Popup</option>
@@ -142,7 +142,7 @@
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type de lien</label>
-              <select v-model="form.link_type" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+              <select v-model="form.link_type" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
                 <option value="none">Aucun</option>
                 <option value="promotion">Promotion</option>
                 <option value="category">Catégorie</option>
@@ -152,46 +152,46 @@
             </div>
             <div v-if="form.link_type === 'url'">
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">URL</label>
-              <input v-model="form.link_url" type="text" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500" placeholder="https://...">
+              <input v-model="form.link_url" type="text" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500" placeholder="https://...">
             </div>
             <div v-if="form.link_type === 'product'">
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Produit</label>
-              <select v-model.number="form.link_id" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+              <select v-model.number="form.link_id" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
                 <option :value="null">-- Sélectionner un produit --</option>
                 <option v-for="p in productsList" :key="p.id" :value="p.id">{{ p.p_name }} ({{ p.p_code }})</option>
               </select>
             </div>
             <div v-if="form.link_type === 'category'">
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Catégorie</label>
-              <select v-model.number="form.link_id" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+              <select v-model.number="form.link_id" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
                 <option :value="null">-- Sélectionner une catégorie --</option>
                 <option v-for="c in categoriesList" :key="c.id" :value="c.id">{{ c.name }}</option>
               </select>
             </div>
             <div v-if="form.link_type === 'promotion'">
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Promotion</label>
-              <select v-model.number="form.link_id" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+              <select v-model.number="form.link_id" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
                 <option :value="null">-- Sélectionner une promotion --</option>
                 <option v-for="pr in promotionsList" :key="pr.id" :value="pr.id">{{ pr.name }}</option>
               </select>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ordre</label>
-              <input v-model.number="form.sort_order" type="number" min="0" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+              <input v-model.number="form.sort_order" type="number" min="0" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date début</label>
-              <input v-model="form.starts_at" type="date" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+              <input v-model="form.starts_at" type="date" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date fin</label>
-              <input v-model="form.ends_at" type="date" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+              <input v-model="form.ends_at" type="date" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
             </div>
           </div>
 
           <div class="flex items-center justify-end gap-3 pt-3 border-t border-gray-200 dark:border-gray-700">
             <button type="button" @click="showModal = false" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition">Annuler</button>
-            <button type="submit" :disabled="saving" class="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition disabled:opacity-50">
+            <button type="submit" :disabled="saving" class="px-4 py-2 text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 rounded-lg transition disabled:opacity-50">
               {{ saving ? 'Enregistrement...' : (editingSlide ? 'Mettre à jour' : 'Créer') }}
             </button>
           </div>

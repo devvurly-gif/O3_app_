@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import http from '@/services/http'
@@ -47,8 +47,8 @@ onMounted(async () => {
 
       <!-- Loading -->
       <template v-if="status === 'loading'">
-        <div class="w-16 h-16 mx-auto mb-5 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-          <svg class="w-8 h-8 text-blue-600 dark:text-blue-400 animate-spin" fill="none" viewBox="0 0 24 24">
+        <div class="w-16 h-16 mx-auto mb-5 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+          <svg class="w-8 h-8 text-orange-500 dark:text-orange-400 animate-spin" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
           </svg>
@@ -85,7 +85,7 @@ onMounted(async () => {
         <a
           v-if="result.login_url"
           :href="result.login_url"
-          class="inline-flex items-center justify-center gap-2 w-full py-3.5 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition shadow-lg shadow-blue-600/25"
+          class="inline-flex items-center justify-center gap-2 w-full py-3.5 rounded-xl text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 transition shadow-lg shadow-blue-600/25"
         >
           Accéder à mon espace
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -105,7 +105,7 @@ onMounted(async () => {
         <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">{{ errorMessage }}</p>
         <a
           href="/register"
-          class="inline-block w-full py-3 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition"
+          class="inline-block w-full py-3 rounded-xl text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 transition"
         >
           Recommencer l'inscription
         </a>

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, reactive, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import http from '@/services/http'
@@ -120,7 +120,7 @@ const canSubmit = computed(() =>
       <!-- Header -->
       <div class="text-center mb-8">
         <a href="/" class="inline-flex items-center gap-2 mb-6">
-          <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold">O3</div>
+          <div class="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center text-white font-bold">O3</div>
           <span class="text-xl font-bold text-gray-900 dark:text-white">O3 App</span>
         </a>
         <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">Créez votre espace</h1>
@@ -150,7 +150,7 @@ const canSubmit = computed(() =>
               required
               maxlength="255"
               placeholder="Ex: Teliphoni SARL"
-              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             />
             <p v-if="errors.company_name" class="mt-1 text-xs text-red-500">{{ errors.company_name[0] }}</p>
           </div>
@@ -159,7 +159,7 @@ const canSubmit = computed(() =>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Sous-domaine <span class="text-red-500">*</span>
             </label>
-            <div class="flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent">
+            <div class="flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden focus-within:ring-2 focus-within:ring-orange-500 focus-within:border-transparent">
               <input
                 v-model="form.tenant_id"
                 type="text"
@@ -202,7 +202,7 @@ const canSubmit = computed(() =>
                 required
                 maxlength="255"
                 placeholder="Ex: Hassan Alami"
-                class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               />
               <p v-if="errors.admin_name" class="mt-1 text-xs text-red-500">{{ errors.admin_name[0] }}</p>
             </div>
@@ -215,7 +215,7 @@ const canSubmit = computed(() =>
                 type="tel"
                 maxlength="30"
                 placeholder="+212 6XX XX XX XX"
-                class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               />
             </div>
           </div>
@@ -230,7 +230,7 @@ const canSubmit = computed(() =>
               required
               maxlength="255"
               placeholder="vous@monentreprise.ma"
-              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             />
             <p class="mt-1 text-xs text-gray-400">Un lien de vérification y sera envoyé.</p>
             <p v-if="errors.email" class="mt-1 text-xs text-red-500">{{ errors.email[0] }}</p>
@@ -247,7 +247,7 @@ const canSubmit = computed(() =>
                 required
                 minlength="8"
                 placeholder="8 caractères minimum"
-                class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               />
               <p v-if="errors.password" class="mt-1 text-xs text-red-500">{{ errors.password[0] }}</p>
             </div>
@@ -260,7 +260,7 @@ const canSubmit = computed(() =>
                 type="password"
                 required
                 placeholder="Retapez le mot de passe"
-                class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               />
               <p v-if="!passwordsMatch" class="mt-1 text-xs text-red-500">Les mots de passe ne correspondent pas.</p>
             </div>
@@ -272,13 +272,13 @@ const canSubmit = computed(() =>
           <input
             v-model="form.accept_terms"
             type="checkbox"
-            class="mt-0.5 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            class="mt-0.5 w-4 h-4 rounded border-gray-300 text-orange-500 focus:ring-orange-500"
           />
           <span class="text-sm text-gray-700 dark:text-gray-300">
             J'accepte les
-            <a href="/legal/cgs" target="_blank" class="text-blue-600 hover:underline">Conditions Générales de Service</a>
+            <a href="/legal/cgs" target="_blank" class="text-orange-500 hover:underline">Conditions Générales de Service</a>
             et la
-            <a href="/legal/privacy" target="_blank" class="text-blue-600 hover:underline">Politique de confidentialité</a>
+            <a href="/legal/privacy" target="_blank" class="text-orange-500 hover:underline">Politique de confidentialité</a>
             (loi marocaine 09-08).
           </span>
         </label>
@@ -288,7 +288,7 @@ const canSubmit = computed(() =>
         <button
           type="submit"
           :disabled="!canSubmit"
-          class="w-full py-3 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          class="w-full py-3 rounded-xl text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           <svg v-if="submitting" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
@@ -299,7 +299,7 @@ const canSubmit = computed(() =>
 
         <p class="text-center text-xs text-gray-500 dark:text-gray-400">
           Déjà un compte ?
-          <a href="/login" class="text-blue-600 hover:underline font-medium">Se connecter</a>
+          <a href="/login" class="text-orange-500 hover:underline font-medium">Se connecter</a>
         </p>
       </form>
 

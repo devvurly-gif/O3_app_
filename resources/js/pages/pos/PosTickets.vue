@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="h-full flex flex-col bg-white dark:bg-gray-800">
     <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between shrink-0">
       <div>
@@ -7,7 +7,7 @@
       </div>
       <router-link
         to="/pos/main"
-        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition"
+        class="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg transition"
       >
         Retour au POS
       </router-link>
@@ -55,7 +55,7 @@
             <!-- Print button (not for already-created returns) -->
             <button
               v-if="ticket.status !== 'cancelled' && ticket.document_type !== 'ReturnSale'"
-              class="px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50 rounded-lg transition flex items-center gap-1"
+              class="px-3 py-1.5 text-xs font-medium text-orange-500 bg-orange-50 hover:bg-orange-100 dark:bg-orange-900/30 dark:text-orange-400 dark:hover:bg-blue-900/50 rounded-lg transition flex items-center gap-1"
               :disabled="printing === ticket.id"
               @click="printTicket(ticket.id, ticket.reference)"
             >
@@ -135,7 +135,7 @@ function typeClass(type: string): string {
   switch (type) {
     case 'DeliveryNote': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400'
     case 'ReturnSale':   return 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-400'
-    default:             return 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400'
+    default:             return 'bg-orange-100 text-orange-600 dark:bg-orange-900/50 dark:text-orange-400'
   }
 }
 

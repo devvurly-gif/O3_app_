@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <Teleport to="body">
     <div class="fixed top-4 right-4 z-[9999] flex flex-col gap-3 w-96 pointer-events-none">
       <TransitionGroup
@@ -65,7 +65,7 @@ function typeClass(type: string) {
     success: 'bg-green-50/95 text-green-800 border border-green-200 shadow-green-100/50',
     error:   'bg-red-50/95 text-red-800 border border-red-200 shadow-red-100/50',
     warning: 'bg-amber-50/95 text-amber-800 border border-amber-200 shadow-amber-100/50',
-    info:    'bg-blue-50/95 text-blue-800 border border-blue-200 shadow-blue-100/50',
+    info:    'bg-orange-50/95 text-blue-800 border border-orange-200 shadow-blue-100/50',
   }[type] ?? 'bg-gray-50/95 text-gray-800 border border-gray-200'
 }
 </script>

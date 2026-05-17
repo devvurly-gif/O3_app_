@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="space-y-5">
     <!-- Header -->
     <div class="flex items-center justify-between">
@@ -7,7 +7,7 @@
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{{ $t('documentIncrementors.subtitle') }}</p>
       </div>
       <button
-        class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition"
+        class="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition"
         @click="openCreate"
       >
         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -43,7 +43,7 @@
       <template #actions="{ row }">
         <div class="flex items-center justify-end gap-2">
           <button
-            class="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition"
+            class="p-1.5 rounded-lg text-orange-500 hover:bg-orange-50 transition"
             :title="$t('common.update')"
             @click="openEdit(row)"
           >
@@ -88,7 +88,7 @@
               v-model="form.di_title"
               type="text"
               :placeholder="$t('documentIncrementors.titlePlaceholder')"
-              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             />
           </div>
           <div>
@@ -97,7 +97,7 @@
               v-model="form.di_model"
               type="text"
               :placeholder="$t('documentIncrementors.modelPlaceholder')"
-              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             />
           </div>
           <div>
@@ -106,7 +106,7 @@
               v-model="form.di_domain"
               type="text"
               :placeholder="$t('documentIncrementors.domainPlaceholder')"
-              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             />
           </div>
           <div>
@@ -115,7 +115,7 @@
               v-model="form.template"
               type="text"
               :placeholder="$t('documentIncrementors.templatePlaceholder')"
-              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             />
             <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{ $t('documentIncrementors.placeholders') }}</p>
           </div>
@@ -127,7 +127,7 @@
               v-model="form.operatorSens"
               type="text"
               :placeholder="$t('documentIncrementors.operatorSensPlaceholder')"
-              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             />
           </div>
           <div>
@@ -137,7 +137,7 @@
               type="number"
               min="1"
               placeholder="1"
-              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             />
           </div>
           <div class="flex items-center gap-2 pt-6">
@@ -145,7 +145,7 @@
               id="di-status"
               v-model="form.status"
               type="checkbox"
-              class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
+              class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-orange-500 focus:ring-orange-500"
             />
             <label for="di-status" class="text-sm text-gray-700 dark:text-gray-300">{{ $t('common.active') }}</label>
           </div>
@@ -159,7 +159,7 @@
           {{ $t('common.cancel') }}
         </button>
         <button
-          class="px-4 py-2 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition disabled:opacity-60"
+          class="px-4 py-2 text-sm font-semibold bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition disabled:opacity-60"
           :disabled="saving"
           @click="submit"
         >

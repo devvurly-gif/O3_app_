@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="space-y-6">
     <!-- Header -->
     <div>
@@ -13,7 +13,7 @@
           <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Type</label>
           <select
             v-model="filters.subject_type"
-            class="block w-44 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+            class="block w-44 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-orange-500 focus:border-orange-500"
           >
             <option value="">Tous</option>
             <option v-for="t in subjectTypes" :key="t.value" :value="t.value">{{ t.label }}</option>
@@ -23,7 +23,7 @@
           <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Action</label>
           <select
             v-model="filters.event"
-            class="block w-36 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+            class="block w-36 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-orange-500 focus:border-orange-500"
           >
             <option value="">Toutes</option>
             <option value="created">Création</option>
@@ -36,7 +36,7 @@
           <input
             v-model="filters.from"
             type="date"
-            class="block w-40 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+            class="block w-40 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-orange-500 focus:border-orange-500"
           />
         </div>
         <div>
@@ -44,12 +44,12 @@
           <input
             v-model="filters.to"
             type="date"
-            class="block w-40 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+            class="block w-40 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-orange-500 focus:border-orange-500"
           />
         </div>
         <button
           type="button"
-          class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition"
+          class="inline-flex items-center gap-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 transition"
           @click="fetchLogs(1)"
         >
           Filtrer
@@ -100,7 +100,7 @@
               <td class="px-4 py-3 text-center">
                 <button
                   type="button"
-                  class="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                  class="text-orange-500 hover:text-blue-800 text-sm font-medium"
                   @click="showDetail(log)"
                 >
                   Voir
@@ -127,7 +127,7 @@
             :key="page"
             type="button"
             class="px-3 py-1 text-sm rounded-md transition"
-            :class="page === pagination.currentPage ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-200'"
+            :class="page === pagination.currentPage ? 'bg-orange-500 text-white' : 'text-gray-600 hover:bg-gray-200'"
             @click="fetchLogs(page)"
           >
             {{ page }}
@@ -323,7 +323,7 @@ function eventLabel(event: string | null): string {
 function eventBadge(event: string | null): string {
   switch (event) {
     case 'created': return 'bg-green-100 text-green-700'
-    case 'updated': return 'bg-blue-100 text-blue-700'
+    case 'updated': return 'bg-orange-100 text-orange-600'
     case 'deleted': return 'bg-red-100 text-red-700'
     default: return 'bg-gray-100 text-gray-700'
   }

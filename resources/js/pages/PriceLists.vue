@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="space-y-5">
     <!-- Header -->
     <div class="flex items-center justify-between">
@@ -8,7 +8,7 @@
       </div>
       <div class="flex items-center gap-2">
         <button
-          class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition"
+          class="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition"
           @click="openCreate"
         >
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -25,11 +25,11 @@
         v-model="search"
         type="text"
         :placeholder="$t('pricelists.search')"
-        class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64"
+        class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent w-64"
       />
       <select
         v-model="channelFilter"
-        class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
       >
         <option value="">{{ $t('common.allStatus') }}</option>
         <option value="all">{{ $t('pricelists.channelAll') }}</option>
@@ -45,7 +45,7 @@
           <span class="font-medium text-gray-900 dark:text-gray-100">{{ row.name }}</span>
           <span
             v-if="row.is_default"
-            class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700"
+            class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 text-orange-600"
           >
             {{ $t('pricelists.defaultBadge') }}
           </span>
@@ -90,7 +90,7 @@
             </svg>
           </button>
           <button
-            class="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition"
+            class="p-1.5 rounded-lg text-orange-500 hover:bg-orange-50 transition"
             :title="$t('common.update')"
             @click="openEdit(row)"
           >
@@ -134,7 +134,7 @@
             type="text"
             required
             :placeholder="$t('pricelists.namePlaceholder')"
-            class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
           />
         </div>
         <div>
@@ -144,7 +144,7 @@
           <textarea
             v-model="form.description"
             rows="2"
-            class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
           />
         </div>
         <div class="grid grid-cols-2 gap-4">
@@ -154,7 +154,7 @@
             </label>
             <select
               v-model="form.channel"
-              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             >
               <option value="all">{{ $t('pricelists.channelAll') }}</option>
               <option value="pos">{{ $t('pricelists.channelPos') }}</option>
@@ -169,7 +169,7 @@
               v-model.number="form.priority"
               type="number"
               min="0"
-              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             />
           </div>
         </div>
@@ -179,7 +179,7 @@
               id="pl-default"
               v-model="form.is_default"
               type="checkbox"
-              class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
+              class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-orange-500 focus:ring-orange-500"
             />
             <label for="pl-default" class="text-sm text-gray-700 dark:text-gray-300">{{ $t('pricelists.isDefault') }}</label>
           </div>
@@ -188,7 +188,7 @@
               id="pl-active"
               v-model="form.is_active"
               type="checkbox"
-              class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
+              class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-orange-500 focus:ring-orange-500"
             />
             <label for="pl-active" class="text-sm text-gray-700 dark:text-gray-300">{{ $t('pricelists.isActive') }}</label>
           </div>
@@ -202,7 +202,7 @@
           {{ $t('common.cancel') }}
         </button>
         <button
-          class="px-4 py-2 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition disabled:opacity-60"
+          class="px-4 py-2 text-sm font-semibold bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition disabled:opacity-60"
           :disabled="saving"
           @click="submit"
         >
@@ -224,7 +224,7 @@
               v-model="productSearch"
               type="text"
               :placeholder="$t('pricelists.search')"
-              class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500"
               @focus="productDropdown = true"
             />
             <div
@@ -235,7 +235,7 @@
                 v-for="p in productResults"
                 :key="p.id"
                 type="button"
-                class="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 dark:hover:bg-gray-700 flex items-center justify-between gap-2"
+                class="w-full text-left px-3 py-2 text-sm hover:bg-orange-50 dark:hover:bg-gray-700 flex items-center justify-between gap-2"
                 @click="pickProduct(p)"
               >
                 <span class="truncate">{{ p.p_title }}</span>
@@ -252,7 +252,7 @@
               type="number"
               step="0.01"
               min="0"
-              class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
           </div>
           <div class="w-24">
@@ -263,7 +263,7 @@
               v-model.number="newItem.min_qty"
               type="number"
               min="1"
-              class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
           </div>
           <div class="w-36">
@@ -273,7 +273,7 @@
             <input
               v-model="newItem.valid_from"
               type="date"
-              class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
           </div>
           <div class="w-36">
@@ -283,7 +283,7 @@
             <input
               v-model="newItem.valid_to"
               type="date"
-              class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
           </div>
           <button

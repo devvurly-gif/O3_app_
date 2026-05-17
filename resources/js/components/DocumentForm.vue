@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import http from '@/services/http'
 import type { ThirdPartner, Warehouse, Product, DocumentIncrementor } from '@/types'
@@ -514,7 +514,7 @@ function getStockClass(stock: number): string {
           <select
             v-model="form.document_type"
             :disabled="editMode"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition disabled:opacity-60 disabled:cursor-not-allowed"
+            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <option v-for="dt in documentTypes" :key="dt.value" :value="dt.value">{{ dt.label }}</option>
           </select>
@@ -526,7 +526,7 @@ function getStockClass(stock: number): string {
           <input
             v-model="partnerSearch"
             :placeholder="`Rechercher ${partnerLabel.toLowerCase()}...`"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition"
             @focus="showPartnerDropdown = true"
             @blur="delayedClosePartner"
           />
@@ -545,8 +545,8 @@ function getStockClass(stock: number): string {
               v-for="p in filteredPartners"
               :key="p.id"
               type="button"
-              class="w-full text-left px-4 py-2.5 text-sm hover:bg-blue-50 dark:hover:bg-blue-900/30 transition"
-              :class="{ 'bg-blue-50 dark:bg-blue-900/30 font-medium': form.thirdPartner_id === p.id }"
+              class="w-full text-left px-4 py-2.5 text-sm hover:bg-orange-50 dark:hover:bg-blue-900/30 transition"
+              :class="{ 'bg-orange-50 dark:bg-orange-900/30 font-medium': form.thirdPartner_id === p.id }"
               @mousedown.prevent="selectPartner(p)"
             >
               <span class="font-medium dark:text-gray-200">{{ p.tp_title }}</span>
@@ -560,7 +560,7 @@ function getStockClass(stock: number): string {
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Entrepôt</label>
           <select
             v-model="form.warehouse_id"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition"
           >
             <option :value="null">— Aucun —</option>
             <option v-for="w in warehouses" :key="w.id" :value="w.id">{{ w.wh_title }}</option>
@@ -573,7 +573,7 @@ function getStockClass(stock: number): string {
           <input
             v-model="form.issued_at"
             type="date"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition"
           />
         </div>
 
@@ -583,7 +583,7 @@ function getStockClass(stock: number): string {
           <input
             v-model="form.due_at"
             type="date"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition"
           />
         </div>
 
@@ -594,7 +594,7 @@ function getStockClass(stock: number): string {
             v-model="form.notes"
             type="text"
             placeholder="Notes internes..."
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition"
           />
         </div>
 
@@ -603,7 +603,7 @@ function getStockClass(stock: number): string {
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Moyen de paiement</label>
           <select
             v-model="form.payment_method"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition"
           >
             <option value="credit">En compte (Crédit)</option>
             <option value="cash">Espèces</option>
@@ -624,7 +624,7 @@ function getStockClass(stock: number): string {
       </div>
 
       <!-- Add-article bar -->
-      <div class="px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-blue-50/50 dark:bg-blue-900/10">
+      <div class="px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-orange-50/50 dark:bg-orange-900/10">
         <div class="flex flex-col sm:flex-row items-stretch sm:items-end gap-3">
           <!-- Product search -->
           <div class="relative flex-1">
@@ -633,13 +633,13 @@ function getStockClass(stock: number): string {
               <input
                 v-model="pendingSearch"
                 placeholder="Chercher un produit..."
-                class="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                class="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition"
                 @input="showPendingDropdown = true"
                 @blur="delayedClosePending"
               />
               <button
                 type="button"
-                class="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600 hover:text-blue-600 dark:hover:text-blue-400 transition"
+                class="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600 hover:text-orange-500 dark:hover:text-blue-400 transition"
                 title="Rechercher"
                 @click="showPendingDropdown = !showPendingDropdown"
               >
@@ -657,7 +657,7 @@ function getStockClass(stock: number): string {
                 v-for="p in filteredPendingProducts"
                 :key="p.id"
                 type="button"
-                class="w-full text-left px-4 py-2.5 text-sm hover:bg-blue-50 dark:hover:bg-blue-900/30 transition flex justify-between items-center"
+                class="w-full text-left px-4 py-2.5 text-sm hover:bg-orange-50 dark:hover:bg-blue-900/30 transition flex justify-between items-center"
                 @mousedown.prevent="selectPendingProduct(p)"
               >
                 <span class="flex-1">
@@ -687,7 +687,7 @@ function getStockClass(stock: number): string {
               type="number"
               min="0.01"
               step="0.01"
-              class="w-full px-3 py-2 text-sm text-right rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+              class="w-full px-3 py-2 text-sm text-right rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition"
               @keydown.enter.prevent="addArticle()"
             />
           </div>
@@ -697,7 +697,7 @@ function getStockClass(stock: number): string {
             type="button"
             :disabled="!canAddArticle()"
             class="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-medium text-white rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed"
-            :class="domain === 'vente' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-teal-600 hover:bg-teal-700'"
+            :class="domain === 'vente' ? 'bg-orange-500 hover:bg-orange-600' : 'bg-teal-600 hover:bg-teal-700'"
             @click="addArticle"
           >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -743,7 +743,7 @@ function getStockClass(stock: number): string {
                   />
                   <button
                     type="button"
-                    class="px-2 py-1.5 rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-400 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-600 hover:text-blue-600 dark:hover:text-blue-400 transition"
+                    class="px-2 py-1.5 rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-400 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-600 hover:text-orange-500 dark:hover:text-blue-400 transition"
                     title="Rechercher"
                     @click="openProductDropdown(line.key)"
                   >
@@ -767,7 +767,7 @@ function getStockClass(stock: number): string {
                     v-for="p in filteredProducts(line.key)"
                     :key="p.id"
                     type="button"
-                    class="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 dark:hover:bg-blue-900/30 transition flex justify-between items-center"
+                    class="w-full text-left px-3 py-2 text-sm hover:bg-orange-50 dark:hover:bg-blue-900/30 transition flex justify-between items-center"
                     @mousedown.prevent="selectProduct(line, p); closeProductDropdown()"
                   >
                     <span class="flex-1">
@@ -919,7 +919,7 @@ function getStockClass(stock: number): string {
         type="submit"
         :disabled="loading || !canSubmit()"
         class="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
-        :class="domain === 'vente' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-teal-600 hover:bg-teal-700'"
+        :class="domain === 'vente' ? 'bg-orange-500 hover:bg-orange-600' : 'bg-teal-600 hover:bg-teal-700'"
       >
         <svg v-if="loading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />

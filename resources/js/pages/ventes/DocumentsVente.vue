@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useDocumentVenteStore } from '@/stores/ventes/useDocumentVenteStore'
@@ -168,7 +168,7 @@ async function submitPayment() {
         </button>
         <router-link
           to="/ventes/documents/create"
-          class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition"
+          class="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 text-white text-sm font-medium rounded-lg hover:bg-orange-600 transition"
         >
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
@@ -184,11 +184,11 @@ async function submitPayment() {
         v-model="search"
         type="text"
         placeholder="Rechercher référence..."
-        class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-200 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64"
+        class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-200 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 w-full sm:w-64"
       />
       <select
         v-model="typeFilter"
-        class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500"
       >
         <option value="">Tous types</option>
         <option v-for="t in saleTypes" :key="t" :value="t">{{ typeLabels[t] }}</option>
@@ -245,7 +245,7 @@ async function submitPayment() {
             Payer
           </button>
           <button
-            class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm font-medium"
+            class="text-orange-500 dark:text-orange-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm font-medium"
             @click="viewDocument(row)"
           >
             Voir
@@ -289,7 +289,7 @@ async function submitPayment() {
             step="0.01"
             min="0.01"
             required
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
           />
         </div>
         <div>
@@ -297,7 +297,7 @@ async function submitPayment() {
           <select
             v-model="paymentForm.method"
             required
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
           >
             <option value="cash">Espèces</option>
             <option value="bank_transfer">Virement</option>
@@ -311,7 +311,7 @@ async function submitPayment() {
           <input
             v-model="paymentForm.paid_at"
             type="date"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
           />
         </div>
         <div>
@@ -320,7 +320,7 @@ async function submitPayment() {
             v-model="paymentForm.reference"
             type="text"
             placeholder="N° chèque, virement..."
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
           />
         </div>
         <div>
@@ -329,7 +329,7 @@ async function submitPayment() {
             v-model="paymentForm.notes"
             rows="2"
             placeholder="Notes..."
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
           ></textarea>
         </div>
       </form>

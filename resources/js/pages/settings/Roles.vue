@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="space-y-5">
     <!-- Header -->
     <div class="flex items-center justify-between">
@@ -7,7 +7,7 @@
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Gérer les rôles et leurs permissions d'accès</p>
       </div>
       <button
-        class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition"
+        class="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition"
         @click="openCreate"
       >
         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -19,7 +19,7 @@
 
     <!-- Loading -->
     <div v-if="roleStore.loading" class="flex items-center justify-center py-12">
-      <svg class="w-8 h-8 animate-spin text-blue-500" fill="none" viewBox="0 0 24 24">
+      <svg class="w-8 h-8 animate-spin text-orange-500" fill="none" viewBox="0 0 24 24">
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
       </svg>
@@ -48,7 +48,7 @@
           </div>
           <div class="flex items-center gap-1">
             <button
-              class="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition"
+              class="p-1.5 rounded-lg text-orange-500 hover:bg-orange-50 transition"
               title="Modifier"
               @click="openEdit(role)"
             >
@@ -108,7 +108,7 @@
               placeholder="ex: sales_operator_g2"
               pattern="^[a-z][a-z0-9_]*$"
               @input="form.name = form.name.toLowerCase()"
-              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
             />
             <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Lettres minuscules, chiffres et underscores (commence par une lettre)</p>
           </div>
@@ -119,7 +119,7 @@
               type="text"
               required
               placeholder="ex: Commercial"
-              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             />
           </div>
           <div class="col-span-2">
@@ -128,7 +128,7 @@
               v-model="form.description"
               type="text"
               placeholder="Description optionnelle du rôle"
-              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             />
           </div>
         </div>
@@ -138,7 +138,7 @@
           <div class="flex items-center justify-between mb-3">
             <label class="text-sm font-semibold text-gray-700 dark:text-gray-300">Permissions</label>
             <div class="flex gap-2">
-              <button type="button" class="text-xs text-blue-600 hover:underline" @click="selectAll">Tout sélectionner</button>
+              <button type="button" class="text-xs text-orange-500 hover:underline" @click="selectAll">Tout sélectionner</button>
               <span class="text-gray-300">|</span>
               <button type="button" class="text-xs text-gray-500 dark:text-gray-400 hover:underline" @click="deselectAll">Tout désélectionner</button>
             </div>
@@ -167,7 +167,7 @@
                   class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs cursor-pointer transition"
                   :class="
                     form.permissions.includes(perm.id)
-                      ? 'bg-blue-50 border-blue-300 text-blue-700'
+                      ? 'bg-orange-50 border-blue-300 text-orange-600'
                       : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'
                   "
                 >
@@ -179,7 +179,7 @@
                   />
                   <svg
                     v-if="form.permissions.includes(perm.id)"
-                    class="w-3.5 h-3.5 text-blue-500"
+                    class="w-3.5 h-3.5 text-orange-500"
                     fill="none"
                     stroke="currentColor"
                     stroke-width="2.5"
@@ -212,7 +212,7 @@
           Annuler
         </button>
         <button
-          class="px-4 py-2 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition disabled:opacity-60"
+          class="px-4 py-2 text-sm font-semibold bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition disabled:opacity-60"
           :disabled="saving"
           @click="submit"
         >

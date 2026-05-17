@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTenantStore } from '@/stores/central/useTenantStore'
@@ -60,7 +60,7 @@ function onPlanChange(plan: string) {
   }
 }
 
-const toggleClass = 'w-11 h-6 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[\'\'] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 dark:after:border-gray-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600'
+const toggleClass = 'w-11 h-6 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-orange-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[\'\'] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 dark:after:border-gray-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500'
 
 const plans = [
   {
@@ -80,7 +80,7 @@ const plans = [
     features: ['Tout le plan Starter', 'Gestion des achats', 'Point de vente (POS)', 'Domaine personnalisé', '2000 emails/mois', '200 WhatsApp/mois', 'Support prioritaire'],
     price: '999',
     color: 'border-gray-300 dark:border-gray-600',
-    selectedColor: 'border-blue-500 bg-blue-50 dark:bg-blue-900/20',
+    selectedColor: 'border-orange-500 bg-orange-50 dark:bg-orange-900/20',
     badge: 'Populaire',
   },
   {
@@ -100,7 +100,7 @@ const plans = [
   <div class="max-w-2xl mx-auto space-y-6">
     <!-- Header -->
     <div>
-      <button @click="router.push('/central/tenants')" class="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 mb-4">
+      <button @click="router.push('/central/tenants')" class="inline-flex items-center gap-1 text-sm text-orange-500 hover:text-orange-600 mb-4">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
         </svg>
@@ -121,7 +121,7 @@ const plans = [
           type="text"
           required
           placeholder="acme"
-          class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500"
+          class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-orange-500"
         />
         <p class="text-xs text-gray-400 mt-1">Lettres minuscules, chiffres et tirets uniquement. Sert d'identifiant et de préfixe DB.</p>
         <p v-if="errors.id" class="text-xs text-red-500 mt-1">{{ errors.id[0] }}</p>
@@ -135,7 +135,7 @@ const plans = [
           type="text"
           required
           placeholder="Acme Corporation"
-          class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500"
+          class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-orange-500"
         />
         <p v-if="errors.name" class="text-xs text-red-500 mt-1">{{ errors.name[0] }}</p>
       </div>
@@ -148,7 +148,7 @@ const plans = [
           type="email"
           required
           placeholder="admin@acme.com"
-          class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500"
+          class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-orange-500"
         />
         <p v-if="errors.email" class="text-xs text-red-500 mt-1">{{ errors.email[0] }}</p>
       </div>
@@ -161,7 +161,7 @@ const plans = [
           type="text"
           required
           placeholder="acme.o3app.com"
-          class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500"
+          class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-orange-500"
         />
         <p class="text-xs text-gray-400 mt-1">Le client accédera à l'application via ce domaine.</p>
         <p v-if="errors.domain" class="text-xs text-red-500 mt-1">{{ errors.domain[0] }}</p>
@@ -176,7 +176,7 @@ const plans = [
           required
           minlength="6"
           placeholder="Minimum 6 caractères"
-          class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500"
+          class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-orange-500"
         />
         <p v-if="errors.admin_password" class="text-xs text-red-500 mt-1">{{ errors.admin_password[0] }}</p>
       </div>
@@ -200,7 +200,7 @@ const plans = [
               v-if="plan.badge"
               :class="[
                 'absolute -top-2.5 right-3 px-2.5 py-0.5 text-xs font-bold rounded-full',
-                plan.value === 'business' ? 'bg-blue-600 text-white' : 'bg-purple-600 text-white',
+                plan.value === 'business' ? 'bg-orange-500 text-white' : 'bg-purple-600 text-white',
               ]"
             >{{ plan.badge }}</span>
 
@@ -209,7 +209,7 @@ const plans = [
               <span class="text-base font-bold text-gray-900 dark:text-white">{{ plan.label }}</span>
               <span
                 v-if="form.plan === plan.value"
-                class="w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center"
+                class="w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center"
               >
                 <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
@@ -244,8 +244,8 @@ const plans = [
           <!-- POS Toggle -->
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
-              <div class="w-9 h-9 rounded-lg flex items-center justify-center" :class="form.pos_enabled ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-gray-200 dark:bg-gray-700'">
-                <svg :class="['w-5 h-5', form.pos_enabled ? 'text-blue-600' : 'text-gray-400']" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <div class="w-9 h-9 rounded-lg flex items-center justify-center" :class="form.pos_enabled ? 'bg-orange-100 dark:bg-orange-900/30' : 'bg-gray-200 dark:bg-gray-700'">
+                <svg :class="['w-5 h-5', form.pos_enabled ? 'text-orange-500' : 'text-gray-400']" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                 </svg>
               </div>
@@ -275,7 +275,7 @@ const plans = [
             </div>
             <label class="relative inline-flex items-center cursor-pointer">
               <input v-model="form.paiement_bl_enabled" type="checkbox" class="sr-only peer" />
-              <div class="w-11 h-6 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 dark:after:border-gray-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+              <div class="w-11 h-6 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-orange-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 dark:after:border-gray-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
             </label>
           </div>
 
@@ -294,7 +294,7 @@ const plans = [
             </div>
             <label class="relative inline-flex items-center cursor-pointer">
               <input v-model="form.ecom_enabled" type="checkbox" class="sr-only peer" />
-              <div class="w-11 h-6 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 dark:after:border-gray-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+              <div class="w-11 h-6 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-orange-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 dark:after:border-gray-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
             </label>
           </div>
         </div>
@@ -312,7 +312,7 @@ const plans = [
         <button
           type="submit"
           :disabled="loading"
-          class="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition"
+          class="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-orange-500 rounded-lg hover:bg-orange-600 disabled:opacity-50 transition"
         >
           <svg v-if="loading" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />

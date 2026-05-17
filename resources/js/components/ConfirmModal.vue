@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import BaseModal from '@/components/BaseModal.vue'
 
 /**
@@ -52,7 +52,7 @@ const emit = defineEmits<{
       <button
         :disabled="loading"
         class="px-5 py-2 text-sm font-medium text-white rounded-lg disabled:opacity-50"
-        :class="variant === 'danger' ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'"
+        :class="variant === 'danger' ? 'bg-red-600 hover:bg-red-700' : 'bg-orange-500 hover:bg-orange-600'"
         @click="emit('confirm')"
       >
         {{ loading ? loadingLabel || confirmLabel + '...' : confirmLabel }}

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="h-full flex items-center justify-center bg-gray-100 dark:bg-gray-700">
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 w-full max-w-lg">
       <div class="text-center mb-6">
@@ -82,7 +82,7 @@
             min="0"
             required
             placeholder="0.00"
-            class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
           />
         </div>
 
@@ -91,13 +91,13 @@
           <textarea
             v-model="notes"
             rows="3"
-            class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+            class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
             placeholder="Notes de fermeture..."
           />
         </div>
 
         <!-- Result (after closing) -->
-        <div v-if="result" class="bg-blue-50 dark:bg-blue-900/30 rounded-xl p-4 space-y-2 text-sm">
+        <div v-if="result" class="bg-orange-50 dark:bg-orange-900/30 rounded-xl p-4 space-y-2 text-sm">
           <div class="flex justify-between">
             <span class="text-gray-600 dark:text-gray-400">Espèces attendues</span>
             <span class="font-semibold text-gray-900 dark:text-white">{{ Number(result.expected_cash).toFixed(2) }} MAD</span>
@@ -106,7 +106,7 @@
             <span class="text-gray-600 dark:text-gray-400">Espèces comptées</span>
             <span class="font-semibold text-gray-900 dark:text-white">{{ Number(result.closing_cash).toFixed(2) }} MAD</span>
           </div>
-          <div class="flex justify-between border-t border-blue-200 dark:border-blue-700 pt-2">
+          <div class="flex justify-between border-t border-orange-200 dark:border-orange-700 pt-2">
             <span class="text-gray-700 dark:text-gray-300 font-medium">Différence</span>
             <span
               class="font-bold"
@@ -156,7 +156,7 @@
             </button>
             <router-link
               to="/dashboard"
-              class="flex-1 py-3 text-center rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition"
+              class="flex-1 py-3 text-center rounded-xl text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 transition"
             >
               Tableau de bord
             </router-link>
@@ -202,7 +202,7 @@ const liveStats = ref<SessionStats | null>(null)
 
 const PAYMENT_METHOD_META: Record<string, { title: string; bg: string; dot: string; label: string; muted: string }> = {
   cash:   { title: 'Espèces',   bg: 'bg-green-50 dark:bg-green-900/20',   dot: 'bg-green-500',   label: 'text-green-700 dark:text-green-400',   muted: 'text-green-600/70 dark:text-green-400/60' },
-  card:   { title: 'Carte',     bg: 'bg-blue-50 dark:bg-blue-900/20',     dot: 'bg-blue-500',    label: 'text-blue-700 dark:text-blue-400',     muted: 'text-blue-600/70 dark:text-blue-400/60' },
+  card:   { title: 'Carte',     bg: 'bg-orange-50 dark:bg-orange-900/20',     dot: 'bg-orange-500',    label: 'text-orange-600 dark:text-orange-400',     muted: 'text-orange-500/70 dark:text-orange-400/60' },
   credit: { title: 'En compte', bg: 'bg-amber-50 dark:bg-amber-900/20',   dot: 'bg-amber-500',   label: 'text-amber-700 dark:text-amber-400',   muted: 'text-amber-600/70 dark:text-amber-400/60' },
   cheque: { title: 'Chèque',    bg: 'bg-purple-50 dark:bg-purple-900/20', dot: 'bg-purple-500',  label: 'text-purple-700 dark:text-purple-400', muted: 'text-purple-600/70 dark:text-purple-400/60' },
   virement: { title: 'Virement', bg: 'bg-indigo-50 dark:bg-indigo-900/20', dot: 'bg-indigo-500', label: 'text-indigo-700 dark:text-indigo-400', muted: 'text-indigo-600/70 dark:text-indigo-400/60' },

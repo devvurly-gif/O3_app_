@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="$emit('close')">
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-6">
       <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-4">
@@ -18,7 +18,7 @@
             v-model="cashGiven"
             type="text"
             inputmode="decimal"
-            class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 text-right text-xl font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 text-right text-xl font-bold focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             readonly
           />
         </div>
@@ -34,7 +34,7 @@
           <button
             v-for="amt in quickAmounts"
             :key="amt"
-            class="py-2 rounded-lg text-sm font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 transition"
+            class="py-2 rounded-lg text-sm font-medium bg-orange-50 text-orange-500 hover:bg-orange-100 transition"
             @click="cashGiven = String(amt)"
           >
             {{ amt }}
@@ -49,7 +49,7 @@
 
       <!-- Card: simple confirm -->
       <div v-else-if="method === 'card'" class="text-center py-8">
-        <svg class="w-16 h-16 mx-auto text-blue-500 mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <svg class="w-16 h-16 mx-auto text-orange-500 mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
         </svg>
         <p class="text-gray-500 dark:text-gray-400">Confirmer le paiement par carte</p>

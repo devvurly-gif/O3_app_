@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="space-y-6">
     <!-- Header -->
     <div>
@@ -15,7 +15,7 @@
           @click="activeTab = tab.id"
           class="px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors"
           :class="activeTab === tab.id
-            ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400'
+            ? 'border-orange-500 text-orange-500 dark:text-orange-400 dark:border-blue-400'
             : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'"
         >
           {{ tab.label }}
@@ -49,7 +49,7 @@
               <p class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $t('appSettings.companyLogo') || 'Logo de l\'entreprise' }}</p>
               <p class="text-xs text-gray-400 dark:text-gray-500">{{ $t('appSettings.logoHint') || 'JPG, PNG, WebP ou SVG. Max 2 Mo. Apparaît sur les factures et documents imprimés.' }}</p>
               <div class="flex items-center gap-2">
-                <label class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition">
+                <label class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-orange-50 dark:bg-orange-900/20 text-orange-500 dark:text-orange-400 rounded-lg hover:bg-orange-100 dark:hover:bg-blue-900/30 transition">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
                   </svg>
@@ -237,7 +237,7 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Twilio Auth Token</label>
               <input v-model="whatsapp.twilio_auth_token" :type="showWhatsappToken ? 'text' : 'password'" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" :class="inputClass + ' font-mono text-xs'" />
-              <button @click="showWhatsappToken = !showWhatsappToken" class="text-xs text-blue-500 mt-1 hover:underline">
+              <button @click="showWhatsappToken = !showWhatsappToken" class="text-xs text-orange-500 mt-1 hover:underline">
                 {{ showWhatsappToken ? $t('appSettings.hide') : $t('appSettings.show') }}
               </button>
             </div>
@@ -282,8 +282,8 @@
       <template v-if="activeTab === 'email'">
         <section class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 space-y-4">
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-              <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <div class="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
+              <svg class="w-5 h-5 text-orange-500 dark:text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
               </svg>
             </div>
@@ -314,7 +314,7 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.mailPassword') }}</label>
               <input v-model="email.mail_password" :type="showEmailPassword ? 'text' : 'password'" placeholder="********" :class="inputClass" />
-              <button @click="showEmailPassword = !showEmailPassword" class="text-xs text-blue-500 mt-1 hover:underline">
+              <button @click="showEmailPassword = !showEmailPassword" class="text-xs text-orange-500 mt-1 hover:underline">
                 {{ showEmailPassword ? $t('appSettings.hide') : $t('appSettings.show') }}
               </button>
             </div>
@@ -355,7 +355,7 @@
             <button
               @click="testEmail"
               :disabled="testingEmail"
-              class="px-4 py-2 text-sm font-medium border border-blue-500 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition disabled:opacity-60"
+              class="px-4 py-2 text-sm font-medium border border-orange-500 text-orange-500 dark:text-orange-400 rounded-lg hover:bg-orange-50 dark:hover:bg-blue-900/20 transition disabled:opacity-60"
             >
               {{ testingEmail ? $t('appSettings.testing') : $t('appSettings.testEmail') }}
             </button>
@@ -429,9 +429,9 @@ const email = reactive({
   mail_enabled: 'false',
 })
 
-const inputClass = 'w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent'
-const btnClass = 'px-4 py-2 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition disabled:opacity-60'
-const toggleClass = 'w-11 h-6 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[\'\'] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 dark:after:border-gray-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600'
+const inputClass = 'w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent'
+const btnClass = 'px-4 py-2 text-sm font-semibold bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition disabled:opacity-60'
+const toggleClass = 'w-11 h-6 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-orange-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[\'\'] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 dark:after:border-gray-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500'
 
 /**
  * Merge a settings payload into a reactive form object, but ONLY for keys

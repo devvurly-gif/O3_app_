@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDocumentStockStore } from '@/stores/stock/useDocumentStockStore'
@@ -32,7 +32,7 @@ const typeColors: Record<string, string> = {
   StockEntry: 'text-green-700 dark:text-green-400',
   StockExit: 'text-red-700 dark:text-red-400',
   StockAdjustmentNote: 'text-indigo-700 dark:text-indigo-400',
-  StockTransfer: 'text-blue-700 dark:text-blue-400',
+  StockTransfer: 'text-orange-600 dark:text-orange-400',
 }
 
 // ── Actions visibility ─────────────────────────────────────────────────────

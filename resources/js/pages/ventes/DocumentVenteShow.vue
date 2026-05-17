@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDocumentVenteStore } from '@/stores/ventes/useDocumentVenteStore'
@@ -215,7 +215,7 @@ const paymentProgress = computed(() => {
     <!-- Loading -->
     <div v-if="store.loading && !doc" class="flex items-center justify-center py-24">
       <div class="flex flex-col items-center gap-3">
-        <svg class="w-8 h-8 animate-spin text-blue-500" fill="none" viewBox="0 0 24 24">
+        <svg class="w-8 h-8 animate-spin text-orange-500" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
         </svg>
@@ -230,7 +230,7 @@ const paymentProgress = computed(() => {
         <div>
           <router-link
             to="/ventes/documents"
-            class="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition"
+            class="text-sm text-orange-500 dark:text-orange-400 hover:text-blue-800 dark:hover:text-blue-300 transition"
           >
             &larr; Documents de Vente
           </router-link>
@@ -250,7 +250,7 @@ const paymentProgress = computed(() => {
               <span class="text-gray-400 dark:text-gray-500">Issu de :</span>
               <router-link
                 :to="`/ventes/documents/${doc.parent.id}`"
-                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition"
+                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-50 dark:bg-orange-900/30 text-orange-500 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-blue-900/50 transition"
               >
                 {{ typeLabels[doc.parent.document_type] ?? doc.parent.document_type }} #{{ doc.parent.reference }}
               </router-link>
@@ -293,7 +293,7 @@ const paymentProgress = computed(() => {
           <button
             v-if="canConfirm"
             :disabled="actionLoading"
-            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-50"
             @click="confirmDocument"
           >
             <svg v-if="actionLoading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -509,7 +509,7 @@ const paymentProgress = computed(() => {
               <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                 <div
                   class="h-2 rounded-full transition-all duration-500"
-                  :class="paymentProgress >= 100 ? 'bg-emerald-500' : 'bg-blue-500'"
+                  :class="paymentProgress >= 100 ? 'bg-emerald-500' : 'bg-orange-500'"
                   :style="{ width: paymentProgress + '%' }"
                 ></div>
               </div>
@@ -548,7 +548,7 @@ const paymentProgress = computed(() => {
           <router-link
             v-if="doc.parent"
             :to="`/ventes/documents/${doc.parent.id}`"
-            class="inline-flex items-center gap-1.5 text-sm text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 px-3 py-1.5 rounded-lg transition"
+            class="inline-flex items-center gap-1.5 text-sm text-orange-500 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 hover:bg-orange-100 dark:hover:bg-blue-900/50 px-3 py-1.5 rounded-lg transition"
           >
             &larr; {{ typeLabels[doc.parent.document_type] ?? doc.parent.document_type }} #{{ doc.parent.reference }}
           </router-link>
@@ -574,7 +574,7 @@ const paymentProgress = computed(() => {
         />
       </svg>
       <p class="text-lg font-medium">Document introuvable</p>
-      <router-link to="/ventes/documents" class="text-sm text-blue-600 dark:text-blue-400 hover:underline mt-2">
+      <router-link to="/ventes/documents" class="text-sm text-orange-500 dark:text-orange-400 hover:underline mt-2">
         Retour à la liste
       </router-link>
     </div>
@@ -596,7 +596,7 @@ const paymentProgress = computed(() => {
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Moyen de paiement *</label>
           <select
             v-model="invoicePaymentMethod"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
           >
             <option value="credit">En compte (Crédit)</option>
             <option value="cash">Espèces</option>

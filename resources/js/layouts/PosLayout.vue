@@ -1,9 +1,9 @@
-<template>
+﻿<template>
   <div class="h-screen flex flex-col bg-gray-100 overflow-hidden">
     <!-- Top bar -->
     <header class="h-14 bg-slate-900 text-white flex items-center justify-between px-4 shrink-0">
       <div class="flex items-center gap-3">
-        <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
+        <div class="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center">
           <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
           </svg>

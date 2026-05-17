@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div v-if="lastPage > 1" class="flex items-center justify-between gap-4 text-sm">
     <!-- Info -->
     <p class="text-gray-500 dark:text-gray-400">
@@ -28,7 +28,7 @@
           class="px-3 py-1.5 rounded-md border font-medium transition"
           :class="
             page === currentPage
-              ? 'bg-blue-600 text-white border-blue-600'
+              ? 'bg-orange-500 text-white border-orange-500'
               : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
           "
           @click="emit('change', page)"

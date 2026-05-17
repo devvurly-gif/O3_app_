@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import http from '@/services/http'
 import BaseSkeleton from '@/components/BaseSkeleton.vue'
@@ -140,7 +140,7 @@ const statusLabels: Record<string, string> = {
 
 const statusStyles: Record<string, string> = {
   draft: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300',
-  confirmed: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300',
+  confirmed: 'bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-300',
   converted: 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300',
   delivered: 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300',
   pending: 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300',

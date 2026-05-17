@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="space-y-6">
     <!-- Header -->
     <div>
@@ -15,7 +15,7 @@
           class="whitespace-nowrap border-b-2 py-2.5 px-1 text-sm font-medium transition-colors"
           :class="
             activeTab === tab.key
-              ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400'
+              ? 'border-orange-500 text-orange-500 dark:text-orange-400 dark:border-blue-400'
               : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
           "
           @click="switchTab(tab.key)"
@@ -43,8 +43,8 @@
             class="block w-full text-sm text-gray-600 dark:text-gray-400
               file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0
               file:text-sm file:font-semibold
-              file:bg-blue-50 file:text-blue-700 dark:file:bg-blue-900/30 dark:file:text-blue-400
-              hover:file:bg-blue-100 dark:hover:file:bg-blue-900/50
+              file:bg-orange-50 file:text-orange-600 dark:file:bg-blue-900/30 dark:file:text-blue-400
+              hover:file:bg-orange-100 dark:hover:file:bg-blue-900/50
               cursor-pointer"
             @change="onFileChange"
           />
@@ -141,7 +141,7 @@
       <!-- Import actions -->
       <div v-if="previewData" class="flex items-center gap-3">
         <button
-          class="px-5 py-2.5 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition disabled:opacity-60"
+          class="px-5 py-2.5 text-sm font-semibold bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition disabled:opacity-60"
           :disabled="importing || previewData.valid_count === 0"
           @click="runImport"
         >
@@ -360,7 +360,7 @@ function statusClass(status: string) {
     case 'valid':
       return 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
     case 'imported':
-      return 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+      return 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400'
     case 'invalid':
       return 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
     default:

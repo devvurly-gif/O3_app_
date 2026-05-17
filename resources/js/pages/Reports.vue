@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="space-y-6">
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -18,7 +18,7 @@
           class="py-3 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap"
           :class="
             activeTab === tab.key
-              ? 'border-blue-600 text-blue-600'
+              ? 'border-orange-500 text-orange-500'
               : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
           "
           @click="activeTab = tab.key"
@@ -38,7 +38,7 @@
             <input
               v-model="filters.from"
               type="date"
-              class="block w-44 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+              class="block w-44 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-orange-500 focus:border-orange-500"
             />
           </div>
           <div>
@@ -46,7 +46,7 @@
             <input
               v-model="filters.to"
               type="date"
-              class="block w-44 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+              class="block w-44 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-orange-500 focus:border-orange-500"
             />
           </div>
         </template>
@@ -57,7 +57,7 @@
             <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Entrepôt</label>
             <select
               v-model="filters.warehouse_id"
-              class="block w-52 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+              class="block w-52 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-orange-500 focus:border-orange-500"
             >
               <option value="">Tous les entrepôts</option>
               <option v-for="wh in warehouses" :key="wh.id" :value="wh.id">{{ wh.wh_title }}</option>
@@ -72,7 +72,7 @@
             <input
               v-model="filters.pos_date"
               type="date"
-              class="block w-44 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+              class="block w-44 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-orange-500 focus:border-orange-500"
             />
           </div>
         </template>
@@ -81,7 +81,7 @@
 
         <button
           type="button"
-          class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition"
+          class="inline-flex items-center gap-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 transition"
           :disabled="loading"
           @click="fetchReport"
         >
