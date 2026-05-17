@@ -100,7 +100,7 @@ const cardIcons: Record<string, string> = {
 const cardColors: Record<string, { bg: string; text: string }> = {
   ca_month: { bg: 'bg-emerald-50 dark:bg-emerald-900/30', text: 'text-emerald-600 dark:text-emerald-400' },
   purchases_month: { bg: 'bg-orange-50 dark:bg-orange-900/30', text: 'text-orange-600 dark:text-orange-400' },
-  payments_month: { bg: 'bg-blue-50 dark:bg-blue-900/30', text: 'text-blue-600 dark:text-blue-400' },
+  payments_month: { bg: 'bg-sky-50 dark:bg-sky-900/30', text: 'text-sky-600 dark:text-sky-400' },
   outstanding: { bg: 'bg-red-50 dark:bg-red-900/30', text: 'text-red-600 dark:text-red-400' },
   today_sales: { bg: 'bg-cyan-50 dark:bg-cyan-900/30', text: 'text-cyan-600 dark:text-cyan-400' },
   margin_month: { bg: 'bg-emerald-50 dark:bg-emerald-900/30', text: 'text-emerald-600 dark:text-emerald-400' },
@@ -151,7 +151,7 @@ const statusStyles: Record<string, string> = {
 
 const paymentColors: Record<string, string> = {
   cash: 'bg-green-500',
-  card: 'bg-blue-500',
+  card: 'bg-sky-500',
   credit: 'bg-amber-500',
   cheque: 'bg-purple-500',
   bank_transfer: 'bg-cyan-500',
@@ -175,7 +175,7 @@ const paymentColors: Record<string, string> = {
           </span>
           <span class="text-xs text-gray-400 dark:text-gray-500">Live</span>
         </div>
-        <svg v-if="refreshing" class="w-4 h-4 text-blue-500 animate-spin" fill="none" viewBox="0 0 24 24">
+        <svg v-if="refreshing" class="w-4 h-4 text-orange-500 animate-spin" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
         </svg>
@@ -277,7 +277,7 @@ const paymentColors: Record<string, string> = {
             <div class="flex items-end gap-1 h-48">
               <div v-for="bar in (data?.revenue_chart ?? [])" :key="bar.month" class="flex-1 group relative">
                 <div
-                  class="bg-blue-500 dark:bg-blue-400 hover:bg-blue-600 dark:hover:bg-blue-300 rounded-t transition-colors mx-auto"
+                  class="bg-orange-500 dark:bg-orange-400 hover:bg-orange-600 dark:hover:bg-orange-300 rounded-t transition-colors mx-auto"
                   :style="{ height: (bar.total / chartMax) * 100 + '%', minHeight: bar.total > 0 ? '4px' : '2px', maxWidth: '24px' }"
                 />
                 <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-900 dark:bg-gray-600 text-white text-xs rounded px-2 py-1 whitespace-nowrap z-10">
@@ -338,7 +338,7 @@ const paymentColors: Record<string, string> = {
           <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center gap-4">
             <h3 class="font-semibold text-gray-800 dark:text-gray-200">Ventes vs Achats — 6 derniers mois</h3>
             <div class="flex items-center gap-3 ml-auto text-xs">
-              <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-blue-500"></span> Ventes</span>
+              <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-orange-500"></span> Ventes</span>
               <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-orange-500"></span> Achats</span>
             </div>
           </div>
@@ -347,7 +347,7 @@ const paymentColors: Record<string, string> = {
               <div v-for="bar in (data?.sales_purchases_chart ?? [])" :key="bar.label" class="flex-1 flex gap-1 items-end">
                 <div class="flex-1 group relative">
                   <div
-                    class="bg-blue-500 dark:bg-blue-400 rounded-t mx-auto hover:opacity-80 transition"
+                    class="bg-orange-500 dark:bg-orange-400 rounded-t mx-auto hover:opacity-80 transition"
                     :style="{ height: (bar.sales / spChartMax) * 100 + '%', minHeight: bar.sales > 0 ? '3px' : '1px', maxWidth: '28px' }"
                   />
                   <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-gray-900 text-white text-xs rounded px-2 py-1 whitespace-nowrap z-10">
@@ -380,7 +380,7 @@ const paymentColors: Record<string, string> = {
           </div>
           <ul v-if="data?.top_products?.length" class="divide-y divide-gray-100 dark:divide-gray-700 max-h-64 overflow-y-auto">
             <li v-for="(p, idx) in (data?.top_products ?? [])" :key="p.product_id" class="flex items-center gap-3 px-5 py-2.5">
-              <span class="w-6 h-6 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-bold flex items-center justify-center shrink-0">
+              <span class="w-6 h-6 rounded-full bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 text-xs font-bold flex items-center justify-center shrink-0">
                 {{ Number(idx) + 1 }}
               </span>
               <div class="flex-1 min-w-0">

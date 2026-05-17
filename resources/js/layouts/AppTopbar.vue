@@ -59,7 +59,7 @@
           class="px-2 py-1 rounded text-xs font-semibold transition-colors"
           :class="
             currentLocale === lang.code
-              ? 'bg-blue-600 text-white'
+              ? 'bg-orange-500 text-white'
               : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
           "
           @click="switchLang(lang.code)"
@@ -107,7 +107,7 @@
               <span class="font-semibold text-sm text-gray-700 dark:text-gray-200">{{ $t('nav.notifications') }}</span>
               <button
                 v-if="unreadCount > 0"
-                class="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                class="text-xs text-orange-400 hover:text-orange-300 font-medium"
                 @click="doMarkAllRead"
               >
                 Tout marquer lu
@@ -135,7 +135,7 @@
                   </p>
                   <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{{ timeAgo(n.created_at) }}</p>
                 </div>
-                <span v-if="!n.read_at" class="mt-1.5 w-2 h-2 rounded-full bg-blue-500 shrink-0"></span>
+                <span v-if="!n.read_at" class="mt-1.5 w-2 h-2 rounded-full bg-orange-500 shrink-0"></span>
               </div>
             </div>
           </div>
@@ -149,7 +149,7 @@
           @click="userOpen = !userOpen"
         >
           <span
-            class="w-8 h-8 rounded-full bg-blue-600 text-white text-sm font-bold flex items-center justify-center select-none"
+            class="w-8 h-8 rounded-full bg-orange-500 text-white text-sm font-bold flex items-center justify-center select-none"
           >
             {{ initials }}
           </span>
