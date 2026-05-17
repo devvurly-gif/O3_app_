@@ -313,8 +313,8 @@
 
           <!-- ── Step 1: Informations ── -->
           <div v-show="promoStep === 'info'" class="space-y-4">
-            <div class="grid grid-cols-2 gap-4">
-              <div class="col-span-2">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div class="sm:col-span-2">
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nom *</label>
                 <input v-model="promoForm.name" type="text" required class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500" placeholder="Ex: Soldes d'été -20%">
               </div>
@@ -354,7 +354,7 @@
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Priorité</label>
                 <input v-model.number="promoForm.priority" type="number" min="0" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500" placeholder="0">
               </div>
-              <div class="col-span-2">
+              <div class="sm:col-span-2">
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
                 <textarea v-model="promoForm.description" rows="2" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500" placeholder="Description optionnelle..."></textarea>
               </div>
@@ -454,16 +454,16 @@
           </button>
         </div>
         <form @submit.prevent="saveSlide" class="p-5 space-y-4">
-          <div class="grid grid-cols-2 gap-4">
-            <div class="col-span-2">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="sm:col-span-2">
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Titre *</label>
               <input v-model="slideForm.title" type="text" required class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
             </div>
-            <div class="col-span-2">
+            <div class="sm:col-span-2">
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sous-titre</label>
               <input v-model="slideForm.subtitle" type="text" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
             </div>
-            <div class="col-span-2">
+            <div class="sm:col-span-2">
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Image *</label>
               <label class="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:border-orange-400 dark:hover:border-orange-500 transition">
                 <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
