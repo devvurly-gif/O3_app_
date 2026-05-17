@@ -274,20 +274,41 @@ const paymentColors: Record<string, string> = {
             <h3 class="font-semibold text-gray-800 dark:text-gray-200">Chiffre d'affaires — 6 derniers mois</h3>
           </div>
           <div class="px-5 py-4">
-            <div class="flex items-end gap-1 h-48">
-              <div v-for="bar in (data?.revenue_chart ?? [])" :key="bar.month" class="flex-1 group relative">
-                <div
-                  class="bg-orange-500 dark:bg-orange-400 hover:bg-orange-600 dark:hover:bg-orange-300 rounded-t transition-colors mx-auto"
-                  :style="{ height: (bar.total / chartMax) * 100 + '%', minHeight: bar.total > 0 ? '4px' : '2px', maxWidth: '24px' }"
+            <svg v-if="data?.revenue_chart?.length" class="w-full h-48" :viewBox="`0 0 ${(data.revenue_chart.length - 1) * 100 + 40} 200`" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#F97316" stop-opacity="0.25" />
+                  <stop offset="100%" stop-color="#F97316" stop-opacity="0" />
+                </linearGradient>
+              </defs>
+              <!-- Grid lines -->
+              <line v-for="i in 4" :key="'g'+i" x1="20" :y1="i * 40" :x2="(data.revenue_chart.length - 1) * 100 + 20" :y2="i * 40" stroke="currentColor" class="text-gray-200 dark:text-gray-700" stroke-width="0.5" />
+              <!-- Area fill -->
+              <polygon
+                :points="
+                  data.revenue_chart.map((b: any, i: number) => `${i * 100 + 20},${180 - (b.total / chartMax) * 160}`).join(' ')
+                  + ` ${(data.revenue_chart.length - 1) * 100 + 20},180 20,180`
+                "
+                fill="url(#revGrad)"
+              />
+              <!-- Line -->
+              <polyline
+                :points="data.revenue_chart.map((b: any, i: number) => `${i * 100 + 20},${180 - (b.total / chartMax) * 160}`).join(' ')"
+                fill="none" stroke="#F97316" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"
+              />
+              <!-- Data points -->
+              <template v-for="(bar, i) in data.revenue_chart" :key="'p'+bar.month">
+                <circle
+                  :cx="i * 100 + 20" :cy="180 - (bar.total / chartMax) * 160"
+                  r="5" fill="#F97316" stroke="white" stroke-width="2" class="dark:stroke-gray-800"
                 />
-                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-900 dark:bg-gray-600 text-white text-xs rounded px-2 py-1 whitespace-nowrap z-10">
-                  {{ bar.label }}: {{ fmtCurrency(bar.total) }}
-                </div>
-              </div>
-            </div>
-            <div class="flex gap-1 mt-2">
-              <div v-for="bar in (data?.revenue_chart ?? [])" :key="'l-' + bar.month" class="flex-1 text-center text-[9px] text-gray-400 dark:text-gray-500 truncate">
-                {{ bar.month.slice(5) }}
+              </template>
+            </svg>
+            <!-- Labels + values -->
+            <div class="flex mt-2" :style="{ paddingLeft: '0px' }">
+              <div v-for="(bar, i) in (data?.revenue_chart ?? [])" :key="'l-' + bar.month" class="flex-1 text-center">
+                <div class="text-[9px] text-gray-400 dark:text-gray-500 truncate">{{ bar.month.slice(5) }}</div>
+                <div class="text-[8px] font-medium text-gray-500 dark:text-gray-400 truncate">{{ fmtNumber(Math.round(bar.total)) }}</div>
               </div>
             </div>
           </div>
