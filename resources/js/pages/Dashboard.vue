@@ -553,34 +553,55 @@ const paymentColors: Record<string, string> = {
         <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
           <h3 class="font-semibold text-gray-800 dark:text-gray-200">Derniers documents</h3>
         </div>
-        <div v-if="data?.recent_documents?.length" class="overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead class="bg-gray-50 dark:bg-gray-800/80 text-gray-500 dark:text-gray-400 uppercase text-xs">
-              <tr>
-                <th class="text-left px-5 py-2.5">Référence</th>
-                <th class="text-left px-3 py-2.5">Type</th>
-                <th class="text-left px-3 py-2.5">Tiers</th>
-                <th class="text-right px-3 py-2.5">Montant</th>
-                <th class="text-center px-3 py-2.5">Statut</th>
-                <th class="text-right px-5 py-2.5">Date</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-              <tr v-for="doc in (data?.recent_documents ?? [])" :key="doc.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
-                <td class="px-5 py-2.5 font-mono text-gray-800 dark:text-gray-200">{{ doc.reference }}</td>
-                <td class="px-3 py-2.5 text-gray-500 dark:text-gray-400">{{ docTypeLabels[doc.document_type] ?? doc.document_type }}</td>
-                <td class="px-3 py-2.5 text-gray-600 dark:text-gray-300">{{ doc.third_partner?.tp_title ?? '—' }}</td>
-                <td class="px-3 py-2.5 text-right font-semibold text-gray-700 dark:text-gray-300">{{ doc.footer ? fmtCurrency(doc.footer.total_ttc) : '—' }}</td>
-                <td class="px-3 py-2.5 text-center">
-                  <span class="px-2 py-0.5 rounded text-[10px] font-medium" :class="statusStyles[doc.status] ?? 'bg-gray-100 text-gray-700'">
-                    {{ statusLabels[doc.status] ?? doc.status }}
-                  </span>
-                </td>
-                <td class="px-5 py-2.5 text-right text-gray-400 dark:text-gray-500">{{ timeAgo(doc.created_at) }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <template v-if="data?.recent_documents?.length">
+          <!-- Desktop table -->
+          <div class="hidden sm:block overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="bg-gray-50 dark:bg-gray-800/80 text-gray-500 dark:text-gray-400 uppercase text-xs">
+                <tr>
+                  <th class="text-left px-5 py-2.5">Référence</th>
+                  <th class="text-left px-3 py-2.5">Type</th>
+                  <th class="text-left px-3 py-2.5">Tiers</th>
+                  <th class="text-right px-3 py-2.5">Montant</th>
+                  <th class="text-center px-3 py-2.5">Statut</th>
+                  <th class="text-right px-5 py-2.5">Date</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                <tr v-for="doc in (data?.recent_documents ?? [])" :key="doc.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
+                  <td class="px-5 py-2.5 font-mono text-gray-800 dark:text-gray-200">{{ doc.reference }}</td>
+                  <td class="px-3 py-2.5 text-gray-500 dark:text-gray-400">{{ docTypeLabels[doc.document_type] ?? doc.document_type }}</td>
+                  <td class="px-3 py-2.5 text-gray-600 dark:text-gray-300">{{ doc.third_partner?.tp_title ?? '—' }}</td>
+                  <td class="px-3 py-2.5 text-right font-semibold text-gray-700 dark:text-gray-300">{{ doc.footer ? fmtCurrency(doc.footer.total_ttc) : '—' }}</td>
+                  <td class="px-3 py-2.5 text-center">
+                    <span class="px-2 py-0.5 rounded text-[10px] font-medium" :class="statusStyles[doc.status] ?? 'bg-gray-100 text-gray-700'">
+                      {{ statusLabels[doc.status] ?? doc.status }}
+                    </span>
+                  </td>
+                  <td class="px-5 py-2.5 text-right text-gray-400 dark:text-gray-500">{{ timeAgo(doc.created_at) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <!-- Mobile cards -->
+          <div class="sm:hidden divide-y divide-gray-100 dark:divide-gray-700">
+            <div v-for="doc in (data?.recent_documents ?? [])" :key="doc.id" class="px-4 py-3 space-y-1.5">
+              <div class="flex items-center justify-between gap-2">
+                <span class="font-mono text-sm font-medium text-gray-800 dark:text-gray-200">{{ doc.reference }}</span>
+                <span class="px-2 py-0.5 rounded text-[10px] font-medium" :class="statusStyles[doc.status] ?? 'bg-gray-100 text-gray-700'">
+                  {{ statusLabels[doc.status] ?? doc.status }}
+                </span>
+              </div>
+              <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                <span>{{ docTypeLabels[doc.document_type] ?? doc.document_type }} · {{ doc.third_partner?.tp_title ?? '—' }}</span>
+                <span>{{ timeAgo(doc.created_at) }}</span>
+              </div>
+              <div class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                {{ doc.footer ? fmtCurrency(doc.footer.total_ttc) : '—' }}
+              </div>
+            </div>
+          </div>
+        </template>
         <div v-else class="px-5 py-8 text-center text-sm text-gray-400 dark:text-gray-500">Aucun document</div>
       </div>
     </template>
