@@ -52,6 +52,13 @@ const reasonOptions = Object.entries(reasonLabels)
 
 const { exporting, exportExcel } = useExcelExport()
 
+function formatDate(dateStr: string) {
+  if (!dateStr) return '—'
+  const d = new Date(dateStr)
+  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) +
+    ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+}
+
 function onExport() {
   exportExcel('/export/stock-mouvements', buildFilters())
 }
@@ -96,13 +103,13 @@ onMounted(() => loadPage())
             d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
           />
         </svg>
-        {{ exporting ? 'Export...' : 'Export Excel' }}
+        <span class="hidden sm:inline">{{ exporting ? 'Export...' : 'Export Excel' }}</span>
       </button>
     </div>
 
     <!-- Filters -->
-    <div class="flex flex-wrap items-center gap-3 mb-6">
-      <div class="relative">
+    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 mb-6">
+      <div class="relative w-full sm:w-64">
         <svg
           class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500"
           fill="none"
@@ -116,24 +123,26 @@ onMounted(() => loadPage())
           v-model="productSearch"
           type="text"
           placeholder="Produit : nom, SKU, EAN…"
-          class="pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-violet-500 w-64"
+          class="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
         />
       </div>
-      <select
-        v-model="dirFilter"
-        class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500"
-      >
-        <option value="">Toutes directions</option>
-        <option value="in">Entrée</option>
-        <option value="out">Sortie</option>
-      </select>
-      <select
-        v-model="reasonFilter"
-        class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500"
-      >
-        <option value="">Tous motifs</option>
-        <option v-for="[key, label] in reasonOptions" :key="key" :value="key">{{ label }}</option>
-      </select>
+      <div class="flex gap-2">
+        <select
+          v-model="dirFilter"
+          class="flex-1 sm:flex-none px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
+        >
+          <option value="">Toutes directions</option>
+          <option value="in">Entrée</option>
+          <option value="out">Sortie</option>
+        </select>
+        <select
+          v-model="reasonFilter"
+          class="flex-1 sm:flex-none px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
+        >
+          <option value="">Tous motifs</option>
+          <option v-for="[key, label] in reasonOptions" :key="key" :value="key">{{ label }}</option>
+        </select>
+      </div>
     </div>
 
     <div v-if="store.loading && !store.mouvements.length" class="text-center py-12 text-gray-500 dark:text-gray-400">Chargement...</div>
@@ -175,6 +184,9 @@ onMounted(() => loadPage())
       </template>
       <template #cell-stock_after="{ row }">
         <span class="text-sm font-mono font-medium">{{ Number(row.stock_after).toFixed(2) }}</span>
+      </template>
+      <template #cell-created_at="{ row }">
+        <span class="text-sm text-gray-500 dark:text-gray-400">{{ formatDate(row.created_at) }}</span>
       </template>
     </BaseTable>
 
