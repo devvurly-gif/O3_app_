@@ -14,8 +14,20 @@ use App\Models\Tenant;
 use Stancl\Tenancy\Database\Models\Domain;
 
 // Check if demo tenant already exists
-if (Tenant::find('demo')) {
-    echo "Demo tenant already exists. Skipping creation.\n";
+$existing = Tenant::find('demo');
+if ($existing) {
+    echo "Demo tenant already exists. Running seed fix...\n";
+    $existing->run(function () {
+        // Fix: seed brand + any missing data
+        if (\App\Models\Brand::count() === 0) {
+            \App\Models\Brand::create(['br_title' => 'Générique', 'br_code' => 'GEN']);
+            echo "Brand seeded.\n";
+        }
+    });
+    echo "\n✅ Demo tenant ready!\n";
+    echo "URL:      https://demo.o3app.ma\n";
+    echo "Email:    demo@o3app.ma\n";
+    echo "Password: demo1234\n";
     exit(0);
 }
 
@@ -106,7 +118,8 @@ $tenant->run(function () use ($tenant) {
 
     // Sample brand
     \App\Models\Brand::create([
-        'name' => 'Générique',
+        'br_title' => 'Générique',
+        'br_code'  => 'GEN',
     ]);
 
     echo "Tenant database seeded.\n";
