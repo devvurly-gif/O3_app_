@@ -234,9 +234,9 @@ const paymentProgress = computed(() => {
           >
             &larr; Documents de Vente
           </router-link>
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-white mt-2 flex items-center gap-3">
+          <h1 class="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white mt-2 flex items-center gap-2 sm:gap-3 flex-wrap">
             {{ typeLabels[doc.document_type] ?? doc.document_type }}
-            <span class="text-lg font-normal text-gray-400 dark:text-gray-500">#{{ doc.reference }}</span>
+            <span class="text-sm sm:text-lg font-normal text-gray-400 dark:text-gray-500">#{{ doc.reference }}</span>
           </h1>
           <p
             v-if="doc.document_title && doc.document_title !== doc.document_type"
@@ -287,7 +287,7 @@ const paymentProgress = computed(() => {
                 d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
               />
             </svg>
-            Modifier
+            <span class="hidden sm:inline">Modifier</span>
           </router-link>
 
           <button
@@ -303,7 +303,7 @@ const paymentProgress = computed(() => {
             <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            {{ actionLoading ? 'Confirmation...' : 'Confirmer' }}
+            <span class="hidden sm:inline">{{ actionLoading ? 'Confirmation...' : 'Confirmer' }}</span>
           </button>
 
           <button
@@ -323,7 +323,7 @@ const paymentProgress = computed(() => {
                 d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
               />
             </svg>
-            {{ actionLoading ? 'Conversion...' : convertLabel }}
+            <span class="hidden sm:inline">{{ actionLoading ? 'Conversion...' : convertLabel }}</span>
           </button>
 
           <button
@@ -338,7 +338,7 @@ const paymentProgress = computed(() => {
                 d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
               />
             </svg>
-            Enregistrer paiement
+            <span class="hidden sm:inline">Payer</span>
           </button>
 
           <div class="flex-1"></div>
@@ -355,7 +355,7 @@ const paymentProgress = computed(() => {
                 d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
               />
             </svg>
-            PDF
+            <span class="hidden sm:inline">PDF</span>
           </button>
           <button
             :disabled="pdfLoading"
@@ -370,7 +370,7 @@ const paymentProgress = computed(() => {
                 d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
               />
             </svg>
-            Aperçu
+            <span class="hidden sm:inline">Aperçu</span>
           </button>
           <button
             class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
@@ -383,7 +383,7 @@ const paymentProgress = computed(() => {
                 d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
               />
             </svg>
-            Dupliquer
+            <span class="hidden sm:inline">Dupliquer</span>
           </button>
 
           <button
@@ -399,7 +399,7 @@ const paymentProgress = computed(() => {
                 d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
               />
             </svg>
-            Annuler
+            <span class="hidden sm:inline">Annuler</span>
           </button>
 
           <button
@@ -414,13 +414,13 @@ const paymentProgress = computed(() => {
                 d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
               />
             </svg>
-            Supprimer
+            <span class="hidden sm:inline">Supprimer</span>
           </button>
         </div>
       </div>
 
       <!-- Info Cards -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
         <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
           <p class="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">Client</p>
           <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">
