@@ -200,7 +200,7 @@ const paymentColors: Record<string, string> = {
 
     <template v-else-if="data">
       <!-- ══ ROW 1: Main KPI cards (4) ══ -->
-      <div class="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
         <div
           v-for="card in mainCards"
           :key="card.key"
@@ -222,7 +222,7 @@ const paymentColors: Record<string, string> = {
       </div>
 
       <!-- ══ ROW 2: Secondary KPI cards (4) ══ -->
-      <div class="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
         <div
           v-for="card in secondaryCards"
           :key="card.key"
