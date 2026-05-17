@@ -223,7 +223,7 @@ class DashboardService
             )->sum('total_ttc');
 
             $purchases = DocumentFooter::whereHas('header', fn ($q) =>
-                $q->where('document_type', 'InvoicePurchase')
+                $q->whereIn('document_type', ['InvoicePurchase', 'PurchaseOrder'])
                   ->whereNotIn('status', ['cancelled'])
                   ->whereBetween('issued_at', [$from, $to])
             )->sum('total_ttc');
@@ -440,7 +440,7 @@ class DashboardService
     {
         $q = DocumentFooter::query()
             ->whereHas('header', function ($q) use ($from, $to) {
-                $q->where('document_type', 'InvoicePurchase')
+                $q->whereIn('document_type', ['InvoicePurchase', 'PurchaseOrder'])
                   ->whereNotIn('status', ['cancelled']);
                 if ($to) {
                     $q->whereBetween('issued_at', [$from, $to]);

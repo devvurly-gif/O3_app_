@@ -383,7 +383,7 @@ const paymentColors: Record<string, string> = {
             <h3 class="font-semibold text-gray-800 dark:text-gray-200">Ventes vs Achats — 6 derniers mois</h3>
             <div class="flex items-center gap-3 ml-auto text-xs">
               <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-orange-500"></span> Ventes</span>
-              <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-orange-500"></span> Achats</span>
+              <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-teal-500"></span> Achats</span>
             </div>
           </div>
           <div class="px-5 py-4">
@@ -400,7 +400,7 @@ const paymentColors: Record<string, string> = {
                 </div>
                 <div class="flex-1 group relative">
                   <div
-                    class="bg-orange-500 dark:bg-orange-400 rounded-t mx-auto hover:opacity-80 transition"
+                    class="bg-teal-500 dark:bg-teal-400 rounded-t mx-auto hover:opacity-80 transition"
                     :style="{ height: (bar.purchases / spChartMax) * 100 + '%', minHeight: bar.purchases > 0 ? '3px' : '1px', maxWidth: '28px' }"
                   />
                   <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-gray-900 text-white text-xs rounded px-2 py-1 whitespace-nowrap z-10">
