@@ -1,7 +1,29 @@
 ﻿<template>
-  <div class="flex h-full">
-    <!-- LEFT: Products panel (60%) -->
-    <div class="w-[60%] flex flex-col border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+  <div class="flex h-full relative">
+    <!-- Mobile cart toggle FAB -->
+    <button
+      class="lg:hidden fixed bottom-4 right-4 z-30 w-14 h-14 rounded-full bg-orange-500 text-white shadow-lg flex items-center justify-center hover:bg-orange-600 transition"
+      @click="mobileView = mobileView === 'cart' ? 'products' : 'cart'"
+    >
+      <svg v-if="mobileView === 'products'" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" />
+      </svg>
+      <svg v-else class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0v10l-8 4m0-14L4 17m8 4V10" />
+      </svg>
+      <span
+        v-if="mobileView === 'products' && posStore.cartItemCount"
+        class="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 flex items-center justify-center text-[10px] font-bold bg-red-500 text-white rounded-full"
+      >
+        {{ posStore.cartItemCount }}
+      </span>
+    </button>
+
+    <!-- LEFT: Products panel (60% desktop, full on mobile) -->
+    <div
+      class="flex flex-col border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+      :class="mobileView === 'products' ? 'w-full lg:w-[60%]' : 'hidden lg:flex lg:w-[60%]'"
+    >
       <!-- Category tabs -->
       <div class="flex items-center gap-2 px-4 py-3 border-b border-gray-100 dark:border-gray-700 overflow-x-auto shrink-0">
         <button
@@ -46,11 +68,11 @@
         <div v-else-if="!posStore.products.length" class="flex items-center justify-center h-full text-gray-400 dark:text-gray-500">
           Aucun produit trouvé
         </div>
-        <div v-else class="grid grid-cols-3 xl:grid-cols-4 gap-3">
+        <div v-else class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 gap-3">
           <button
             v-for="product in posStore.products"
             :key="product.id"
-            class="flex flex-col bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-3 hover:border-blue-400 hover:shadow-md transition-all text-left group"
+            class="flex flex-col bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-3 hover:border-orange-400 hover:shadow-md transition-all text-left group"
             @click="addToCart(product)"
           >
             <div class="w-full aspect-square rounded-lg bg-gray-200 mb-2 overflow-hidden flex items-center justify-center">
@@ -77,8 +99,11 @@
       </div>
     </div>
 
-    <!-- RIGHT: Cart panel (40%) -->
-    <div class="w-[40%] flex flex-col bg-white dark:bg-gray-800">
+    <!-- RIGHT: Cart panel (40% desktop, full on mobile) -->
+    <div
+      class="flex flex-col bg-white dark:bg-gray-800"
+      :class="mobileView === 'cart' ? 'w-full lg:w-[40%]' : 'hidden lg:flex lg:w-[40%]'"
+    >
       <!-- Cart header -->
       <div class="px-5 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between shrink-0">
         <h2 class="text-sm font-bold text-gray-900 dark:text-white">
@@ -599,6 +624,7 @@ interface PosCustomer {
 const router = useRouter()
 const posStore = usePosStore()
 
+const mobileView = ref<'products' | 'cart'>('products')
 const categories = ref<{ id: number; ctg_title: string }[]>([])
 const showCheckout = ref(false)
 const checkoutMethod = ref('cash')
