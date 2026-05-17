@@ -59,6 +59,8 @@ const t = {
         { icon: 'pos', title: 'Point de Vente (POS)', desc: 'Caisse tactile, gestion des sessions, tickets, multi-terminaux. Fonctionne hors-ligne.' },
         { icon: 'invoice', title: 'Facturation & Paiements', desc: 'Factures conformes, suivi des paiements, relances automatiques, gestion des crédits clients.' },
         { icon: 'report', title: 'Rapports & Analyses', desc: 'Tableau de bord temps réel, chiffre d\'affaires, marges, top produits, export Excel.' },
+        { icon: 'ecommerce', title: 'Boutique e-Commerce', desc: 'Créez et gérez votre site web e-commerce directement depuis la plateforme. Catalogue en ligne, commandes, paiements.' },
+        { icon: 'messaging', title: 'WhatsApp & Email', desc: 'Restez en contact avec vos clients via WhatsApp et Email. Relances, confirmations de commande, promotions.' },
       ],
     },
     testimonials: {
@@ -159,6 +161,8 @@ const t = {
         { icon: 'pos', title: 'Point of Sale (POS)', desc: 'Touch register, session management, tickets, multi-terminal. Works offline.' },
         { icon: 'invoice', title: 'Invoicing & Payments', desc: 'Compliant invoices, payment tracking, auto-reminders, credit management.' },
         { icon: 'report', title: 'Reports & Analytics', desc: 'Real-time dashboard, revenue, margins, top products, Excel export.' },
+        { icon: 'ecommerce', title: 'e-Commerce Website', desc: 'Create and manage your online store directly from the platform. Product catalog, orders, payments.' },
+        { icon: 'messaging', title: 'WhatsApp & Email', desc: 'Stay in touch with your clients via WhatsApp and Email. Reminders, order confirmations, promotions.' },
       ],
     },
     testimonials: {
@@ -240,6 +244,8 @@ function getFeatureIcon(icon: string) {
     pos: 'M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z',
     invoice: 'M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z',
     report: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
+    ecommerce: 'M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418',
+    messaging: 'M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z',
   }
   return icons[icon] || ''
 }
@@ -782,6 +788,77 @@ const stepColors = ['from-orange-500 to-orange-600', 'from-gray-700 to-gray-800'
                 <text x="88" y="96" fill="#F97316" font-size="8" font-weight="bold">1.2M</text>
                 <rect x="140" y="82" width="40" height="22" rx="4" fill="#FEF3C7" stroke="#FDE68A" stroke-width="1" />
                 <text x="147" y="96" fill="#D97706" font-size="8" font-weight="bold">Top 5</text>
+              </svg>
+              <!-- e-Commerce illustration -->
+              <svg v-if="feature.icon === 'ecommerce'" class="w-full h-full p-5" viewBox="0 0 200 120" fill="none">
+                <!-- Browser window -->
+                <rect x="10" y="5" width="180" height="110" rx="8" fill="white" stroke="#E5E7EB" stroke-width="1.5" />
+                <!-- Browser bar -->
+                <rect x="10" y="5" width="180" height="18" rx="8" fill="#F9FAFB" />
+                <circle cx="22" cy="14" r="3" fill="#FCA5A5" />
+                <circle cx="32" cy="14" r="3" fill="#FDE68A" />
+                <circle cx="42" cy="14" r="3" fill="#86EFAC" />
+                <rect x="55" y="10" width="80" height="8" rx="4" fill="#E5E7EB" />
+                <!-- Product grid -->
+                <rect x="20" y="30" width="45" height="35" rx="4" fill="#FFF7ED" stroke="#FED7AA" stroke-width="1" />
+                <rect x="25" y="35" width="35" height="15" rx="2" fill="#FDBA74" opacity="0.3" />
+                <rect x="25" y="53" width="25" height="4" rx="1" fill="#D1D5DB" />
+                <text x="25" y="64" fill="#F97316" font-size="6" font-weight="bold">290 MAD</text>
+                <rect x="75" y="30" width="45" height="35" rx="4" fill="#FFF7ED" stroke="#FED7AA" stroke-width="1" />
+                <rect x="80" y="35" width="35" height="15" rx="2" fill="#FDBA74" opacity="0.3" />
+                <rect x="80" y="53" width="25" height="4" rx="1" fill="#D1D5DB" />
+                <text x="80" y="64" fill="#F97316" font-size="6" font-weight="bold">450 MAD</text>
+                <rect x="130" y="30" width="45" height="35" rx="4" fill="#FFF7ED" stroke="#FED7AA" stroke-width="1" />
+                <rect x="135" y="35" width="35" height="15" rx="2" fill="#FDBA74" opacity="0.3" />
+                <rect x="135" y="53" width="25" height="4" rx="1" fill="#D1D5DB" />
+                <text x="135" y="64" fill="#F97316" font-size="6" font-weight="bold">120 MAD</text>
+                <!-- Cart button -->
+                <rect x="130" y="80" width="55" height="18" rx="8" fill="#F97316" />
+                <text x="138" y="92" fill="white" font-size="7" font-weight="bold">🛒 Panier</text>
+                <!-- Order count badge -->
+                <circle cx="178" cy="79" r="7" fill="#EF4444" />
+                <text x="176" y="82" fill="white" font-size="6" font-weight="bold">3</text>
+                <!-- Search bar -->
+                <rect x="20" y="80" width="100" height="18" rx="8" fill="#F9FAFB" stroke="#E5E7EB" stroke-width="1" />
+                <text x="30" y="92" fill="#9CA3AF" font-size="6">Rechercher...</text>
+              </svg>
+              <!-- WhatsApp & Email illustration -->
+              <svg v-if="feature.icon === 'messaging'" class="w-full h-full p-5" viewBox="0 0 200 120" fill="none">
+                <!-- WhatsApp chat bubble -->
+                <rect x="10" y="10" width="85" height="100" rx="10" fill="#DCF8C6" stroke="#25D366" stroke-width="1.5" />
+                <!-- WhatsApp icon -->
+                <circle cx="30" cy="25" r="10" fill="#25D366" />
+                <text x="25" y="29" fill="white" font-size="10">📱</text>
+                <text x="45" y="28" fill="#075E54" font-size="7" font-weight="bold">WhatsApp</text>
+                <!-- Chat messages -->
+                <rect x="18" y="40" width="60" height="14" rx="6" fill="white" />
+                <text x="23" y="50" fill="#333" font-size="5.5">Commande #089 confirmée ✅</text>
+                <rect x="18" y="58" width="50" height="14" rx="6" fill="white" />
+                <text x="23" y="68" fill="#333" font-size="5.5">Livraison demain 🚚</text>
+                <rect x="18" y="76" width="55" height="14" rx="6" fill="white" />
+                <text x="23" y="86" fill="#333" font-size="5.5">Merci pour votre achat!</text>
+                <!-- Sent indicators -->
+                <text x="72" y="50" fill="#25D366" font-size="5">✓✓</text>
+                <text x="62" y="68" fill="#25D366" font-size="5">✓✓</text>
+                <!-- Email panel -->
+                <rect x="105" y="10" width="85" height="100" rx="10" fill="white" stroke="#E5E7EB" stroke-width="1.5" />
+                <!-- Email icon -->
+                <circle cx="125" cy="25" r="10" fill="#F97316" />
+                <text x="120" y="29" fill="white" font-size="10">✉</text>
+                <text x="140" y="28" fill="#EA580C" font-size="7" font-weight="bold">Email</text>
+                <!-- Email items -->
+                <rect x="113" y="40" width="70" height="16" rx="4" fill="#FFF7ED" stroke="#FED7AA" stroke-width="0.5" />
+                <rect x="117" y="44" width="35" height="3" rx="1" fill="#FDBA74" />
+                <rect x="117" y="50" width="55" height="2" rx="1" fill="#E5E7EB" />
+                <rect x="113" y="60" width="70" height="16" rx="4" fill="#FFF7ED" stroke="#FED7AA" stroke-width="0.5" />
+                <rect x="117" y="64" width="40" height="3" rx="1" fill="#FDBA74" />
+                <rect x="117" y="70" width="50" height="2" rx="1" fill="#E5E7EB" />
+                <rect x="113" y="80" width="70" height="16" rx="4" fill="#F0FDF4" stroke="#BBF7D0" stroke-width="0.5" />
+                <rect x="117" y="84" width="30" height="3" rx="1" fill="#86EFAC" />
+                <rect x="117" y="90" width="45" height="2" rx="1" fill="#E5E7EB" />
+                <!-- Send button -->
+                <circle cx="175" cy="104" r="5" fill="#F97316" />
+                <text x="173" y="107" fill="white" font-size="5">▶</text>
               </svg>
             </div>
 
