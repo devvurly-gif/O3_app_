@@ -38,7 +38,34 @@ const { fmt } = useFormat()
       <span class="text-xs text-gray-400 dark:text-gray-500">{{ lines?.length ?? 0 }} article(s)</span>
     </div>
 
-    <div v-if="lines?.length" class="overflow-x-auto">
+    <!-- ── Mobile: card view ── -->
+    <div v-if="lines?.length" class="sm:hidden divide-y divide-gray-100 dark:divide-gray-700">
+      <div
+        v-for="(ligne, i) in lines"
+        :key="'m-' + ((ligne as any).id ?? i)"
+        class="px-4 py-3 space-y-1.5"
+      >
+        <div class="flex items-start justify-between gap-2">
+          <div class="min-w-0">
+            <p class="font-medium text-sm text-gray-800 dark:text-gray-200 truncate">{{ (ligne as any).designation }}</p>
+            <p v-if="(ligne as any).reference" class="text-xs text-gray-400 dark:text-gray-500">[{{ (ligne as any).reference }}]</p>
+          </div>
+          <span v-if="variant === 'commercial'" class="text-sm font-bold text-gray-900 dark:text-white shrink-0">
+            {{ fmt((ligne as any).total_ttc) }} DH
+          </span>
+        </div>
+        <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
+          <span>Qté: <strong class="text-gray-700 dark:text-gray-300">{{ (ligne as any).quantity }} {{ (ligne as any).unit }}</strong></span>
+          <span v-if="variant === 'commercial'">PU: <strong class="text-gray-700 dark:text-gray-300">{{ fmt((ligne as any).unit_price) }}</strong></span>
+          <span v-if="variant === 'commercial' && Number((ligne as any).discount_percent ?? 0) > 0">Remise: <strong class="text-gray-700 dark:text-gray-300">{{ (ligne as any).discount_percent }}%</strong></span>
+          <span v-if="variant === 'commercial'">TVA: <strong class="text-gray-700 dark:text-gray-300">{{ (ligne as any).tax_percent ?? 0 }}%</strong></span>
+          <span v-if="variant === 'stock'">Coût: <strong class="text-gray-700 dark:text-gray-300">{{ fmt((ligne as any).unit_price) }} DH</strong></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Desktop: table view ── -->
+    <div v-if="lines?.length" class="hidden sm:block overflow-x-auto">
       <!-- Commercial variant (ventes / achats) -->
       <table v-if="variant === 'commercial'" class="w-full text-sm">
         <thead class="bg-gray-50/50 dark:bg-gray-800/60 text-gray-500 dark:text-gray-400 uppercase text-xs">
