@@ -52,11 +52,18 @@ onMounted(() => loadPage())
 
 const columns = [
   { key: 'reference', label: 'Référence' },
-  { key: 'document_type', label: 'Type' },
-  { key: 'status', label: 'Statut' },
+  { key: 'document_type', label: 'Type', hideOnMobile: true },
+  { key: 'status', label: 'Statut', hideOnMobile: true },
   { key: 'third_partner', label: 'Fournisseur' },
   { key: 'issued_at', label: 'Date' },
 ]
+
+function mobileRowClass(row: Record<string, unknown>): string {
+  const isPaid = row.status === 'paid'
+  return isPaid
+    ? 'border-gray-200 dark:border-gray-700'
+    : 'border-red-400 dark:border-red-600 border-l-4'
+}
 
 const typeLabels = {
   PurchaseOrder: 'Bon de Commande',
@@ -131,7 +138,7 @@ function viewDocument(doc: Record<string, unknown>) {
 
     <BaseSkeleton v-if="store.loading && !store.documents.length" type="table" :rows="8" />
 
-    <BaseTable v-else :columns="columns" :rows="store.documents">
+    <BaseTable v-else :columns="columns" :rows="store.documents" :mobile-row-class="mobileRowClass">
       <template #cell-document_type="{ row }">
         <span class="text-sm">{{ typeLabels[row.document_type] ?? row.document_type }}</span>
       </template>

@@ -61,10 +61,13 @@
     <div
       v-for="(row, i) in rows"
       :key="row.id ?? i"
-      class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm overflow-hidden"
+      :class="[
+        'rounded-lg border bg-white dark:bg-gray-800 shadow-sm overflow-hidden',
+        mobileRowClass ? mobileRowClass(row) : 'border-gray-200 dark:border-gray-700',
+      ]"
     >
       <div class="divide-y divide-gray-100 dark:divide-gray-700">
-        <div v-for="col in columns" :key="col.key" class="flex items-center justify-between px-4 py-2.5 gap-3">
+        <div v-for="col in mobileColumns()" :key="col.key" class="flex items-center justify-between px-4 py-2.5 gap-3">
           <span class="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider shrink-0">{{
             col.label
           }}</span>
@@ -87,13 +90,19 @@
 
 <script setup lang="ts">
 interface Props {
-  columns: Array<{ key: string; label: string; [k: string]: unknown }>
+  columns: Array<{ key: string; label: string; hideOnMobile?: boolean; [k: string]: unknown }>
   rows: any[]
   emptyText?: string
+  mobileRowClass?: (row: any) => string
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   rows: () => [],
   emptyText: 'No records found.',
+  mobileRowClass: undefined,
 })
+
+function mobileColumns() {
+  return props.columns.filter(c => !c.hideOnMobile)
+}
 </script>
