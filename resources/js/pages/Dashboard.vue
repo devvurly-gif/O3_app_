@@ -47,6 +47,38 @@ const chartMax = computed(() => {
   return Math.max(...data.value.revenue_chart.map((r: any) => r.total), 1)
 })
 
+/** Build a smooth cubic bezier SVG path from chart points */
+const revenuePath = computed(() => {
+  const chart = data.value?.revenue_chart
+  if (!chart?.length) return ''
+  const pts = chart.map((b: any, i: number) => ({
+    x: i * 100 + 20,
+    y: 180 - (b.total / chartMax.value) * 160,
+  }))
+  if (pts.length < 2) return `M${pts[0].x},${pts[0].y}`
+  let d = `M${pts[0].x},${pts[0].y}`
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[Math.max(i - 1, 0)]
+    const p1 = pts[i]
+    const p2 = pts[i + 1]
+    const p3 = pts[Math.min(i + 2, pts.length - 1)]
+    const tension = 0.35
+    const cp1x = p1.x + (p2.x - p0.x) * tension
+    const cp1y = p1.y + (p2.y - p0.y) * tension
+    const cp2x = p2.x - (p3.x - p1.x) * tension
+    const cp2y = p2.y - (p3.y - p1.y) * tension
+    d += ` C${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`
+  }
+  return d
+})
+
+const revenueAreaPath = computed(() => {
+  const chart = data.value?.revenue_chart
+  if (!chart?.length) return ''
+  const last = chart.length - 1
+  return `${revenuePath.value} L${last * 100 + 20},180 L20,180 Z`
+})
+
 const spChartMax = computed(() => {
   if (!data.value?.sales_purchases_chart) return 1
   return Math.max(
@@ -284,18 +316,9 @@ const paymentColors: Record<string, string> = {
               <!-- Grid lines -->
               <line v-for="i in 4" :key="'g'+i" x1="20" :y1="i * 40" :x2="(data.revenue_chart.length - 1) * 100 + 20" :y2="i * 40" stroke="currentColor" class="text-gray-200 dark:text-gray-700" stroke-width="0.5" />
               <!-- Area fill -->
-              <polygon
-                :points="
-                  data.revenue_chart.map((b: any, i: number) => `${i * 100 + 20},${180 - (b.total / chartMax) * 160}`).join(' ')
-                  + ` ${(data.revenue_chart.length - 1) * 100 + 20},180 20,180`
-                "
-                fill="url(#revGrad)"
-              />
-              <!-- Line -->
-              <polyline
-                :points="data.revenue_chart.map((b: any, i: number) => `${i * 100 + 20},${180 - (b.total / chartMax) * 160}`).join(' ')"
-                fill="none" stroke="#F97316" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"
-              />
+              <path :d="revenueAreaPath" fill="url(#revGrad)" />
+              <!-- Smooth line -->
+              <path :d="revenuePath" fill="none" stroke="#F97316" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
               <!-- Data points -->
               <template v-for="(bar, i) in data.revenue_chart" :key="'p'+bar.month">
                 <circle
