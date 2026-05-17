@@ -70,11 +70,11 @@ class DashboardService
 
         // Invoice count
         $invoicesCurrent = DocumentHeader::whereIn('document_type', ['InvoiceSale', 'TicketSale'])
-            ->where('created_at', '>=', $startMonth)
+            ->where('issued_at', '>=', $startMonth)
             ->whereNotIn('status', ['cancelled'])
             ->count();
         $invoicesPrev = DocumentHeader::whereIn('document_type', ['InvoiceSale', 'TicketSale'])
-            ->whereBetween('created_at', [$startPrev, $endPrev])
+            ->whereBetween('issued_at', [$startPrev, $endPrev])
             ->whereNotIn('status', ['cancelled'])
             ->count();
 
@@ -88,7 +88,7 @@ class DashboardService
         $todaySales = DocumentFooter::whereHas('header', fn ($q) =>
             $q->whereIn('document_type', ['InvoiceSale', 'TicketSale', 'DeliveryNote'])
               ->whereNotIn('status', ['cancelled'])
-              ->where('created_at', '>=', $startToday)
+              ->where('issued_at', '>=', $startToday)
         )->sum('total_ttc');
 
         // Margin estimate (sales - purchases this month)
@@ -181,9 +181,9 @@ class DashboardService
             ->join('document_headers', 'document_footers.document_header_id', '=', 'document_headers.id')
             ->whereIn('document_headers.document_type', ['InvoiceSale', 'TicketSale'])
             ->whereNotIn('document_headers.status', ['cancelled'])
-            ->where('document_headers.created_at', '>=', Carbon::now()->subMonths(5)->startOfMonth())
+            ->where('document_headers.issued_at', '>=', Carbon::now()->subMonths(5)->startOfMonth())
             ->select(
-                DB::raw("DATE_FORMAT(document_headers.created_at, '%Y-%m') as month"),
+                DB::raw("DATE_FORMAT(document_headers.issued_at, '%Y-%m') as month"),
                 DB::raw('SUM(document_footers.total_ttc) as total')
             )
             ->groupBy('month')
@@ -219,13 +219,13 @@ class DashboardService
             $sales = DocumentFooter::whereHas('header', fn ($q) =>
                 $q->whereIn('document_type', ['InvoiceSale', 'TicketSale'])
                   ->whereNotIn('status', ['cancelled'])
-                  ->whereBetween('created_at', [$from, $to])
+                  ->whereBetween('issued_at', [$from, $to])
             )->sum('total_ttc');
 
             $purchases = DocumentFooter::whereHas('header', fn ($q) =>
                 $q->where('document_type', 'InvoicePurchase')
                   ->whereNotIn('status', ['cancelled'])
-                  ->whereBetween('created_at', [$from, $to])
+                  ->whereBetween('issued_at', [$from, $to])
             )->sum('total_ttc');
 
             $result[] = [
@@ -262,7 +262,7 @@ class DashboardService
             ->join('document_headers', 'document_lignes.document_header_id', '=', 'document_headers.id')
             ->whereIn('document_headers.document_type', ['InvoiceSale', 'TicketSale'])
             ->whereNotIn('document_headers.status', ['cancelled'])
-            ->where('document_headers.created_at', '>=', $since)
+            ->where('document_headers.issued_at', '>=', $since)
             ->select(
                 'document_lignes.product_id',
                 'document_lignes.designation',
@@ -323,7 +323,7 @@ class DashboardService
             ->join('third_partners', 'document_headers.thirdPartner_id', '=', 'third_partners.id')
             ->whereIn('document_headers.document_type', ['InvoiceSale', 'TicketSale'])
             ->whereNotIn('document_headers.status', ['cancelled'])
-            ->where('document_headers.created_at', '>=', $since)
+            ->where('document_headers.issued_at', '>=', $since)
             ->where('third_partners.tp_code', '!=', 'CLIENT-COMPTOIR')
             ->select(
                 'third_partners.id',
@@ -375,7 +375,7 @@ class DashboardService
     private function posToday(Carbon $startToday): array
     {
         $tickets = DocumentHeader::where('document_type', 'TicketSale')
-            ->where('created_at', '>=', $startToday)
+            ->where('issued_at', '>=', $startToday)
             ->whereNotIn('status', ['cancelled']);
 
         $ticketCount = (clone $tickets)->count();
@@ -383,7 +383,7 @@ class DashboardService
         $totalTtc = DocumentFooter::whereHas('header', fn ($q) =>
             $q->where('document_type', 'TicketSale')
               ->whereNotIn('status', ['cancelled'])
-              ->where('created_at', '>=', $startToday)
+              ->where('issued_at', '>=', $startToday)
         )->sum('total_ttc');
 
         // Active sessions
@@ -427,9 +427,9 @@ class DashboardService
                 $q->whereIn('document_type', ['InvoiceSale', 'TicketSale'])
                   ->whereNotIn('status', ['cancelled']);
                 if ($to) {
-                    $q->whereBetween('created_at', [$from, $to]);
+                    $q->whereBetween('issued_at', [$from, $to]);
                 } else {
-                    $q->where('created_at', '>=', $from);
+                    $q->where('issued_at', '>=', $from);
                 }
             });
 
@@ -443,9 +443,9 @@ class DashboardService
                 $q->where('document_type', 'InvoicePurchase')
                   ->whereNotIn('status', ['cancelled']);
                 if ($to) {
-                    $q->whereBetween('created_at', [$from, $to]);
+                    $q->whereBetween('issued_at', [$from, $to]);
                 } else {
-                    $q->where('created_at', '>=', $from);
+                    $q->where('issued_at', '>=', $from);
                 }
             });
 
