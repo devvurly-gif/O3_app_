@@ -388,20 +388,20 @@ const paymentColors: Record<string, string> = {
           </div>
           <div class="px-5 py-4">
             <div class="flex items-end gap-3 h-40">
-              <div v-for="bar in (data?.sales_purchases_chart ?? [])" :key="bar.label" class="flex-1 flex gap-1 items-end">
-                <div class="flex-1 group relative">
+              <div v-for="bar in (data?.sales_purchases_chart ?? [])" :key="bar.label" class="flex-1 h-full flex gap-1 items-end">
+                <div class="flex-1 h-full group relative flex items-end">
                   <div
-                    class="bg-orange-500 dark:bg-orange-400 rounded-t mx-auto hover:opacity-80 transition"
-                    :style="{ height: (bar.sales / spChartMax) * 100 + '%', minHeight: bar.sales > 0 ? '3px' : '1px', maxWidth: '28px' }"
+                    class="bg-orange-500 dark:bg-orange-400 rounded-t w-full hover:opacity-80 transition"
+                    :style="{ height: (bar.sales / spChartMax) * 100 + '%', minHeight: bar.sales > 0 ? '4px' : '1px', maxWidth: '28px', margin: '0 auto' }"
                   />
                   <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-gray-900 text-white text-xs rounded px-2 py-1 whitespace-nowrap z-10">
                     Ventes: {{ fmtCurrency(bar.sales) }}
                   </div>
                 </div>
-                <div class="flex-1 group relative">
+                <div class="flex-1 h-full group relative flex items-end">
                   <div
-                    class="bg-teal-500 dark:bg-teal-400 rounded-t mx-auto hover:opacity-80 transition"
-                    :style="{ height: (bar.purchases / spChartMax) * 100 + '%', minHeight: bar.purchases > 0 ? '3px' : '1px', maxWidth: '28px' }"
+                    class="bg-teal-500 dark:bg-teal-400 rounded-t w-full hover:opacity-80 transition"
+                    :style="{ height: (bar.purchases / spChartMax) * 100 + '%', minHeight: bar.purchases > 0 ? '4px' : '1px', maxWidth: '28px', margin: '0 auto' }"
                   />
                   <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-gray-900 text-white text-xs rounded px-2 py-1 whitespace-nowrap z-10">
                     Achats: {{ fmtCurrency(bar.purchases) }}
