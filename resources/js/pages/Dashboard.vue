@@ -1,7 +1,19 @@
 ﻿<script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import http from '@/services/http'
 import BaseSkeleton from '@/components/BaseSkeleton.vue'
+import { Line } from 'vue-chartjs'
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Filler,
+  Tooltip,
+} from 'chart.js'
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip)
 
 const data = ref<Record<string, any> | null>(null)
 const loading = ref(true)
@@ -42,42 +54,68 @@ const mainCards = computed(() => data.value?.cards?.slice(0, 4) ?? [])
 const secondaryCards = computed(() => data.value?.cards?.slice(4, 8) ?? [])
 const pillCards = computed(() => data.value?.cards?.slice(8) ?? [])
 
-const chartMax = computed(() => {
-  if (!data.value?.revenue_chart) return 1
-  return Math.max(...data.value.revenue_chart.map((r: any) => r.total), 1)
-})
-
-/** Build a smooth cubic bezier SVG path from chart points */
-const revenuePath = computed(() => {
-  const chart = data.value?.revenue_chart
-  if (!chart?.length) return ''
-  const pts = chart.map((b: any, i: number) => ({
-    x: i * 100 + 20,
-    y: 180 - (b.total / chartMax.value) * 160,
-  }))
-  if (pts.length < 2) return `M${pts[0].x},${pts[0].y}`
-  let d = `M${pts[0].x},${pts[0].y}`
-  for (let i = 0; i < pts.length - 1; i++) {
-    const p0 = pts[Math.max(i - 1, 0)]
-    const p1 = pts[i]
-    const p2 = pts[i + 1]
-    const p3 = pts[Math.min(i + 2, pts.length - 1)]
-    const tension = 0.35
-    const cp1x = p1.x + (p2.x - p0.x) * tension
-    const cp1y = p1.y + (p2.y - p0.y) * tension
-    const cp2x = p2.x - (p3.x - p1.x) * tension
-    const cp2y = p2.y - (p3.y - p1.y) * tension
-    d += ` C${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`
+// ── Chart.js revenue line config ───────────────────────
+const revenueChartKey = ref(0)
+const revenueChartData = computed(() => {
+  const chart = data.value?.revenue_chart ?? []
+  return {
+    labels: chart.map((r: any) => r.month?.slice(5) ?? ''),
+    datasets: [
+      {
+        label: 'Chiffre d\'affaires',
+        data: chart.map((r: any) => r.total),
+        borderColor: '#F97316',
+        backgroundColor: (ctx: any) => {
+          const canvas = ctx.chart?.ctx
+          if (!canvas) return 'rgba(249,115,22,0.1)'
+          const gradient = canvas.createLinearGradient(0, 0, 0, ctx.chart.height)
+          gradient.addColorStop(0, 'rgba(249,115,22,0.25)')
+          gradient.addColorStop(1, 'rgba(249,115,22,0)')
+          return gradient
+        },
+        fill: true,
+        tension: 0.4,
+        borderWidth: 3,
+        pointRadius: 5,
+        pointBackgroundColor: '#F97316',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointHoverRadius: 7,
+      },
+    ],
   }
-  return d
 })
 
-const revenueAreaPath = computed(() => {
-  const chart = data.value?.revenue_chart
-  if (!chart?.length) return ''
-  const last = chart.length - 1
-  return `${revenuePath.value} L${last * 100 + 20},180 L20,180 Z`
-})
+const revenueChartOptions = computed(() => ({
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    tooltip: {
+      callbacks: {
+        label: (ctx: any) => fmtCurrency(ctx.parsed.y),
+      },
+    },
+    legend: { display: false },
+  },
+  scales: {
+    x: {
+      grid: { display: false },
+      ticks: { color: '#9CA3AF', font: { size: 11 } },
+    },
+    y: {
+      grid: { color: 'rgba(156,163,175,0.15)' },
+      ticks: {
+        color: '#9CA3AF',
+        font: { size: 10 },
+        callback: (v: any) => v >= 1000000 ? (v / 1000000).toFixed(1) + 'M' : v >= 1000 ? (v / 1000).toFixed(0) + 'K' : v,
+      },
+      beginAtZero: true,
+    },
+  },
+  interaction: { intersect: false, mode: 'index' as const },
+}))
+
+watch(() => data.value?.revenue_chart, () => { revenueChartKey.value++ })
 
 const spChartMax = computed(() => {
   if (!data.value?.sales_purchases_chart) return 1
@@ -306,33 +344,8 @@ const paymentColors: Record<string, string> = {
             <h3 class="font-semibold text-gray-800 dark:text-gray-200">Chiffre d'affaires — 6 derniers mois</h3>
           </div>
           <div class="px-5 py-4">
-            <svg v-if="data?.revenue_chart?.length" class="w-full h-48" :viewBox="`0 0 ${(data.revenue_chart.length - 1) * 100 + 40} 200`" preserveAspectRatio="none">
-              <defs>
-                <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#F97316" stop-opacity="0.25" />
-                  <stop offset="100%" stop-color="#F97316" stop-opacity="0" />
-                </linearGradient>
-              </defs>
-              <!-- Grid lines -->
-              <line v-for="i in 4" :key="'g'+i" x1="20" :y1="i * 40" :x2="(data.revenue_chart.length - 1) * 100 + 20" :y2="i * 40" stroke="currentColor" class="text-gray-200 dark:text-gray-700" stroke-width="0.5" />
-              <!-- Area fill -->
-              <path :d="revenueAreaPath" fill="url(#revGrad)" />
-              <!-- Smooth line -->
-              <path :d="revenuePath" fill="none" stroke="#F97316" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
-              <!-- Data points -->
-              <template v-for="(bar, i) in data.revenue_chart" :key="'p'+bar.month">
-                <circle
-                  :cx="i * 100 + 20" :cy="180 - (bar.total / chartMax) * 160"
-                  r="5" fill="#F97316" stroke="white" stroke-width="2" class="dark:stroke-gray-800"
-                />
-              </template>
-            </svg>
-            <!-- Labels + values -->
-            <div class="flex mt-2" :style="{ paddingLeft: '0px' }">
-              <div v-for="(bar, i) in (data?.revenue_chart ?? [])" :key="'l-' + bar.month" class="flex-1 text-center">
-                <div class="text-[9px] text-gray-400 dark:text-gray-500 truncate">{{ bar.month.slice(5) }}</div>
-                <div class="text-[8px] font-medium text-gray-500 dark:text-gray-400 truncate">{{ fmtNumber(Math.round(bar.total)) }}</div>
-              </div>
+            <div v-if="data?.revenue_chart?.length" class="h-52">
+              <Line :key="revenueChartKey" :data="revenueChartData" :options="revenueChartOptions" />
             </div>
           </div>
         </div>
