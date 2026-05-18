@@ -534,7 +534,7 @@
                       v-if="customerDocuments.length !== countableDocuments.length"
                       class="text-xs font-normal text-gray-400 dark:text-gray-500 ml-1"
                     >
-                      (sur {{ customerDocuments.length }} — devis et annulés exclus)
+                      (sur {{ customerDocuments.length }} — factures{{ paiementSurBl ? ' + BL' : '' }} uniquement)
                     </span>
                   </td>
                   <td class="py-2.5 px-3 text-right font-mono">
@@ -970,7 +970,7 @@
                       v-if="showDocuments.length !== countableShowDocuments.length"
                       class="text-xs font-normal text-gray-400 dark:text-gray-500 ml-1"
                     >
-                      (sur {{ showDocuments.length }} — devis et annulés exclus)
+                      (sur {{ showDocuments.length }} — factures{{ paiementSurBl ? ' + BL' : '' }} uniquement)
                     </span>
                   </td>
                   <td class="py-2.5 px-3 text-right font-mono">
@@ -1601,15 +1601,20 @@ const customerPayments = computed(() => {
 })
 
 // Documents that should weigh in on the cumulative totals shown in the modal
-// footer. Quotes (Devis = QuoteSale) are not financial commitments yet, and
-// cancelled/draft documents never actually posted to the books — so all three
-// are excluded from the sum. Billed BLs (converted to invoice) are also
-// excluded to prevent double-counting: the invoice carries the amount, not
-// the BL. They remain visible in the table for history.
+// footer. Only Factures (InvoiceSale) are always counted. BLs (DeliveryNote)
+// are counted only when "paiement sur BL" is active. Billed BLs (converted
+// to invoice) are always excluded to prevent double-counting.
+// Quotes, customer orders, and cancelled/draft documents are excluded.
+const countableDocTypes = computed(() => {
+  const types = ['InvoiceSale']
+  if (paiementSurBl.value) types.push('DeliveryNote')
+  return types
+})
+
 const countableDocuments = computed(() =>
   customerDocuments.value.filter(
     (inv: any) =>
-      inv.document_type !== 'QuoteSale' &&
+      countableDocTypes.value.includes(inv.document_type) &&
       inv.status !== 'cancelled' &&
       inv.status !== 'draft' &&
       !isBilledBl(inv),
@@ -1697,13 +1702,14 @@ const showPayments = computed(() => {
   return payments.sort((a, b) => new Date(b.paid_at).getTime() - new Date(a.paid_at).getTime())
 })
 
-// Same exclusion logic as the edit modal: ignore quotes, cancelled and drafts.
+// Same logic as the edit modal: only Factures + conditionally BLs.
 const countableShowDocuments = computed(() =>
   showDocuments.value.filter(
     (inv: any) =>
-      inv.document_type !== 'QuoteSale' &&
+      countableDocTypes.value.includes(inv.document_type) &&
       inv.status !== 'cancelled' &&
-      inv.status !== 'draft',
+      inv.status !== 'draft' &&
+      !isBilledBl(inv),
   ),
 )
 const showTotalTTC = computed(() =>
