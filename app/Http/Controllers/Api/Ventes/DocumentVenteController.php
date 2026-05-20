@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Ventes\StoreDocumentVenteRequest;
 use App\Models\DocumentHeader;
 use App\Models\Payment;
-use App\Models\Setting;
 use App\Models\ThirdPartner;
 use App\Repositories\Contracts\DocumentIncrementorRepositoryInterface;
 use App\Services\DocumentIncrementorService;
@@ -154,7 +153,7 @@ class DocumentVenteController extends Controller
             $this->stockService->applyDocumentMovements($bl);
             $bl->update(['status' => 'confirmed']);
 
-            if (Setting::get('ventes', 'paiement_sur_bl', 'false') === 'true' && $bl->thirdPartner_id) {
+            if ($bl->thirdPartner_id) {
                 $bl->loadMissing('footer', 'thirdPartner');
                 if ($bl->thirdPartner && $bl->footer?->total_ttc > 0) {
                     $bl->thirdPartner->recalculateEncours();
