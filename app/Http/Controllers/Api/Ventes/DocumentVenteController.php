@@ -157,7 +157,19 @@ class DocumentVenteController extends Controller
                 ->where('status', 'pending')
                 ->exists();
 
+            \Illuminate\Support\Facades\Log::info('BL Confirmation Debug', [
+                'bl_id' => $bl->id,
+                'bl_ref' => $bl->reference,
+                'warehouse_id' => $bl->warehouse_id,
+                'lignes_count' => $bl->lignes->count(),
+                'has_pending_movements' => $hasPendingMovements,
+            ]);
+
             if (!$hasPendingMovements && $bl->lignes->isNotEmpty()) {
+                \Illuminate\Support\Facades\Log::info('Creating pending movements for BL', [
+                    'bl_id' => $bl->id,
+                    'bl_ref' => $bl->reference,
+                ]);
                 $this->stockService->processDocument($bl, pending: true);
             }
 

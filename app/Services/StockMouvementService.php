@@ -30,11 +30,27 @@ class StockMouvementService
      */
     public function processDocument(DocumentHeader $document, bool $pending = false): void
     {
+        Log::info('StockMouvementService.processDocument started', [
+            'document_id' => $document->id,
+            'document_ref' => $document->reference,
+            'document_type' => $document->document_type,
+            'warehouse_id' => $document->warehouse_id,
+            'pending' => $pending,
+        ]);
+
         if (!$document->warehouse_id) {
+            Log::warning('Document has no warehouse_id, skipping processDocument', [
+                'document_id' => $document->id,
+            ]);
             return;
         }
 
         $document->loadMissing('lignes');
+
+        Log::info('Document lignes loaded', [
+            'document_id' => $document->id,
+            'lignes_count' => $document->lignes->count(),
+        ]);
 
         [$direction, $reason, $label] = match ($document->document_type) {
             'DeliveryNote'         => ['out', 'sale_delivery',     'Sortie auto BL '     . $document->reference],
@@ -50,6 +66,10 @@ class StockMouvementService
         };
 
         if (!$direction) {
+            Log::info('No direction matched for document type', [
+                'document_id' => $document->id,
+                'document_type' => $document->document_type,
+            ]);
             if ($document->document_type === 'StockAdjustmentNote') {
                 $this->processAdjustment($document);
             } elseif ($document->document_type === 'StockTransfer') {
