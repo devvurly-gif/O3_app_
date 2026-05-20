@@ -127,6 +127,18 @@ class DocumentAchatController extends Controller
         }
 
         DB::transaction(function () use ($br) {
+            $br->loadMissing('lignes');
+
+            // If no pending movements exist, create them (handles BRs created directly without PO)
+            $hasPendingMovements = $br->stockMouvements()
+                ->where('status', 'pending')
+                ->exists();
+
+            if (!$hasPendingMovements && $br->lignes->isNotEmpty()) {
+                $this->stockService->processDocument($br, pending: true);
+            }
+
+            // Apply the pending movements and update stock
             $this->stockService->applyDocumentMovements($br);
             $br->update(['status' => 'confirmed']);
         });
