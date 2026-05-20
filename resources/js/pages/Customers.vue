@@ -1466,7 +1466,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch, onMounted, h } from 'vue'
+import { ref, reactive, computed, watch, onMounted, onUnmounted, h } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useThirdPartnerStore } from '@/stores/thirdPartner'
@@ -1674,6 +1674,33 @@ const saving = ref(false)
 const deleting = ref(false)
 const editTarget = ref<any>(null)
 const deleteTarget = ref<any>(null)
+
+// ── WebSocket listener for encours updates ───────────────────────────────
+let currentPartnerChannel: any = null
+
+function setupPartnerListener() {
+  if (!editTarget.value?.id || !window.Echo) return
+
+  currentPartnerChannel = window.Echo.private(`partner.${editTarget.value.id}`)
+  currentPartnerChannel.listen('.encours-updated', (data: any) => {
+    if (form.id === data.partner_id) {
+      form.encours_actuel = data.encours_actuel
+      form.seuil_credit = data.seuil_credit
+    }
+  })
+}
+
+function cleanupPartnerListener() {
+  if (currentPartnerChannel && window.Echo) {
+    window.Echo.leave(`partner.${editTarget.value?.id}`)
+    currentPartnerChannel = null
+  }
+}
+
+watch(editTarget, (newVal, oldVal) => {
+  if (oldVal?.id) cleanupPartnerListener()
+  if (newVal?.id) setupPartnerListener()
+})
 
 // ── Show (read-only) modal state ─────────────────────────────────────────
 const showShowModal = ref(false)
@@ -2167,5 +2194,9 @@ onMounted(() => {
   loadPage()
   if (!priceLists.value.length) priceListStore.fetchAll()
   if (!settingStore.settings?.ventes) settingStore.fetchAll()
+})
+
+onUnmounted(() => {
+  cleanupPartnerListener()
 })
 </script>
