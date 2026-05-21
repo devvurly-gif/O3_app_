@@ -69,8 +69,7 @@ Route::prefix('auth')->group(function () {
     // so a throttle hit just returns 429 — no side-channel leak about
     // whether the email exists.
     Route::post('/login', [AuthController::class, 'login'])
-        ->middleware('throttle:5,1')
-        ->name('login');
+        ->middleware('throttle:5,1');
 });
 
 // ── Protected (any authenticated user) ────────────────────────────────────
