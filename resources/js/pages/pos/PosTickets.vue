@@ -25,9 +25,12 @@
         >
           <div>
             <div class="flex items-center gap-2 mb-1">
-              <span class="font-mono text-sm font-semibold text-gray-900 dark:text-white">
+              <button
+                class="font-mono text-sm font-semibold text-orange-500 hover:text-orange-700 hover:underline transition"
+                @click="openTicketDetail(ticket)"
+              >
                 {{ ticket.reference }}
-              </span>
+              </button>
               <span
                 class="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase"
                 :class="typeClass(ticket.document_type)"
@@ -77,6 +80,99 @@
         </div>
       </div>
     </div>
+
+    <!-- Ticket Detail Modal -->
+    <BaseModal v-model="showTicketDetailModal" :title="ticketDetail?.reference ?? 'Ticket'" size="lg">
+      <div v-if="ticketDetailLoading" class="flex items-center justify-center py-12">
+        <svg class="w-6 h-6 animate-spin text-orange-500" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+        </svg>
+      </div>
+      <div v-else-if="ticketDetail" class="space-y-4">
+        <!-- Ticket Header Info -->
+        <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+            <div>
+              <p class="text-gray-500 dark:text-gray-400 text-xs uppercase font-semibold mb-1">Type</p>
+              <p class="font-medium text-gray-900 dark:text-white">{{ typeLabel(ticketDetail.document_type) }}</p>
+            </div>
+            <div>
+              <p class="text-gray-500 dark:text-gray-400 text-xs uppercase font-semibold mb-1">Date</p>
+              <p class="font-medium text-gray-900 dark:text-white">{{ new Date(ticketDetail.created_at).toLocaleString('fr-FR') }}</p>
+            </div>
+            <div>
+              <p class="text-gray-500 dark:text-gray-400 text-xs uppercase font-semibold mb-1">Statut</p>
+              <span
+                class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                :class="statusClass(ticketDetail.status)"
+              >
+                {{ statusLabel(ticketDetail.status) }}
+              </span>
+            </div>
+            <div>
+              <p class="text-gray-500 dark:text-gray-400 text-xs uppercase font-semibold mb-1">Total TTC</p>
+              <p class="font-mono font-semibold text-gray-900 dark:text-white">
+                {{ ticketDetail.footer ? Number(ticketDetail.footer.total_ttc).toFixed(2) : '0.00' }} MAD
+              </p>
+            </div>
+          </div>
+          <div v-if="ticketDetail.third_partner && ticketDetail.third_partner.tp_code !== 'CLIENT-COMPTOIR'" class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Client</p>
+            <p class="font-medium text-gray-900 dark:text-white">{{ ticketDetail.third_partner.tp_title }}</p>
+          </div>
+        </div>
+
+        <!-- Ticket Lines Table -->
+        <div v-if="ticketDetail.lignes && ticketDetail.lignes.length > 0" class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-gray-200 dark:border-gray-700 text-left bg-gray-50 dark:bg-gray-900">
+                <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase">Désignation</th>
+                <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase text-right">Quantité</th>
+                <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase text-right">P.U.</th>
+                <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase text-right">Total</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+              <tr v-for="ligne in ticketDetail.lignes" :key="ligne.id" class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                <td class="py-2.5 px-3 text-gray-900 dark:text-white">
+                  <div class="flex items-start gap-2">
+                    <div class="flex-1">
+                      <p class="font-medium">{{ ligne.designation }}</p>
+                      <p v-if="ligne.product?.tp_code" class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        {{ ligne.product.tp_code }}
+                      </p>
+                    </div>
+                  </div>
+                </td>
+                <td class="py-2.5 px-3 text-right font-mono text-gray-600 dark:text-gray-400">
+                  {{ Number(ligne.quantity).toFixed(2) }} {{ ligne.unit }}
+                </td>
+                <td class="py-2.5 px-3 text-right font-mono text-gray-600 dark:text-gray-400">
+                  {{ Number(ligne.unit_price).toFixed(2) }}
+                </td>
+                <td class="py-2.5 px-3 text-right font-mono font-medium text-gray-900 dark:text-white">
+                  {{ (Number(ligne.quantity) * Number(ligne.unit_price) * (1 - (Number(ligne.discount_percent) ?? 0) / 100)).toFixed(2) }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div v-else class="text-center py-8 text-gray-500 dark:text-gray-400">
+          <p class="text-sm">Aucune ligne de détail</p>
+        </div>
+      </div>
+
+      <template #footer>
+        <button
+          class="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition"
+          @click="showTicketDetailModal = false"
+        >
+          Fermer
+        </button>
+      </template>
+    </BaseModal>
   </div>
 </template>
 
@@ -100,6 +196,9 @@ interface PosDocument {
 const posStore = usePosStore()
 const printing = ref<number | null>(null)
 const returning = ref<number | null>(null)
+const showTicketDetailModal = ref(false)
+const ticketDetail = ref<any>(null)
+const ticketDetailLoading = ref(false)
 
 function statusLabel(status: string): string {
   switch (status) {
@@ -183,6 +282,25 @@ async function returnTicket(ticket: PosDocument) {
     alert(e.response?.data?.message ?? 'Erreur lors du retour')
   } finally {
     returning.value = null
+  }
+}
+
+async function openTicketDetail(ticket: PosDocument) {
+  ticketDetail.value = ticket
+  ticketDetailLoading.value = true
+  showTicketDetailModal.value = true
+  // Ensure the ticket has lignes loaded
+  if (!ticket.lignes) {
+    try {
+      const { data } = await http.get(`/documents/${ticket.id}`)
+      ticketDetail.value = data
+    } catch {
+      // Silently continue with what we have
+    } finally {
+      ticketDetailLoading.value = false
+    }
+  } else {
+    ticketDetailLoading.value = false
   }
 }
 
