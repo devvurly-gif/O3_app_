@@ -1,6 +1,7 @@
 ﻿<script setup lang="ts">
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import http from '@/services/http'
+import BaseModal from '@/components/BaseModal.vue'
 import type { ThirdPartner, Warehouse, Product, DocumentIncrementor } from '@/types'
 
 interface LineItem {
@@ -343,11 +344,29 @@ const selectedPartnerName = computed(() => {
 
 const showPartnerDropdown = ref(false)
 const showProductDropdown = ref<number | null>(null)
+const showCustomerDetailModal = ref(false)
+const customerDetail = ref<any>(null)
+const customerDetailLoading = ref(false)
 
 function selectPartner(p: ThirdPartner) {
   form.thirdPartner_id = p.id
   partnerSearch.value = p.tp_title
   showPartnerDropdown.value = false
+}
+
+async function openCustomerDetail(partner: ThirdPartner) {
+  customerDetail.value = partner
+  customerDetailLoading.value = true
+  showCustomerDetailModal.value = true
+  // Fetch full customer details if needed
+  try {
+    const { data } = await http.get(`/third-partners/${partner.id}`)
+    customerDetail.value = data
+  } catch {
+    // Silently continue with what we have
+  } finally {
+    customerDetailLoading.value = false
+  }
 }
 
 function delayedClosePartner() {
@@ -535,7 +554,14 @@ function getStockClass(stock: number): string {
             v-if="selectedPartnerName && !showPartnerDropdown && partnerSearch !== selectedPartnerName"
             class="text-xs text-gray-500 dark:text-gray-400 mt-1"
           >
-            Sélectionné : {{ selectedPartnerName }}
+            Sélectionné :
+            <button
+              type="button"
+              class="text-orange-500 hover:text-orange-700 hover:underline transition font-medium"
+              @click="openCustomerDetail(partners.find(p => p.id === form.thirdPartner_id)!)"
+            >
+              {{ selectedPartnerName }}
+            </button>
           </div>
           <div
             v-if="showPartnerDropdown && filteredPartners.length"
@@ -931,4 +957,54 @@ function getStockClass(stock: number): string {
       </button>
     </div>
   </form>
+
+  <!-- Customer Detail Modal -->
+  <BaseModal v-model="showCustomerDetailModal" :title="customerDetail?.tp_title ?? 'Client'" size="lg">
+    <div v-if="customerDetailLoading" class="flex items-center justify-center py-12">
+      <svg class="w-6 h-6 animate-spin text-orange-500" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+      </svg>
+    </div>
+    <div v-else-if="customerDetail" class="space-y-4">
+      <!-- Customer Header Info -->
+      <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
+          <div>
+            <p class="text-gray-500 dark:text-gray-400 text-xs uppercase font-semibold mb-1">Code</p>
+            <p class="font-medium text-gray-900 dark:text-white">{{ customerDetail.tp_code }}</p>
+          </div>
+          <div>
+            <p class="text-gray-500 dark:text-gray-400 text-xs uppercase font-semibold mb-1">Raison Sociale</p>
+            <p class="font-medium text-gray-900 dark:text-white">{{ customerDetail.tp_title }}</p>
+          </div>
+          <div>
+            <p class="text-gray-500 dark:text-gray-400 text-xs uppercase font-semibold mb-1">Rôle</p>
+            <p class="font-medium text-gray-900 dark:text-white">{{ customerDetail.tp_Role }}</p>
+          </div>
+        </div>
+        <div v-if="customerDetail.tp_email" class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+          <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Email</p>
+          <p class="font-medium text-gray-900 dark:text-white">{{ customerDetail.tp_email }}</p>
+        </div>
+        <div v-if="customerDetail.tp_phone" class="mt-2">
+          <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Téléphone</p>
+          <p class="font-medium text-gray-900 dark:text-white">{{ customerDetail.tp_phone }}</p>
+        </div>
+        <div v-if="customerDetail.tp_address" class="mt-2">
+          <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Adresse</p>
+          <p class="font-medium text-gray-900 dark:text-white">{{ customerDetail.tp_address }}</p>
+        </div>
+      </div>
+    </div>
+
+    <template #footer>
+      <button
+        class="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition"
+        @click="showCustomerDetailModal = false"
+      >
+        Fermer
+      </button>
+    </template>
+  </BaseModal>
 </template>
