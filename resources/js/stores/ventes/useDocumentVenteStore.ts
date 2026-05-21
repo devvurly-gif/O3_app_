@@ -107,6 +107,25 @@ export const useDocumentVenteStore = defineStore('documentVente', () => {
   }
 
   /**
+   * Confirm a delivery note (BL) — applies stock movements.
+   */
+  async function confirmerBL(blId: number): Promise<DocumentHeader> {
+    loading.value = true
+    error.value = null
+    try {
+      const { data } = await http.put<DocumentHeader>(`/ventes/documents/${blId}/confirmer-bl`)
+      current.value = data
+      return data
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { message?: string } } }
+      error.value = err.response?.data?.message ?? 'Erreur de confirmation.'
+      throw e
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /**
    * Confirm delivery reception — creates the Invoice.
    */
   async function confirmerReception(
@@ -219,6 +238,7 @@ export const useDocumentVenteStore = defineStore('documentVente', () => {
     addPayment,
     genererBC,
     genererBL,
+    confirmerBL,
     confirmerReception,
   }
 })

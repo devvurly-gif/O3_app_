@@ -84,6 +84,25 @@ export const useDocumentAchatStore = defineStore('documentAchat', () => {
   }
 
   /**
+   * Confirm a receipt note (BR) — applies stock movements.
+   */
+  async function confirmerBR(brId: number): Promise<DocumentHeader> {
+    loading.value = true
+    error.value = null
+    try {
+      const { data } = await http.put<DocumentHeader>(`/achats/documents/${brId}/confirmer-br`)
+      current.value = data
+      return data
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { message?: string } } }
+      error.value = err.response?.data?.message ?? 'Erreur de confirmation.'
+      throw e
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /**
    * Confirm receipt and create the Purchase Invoice (Facture Achat).
    */
   async function confirmerFacture(
@@ -195,6 +214,7 @@ export const useDocumentAchatStore = defineStore('documentAchat', () => {
     remove,
     addPayment,
     genererReception,
+    confirmerBR,
     confirmerFacture,
   }
 })

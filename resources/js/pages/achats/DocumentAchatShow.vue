@@ -73,8 +73,14 @@ async function confirmDocument() {
   if (!doc.value) return
   actionLoading.value = true
   try {
-    await store.updateStatus(doc.value.id, 'confirmed')
-    doc.value = await store.fetchOne(doc.value.id)
+    // For ReceiptNotePurchase (BR), use the specific confirmerBR endpoint to apply stock movements
+    if (doc.value.document_type === 'ReceiptNotePurchase') {
+      doc.value = await store.confirmerBR(doc.value.id)
+    } else {
+      // For other document types, use generic status update
+      await store.updateStatus(doc.value.id, 'confirmed')
+      doc.value = await store.fetchOne(doc.value.id)
+    }
     toast.success('Document confirmé avec succès.')
   } catch { /* Axios interceptor shows toast */ }
   actionLoading.value = false
