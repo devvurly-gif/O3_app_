@@ -7,6 +7,7 @@ import { useFormat } from '@/composables/useFormat'
 interface Props {
   modelValue: boolean
   customerId: number | null
+  type?: 'customer' | 'supplier'
 }
 
 const props = defineProps<Props>()
@@ -172,7 +173,7 @@ function handleClose() {
 </script>
 
 <template>
-  <BaseModal :modelValue="modelValue" :title="customerDetail?.tp_title ?? 'Client'" size="xl" @update:modelValue="handleClose">
+  <BaseModal :modelValue="modelValue" :title="`${props.type === 'supplier' ? 'Fournisseur' : 'Client'} : ${customerDetail?.tp_title ?? ''}`" size="xl" @update:modelValue="handleClose">
     <!-- Tab Navigation -->
     <div class="border-b border-gray-200 dark:border-gray-700 -mt-2 mb-4">
       <nav class="flex gap-0 -mb-px overflow-x-auto">

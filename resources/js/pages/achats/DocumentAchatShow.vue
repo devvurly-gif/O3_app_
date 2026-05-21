@@ -650,6 +650,6 @@ const paymentProgress = computed(() => {
     </ConfirmModal>
 
     <!-- Supplier Detail Modal -->
-    <CustomerDetailModalFull v-model="showCustomerDetailModal" :customerId="selectedCustomer?.id" />
+    <CustomerDetailModalFull v-model="showCustomerDetailModal" :customerId="selectedCustomer?.id" type="supplier" />
   </div>
 </template>
