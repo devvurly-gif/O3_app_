@@ -20,6 +20,7 @@ const { fmt: formatNumber } = useFormat()
 const loading = ref(false)
 const customerDetail = ref<any>(null)
 const activeTab = ref<'info' | 'fiscal' | 'credit' | 'factures' | 'paiements' | 'statistiques'>('info')
+const expandedDocId = ref<number | null>(null)
 
 // Tabs
 const tabs = computed(() => {
@@ -84,6 +85,15 @@ async function loadCustomerDetail() {
     console.error('Failed to load customer details:', error)
   } finally {
     loading.value = false
+  }
+}
+
+// Toggle document expansion
+function toggleDocumentExpand(docId: number) {
+  if (expandedDocId.value === docId) {
+    expandedDocId.value = null
+  } else {
+    expandedDocId.value = docId
   }
 }
 
@@ -368,35 +378,81 @@ function handleClose() {
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-              <tr v-for="doc in customerDocuments" :key="doc.id" class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                <td class="py-2.5 px-3 font-mono text-xs">{{ doc.reference }}</td>
-                <td class="py-2.5 px-3 text-gray-600 dark:text-gray-400">{{ formatDate(doc.issued_at) }}</td>
-                <td class="py-2.5 px-3">
-                  <span
-                    class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
-                    :class="docTypeClass(doc.document_type)"
-                  >
-                    {{ docTypeLabel(doc.document_type) }}
-                  </span>
-                </td>
-                <td class="py-2.5 px-3 text-right font-mono font-medium">
-                  {{ formatNumber(doc.footer?.total_ttc ?? 0) }} <span class="text-gray-400 dark:text-gray-500 text-xs">DH</span>
-                </td>
-                <td
-                  class="py-2.5 px-3 text-right font-mono font-medium"
-                  :class="(doc.footer?.amount_due ?? 0) > 0 ? 'text-red-600' : 'text-emerald-600'"
+              <template v-for="doc in customerDocuments" :key="doc.id">
+                <tr
+                  class="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition"
+                  @click="toggleDocumentExpand(doc.id)"
                 >
-                  {{ formatNumber(doc.footer?.amount_due ?? 0) }} <span class="text-gray-400 dark:text-gray-500 text-xs">DH</span>
-                </td>
-                <td class="py-2.5 px-3 text-center">
-                  <span
-                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-                    :class="statusClass(doc.status)"
+                  <td class="py-2.5 px-3 font-mono text-xs">
+                    <button
+                      class="text-orange-500 hover:text-orange-700 hover:underline font-semibold transition"
+                      @click.stop="toggleDocumentExpand(doc.id)"
+                    >
+                      {{ doc.reference }}
+                    </button>
+                  </td>
+                  <td class="py-2.5 px-3 text-gray-600 dark:text-gray-400">{{ formatDate(doc.issued_at) }}</td>
+                  <td class="py-2.5 px-3">
+                    <span
+                      class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+                      :class="docTypeClass(doc.document_type)"
+                    >
+                      {{ docTypeLabel(doc.document_type) }}
+                    </span>
+                  </td>
+                  <td class="py-2.5 px-3 text-right font-mono font-medium">
+                    {{ formatNumber(doc.footer?.total_ttc ?? 0) }} <span class="text-gray-400 dark:text-gray-500 text-xs">DH</span>
+                  </td>
+                  <td
+                    class="py-2.5 px-3 text-right font-mono font-medium"
+                    :class="(doc.footer?.amount_due ?? 0) > 0 ? 'text-red-600' : 'text-emerald-600'"
                   >
-                    {{ statusLabel(doc.status, doc.document_type) }}
-                  </span>
-                </td>
-              </tr>
+                    {{ formatNumber(doc.footer?.amount_due ?? 0) }} <span class="text-gray-400 dark:text-gray-500 text-xs">DH</span>
+                  </td>
+                  <td class="py-2.5 px-3 text-center">
+                    <span
+                      class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                      :class="statusClass(doc.status)"
+                    >
+                      {{ statusLabel(doc.status, doc.document_type) }}
+                    </span>
+                  </td>
+                </tr>
+                <!-- Expanded details row -->
+                <tr v-if="expandedDocId === doc.id" class="bg-gray-50 dark:bg-gray-800">
+                  <td colspan="6" class="py-4 px-4">
+                    <div class="space-y-3">
+                      <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                          <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Montant HT</p>
+                          <p class="font-mono font-medium">{{ formatNumber(doc.footer?.total_ht ?? 0) }} DH</p>
+                        </div>
+                        <div>
+                          <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Remise</p>
+                          <p class="font-mono font-medium">{{ formatNumber(doc.footer?.total_discount ?? 0) }} DH</p>
+                        </div>
+                        <div>
+                          <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">TVA</p>
+                          <p class="font-mono font-medium">{{ formatNumber(doc.footer?.total_tax ?? 0) }} DH</p>
+                        </div>
+                        <div>
+                          <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Payé</p>
+                          <p class="font-mono font-medium text-emerald-600">{{ formatNumber(doc.footer?.amount_paid ?? 0) }} DH</p>
+                        </div>
+                      </div>
+                      <div v-if="doc.lignes && doc.lignes.length" class="border-t pt-3">
+                        <p class="text-xs font-semibold text-gray-600 dark:text-gray-300 mb-2">Articles</p>
+                        <div class="space-y-1 text-xs">
+                          <div v-for="ligne in doc.lignes" :key="ligne.id" class="flex justify-between text-gray-600 dark:text-gray-400">
+                            <span>{{ ligne.product?.designation ?? 'Produit' }} x {{ ligne.quantity }}</span>
+                            <span class="font-mono">{{ formatNumber(ligne.total ?? 0) }} DH</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </template>
             </tbody>
             <tfoot>
               <tr class="border-t-2 border-gray-200 dark:border-gray-700 font-semibold bg-gray-50 dark:bg-gray-900">
