@@ -243,7 +243,32 @@ class DocumentVenteController extends Controller
             return response()->json(['message' => 'Ce document n\'est pas un Bon de Livraison.'], 422);
         }
 
-        if (!in_array($bl->status, ['confirmed', 'delivered'])) {
+        // If BL is still in draft, confirm it first (auto-apply stock movements)
+        if ($bl->status === 'draft') {
+            DB::transaction(function () use ($bl) {
+                $bl->loadMissing('lignes');
+
+                // If no pending movements exist, create them (handles BLs created directly without BC)
+                $hasPendingMovements = $bl->stockMouvements()
+                    ->where('status', 'pending')
+                    ->exists();
+
+                if (!$hasPendingMovements && $bl->lignes->isNotEmpty()) {
+                    $this->stockService->processDocument($bl, pending: true);
+                }
+
+                // Apply the pending movements and update stock
+                $this->stockService->applyDocumentMovements($bl);
+                $bl->update(['status' => 'confirmed']);
+
+                if ($bl->thirdPartner_id) {
+                    $bl->loadMissing('footer', 'thirdPartner');
+                    if ($bl->thirdPartner && $bl->footer?->total_ttc > 0) {
+                        $bl->thirdPartner->recalculateEncours();
+                    }
+                }
+            });
+        } elseif (!in_array($bl->status, ['confirmed', 'delivered'])) {
             return response()->json(['message' => 'Ce BL doit être confirmé avant d\'être facturé. Statut : ' . $bl->status], 422);
         }
 

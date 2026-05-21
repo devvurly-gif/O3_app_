@@ -201,7 +201,25 @@ class DocumentAchatController extends Controller
             return response()->json(['message' => 'Ce document n\'est pas un Bon de Réception.'], 422);
         }
 
-        if ($br->status !== 'confirmed') {
+        // If BR is still in draft, confirm it first (auto-apply stock movements)
+        if ($br->status === 'draft') {
+            DB::transaction(function () use ($br) {
+                $br->loadMissing('lignes');
+
+                // If no pending movements exist, create them (handles BRs created directly without PO)
+                $hasPendingMovements = $br->stockMouvements()
+                    ->where('status', 'pending')
+                    ->exists();
+
+                if (!$hasPendingMovements && $br->lignes->isNotEmpty()) {
+                    $this->stockService->processDocument($br, pending: true);
+                }
+
+                // Apply the pending movements and update stock
+                $this->stockService->applyDocumentMovements($br);
+                $br->update(['status' => 'confirmed']);
+            });
+        } elseif ($br->status !== 'confirmed') {
             return response()->json(['message' => 'Ce BR doit être confirmé avant d\'être facturé. Statut : ' . $br->status], 422);
         }
 
