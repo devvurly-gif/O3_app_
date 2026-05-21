@@ -18,29 +18,32 @@ class DocumentSeeder extends Seeder
 {
     public function run(): void
     {
-        $admin   = User::where('email', 'admin@o2app.ma')->first();
-        $cashier = User::where('email', 'cashier@o2app.ma')->first();
+        $admin   = User::where('email', 'like', 'admin@%')->first();
+        $cashier = User::where('email', 'like', 'cashier@%')->first();
         $mainWh  = Warehouse::first();
 
         $incInvoice  = DocumentIncrementor::where('di_model', 'InvoiceSale')->first();
         $incBC       = DocumentIncrementor::where('di_model', 'PurchaseOrder')->first();
         $incDevis    = DocumentIncrementor::where('di_model', 'QuoteSale')->first();
+        $incFacAchat = DocumentIncrementor::where('di_model', 'InvoicePurchase')->first();
 
         $customer1 = ThirdPartner::where('tp_Ice_Number', '001234567890123')->first();
         $customer2 = ThirdPartner::where('tp_Ice_Number', '002345678901234')->first();
         $supplier1 = ThirdPartner::where('tp_Ice_Number', '004567890123456')->first();
 
-        $laptop   = Product::where('p_sku', 'HP-PB450-I5')->first();
-        $dellLap  = Product::where('p_sku', 'DELL-LAT5530-I7')->first();
-        $printer  = Product::where('p_sku', 'CAN-PIXMA-G3420')->first();
-        $ink      = Product::where('p_sku', 'CAN-INK-PG545')->first();
-        $paper    = Product::where('p_sku', 'PAP-A4-80G')->first();
-        $mouse    = Product::where('p_sku', 'LOG-MXM3')->first();
+        // Pick the first 6 products regardless of SKU
+        $allProducts = Product::take(6)->get();
+        $prod1 = $allProducts[0] ?? null;
+        $prod2 = $allProducts[1] ?? null;
+        $prod3 = $allProducts[2] ?? null;
+        $prod4 = $allProducts[3] ?? null;
+        $prod5 = $allProducts[4] ?? null;
+        $prod6 = $allProducts[5] ?? null;
 
         // Abort early if required dependencies are missing
         if (! $admin || ! $cashier || ! $mainWh || ! $incInvoice || ! $incBC || ! $incDevis
             || ! $customer1 || ! $customer2 || ! $supplier1
-            || ! $laptop || ! $dellLap || ! $printer || ! $ink || ! $paper || ! $mouse
+            || ! $prod1 || ! $prod2 || ! $prod3 || ! $prod4 || ! $prod5 || ! $prod6
         ) {
             $this->command->warn('DocumentSeeder: skipped — one or more required records not found.');
             return;
@@ -49,14 +52,14 @@ class DocumentSeeder extends Seeder
         // ── 1. PAID INVOICE ───────────────────────────────────────
         DB::transaction(function () use (
             $incInvoice, $customer1, $admin, $mainWh,
-            $laptop, $printer, $ink
+            $prod1, $prod2, $prod3
         ) {
             if (DocumentHeader::where('reference', 'FAC-2025-0001')->exists()) return;
 
             $header = DocumentHeader::create([
                 'document_incrementor_id' => $incInvoice->id,
                 'reference'               => 'FAC-2025-0001',
-                'document_type'           => 'Invoice',
+                'document_type'           => 'InvoiceSale',
                 'document_title'          => 'Factures',
                 'thirdPartner_id'         => $customer1->id,
                 'company_role'            => 'customer',
@@ -70,40 +73,40 @@ class DocumentSeeder extends Seeder
 
             $lignes = [
                 [
-                    'product_id'       => $laptop->id,
+                    'product_id'       => $prod1->id,
                     'sort_order'       => 1,
                     'line_type'        => 'product',
-                    'designation'      => $laptop->p_title,
-                    'reference'        => $laptop->p_sku,
+                    'designation'      => $prod1->p_title,
+                    'reference'        => $prod1->p_sku ?? $prod1->p_code,
                     'quantity'         => 2,
                     'unit'             => 'pièce',
-                    'unit_price'       => $laptop->p_salePrice,
+                    'unit_price'       => $prod1->p_salePrice,
                     'discount_percent' => 5,
                     'tax_percent'      => 20,
                     'status'           => 'active',
                 ],
                 [
-                    'product_id'       => $printer->id,
+                    'product_id'       => $prod2->id,
                     'sort_order'       => 2,
                     'line_type'        => 'product',
-                    'designation'      => $printer->p_title,
-                    'reference'        => $printer->p_sku,
+                    'designation'      => $prod2->p_title,
+                    'reference'        => $prod2->p_sku ?? $prod2->p_code,
                     'quantity'         => 1,
                     'unit'             => 'pièce',
-                    'unit_price'       => $printer->p_salePrice,
+                    'unit_price'       => $prod2->p_salePrice,
                     'discount_percent' => 0,
                     'tax_percent'      => 20,
                     'status'           => 'active',
                 ],
                 [
-                    'product_id'       => $ink->id,
+                    'product_id'       => $prod3->id,
                     'sort_order'       => 3,
                     'line_type'        => 'product',
-                    'designation'      => $ink->p_title,
-                    'reference'        => $ink->p_sku,
+                    'designation'      => $prod3->p_title,
+                    'reference'        => $prod3->p_sku ?? $prod3->p_code,
                     'quantity'         => 5,
                     'unit'             => 'pièce',
-                    'unit_price'       => $ink->p_salePrice,
+                    'unit_price'       => $prod3->p_salePrice,
                     'discount_percent' => 10,
                     'tax_percent'      => 20,
                     'status'           => 'active',
@@ -166,14 +169,14 @@ class DocumentSeeder extends Seeder
         // ── 2. PARTIAL INVOICE ────────────────────────────────────
         DB::transaction(function () use (
             $incInvoice, $customer2, $cashier, $mainWh,
-            $dellLap, $mouse, $paper
+            $prod4, $prod5, $prod6
         ) {
             if (DocumentHeader::where('reference', 'FAC-2025-0002')->exists()) return;
 
             $header = DocumentHeader::create([
                 'document_incrementor_id' => $incInvoice->id,
                 'reference'               => 'FAC-2025-0002',
-                'document_type'           => 'Invoice',
+                'document_type'           => 'InvoiceSale',
                 'document_title'          => 'Factures',
                 'thirdPartner_id'         => $customer2->id,
                 'company_role'            => 'customer',
@@ -186,40 +189,40 @@ class DocumentSeeder extends Seeder
 
             $lignes = [
                 [
-                    'product_id'   => $dellLap->id,
+                    'product_id'   => $prod4->id,
                     'sort_order'   => 1,
                     'line_type'    => 'product',
-                    'designation'  => $dellLap->p_title,
-                    'reference'    => $dellLap->p_sku,
+                    'designation'  => $prod4->p_title,
+                    'reference'    => $prod4->p_sku ?? $prod4->p_code,
                     'quantity'     => 3,
                     'unit'         => 'pièce',
-                    'unit_price'   => $dellLap->p_salePrice,
+                    'unit_price'   => $prod4->p_salePrice,
                     'discount_percent' => 0,
                     'tax_percent'  => 20,
                     'status'       => 'active',
                 ],
                 [
-                    'product_id'   => $mouse->id,
+                    'product_id'   => $prod5->id,
                     'sort_order'   => 2,
                     'line_type'    => 'product',
-                    'designation'  => $mouse->p_title,
-                    'reference'    => $mouse->p_sku,
+                    'designation'  => $prod5->p_title,
+                    'reference'    => $prod5->p_sku ?? $prod5->p_code,
                     'quantity'     => 3,
                     'unit'         => 'pièce',
-                    'unit_price'   => $mouse->p_salePrice,
+                    'unit_price'   => $prod5->p_salePrice,
                     'discount_percent' => 0,
                     'tax_percent'  => 20,
                     'status'       => 'active',
                 ],
                 [
-                    'product_id'   => $paper->id,
+                    'product_id'   => $prod6->id,
                     'sort_order'   => 3,
                     'line_type'    => 'product',
-                    'designation'  => $paper->p_title,
-                    'reference'    => $paper->p_sku,
+                    'designation'  => $prod6->p_title,
+                    'reference'    => $prod6->p_sku ?? $prod6->p_code,
                     'quantity'     => 10,
-                    'unit'         => 'ramette',
-                    'unit_price'   => $paper->p_salePrice,
+                    'unit'         => 'pièce',
+                    'unit_price'   => $prod6->p_salePrice,
                     'discount_percent' => 5,
                     'tax_percent'  => 20,
                     'status'       => 'active',
@@ -278,14 +281,14 @@ class DocumentSeeder extends Seeder
 
         // ── 3. DRAFT QUOTE ────────────────────────────────────────
         DB::transaction(function () use (
-            $incDevis, $customer1, $admin, $mainWh, $dellLap, $mouse
+            $incDevis, $customer1, $admin, $mainWh, $prod2, $prod5
         ) {
             if (DocumentHeader::where('reference', 'DEV-2025-0001')->exists()) return;
 
             $header = DocumentHeader::create([
                 'document_incrementor_id' => $incDevis->id,
                 'reference'               => 'DEV-2025-0001',
-                'document_type'           => 'Quote',
+                'document_type'           => 'QuoteSale',
                 'document_title'          => 'Devis',
                 'thirdPartner_id'         => $customer1->id,
                 'company_role'            => 'customer',
@@ -299,27 +302,27 @@ class DocumentSeeder extends Seeder
 
             $lignes = [
                 [
-                    'product_id'       => $dellLap->id,
+                    'product_id'       => $prod2->id,
                     'sort_order'       => 1,
                     'line_type'        => 'product',
-                    'designation'      => $dellLap->p_title,
-                    'reference'        => $dellLap->p_sku,
+                    'designation'      => $prod2->p_title,
+                    'reference'        => $prod2->p_sku ?? $prod2->p_code,
                     'quantity'         => 5,
                     'unit'             => 'pièce',
-                    'unit_price'       => $dellLap->p_salePrice,
+                    'unit_price'       => $prod2->p_salePrice,
                     'discount_percent' => 8,
                     'tax_percent'      => 20,
                     'status'           => 'active',
                 ],
                 [
-                    'product_id'       => $mouse->id,
+                    'product_id'       => $prod5->id,
                     'sort_order'       => 2,
                     'line_type'        => 'product',
-                    'designation'      => $mouse->p_title,
-                    'reference'        => $mouse->p_sku,
+                    'designation'      => $prod5->p_title,
+                    'reference'        => $prod5->p_sku ?? $prod5->p_code,
                     'quantity'         => 5,
                     'unit'             => 'pièce',
-                    'unit_price'       => $mouse->p_salePrice,
+                    'unit_price'       => $prod5->p_salePrice,
                     'discount_percent' => 8,
                     'tax_percent'      => 20,
                     'status'           => 'active',
@@ -362,7 +365,7 @@ class DocumentSeeder extends Seeder
 
         // ── 4. PURCHASE ORDER ─────────────────────────────────────
         DB::transaction(function () use (
-            $incBC, $supplier1, $admin, $mainWh, $laptop, $dellLap
+            $incBC, $supplier1, $admin, $mainWh, $prod1, $prod3
         ) {
             if (DocumentHeader::where('reference', 'BC-2025-0001')->exists()) return;
 
@@ -383,27 +386,27 @@ class DocumentSeeder extends Seeder
 
             $lignes = [
                 [
-                    'product_id'       => $laptop->id,
+                    'product_id'       => $prod1->id,
                     'sort_order'       => 1,
                     'line_type'        => 'product',
-                    'designation'      => $laptop->p_title,
-                    'reference'        => $laptop->p_sku,
+                    'designation'      => $prod1->p_title,
+                    'reference'        => $prod1->p_sku ?? $prod1->p_code,
                     'quantity'         => 10,
                     'unit'             => 'pièce',
-                    'unit_price'       => $laptop->p_purchasePrice,
+                    'unit_price'       => $prod1->p_purchasePrice,
                     'discount_percent' => 3,
                     'tax_percent'      => 20,
                     'status'           => 'active',
                 ],
                 [
-                    'product_id'       => $dellLap->id,
+                    'product_id'       => $prod3->id,
                     'sort_order'       => 2,
                     'line_type'        => 'product',
-                    'designation'      => $dellLap->p_title,
-                    'reference'        => $dellLap->p_sku,
+                    'designation'      => $prod3->p_title,
+                    'reference'        => $prod3->p_sku ?? $prod3->p_code,
                     'quantity'         => 5,
                     'unit'             => 'pièce',
-                    'unit_price'       => $dellLap->p_purchasePrice,
+                    'unit_price'       => $prod3->p_purchasePrice,
                     'discount_percent' => 0,
                     'tax_percent'      => 20,
                     'status'           => 'active',
@@ -444,5 +447,105 @@ class DocumentSeeder extends Seeder
 
             $incBC->increment('nextTrick');
         });
+
+        // ── 5. PURCHASE INVOICE (InvoicePurchase) ─────────────────
+        if ($incFacAchat) {
+            DB::transaction(function () use (
+                $incFacAchat, $supplier1, $admin, $mainWh, $prod1, $prod2, $prod6
+            ) {
+                if (DocumentHeader::where('reference', 'FA-2025-0001')->exists()) return;
+
+                $header = DocumentHeader::create([
+                    'document_incrementor_id' => $incFacAchat->id,
+                    'reference'               => 'FA-2025-0001',
+                    'document_type'           => 'InvoicePurchase',
+                    'document_title'          => 'Facture Achat',
+                    'thirdPartner_id'         => $supplier1->id,
+                    'company_role'            => 'supplier',
+                    'user_id'                 => $admin->id,
+                    'warehouse_id'            => $mainWh->id,
+                    'status'                  => 'confirmed',
+                    'issued_at'               => now()->subDays(7),
+                    'due_at'                  => now()->addDays(30),
+                    'notes'                   => 'Facture fournisseur Delta Import',
+                ]);
+
+                $lignes = [
+                    [
+                        'product_id'       => $prod1->id,
+                        'sort_order'       => 1,
+                        'line_type'        => 'product',
+                        'designation'      => $prod1->p_title,
+                        'reference'        => $prod1->p_sku ?? $prod1->p_code,
+                        'quantity'         => 20,
+                        'unit'             => 'pièce',
+                        'unit_price'       => $prod1->p_purchasePrice,
+                        'discount_percent' => 5,
+                        'tax_percent'      => 20,
+                        'status'           => 'active',
+                    ],
+                    [
+                        'product_id'       => $prod2->id,
+                        'sort_order'       => 2,
+                        'line_type'        => 'product',
+                        'designation'      => $prod2->p_title,
+                        'reference'        => $prod2->p_sku ?? $prod2->p_code,
+                        'quantity'         => 15,
+                        'unit'             => 'pièce',
+                        'unit_price'       => $prod2->p_purchasePrice,
+                        'discount_percent' => 0,
+                        'tax_percent'      => 20,
+                        'status'           => 'active',
+                    ],
+                    [
+                        'product_id'       => $prod6->id,
+                        'sort_order'       => 3,
+                        'line_type'        => 'product',
+                        'designation'      => $prod6->p_title,
+                        'reference'        => $prod6->p_sku ?? $prod6->p_code,
+                        'quantity'         => 50,
+                        'unit'             => 'pièce',
+                        'unit_price'       => $prod6->p_purchasePrice,
+                        'discount_percent' => 0,
+                        'tax_percent'      => 20,
+                        'status'           => 'active',
+                    ],
+                ];
+
+                $totalHt = 0; $totalDiscount = 0; $totalTax = 0; $totalTtc = 0;
+
+                foreach ($lignes as $ligneData) {
+                    $base        = $ligneData['quantity'] * $ligneData['unit_price'];
+                    $discountAmt = $base * ($ligneData['discount_percent'] / 100);
+                    $ht          = $base - $discountAmt;
+                    $tax         = $ht * ($ligneData['tax_percent'] / 100);
+                    $ttc         = $ht + $tax;
+
+                    $ligneData['total_ligne_ht']     = $ht;
+                    $ligneData['total_tax']          = $tax;
+                    $ligneData['total_ttc']          = $ttc;
+                    $ligneData['document_header_id'] = $header->id;
+
+                    DocumentLigne::create($ligneData);
+                    $totalHt       += $ht;
+                    $totalDiscount += $discountAmt;
+                    $totalTax      += $tax;
+                    $totalTtc      += $ttc;
+                }
+
+                DocumentFooter::create([
+                    'document_header_id' => $header->id,
+                    'total_ht'           => $totalHt,
+                    'total_discount'     => $totalDiscount,
+                    'total_tax'          => $totalTax,
+                    'total_ttc'          => $totalTtc,
+                    'amount_paid'        => 0,
+                    'amount_due'         => $totalTtc,
+                    'payment_method'     => 'bank_transfer',
+                ]);
+
+                $incFacAchat->increment('nextTrick');
+            });
+        }
     }
 }

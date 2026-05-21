@@ -22,12 +22,12 @@ class DocumentIncrementorService
         $token    = (string) Str::uuid();
         $cacheKey = "di_reserve_{$incrementor->id}";
 
-        $reserved = Cache::get($cacheKey);
+        $reserved = $this->cacheGet($cacheKey);
         $nextNum  = $reserved['num'] ?? $incrementor->nextTrick;
 
         $reference = $this->formatReference($incrementor->template, $nextNum);
 
-        Cache::put($cacheKey, ['num' => $nextNum, 'token' => $token], now()->addMinutes(30));
+        $this->cachePut($cacheKey, ['num' => $nextNum, 'token' => $token], now()->addMinutes(30));
 
         return [
             'token'     => $token,
@@ -45,7 +45,7 @@ class DocumentIncrementorService
     public function confirmNext(DocumentIncrementor $incrementor, string $token): array|false
     {
         $cacheKey = "di_reserve_{$incrementor->id}";
-        $reserved = Cache::get($cacheKey);
+        $reserved = $this->cacheGet($cacheKey);
 
         if (!$reserved || $reserved['token'] !== $token) {
             return false;
@@ -54,7 +54,7 @@ class DocumentIncrementorService
         $incrementor->nextTrick = $reserved['num'] + 1;
         $incrementor->save();
 
-        Cache::forget($cacheKey);
+        $this->cacheForget($cacheKey);
 
         return [
             'reference' => $this->formatReference($incrementor->template, $reserved['num']),
@@ -84,5 +84,32 @@ class DocumentIncrementorService
         }, $ref);
 
         return $ref;
+    }
+
+    private function cacheGet(string $key): mixed
+    {
+        try {
+            return Cache::get($key);
+        } catch (\BadMethodCallException) {
+            return null;
+        }
+    }
+
+    private function cachePut(string $key, mixed $value, mixed $ttl): void
+    {
+        try {
+            Cache::put($key, $value, $ttl);
+        } catch (\BadMethodCallException) {
+            // file driver + Stancl tagging — reservation skipped
+        }
+    }
+
+    private function cacheForget(string $key): void
+    {
+        try {
+            Cache::forget($key);
+        } catch (\BadMethodCallException) {
+            // ignore
+        }
     }
 }

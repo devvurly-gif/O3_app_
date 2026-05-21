@@ -318,6 +318,7 @@ async function doLogout() {
 
 // ── Icons ─────────────────────────────────────────────────────────────────
 const icons = {
+  scan: `<svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v2m10-4h2a2 2 0 012 2v2M5 15v2a2 2 0 002 2h2m10 0h2a2 2 0 002-2v-2M4 12h16"/></svg>`,
   dashboard: `<svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>`,
   products: `<svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0v10l-8 4m0-14L4 17m8 4V10"/></svg>`,
   categories: `<svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>`,
@@ -414,6 +415,12 @@ const tenantNavItems = computed((): SidebarLink[] => {
       icon: icons.listdoc,
       groupKey_ref: 'nav.purchases',
       groupFirst: true,
+    },
+    {
+      to: '/achats/ocr-import',
+      labelKey: 'nav.ocrImport',
+      icon: icons.scan,
+      groupKey_ref: 'nav.purchases',
     },
 
     { groupKey: 'nav.stock', groupIcon: groupIcons.stock },

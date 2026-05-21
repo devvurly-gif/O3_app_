@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080" viewBox="0 0 1080 1080">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e3a8a"/>
+      <stop offset="100%" style="stop-color:#2563eb"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1080" height="1080" fill="url(#bg)"/>
+
+  <!-- Decorative circles -->
+  <circle cx="950" cy="150" r="200" fill="rgba(255,255,255,0.04)"/>
+  <circle cx="130" cy="930" r="180" fill="rgba(255,255,255,0.04)"/>
+
+  <!-- Top bar -->
+  <rect x="0" y="0" width="1080" height="6" fill="#f59e0b"/>
+
+  <!-- Logo -->
+  <circle cx="540" cy="200" r="60" fill="white"/>
+  <text x="540" y="220" text-anchor="middle" fill="#2563eb" font-size="48" font-weight="bold" font-family="Arial, sans-serif">O3</text>
+
+  <!-- Big number -->
+  <text x="540" y="400" text-anchor="middle" fill="#fbbf24" font-size="120" font-weight="bold" font-family="Arial, sans-serif">5</text>
+
+  <!-- Main text -->
+  <text x="540" y="500" text-anchor="middle" fill="white" font-size="44" font-weight="bold" font-family="Arial, sans-serif">raisons d'abandonner</text>
+  <text x="540" y="560" text-anchor="middle" fill="white" font-size="44" font-weight="bold" font-family="Arial, sans-serif">Excel pour gerer</text>
+  <text x="540" y="620" text-anchor="middle" fill="#fbbf24" font-size="44" font-weight="bold" font-family="Arial, sans-serif">votre entreprise</text>
+
+  <!-- Swipe indicator -->
+  <text x="540" y="800" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="20" font-family="Arial, sans-serif">Swipez pour decouvrir &gt;&gt;&gt;</text>
+
+  <!-- Dots indicator -->
+  <circle cx="490" cy="870" r="6" fill="white"/>
+  <circle cx="510" cy="870" r="6" fill="rgba(255,255,255,0.3)"/>
+  <circle cx="530" cy="870" r="6" fill="rgba(255,255,255,0.3)"/>
+  <circle cx="550" cy="870" r="6" fill="rgba(255,255,255,0.3)"/>
+  <circle cx="570" cy="870" r="6" fill="rgba(255,255,255,0.3)"/>
+  <circle cx="590" cy="870" r="6" fill="rgba(255,255,255,0.3)"/>
+
+  <!-- Bottom bar -->
+  <rect x="0" y="1074" width="1080" height="6" fill="#f59e0b"/>
+</svg>

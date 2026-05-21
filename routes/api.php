@@ -227,6 +227,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('achats/documents/{br}/confirmer-facture',              [DocumentAchatController::class, 'confirmer_facture']);
         Route::post('achats/documents/{br}/annuler',                       [DocumentAchatController::class, 'annuler_br']);
         Route::post('achats/documents/{document}/retour-fournisseur',      [DocumentAchatController::class, 'retour_fournisseur']);
+
+        // ── OCR Invoice Import ──────────────────────────────────────
+        Route::post('achats/ocr/parse',   [\App\Http\Controllers\Api\Achats\OcrInvoiceController::class, 'parse']);
+        Route::post('achats/ocr/confirm', [\App\Http\Controllers\Api\Achats\OcrInvoiceController::class, 'confirm']);
     });
 
     // ── Stock write (admin, manager, warehouse) ───────────────────────────

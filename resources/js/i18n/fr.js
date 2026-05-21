@@ -86,6 +86,7 @@ export default {
     newStock: 'Nouveau mouvement',
     documentsVente: 'Documents de Vente',
     documentsAchat: "Documents d'Achat",
+    ocrImport: 'Import OCR',
     transferts: 'Transferts',
     operations: 'Opérations',
     mouvements: 'Mouvements',

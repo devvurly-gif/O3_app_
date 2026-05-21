@@ -108,6 +108,15 @@ function viewDocument(doc: Record<string, unknown>) {
           <span class="hidden sm:inline">{{ exporting ? 'Export...' : 'Export Excel' }}</span>
         </button>
         <router-link
+          to="/achats/ocr-import"
+          class="inline-flex items-center gap-2 px-3 py-2 border border-teal-600 text-teal-600 dark:text-teal-400 dark:border-teal-400 text-sm font-medium rounded-lg hover:bg-teal-50 dark:hover:bg-teal-900/20 transition"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <span class="hidden sm:inline">Import OCR</span>
+        </router-link>
+        <router-link
           to="/achats/documents/create"
           class="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700 transition"
         >

@@ -75,6 +75,7 @@ class ThirdPartnerController extends Controller
                 'documentHeaders.footer',
                 'documentHeaders.payments',
                 'documentHeaders.lignes.product',
+                'documentHeaders.children:id,reference,document_type,parent_id',
             ])
         );
     }

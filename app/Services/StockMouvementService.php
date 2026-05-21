@@ -175,11 +175,13 @@ class StockMouvementService
     {
         $movements = $this->mouvements->forDocumentByStatus($document->id, 'pending');
 
-        Log::info('StockMouvementService.applyDocumentMovements started', [
+        Log::warning('★★★ APPLY_MOVEMENTS CRITICAL ★★★', [
             'document_id' => $document->id,
             'document_ref' => $document->reference,
             'document_type' => $document->document_type,
             'pending_movements_count' => $movements->count(),
+            'total_movements' => $this->mouvements->forDocument($document->id)->count(),
+            'all_statuses' => $this->mouvements->forDocument($document->id)->pluck('status')->toArray(),
         ]);
 
         foreach ($movements as $mouvement) {

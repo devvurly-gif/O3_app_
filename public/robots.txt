@@ -1,2 +1,18 @@
+# O3 App — robots.txt
+# Landing page & public assets: indexable
+# Tenant dashboards & API: blocked
+
 User-agent: *
-Disallow:
+Allow: /
+Disallow: /api/
+Disallow: /central/
+Disallow: /dashboard
+Disallow: /settings
+Disallow: /login
+Disallow: /register
+Disallow: /sanctum/
+Disallow: /telescope
+Disallow: /_debugbar
+
+# Sitemap
+Sitemap: https://o3app.ma/sitemap.xml

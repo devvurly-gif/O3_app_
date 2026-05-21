@@ -15,4 +15,7 @@ export default defineConfig({
     resolve: {
         alias: { '@': '/resources/js' },
     },
+    optimizeDeps: {
+        include: ['pdfjs-dist'],
+    },
 })

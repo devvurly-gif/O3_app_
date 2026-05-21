@@ -15,32 +15,49 @@ class CacheService
 
     public static function remember(string $key, int $ttl, Closure $callback): mixed
     {
-        return Cache::remember($key, $ttl, $callback);
+        try {
+            return Cache::remember($key, $ttl, $callback);
+        } catch (\BadMethodCallException) {
+            // File/array driver does not support tagging (Stancl tenancy wraps with tags).
+            // Fall through to execute the callback directly.
+            return $callback();
+        }
     }
 
     public static function forget(string ...$keys): void
     {
         foreach ($keys as $key) {
-            Cache::forget($key);
+            try {
+                Cache::forget($key);
+            } catch (\BadMethodCallException) {
+                // Ignore — file driver with Stancl tenancy tagging
+            }
         }
     }
 
     public static function forgetByPrefix(string $prefix): void
     {
-        // File/array driver doesn't support tags, so we maintain a known list
-        $knownKeys = Cache::get("cache_keys:{$prefix}", []);
-        foreach ($knownKeys as $key) {
-            Cache::forget($key);
+        try {
+            $knownKeys = Cache::get("cache_keys:{$prefix}", []);
+            foreach ($knownKeys as $key) {
+                Cache::forget($key);
+            }
+            Cache::forget("cache_keys:{$prefix}");
+        } catch (\BadMethodCallException) {
+            // file driver + Stancl tenancy tagging
         }
-        Cache::forget("cache_keys:{$prefix}");
     }
 
     public static function trackKey(string $prefix, string $key): void
     {
-        $tracked = Cache::get("cache_keys:{$prefix}", []);
-        if (!in_array($key, $tracked)) {
-            $tracked[] = $key;
-            Cache::put("cache_keys:{$prefix}", $tracked, self::TTL_VERY_LONG);
+        try {
+            $tracked = Cache::get("cache_keys:{$prefix}", []);
+            if (!in_array($key, $tracked)) {
+                $tracked[] = $key;
+                Cache::put("cache_keys:{$prefix}", $tracked, self::TTL_VERY_LONG);
+            }
+        } catch (\BadMethodCallException) {
+            // file driver + Stancl tenancy tagging
         }
     }
 

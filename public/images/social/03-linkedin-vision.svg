@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="627" viewBox="0 0 1200 627">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e3a8a"/>
+      <stop offset="50%" style="stop-color:#1e40af"/>
+      <stop offset="100%" style="stop-color:#2563eb"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="627" fill="url(#bg)"/>
+
+  <!-- Morocco flag colors accent -->
+  <rect x="0" y="0" width="1200" height="5" fill="#c1272d"/>
+  <rect x="0" y="5" width="1200" height="3" fill="#006233"/>
+
+  <!-- Decorative -->
+  <circle cx="1050" cy="100" r="180" fill="rgba(255,255,255,0.03)"/>
+
+  <!-- Logo -->
+  <circle cx="100" cy="80" r="35" fill="white"/>
+  <text x="100" y="93" text-anchor="middle" fill="#2563eb" font-size="28" font-weight="bold" font-family="Arial, sans-serif">O3</text>
+
+  <!-- Headline -->
+  <text x="100" y="200" fill="white" font-size="46" font-weight="bold" font-family="Arial, sans-serif">Les PME marocaines meritent</text>
+  <text x="100" y="260" fill="#fbbf24" font-size="46" font-weight="bold" font-family="Arial, sans-serif">des outils a la hauteur</text>
+  <text x="100" y="320" fill="#fbbf24" font-size="46" font-weight="bold" font-family="Arial, sans-serif">de leurs ambitions.</text>
+
+  <!-- Features list -->
+  <g fill="rgba(255,255,255,0.85)" font-size="20" font-family="Arial, sans-serif">
+    <circle cx="120" cy="390" r="5" fill="#22c55e"/>
+    <text x="140" y="397">Interface en francais (bientot arabe)</text>
+
+    <circle cx="120" cy="425" r="5" fill="#22c55e"/>
+    <text x="140" y="432">Prix adaptes : a partir de 499 MAD/mois</text>
+
+    <circle cx="120" cy="460" r="5" fill="#22c55e"/>
+    <text x="140" y="467">Hebergement cloud securise</text>
+
+    <circle cx="120" cy="495" r="5" fill="#22c55e"/>
+    <text x="140" y="502">Facturation conforme aux normes marocaines</text>
+  </g>
+
+  <!-- Badge -->
+  <rect x="100" y="540" width="320" height="48" rx="24" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.25)" stroke-width="1"/>
+  <text x="260" y="570" text-anchor="middle" fill="white" font-size="16" font-weight="bold" font-family="Arial, sans-serif">Ne au Maroc, pour le Maroc</text>
+
+  <!-- Right side - Morocco star -->
+  <g transform="translate(900, 350)">
+    <polygon points="0,-100 22,-30 95,-30 35,15 58,85 0,42 -58,85 -35,15 -95,-30 -22,-30" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+  </g>
+
+  <!-- URL -->
+  <text x="900" y="560" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="18" font-family="Arial, sans-serif">o3app.ma</text>
+</svg>

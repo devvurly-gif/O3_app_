@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080" viewBox="0 0 1080 1080">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e3a8a"/>
+      <stop offset="100%" style="stop-color:#2563eb"/>
+    </linearGradient>
+  </defs>
+  <rect width="1080" height="1080" fill="url(#bg)"/>
+  <rect x="0" y="0" width="1080" height="6" fill="#f59e0b"/>
+  <circle cx="950" cy="150" r="200" fill="rgba(255,255,255,0.04)"/>
+
+  <!-- Number -->
+  <circle cx="540" cy="200" r="70" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+  <text x="540" y="225" text-anchor="middle" fill="#fbbf24" font-size="64" font-weight="bold" font-family="Arial, sans-serif">1</text>
+
+  <!-- Icon - scattered folders -->
+  <rect x="350" y="320" width="80" height="60" rx="8" fill="rgba(255,255,255,0.15)" transform="rotate(-10 390 350)"/>
+  <rect x="500" y="300" width="80" height="60" rx="8" fill="rgba(255,255,255,0.2)" transform="rotate(5 540 330)"/>
+  <rect x="650" y="330" width="80" height="60" rx="8" fill="rgba(255,255,255,0.15)" transform="rotate(15 690 360)"/>
+
+  <!-- Main text -->
+  <text x="540" y="500" text-anchor="middle" fill="white" font-size="42" font-weight="bold" font-family="Arial, sans-serif">Vos donnees sont</text>
+  <text x="540" y="560" text-anchor="middle" fill="#fbbf24" font-size="42" font-weight="bold" font-family="Arial, sans-serif">dispersees partout</text>
+
+  <!-- Solution -->
+  <rect x="140" y="640" width="800" height="120" rx="20" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+  <text x="180" y="685" fill="#22c55e" font-size="22" font-weight="bold" font-family="Arial, sans-serif">Avec O3 App :</text>
+  <text x="180" y="730" fill="rgba(255,255,255,0.9)" font-size="22" font-family="Arial, sans-serif">Tout est centralise dans une seule plateforme cloud</text>
+
+  <!-- Dots -->
+  <circle cx="490" cy="870" r="6" fill="rgba(255,255,255,0.3)"/>
+  <circle cx="510" cy="870" r="6" fill="white"/>
+  <circle cx="530" cy="870" r="6" fill="rgba(255,255,255,0.3)"/>
+  <circle cx="550" cy="870" r="6" fill="rgba(255,255,255,0.3)"/>
+  <circle cx="570" cy="870" r="6" fill="rgba(255,255,255,0.3)"/>
+  <circle cx="590" cy="870" r="6" fill="rgba(255,255,255,0.3)"/>
+
+  <rect x="0" y="1074" width="1080" height="6" fill="#f59e0b"/>
+</svg>

@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080" viewBox="0 0 1080 1080">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e3a8a"/>
+      <stop offset="100%" style="stop-color:#2563eb"/>
+    </linearGradient>
+  </defs>
+  <rect width="1080" height="1080" fill="url(#bg)"/>
+  <rect x="0" y="0" width="1080" height="6" fill="#f59e0b"/>
+
+  <!-- Logo -->
+  <circle cx="540" cy="100" r="45" fill="white"/>
+  <text x="540" y="115" text-anchor="middle" fill="#2563eb" font-size="36" font-weight="bold" font-family="Arial, sans-serif">O3</text>
+
+  <!-- Title -->
+  <text x="540" y="210" text-anchor="middle" fill="white" font-size="38" font-weight="bold" font-family="Arial, sans-serif">Combien coute un ERP</text>
+  <text x="540" y="260" text-anchor="middle" fill="#fbbf24" font-size="38" font-weight="bold" font-family="Arial, sans-serif">au Maroc ?</text>
+
+  <!-- Table header -->
+  <rect x="120" y="310" width="840" height="55" rx="12" fill="rgba(255,255,255,0.1)"/>
+  <text x="350" y="345" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-size="18" font-weight="bold" font-family="Arial, sans-serif">Solution</text>
+  <text x="730" y="345" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-size="18" font-weight="bold" font-family="Arial, sans-serif">Prix / mois</text>
+
+  <!-- Row 1 - SAP -->
+  <rect x="120" y="375" width="840" height="60" rx="0" fill="rgba(255,255,255,0.03)"/>
+  <text x="200" y="413" fill="rgba(255,255,255,0.7)" font-size="22" font-family="Arial, sans-serif">SAP Business One</text>
+  <text x="730" y="413" text-anchor="middle" fill="#ef4444" font-size="22" font-weight="bold" font-family="Arial, sans-serif">15,000+ MAD</text>
+
+  <!-- Row 2 - Odoo -->
+  <rect x="120" y="440" width="840" height="60" rx="0" fill="rgba(255,255,255,0.06)"/>
+  <text x="200" y="478" fill="rgba(255,255,255,0.7)" font-size="22" font-family="Arial, sans-serif">Odoo Enterprise</text>
+  <text x="730" y="478" text-anchor="middle" fill="#f97316" font-size="22" font-weight="bold" font-family="Arial, sans-serif">5,000+ MAD</text>
+
+  <!-- Row 3 - Sage -->
+  <rect x="120" y="505" width="840" height="60" rx="0" fill="rgba(255,255,255,0.03)"/>
+  <text x="200" y="543" fill="rgba(255,255,255,0.7)" font-size="22" font-family="Arial, sans-serif">Sage</text>
+  <text x="730" y="543" text-anchor="middle" fill="#f59e0b" font-size="22" font-weight="bold" font-family="Arial, sans-serif">3,000+ MAD</text>
+
+  <!-- Row 4 - O3 App (highlighted) -->
+  <rect x="110" y="575" width="860" height="75" rx="16" fill="rgba(34,197,94,0.15)" stroke="#22c55e" stroke-width="2"/>
+  <circle cx="170" cy="613" r="22" fill="white"/>
+  <text x="170" y="622" text-anchor="middle" fill="#2563eb" font-size="18" font-weight="bold" font-family="Arial, sans-serif">O3</text>
+  <text x="210" y="620" fill="white" font-size="24" font-weight="bold" font-family="Arial, sans-serif">O3 App Starter</text>
+  <text x="730" y="622" text-anchor="middle" fill="#22c55e" font-size="30" font-weight="bold" font-family="Arial, sans-serif">499 MAD</text>
+
+  <!-- Savings callout -->
+  <rect x="260" y="700" width="560" height="70" rx="35" fill="#f59e0b"/>
+  <text x="540" y="743" text-anchor="middle" fill="#1e3a8a" font-size="24" font-weight="bold" font-family="Arial, sans-serif">Jusqu'a 30x moins cher !</text>
+
+  <!-- Bottom text -->
+  <text x="540" y="840" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-size="20" font-family="Arial, sans-serif">Toutes les fonctionnalites essentielles</text>
+  <text x="540" y="870" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-size="20" font-family="Arial, sans-serif">a une fraction du prix.</text>
+
+  <!-- CTA -->
+  <text x="540" y="940" text-anchor="middle" fill="white" font-size="22" font-weight="bold" font-family="Arial, sans-serif">Essai gratuit 14 jours — o3app.ma</text>
+
+  <rect x="0" y="1074" width="1080" height="6" fill="#f59e0b"/>
+</svg>

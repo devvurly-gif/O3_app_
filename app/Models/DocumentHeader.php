@@ -86,6 +86,28 @@ class DocumentHeader extends Model
         return $this->hasMany(DocumentHeader::class, 'parent_id');
     }
 
+    /**
+     * Whether this BL has been converted to an invoice.
+     *
+     * Two indicators are checked because we have two sources of truth:
+     *  1. status === 'converted' is set explicitly when we invoice the
+     *     BL via `DocumentVenteController::confirmer_reception`.
+     *  2. The presence of an `InvoiceSale` child as a fallback for
+     *     historical BLs converted before the status field carried
+     *     'converted' (pre-2026-05-06).
+     *
+     * Used by frontend listings to grey out "billed" BLs and to skip
+     * them in any sales aggregate (avoiding double-accounting).
+     */
+    public function isBilled(): bool
+    {
+        if ($this->status === 'converted') {
+            return true;
+        }
+        return $this->document_type === 'DeliveryNote'
+            && $this->children()->where('document_type', 'InvoiceSale')->exists();
+    }
+
     public function lignes(): HasMany
     {
         return $this->hasMany(DocumentLigne::class, 'document_header_id')

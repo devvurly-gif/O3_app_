@@ -52,15 +52,15 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $this->command->info('');
-        $this->command->info('  o2_app seeded successfully!');
+        $this->command->info('  O3 App seeded successfully!');
         $this->command->info('');
         $this->command->table(
             ['Role', 'Email', 'Password'],
             [
-                ['Admin',      'admin@o2app.ma',     'Admin@1234'],
-                ['Manager',    'manager@o2app.ma',   'Manager@1234'],
-                ['Cashier',    'cashier@o2app.ma',   'Cashier@1234'],
-                ['Warehouse',  'warehouse@o2app.ma', 'Warehouse@1234'],
+                ['Admin',      'admin@o3app.ma',     'Admin@1234'],
+                ['Manager',    'manager@o3app.ma',   'Manager@1234'],
+                ['Cashier',    'cashier@o3app.ma',   'Cashier@1234'],
+                ['Warehouse',  'warehouse@o3app.ma', 'Warehouse@1234'],
             ]
         );
     }

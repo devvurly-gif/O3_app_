@@ -131,6 +131,11 @@ const routes: RouteRecordRaw[] = [
     meta: { layout: 'app', title: 'Nouveau Document Achat', breadcrumb: 'Nouveau' },
   },
   {
+    path: '/achats/ocr-import',
+    component: () => import('../pages/achats/OcrInvoiceImport.vue'),
+    meta: { layout: 'app', title: 'Import Facture OCR', breadcrumb: 'Import OCR' },
+  },
+  {
     path: '/achats/documents/:id/edit',
     component: () => import('../pages/achats/DocumentEditAchat.vue'),
     meta: { layout: 'app', title: 'Modifier Document Achat', breadcrumb: 'Modifier' },

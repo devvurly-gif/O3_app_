@@ -157,16 +157,18 @@ class DocumentVenteController extends Controller
                 ->where('status', 'pending')
                 ->exists();
 
-            \Illuminate\Support\Facades\Log::info('BL Confirmation Debug', [
+            \Illuminate\Support\Facades\Log::info('★ CONFIRMER_BL START ★', [
                 'bl_id' => $bl->id,
                 'bl_ref' => $bl->reference,
                 'warehouse_id' => $bl->warehouse_id,
                 'lignes_count' => $bl->lignes->count(),
                 'has_pending_movements' => $hasPendingMovements,
+                'all_movements' => $bl->stockMouvements()->count(),
+                'movement_statuses' => $bl->stockMouvements()->pluck('status')->toArray(),
             ]);
 
             if (!$hasPendingMovements && $bl->lignes->isNotEmpty()) {
-                \Illuminate\Support\Facades\Log::info('Creating pending movements for BL', [
+                \Illuminate\Support\Facades\Log::warning('★ NO PENDING MOVEMENTS - CREATING ★', [
                     'bl_id' => $bl->id,
                     'bl_ref' => $bl->reference,
                 ]);
@@ -174,7 +176,15 @@ class DocumentVenteController extends Controller
             }
 
             // Apply the pending movements and update stock
+            \Illuminate\Support\Facades\Log::info('★ APPLYING MOVEMENTS ★', [
+                'bl_id' => $bl->id,
+                'bl_ref' => $bl->reference,
+            ]);
             $this->stockService->applyDocumentMovements($bl);
+            \Illuminate\Support\Facades\Log::info('★ UPDATING STATUS TO CONFIRMED ★', [
+                'bl_id' => $bl->id,
+                'bl_ref' => $bl->reference,
+            ]);
             $bl->update(['status' => 'confirmed']);
 
             if ($bl->thirdPartner_id) {
