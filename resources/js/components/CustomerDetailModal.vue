@@ -39,6 +39,19 @@ const creditAvailable = computed(() => {
   return (detail.value.seuil_credit ?? 0) - (detail.value.encours_actuel ?? 0)
 })
 
+const allPayments = computed(() => {
+  if (!detail.value?.document_headers) return []
+  const payments: any[] = []
+  for (const doc of detail.value.document_headers) {
+    if (doc.payments?.length) {
+      for (const p of doc.payments) {
+        payments.push({ ...p, _doc_code: doc.reference })
+      }
+    }
+  }
+  return payments.sort((a: any, b: any) => new Date(b.paid_at).getTime() - new Date(a.paid_at).getTime())
+})
+
 watch(
   () => props.modelValue,
   async (isOpen) => {
@@ -238,12 +251,12 @@ const handleClose = () => {
       <!-- TAB: Documents -->
       <div v-show="activeTab === 'documents'" class="space-y-3">
         <p class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">Documents</p>
-        <div v-if="!detail?.documentHeaders || detail.documentHeaders.length === 0" class="text-center py-8">
+        <div v-if="!detail?.document_headers || detail.document_headers.length === 0" class="text-center py-8">
           <p class="text-sm text-gray-500 dark:text-gray-400">Aucun document</p>
         </div>
         <div v-else class="space-y-2">
           <div
-            v-for="doc in detail.documentHeaders"
+            v-for="doc in detail.document_headers"
             :key="doc.id"
             class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           >
@@ -252,11 +265,11 @@ const handleClose = () => {
                 {{ doc.document_type }} - {{ doc.reference }}
               </p>
               <p class="text-xs text-gray-500 dark:text-gray-400">
-                {{ new Date(doc.date_document).toLocaleDateString('fr-FR') }}
+                {{ new Date(doc.issued_at).toLocaleDateString('fr-FR') }}
               </p>
             </div>
             <p class="text-sm font-mono font-bold text-gray-900 dark:text-white">
-              {{ fmt(doc.montant_total ?? 0) }}
+              {{ fmt(doc.footer?.total_ttc ?? 0) }}
             </p>
           </div>
         </div>
@@ -265,31 +278,26 @@ const handleClose = () => {
       <!-- TAB: Payments -->
       <div v-show="activeTab === 'payments'" class="space-y-3">
         <p class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">Historique des paiements</p>
-        <div v-if="!detail?.documentHeaders?.some(d => d.payments?.length)" class="text-center py-8">
+        <div v-if="!allPayments || allPayments.length === 0" class="text-center py-8">
           <p class="text-sm text-gray-500 dark:text-gray-400">Aucun paiement</p>
         </div>
         <div v-else class="space-y-2">
           <div
-            v-for="doc in detail.documentHeaders"
-            :key="`doc-${doc.id}`"
+            v-for="payment in allPayments"
+            :key="payment.id"
+            class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           >
-            <div
-              v-for="payment in doc.payments"
-              :key="payment.id"
-              class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            >
-              <div class="flex-1">
-                <p class="text-sm font-medium text-gray-900 dark:text-white">
-                  {{ doc.reference }} - {{ payment.payment_method || 'Non spécifié' }}
-                </p>
-                <p class="text-xs text-gray-500 dark:text-gray-400">
-                  {{ new Date(payment.payment_date).toLocaleDateString('fr-FR') }}
-                </p>
-              </div>
-              <p class="text-sm font-mono font-bold text-emerald-600">
-                {{ fmt(payment.amount ?? 0) }}
+            <div class="flex-1">
+              <p class="text-sm font-medium text-gray-900 dark:text-white">
+                {{ payment._doc_code }} - {{ payment.payment_method || 'Non spécifié' }}
+              </p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                {{ new Date(payment.paid_at).toLocaleDateString('fr-FR') }}
               </p>
             </div>
+            <p class="text-sm font-mono font-bold text-emerald-600">
+              {{ fmt(payment.amount ?? 0) }}
+            </p>
           </div>
         </div>
       </div>
