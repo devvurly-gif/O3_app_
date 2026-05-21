@@ -13,7 +13,7 @@ import { usePdf } from '@/composables/usePdf'
 import { purchaseTypeLabels } from '@/composables/useDocumentLabels'
 import type { DocumentHeader } from '@/types'
 import http from '@/services/http'
-import CustomerDetailModal from '@/components/CustomerDetailModal.vue'
+import CustomerDetailModalFull from '@/components/CustomerDetailModalFull.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -650,6 +650,6 @@ const paymentProgress = computed(() => {
     </ConfirmModal>
 
     <!-- Supplier Detail Modal -->
-    <CustomerDetailModal v-model="showCustomerDetailModal" :customer="selectedCustomer" />
+    <CustomerDetailModalFull v-model="showCustomerDetailModal" :customerId="selectedCustomer?.id" />
   </div>
 </template>

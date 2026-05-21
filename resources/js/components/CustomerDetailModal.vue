@@ -250,28 +250,58 @@ const handleClose = () => {
 
       <!-- TAB: Documents -->
       <div v-show="activeTab === 'documents'" class="space-y-3">
-        <p class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">Documents</p>
         <div v-if="!detail?.document_headers || detail.document_headers.length === 0" class="text-center py-8">
           <p class="text-sm text-gray-500 dark:text-gray-400">Aucun document</p>
         </div>
-        <div v-else class="space-y-2">
-          <div
-            v-for="doc in detail.document_headers"
-            :key="doc.id"
-            class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-          >
-            <div class="flex-1">
-              <p class="text-sm font-medium text-gray-900 dark:text-white">
-                {{ doc.document_type }} - {{ doc.reference }}
-              </p>
-              <p class="text-xs text-gray-500 dark:text-gray-400">
-                {{ new Date(doc.issued_at).toLocaleDateString('fr-FR') }}
-              </p>
-            </div>
-            <p class="text-sm font-mono font-bold text-gray-900 dark:text-white">
-              {{ fmt(doc.footer?.total_ttc ?? 0) }}
-            </p>
-          </div>
+        <div v-else class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-gray-200 dark:border-gray-700">
+                <th class="text-left py-2 px-3 font-semibold text-gray-700 dark:text-gray-300">Code</th>
+                <th class="text-left py-2 px-3 font-semibold text-gray-700 dark:text-gray-300">Date</th>
+                <th class="text-left py-2 px-3 font-semibold text-gray-700 dark:text-gray-300">Type</th>
+                <th class="text-right py-2 px-3 font-semibold text-gray-700 dark:text-gray-300">Total TTC</th>
+                <th class="text-right py-2 px-3 font-semibold text-gray-700 dark:text-gray-300">Reste dû</th>
+                <th class="text-center py-2 px-3 font-semibold text-gray-700 dark:text-gray-300">Statut</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="doc in detail.document_headers"
+                :key="doc.id"
+                class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
+                <td class="py-2 px-3 font-mono text-gray-900 dark:text-white">
+                  {{ doc.reference }}
+                </td>
+                <td class="py-2 px-3 text-gray-600 dark:text-gray-400">
+                  {{ new Date(doc.issued_at).toLocaleDateString('fr-FR') }}
+                </td>
+                <td class="py-2 px-3">
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                    {{ doc.document_type }}
+                  </span>
+                </td>
+                <td class="py-2 px-3 text-right text-gray-900 dark:text-white">
+                  {{ fmt(doc.footer?.total_ttc ?? 0) }} DH
+                </td>
+                <td
+                  class="py-2 px-3 text-right font-mono font-bold"
+                  :class="(doc.footer?.amount_due ?? 0) > 0 ? 'text-red-600' : 'text-emerald-600'"
+                >
+                  {{ fmt(doc.footer?.amount_due ?? 0) }} DH
+                </td>
+                <td class="py-2 px-3 text-center">
+                  <span
+                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                    :class="doc.status === 'paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'"
+                  >
+                    {{ doc.status === 'paid' ? 'Payé' : doc.status === 'delivered' ? 'Livré' : 'Ouvert' }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
