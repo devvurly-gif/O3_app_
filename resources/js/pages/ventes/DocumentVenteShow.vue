@@ -13,7 +13,7 @@ import { useFormat } from '@/composables/useFormat'
 import { usePdf } from '@/composables/usePdf'
 import { saleTypeLabels } from '@/composables/useDocumentLabels'
 import type { DocumentHeader } from '@/types'
-import http from '@/http'
+import http from '@/services/http'
 
 const route = useRoute()
 const router = useRouter()
