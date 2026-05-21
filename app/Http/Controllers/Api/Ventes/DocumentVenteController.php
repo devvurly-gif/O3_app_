@@ -245,6 +245,11 @@ class DocumentVenteController extends Controller
 
         // If BL is still in draft, confirm it first (auto-apply stock movements)
         if ($bl->status === 'draft') {
+            Log::info('confirmer_reception: Auto-confirming draft BL', [
+                'bl_id' => $bl->id,
+                'bl_ref' => $bl->reference,
+            ]);
+
             DB::transaction(function () use ($bl) {
                 $bl->loadMissing('lignes');
 
@@ -268,6 +273,11 @@ class DocumentVenteController extends Controller
                     }
                 }
             });
+
+            Log::info('confirmer_reception: Draft BL auto-confirmed successfully', [
+                'bl_id' => $bl->id,
+                'bl_ref' => $bl->reference,
+            ]);
         } elseif (!in_array($bl->status, ['confirmed', 'delivered'])) {
             return response()->json(['message' => 'Ce BL doit être confirmé avant d\'être facturé. Statut : ' . $bl->status], 422);
         }

@@ -203,6 +203,11 @@ class DocumentAchatController extends Controller
 
         // If BR is still in draft, confirm it first (auto-apply stock movements)
         if ($br->status === 'draft') {
+            Log::info('confirmer_facture: Auto-confirming draft BR', [
+                'br_id' => $br->id,
+                'br_ref' => $br->reference,
+            ]);
+
             DB::transaction(function () use ($br) {
                 $br->loadMissing('lignes');
 
@@ -219,6 +224,11 @@ class DocumentAchatController extends Controller
                 $this->stockService->applyDocumentMovements($br);
                 $br->update(['status' => 'confirmed']);
             });
+
+            Log::info('confirmer_facture: Draft BR auto-confirmed successfully', [
+                'br_id' => $br->id,
+                'br_ref' => $br->reference,
+            ]);
         } elseif ($br->status !== 'confirmed') {
             return response()->json(['message' => 'Ce BR doit être confirmé avant d\'être facturé. Statut : ' . $br->status], 422);
         }

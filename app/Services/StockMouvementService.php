@@ -175,6 +175,13 @@ class StockMouvementService
     {
         $movements = $this->mouvements->forDocumentByStatus($document->id, 'pending');
 
+        Log::info('StockMouvementService.applyDocumentMovements started', [
+            'document_id' => $document->id,
+            'document_ref' => $document->reference,
+            'document_type' => $document->document_type,
+            'pending_movements_count' => $movements->count(),
+        ]);
+
         foreach ($movements as $mouvement) {
             $currentStock = $this->stocks->getStockLevel($mouvement->product_id, $mouvement->warehouse_id);
             $stockAfter   = $mouvement->direction === 'in'
@@ -193,6 +200,13 @@ class StockMouvementService
                 'status'       => 'applied',
             ]);
 
+            Log::info('Movement applied', [
+                'product_id' => $mouvement->product_id,
+                'quantity' => $mouvement->quantity,
+                'stock_before' => $currentStock,
+                'stock_after' => $stockAfter,
+            ]);
+
             $this->stocks->upsertStock($mouvement->product_id, $mouvement->warehouse_id, [
                 'stockLevel'  => $stockAfter,
                 'stockAtTime' => now(),
@@ -201,6 +215,11 @@ class StockMouvementService
 
             $this->checkLowStockAlert($mouvement->product_id, $mouvement->warehouse_id, $stockAfter);
         }
+
+        Log::info('StockMouvementService.applyDocumentMovements completed', [
+            'document_id' => $document->id,
+            'movements_applied' => $movements->count(),
+        ]);
     }
 
     /**
