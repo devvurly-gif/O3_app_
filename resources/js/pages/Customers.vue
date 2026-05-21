@@ -486,7 +486,12 @@
                   :class="isBilledBl(inv) ? 'opacity-60 bg-gray-50/40 dark:bg-gray-900/40' : ''"
                 >
                   <td class="py-2.5 px-3 font-mono text-xs">
-                    {{ inv.reference }}
+                    <button
+                      class="text-orange-500 hover:text-orange-700 hover:underline font-semibold transition"
+                      @click="openDocumentDetail(inv)"
+                    >
+                      {{ inv.reference }}
+                    </button>
                     <span
                       v-if="isBilledBl(inv)"
                       class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
@@ -1438,6 +1443,95 @@
       </template>
     </BaseModal>
 
+    <!-- Document Detail Modal -->
+    <BaseModal v-model="showDocumentDetailModal" :title="documentDetail?.reference ?? 'Document'" size="lg">
+      <div v-if="documentDetailLoading" class="flex items-center justify-center py-12">
+        <svg class="w-6 h-6 animate-spin text-orange-500" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+        </svg>
+      </div>
+      <div v-else-if="documentDetail" class="space-y-4">
+        <!-- Document Header Info -->
+        <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+            <div>
+              <p class="text-gray-500 dark:text-gray-400 text-xs uppercase font-semibold mb-1">Type</p>
+              <p class="font-medium text-gray-900 dark:text-white">{{ docTypeLabel(documentDetail.document_type) }}</p>
+            </div>
+            <div>
+              <p class="text-gray-500 dark:text-gray-400 text-xs uppercase font-semibold mb-1">Date</p>
+              <p class="font-medium text-gray-900 dark:text-white">{{ formatDate(documentDetail.issued_at) }}</p>
+            </div>
+            <div>
+              <p class="text-gray-500 dark:text-gray-400 text-xs uppercase font-semibold mb-1">Statut</p>
+              <span
+                class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                :class="statusClass(documentDetail.status)"
+              >
+                {{ statusLabel(documentDetail.status, documentDetail.document_type) }}
+              </span>
+            </div>
+            <div>
+              <p class="text-gray-500 dark:text-gray-400 text-xs uppercase font-semibold mb-1">Total TTC</p>
+              <p class="font-mono font-semibold text-gray-900 dark:text-white">
+                {{ formatNumber(documentDetail.footer?.total_ttc ?? 0) }} DH
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Document Lines Table -->
+        <div v-if="documentDetail.lignes && documentDetail.lignes.length > 0" class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-gray-200 dark:border-gray-700 text-left bg-gray-50 dark:bg-gray-900">
+                <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase">Désignation</th>
+                <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase text-right">Quantité</th>
+                <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase text-right">P.U.</th>
+                <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase text-right">Total</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+              <tr v-for="ligne in documentDetail.lignes" :key="ligne.id" class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                <td class="py-2.5 px-3 text-gray-900 dark:text-white">
+                  <div class="flex items-start gap-2">
+                    <div class="flex-1">
+                      <p class="font-medium">{{ ligne.designation }}</p>
+                      <p v-if="ligne.product?.tp_code" class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        {{ ligne.product.tp_code }}
+                      </p>
+                    </div>
+                  </div>
+                </td>
+                <td class="py-2.5 px-3 text-right font-mono text-gray-600 dark:text-gray-400">
+                  {{ formatNumber(ligne.quantity) }} {{ ligne.unit }}
+                </td>
+                <td class="py-2.5 px-3 text-right font-mono text-gray-600 dark:text-gray-400">
+                  {{ formatNumber(ligne.unit_price) }}
+                </td>
+                <td class="py-2.5 px-3 text-right font-mono font-medium text-gray-900 dark:text-white">
+                  {{ formatNumber(ligne.quantity * ligne.unit_price * (1 - (ligne.discount_percent ?? 0) / 100)) }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div v-else class="text-center py-8 text-gray-500 dark:text-gray-400">
+          <p class="text-sm">Aucune ligne de détail</p>
+        </div>
+      </div>
+
+      <template #footer>
+        <button
+          class="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition"
+          @click="showDocumentDetailModal = false"
+        >
+          Fermer
+        </button>
+      </template>
+    </BaseModal>
+
     <!-- Delete Modal -->
     <BaseModal v-model="showDelete" :title="$t('customers.deleteTitle')" size="sm">
       <p class="text-sm text-gray-600 dark:text-gray-400">
@@ -1763,6 +1857,11 @@ const showCreditAvailable = computed(
   () => (showTarget.value?.seuil_credit ?? 0) - (showTarget.value?.encours_actuel ?? 0),
 )
 
+// ── Document Detail Modal state ─────────────────────────────────────────
+const showDocumentDetailModal = ref(false)
+const documentDetail = ref<any>(null)
+const documentDetailLoading = ref(false)
+
 // ── Bulk Payment state ──────────────────────────────────────────────────
 const showPaymentModal = ref(false)
 const paymentTarget = ref<any>(null)
@@ -1836,6 +1935,25 @@ function docTypeShort(type: string): string {
     InvoicePurchase: 'FACA',
   }
   return map[type] ?? type
+}
+
+async function openDocumentDetail(doc: any) {
+  documentDetail.value = doc
+  documentDetailLoading.value = true
+  showDocumentDetailModal.value = true
+  // Ensure the document has lignes loaded
+  if (!doc.lignes) {
+    try {
+      const { data } = await http.get(`/documents/${doc.id}`)
+      documentDetail.value = data
+    } catch {
+      // Silently continue with what we have
+    } finally {
+      documentDetailLoading.value = false
+    }
+  } else {
+    documentDetailLoading.value = false
+  }
 }
 
 async function openBulkPayment(row: any) {
