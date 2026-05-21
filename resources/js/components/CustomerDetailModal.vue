@@ -25,6 +25,8 @@ const tabs = [
   { key: 'info', label: 'Informations', icon: 'IconInfoCircle' },
   { key: 'fiscal', label: 'Fiscal', icon: 'IconFileText' },
   { key: 'credit', label: 'Crédit', icon: 'IconCreditCard' },
+  { key: 'documents', label: 'Documents', icon: 'IconFileText' },
+  { key: 'payments', label: 'Paiements', icon: 'IconCreditCard' },
 ]
 
 const creditPercent = computed(() => {
@@ -227,6 +229,65 @@ const handleClose = () => {
                 :class="creditAvailable > 0 ? 'text-emerald-600' : 'text-red-600'"
               >
                 {{ fmt(creditAvailable) }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: Documents -->
+      <div v-show="activeTab === 'documents'" class="space-y-3">
+        <p class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">Documents</p>
+        <div v-if="!detail?.documentHeaders || detail.documentHeaders.length === 0" class="text-center py-8">
+          <p class="text-sm text-gray-500 dark:text-gray-400">Aucun document</p>
+        </div>
+        <div v-else class="space-y-2">
+          <div
+            v-for="doc in detail.documentHeaders"
+            :key="doc.id"
+            class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          >
+            <div class="flex-1">
+              <p class="text-sm font-medium text-gray-900 dark:text-white">
+                {{ doc.document_type }} - {{ doc.reference }}
+              </p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                {{ new Date(doc.date_document).toLocaleDateString('fr-FR') }}
+              </p>
+            </div>
+            <p class="text-sm font-mono font-bold text-gray-900 dark:text-white">
+              {{ fmt(doc.montant_total ?? 0) }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: Payments -->
+      <div v-show="activeTab === 'payments'" class="space-y-3">
+        <p class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">Historique des paiements</p>
+        <div v-if="!detail?.documentHeaders?.some(d => d.payments?.length)" class="text-center py-8">
+          <p class="text-sm text-gray-500 dark:text-gray-400">Aucun paiement</p>
+        </div>
+        <div v-else class="space-y-2">
+          <div
+            v-for="doc in detail.documentHeaders"
+            :key="`doc-${doc.id}`"
+          >
+            <div
+              v-for="payment in doc.payments"
+              :key="payment.id"
+              class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            >
+              <div class="flex-1">
+                <p class="text-sm font-medium text-gray-900 dark:text-white">
+                  {{ doc.reference }} - {{ payment.payment_method || 'Non spécifié' }}
+                </p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                  {{ new Date(payment.payment_date).toLocaleDateString('fr-FR') }}
+                </p>
+              </div>
+              <p class="text-sm font-mono font-bold text-emerald-600">
+                {{ fmt(payment.amount ?? 0) }}
               </p>
             </div>
           </div>
