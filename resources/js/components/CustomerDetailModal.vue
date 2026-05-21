@@ -63,7 +63,7 @@ const handleClose = () => {
 </script>
 
 <template>
-  <BaseModal v-model="modelValue" :title="`Détails Client : ${detail?.tp_title ?? ''}`" size="xl" @update:model-value="handleClose">
+  <BaseModal :modelValue="modelValue" :title="`Détails Client : ${detail?.tp_title ?? ''}`" size="xl" @update:modelValue="handleClose">
     <!-- Tab Navigation -->
     <div class="border-b border-gray-200 dark:border-gray-700 -mt-2 mb-4">
       <nav class="flex gap-0 -mb-px overflow-x-auto">
