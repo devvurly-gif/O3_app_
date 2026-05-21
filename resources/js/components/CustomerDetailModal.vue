@@ -234,4 +234,4 @@ const handleClose = () => {
       </div>
     </div>
   </BaseModal>
-</script>
+</template>
