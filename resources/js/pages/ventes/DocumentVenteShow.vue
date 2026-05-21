@@ -14,6 +14,7 @@ import { usePdf } from '@/composables/usePdf'
 import { saleTypeLabels } from '@/composables/useDocumentLabels'
 import type { DocumentHeader } from '@/types'
 import http from '@/services/http'
+import CustomerDetailModal from '@/components/CustomerDetailModal.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -36,8 +37,7 @@ const invoicePaymentMethod = ref('credit')
 const actionLoading = ref(false)
 const paymentError = ref('')
 const showCustomerDetailModal = ref(false)
-const customerDetail = ref<any>(null)
-const customerDetailLoading = ref(false)
+const selectedCustomer = ref<any>(null)
 
 const typeLabels = saleTypeLabels
 
@@ -201,18 +201,9 @@ async function duplicateDocument() {
   router.push('/ventes/documents/create')
 }
 
-async function openCustomerDetail(customer: any) {
-  customerDetail.value = customer
-  customerDetailLoading.value = true
+function openCustomerDetail(customer: any) {
+  selectedCustomer.value = customer
   showCustomerDetailModal.value = true
-  try {
-    const { data } = await http.get(`/third-partners/${customer.id}`)
-    customerDetail.value = data
-  } catch {
-    // Silently continue with what we have
-  } finally {
-    customerDetailLoading.value = false
-  }
 }
 
 async function downloadPdf() {
@@ -682,49 +673,6 @@ const paymentProgress = computed(() => {
     </ConfirmModal>
 
     <!-- Customer Detail Modal -->
-    <BaseModal v-model="showCustomerDetailModal" :title="`Détails Client : ${customerDetail?.tp_title ?? ''}`" size="md">
-      <div v-if="customerDetail" class="space-y-6">
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <p class="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Code</p>
-            <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ customerDetail.tp_code ?? '—' }}</p>
-          </div>
-          <div>
-            <p class="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">
-              Raison Sociale
-            </p>
-            <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ customerDetail.tp_title ?? '—' }}</p>
-          </div>
-          <div>
-            <p class="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Rôle</p>
-            <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">
-              {{ customerDetail.tp_type === 'customer' ? 'Client' : customerDetail.tp_type === 'supplier' ? 'Fournisseur' : customerDetail.tp_type ?? '—' }}
-            </p>
-          </div>
-          <div>
-            <p class="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Email</p>
-            <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ customerDetail.tp_email ?? '—' }}</p>
-          </div>
-          <div>
-            <p class="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Téléphone</p>
-            <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ customerDetail.tp_phone ?? '—' }}</p>
-          </div>
-          <div>
-            <p class="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Fax</p>
-            <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ customerDetail.tp_fax ?? '—' }}</p>
-          </div>
-        </div>
-
-        <div v-if="customerDetail.tp_address" class="border-t border-gray-200 dark:border-gray-700 pt-4">
-          <p class="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Adresse</p>
-          <p class="text-sm text-gray-700 dark:text-gray-300">{{ customerDetail.tp_address }}</p>
-        </div>
-
-        <div v-if="customerDetail.tp_notes" class="border-t border-gray-200 dark:border-gray-700 pt-4">
-          <p class="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Notes</p>
-          <p class="text-sm text-gray-700 dark:text-gray-300">{{ customerDetail.tp_notes }}</p>
-        </div>
-      </div>
-    </BaseModal>
+    <CustomerDetailModal v-model="showCustomerDetailModal" :customer="selectedCustomer" />
   </div>
 </template>
