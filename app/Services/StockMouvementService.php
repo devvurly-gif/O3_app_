@@ -80,8 +80,22 @@ class StockMouvementService
 
         $status = $pending ? 'pending' : 'applied';
 
+        Log::info('Starting movement creation loop', [
+            'document_id' => $document->id,
+            'status' => $status,
+            'direction' => $direction,
+            'lignes_count' => count($document->lignes),
+        ]);
+
         foreach ($document->lignes as $ligne) {
+            Log::info('Processing ligne', [
+                'ligne_id' => $ligne->id,
+                'product_id' => $ligne->product_id,
+                'quantity' => $ligne->quantity,
+            ]);
+
             if (!$ligne->product_id) {
+                Log::warning('Ligne has no product_id, skipping', ['ligne_id' => $ligne->id]);
                 continue;
             }
 
@@ -90,27 +104,44 @@ class StockMouvementService
                 ? $currentStock + $ligne->quantity
                 : $currentStock - $ligne->quantity;
 
+            Log::info('Stock calculation', [
+                'product_id' => $ligne->product_id,
+                'current_stock' => $currentStock,
+                'quantity' => $ligne->quantity,
+                'stock_after' => $stockAfter,
+            ]);
+
             // Negative stock check (only when applying immediately)
             if (!$pending && $direction === 'out' && $stockAfter < 0) {
                 $this->guardNegativeStock($ligne, $currentStock);
             }
 
-            $this->mouvements->create([
-                'product_id'         => $ligne->product_id,
-                'warehouse_id'       => $document->warehouse_id,
-                'document_header_id' => $document->id,
-                'document_reference' => $document->reference,
-                'document_type'      => $document->document_type,
-                'direction'          => $direction,
-                'reason'             => $reason,
-                'quantity'           => $ligne->quantity,
-                'unit_cost'          => $ligne->unit_price,
-                'stock_before'       => $currentStock,
-                'stock_after'        => $pending ? $currentStock : $stockAfter,
-                'user_id'            => $document->user_id,
-                'notes'              => $label,
-                'status'             => $status,
-            ]);
+            try {
+                $this->mouvements->create([
+                    'product_id'         => $ligne->product_id,
+                    'warehouse_id'       => $document->warehouse_id,
+                    'document_header_id' => $document->id,
+                    'document_reference' => $document->reference,
+                    'document_type'      => $document->document_type,
+                    'direction'          => $direction,
+                    'reason'             => $reason,
+                    'quantity'           => $ligne->quantity,
+                    'unit_cost'          => $ligne->unit_price,
+                    'stock_before'       => $currentStock,
+                    'stock_after'        => $pending ? $currentStock : $stockAfter,
+                    'user_id'            => $document->user_id,
+                    'notes'              => $label,
+                    'status'             => $status,
+                ]);
+                Log::info('Movement created successfully', ['product_id' => $ligne->product_id]);
+            } catch (\Exception $e) {
+                Log::error('Error creating movement', [
+                    'product_id' => $ligne->product_id,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+                throw $e;
+            }
 
             // Only update warehouse stock when not pending
             if (!$pending) {
@@ -123,6 +154,8 @@ class StockMouvementService
                 $this->checkLowStockAlert($ligne->product_id, $document->warehouse_id, $stockAfter);
             }
         }
+
+        Log::info('Movement creation loop completed', ['document_id' => $document->id]);
 
         // Encours: recalculate authoritatively from source data
         // (covers InvoiceSale here; BL / return / payment paths trigger their own recalc)
