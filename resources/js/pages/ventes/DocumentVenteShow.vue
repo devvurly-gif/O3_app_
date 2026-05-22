@@ -38,6 +38,7 @@ const actionLoading = ref(false)
 const paymentError = ref('')
 const showCustomerDetailModal = ref(false)
 const selectedCustomer = ref<any>(null)
+const selectedCustomerId = ref<number | null>(null)
 
 const typeLabels = saleTypeLabels
 
@@ -203,7 +204,7 @@ async function duplicateDocument() {
 
 function openCustomerDetail(customer: any) {
   selectedCustomer.value = customer
-  selectedCustomer.value._customer_id = doc.value?.thirdPartner_id
+  selectedCustomerId.value = doc.value?.thirdPartner_id ?? null
   showCustomerDetailModal.value = true
 }
 
@@ -674,6 +675,6 @@ const paymentProgress = computed(() => {
     </ConfirmModal>
 
     <!-- Customer Detail Modal -->
-    <CustomerDetailModalFull v-model="showCustomerDetailModal" :customer="selectedCustomer" type="customer" />
+    <CustomerDetailModalFull v-model="showCustomerDetailModal" :customer="selectedCustomer" :customerId="selectedCustomerId" type="customer" />
   </div>
 </template>
