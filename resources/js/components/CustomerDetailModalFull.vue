@@ -79,12 +79,14 @@ async function loadCustomerDetail() {
   // If customer object is provided, use it as initial value
   if (props.customer) {
     customerDetail.value = props.customer
-    activeTab.value = 'info'
   }
 
-  // Determine which ID to use for fetching
+  // Determine which ID to use for fetching - always fetch for complete data
   const idToFetch = props.customerId || props.customer?._customer_id || props.customer?.id
-  if (!idToFetch) return
+  if (!idToFetch) {
+    activeTab.value = 'info'
+    return
+  }
 
   loading.value = true
   try {
@@ -96,6 +98,7 @@ async function loadCustomerDetail() {
     // If we have customer data from the prop, keep it even if the fetch fails
     if (!customerDetail.value && props.customer) {
       customerDetail.value = props.customer
+      activeTab.value = 'info'
     }
   } finally {
     loading.value = false
