@@ -203,6 +203,7 @@ async function duplicateDocument() {
 
 function openCustomerDetail(customer: any) {
   selectedCustomer.value = customer
+  selectedCustomer.value._customer_id = doc.value?.thirdPartner_id
   showCustomerDetailModal.value = true
 }
 
@@ -673,6 +674,6 @@ const paymentProgress = computed(() => {
     </ConfirmModal>
 
     <!-- Customer Detail Modal -->
-    <CustomerDetailModalFull v-model="showCustomerDetailModal" :customerId="selectedCustomer?.id" type="customer" />
+    <CustomerDetailModalFull v-model="showCustomerDetailModal" :customer="selectedCustomer" type="customer" />
   </div>
 </template>

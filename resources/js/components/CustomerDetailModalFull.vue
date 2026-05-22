@@ -6,7 +6,8 @@ import { useFormat } from '@/composables/useFormat'
 
 interface Props {
   modelValue: boolean
-  customerId: number | null
+  customerId?: number | null
+  customer?: any
   type?: 'customer' | 'supplier'
 }
 
@@ -75,15 +76,27 @@ const paymentRate = computed(() => (totalTTC.value > 0 ? (totalPayments.value / 
 
 // Load customer detail
 async function loadCustomerDetail() {
-  if (!props.customerId) return
+  // If customer object is provided, use it as initial value
+  if (props.customer) {
+    customerDetail.value = props.customer
+    activeTab.value = 'info'
+  }
+
+  // Determine which ID to use for fetching
+  const idToFetch = props.customerId || props.customer?._customer_id || props.customer?.id
+  if (!idToFetch) return
 
   loading.value = true
   try {
-    const { data } = await http.get(`/third-parties/${props.customerId}`)
+    const { data } = await http.get(`/third-parties/${idToFetch}`)
     customerDetail.value = data
     activeTab.value = 'info'
   } catch (error) {
     console.error('Failed to load customer details:', error)
+    // If we have customer data from the prop, keep it even if the fetch fails
+    if (!customerDetail.value && props.customer) {
+      customerDetail.value = props.customer
+    }
   } finally {
     loading.value = false
   }
@@ -162,6 +175,12 @@ watch(() => props.modelValue, (isOpen) => {
 }, { immediate: true })
 
 watch(() => props.customerId, () => {
+  if (props.modelValue) {
+    loadCustomerDetail()
+  }
+})
+
+watch(() => props.customer, () => {
   if (props.modelValue) {
     loadCustomerDetail()
   }
