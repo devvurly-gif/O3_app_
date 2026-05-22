@@ -394,3 +394,7 @@ Route::prefix('ecom')->middleware(['ecom.key', 'throttle:60,1'])->group(function
     // Orders
     Route::post('orders',            [EcomOrderController::class, 'store']);
 });
+
+// Package and Features info
+Route::get('/package-info', 'Api\PackageInfoController@getPackageInfo');
+Route::get('/feature/{feature}/enabled', 'Api\PackageInfoController@isFeatureEnabled');

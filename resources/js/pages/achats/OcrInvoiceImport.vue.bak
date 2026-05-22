@@ -3,7 +3,6 @@ import { ref, reactive, computed, onMounted, onUnmounted, nextTick, watch } from
 import { useRouter } from 'vue-router'
 import http from '@/services/http'
 import { useToastStore } from '@/stores/toastStore'
-import { useFeaturesSettings } from '@/composables/useFeaturesSettings'
 import * as pdfjsLib from 'pdfjs-dist'
 
 // PDF.js worker — use unpkg CDN for reliable loading in both dev and prod
@@ -11,11 +10,6 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLi
 
 const router = useRouter()
 const toast = useToastStore()
-
-// Feature access control
-const { isOcrImportEnabled, loading: featuresLoading } = useFeaturesSettings()
-const ocrDisabled = computed(() => !isOcrImportEnabled.value)
-const ocrDisabledMessage = ref('OCR Import is only available in the Business package. Please upgrade your plan to access this feature.')
 
 // ── State ────────────────────────────────────────────────────────
 type Step = 'upload' | 'review' | 'success'
