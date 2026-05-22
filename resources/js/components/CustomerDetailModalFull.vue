@@ -39,16 +39,16 @@ const tabs = computed(() => {
 
 // Documents & Payments
 const customerDocuments = computed(() => {
-  if (!customerDetail.value?.documentHeaders) return []
-  return customerDetail.value.documentHeaders.sort(
+  if (!customerDetail.value?.document_headers) return []
+  return customerDetail.value.document_headers.sort(
     (a: any, b: any) => new Date(b.issued_at).getTime() - new Date(a.issued_at).getTime(),
   )
 })
 
 const customerPayments = computed(() => {
-  if (!customerDetail.value?.documentHeaders) return []
+  if (!customerDetail.value?.document_headers) return []
   const payments: any[] = []
-  for (const doc of customerDetail.value.documentHeaders) {
+  for (const doc of customerDetail.value.document_headers) {
     if (doc.payments?.length) {
       for (const p of doc.payments) {
         payments.push({ ...p, _doc_code: doc.reference })
