@@ -1,4 +1,5 @@
 <?php
+use AppServicesTaxService;
 
 namespace App\Services;
 
@@ -52,7 +53,7 @@ class PriceResolver
 
         // 3. Fallback to product base price
         $ht = (float) $product->p_salePrice;
-        $ttc = $ht * (1 + ((float) $product->p_taxRate) / 100);
+        $ttc = TaxService::calculateTTC($ht, (float) $product->p_taxRate);
         return [
             'price_ht'      => round($ht, 2),
             'price_ttc'     => round($ttc, 2),

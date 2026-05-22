@@ -85,6 +85,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ── Dashboard ────────────────────────────────────────────────────────
     Route::get('dashboard', [DashboardController::class, 'index']);
+    Route::get("tax-settings", [AppHttpControllersApiTaxSettingsController::class, "index"]);
 
     // ── Notifications ──────────────────────────────────────────────────
     Route::get('notifications',                [NotificationController::class, 'index']);
