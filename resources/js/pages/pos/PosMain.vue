@@ -856,7 +856,12 @@ function payWithCredit() {
 
 async function confirmPayment(payments: { amount: number; method: string }[]) {
   try {
-    await posStore.checkout(payments, selectedCustomer.value?.id)
+    const ticket = await posStore.checkout(payments, selectedCustomer.value?.id) as any
+    
+    // Print the ticket receipt
+    if (ticket?.id) {
+      setTimeout(() => printTicketReceipt(ticket.id), 500)
+    }
     showCheckout.value = false
     selectedCustomer.value = null
     // Refresh the live "ventes par mode de paiement" panel so the
@@ -865,6 +870,19 @@ async function confirmPayment(payments: { amount: number; method: string }[]) {
   } catch (err: unknown) {
     const e = err as { response?: { data?: { message?: string } } }
     alert(e.response?.data?.message ?? 'Erreur lors du paiement')
+  }
+}
+
+function printTicketReceipt(ticketId: number) {
+  const printUrl = `/api/pos/tickets/${ticketId}/print`
+  const printWindow = window.open(printUrl, "_blank", "height=600,width=800")
+  
+  if (printWindow) {
+    printWindow.onload = () => {
+      setTimeout(() => {
+        printWindow.print()
+      }, 500)
+    }
   }
 }
 
