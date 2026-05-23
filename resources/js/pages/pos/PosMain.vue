@@ -875,14 +875,27 @@ async function confirmPayment(payments: { amount: number; method: string }[]) {
 
 function printTicketReceipt(ticketId: number) {
   const printUrl = `/api/pos/tickets/${ticketId}/print`
-  const printWindow = window.open(printUrl, "_blank", "height=600,width=800")
+  // Open PDF and auto-print, then close the window
+  const printWindow = window.open(printUrl, "_blank", "width=1,height=1")
   
   if (printWindow) {
+    // Wait for PDF to load, then trigger print
     printWindow.onload = () => {
       setTimeout(() => {
         printWindow.print()
-      }, 500)
+        // Close window after print dialog appears
+        setTimeout(() => {
+          try { printWindow.close() } catch (e) {}
+        }, 500)
+      }, 1000)
     }
+    
+    // Fallback: close after timeout if onload doesn't fire
+    setTimeout(() => {
+      try { printWindow.close() } catch (e) {}
+    }, 5000)
+  }
+}
   }
 }
 
