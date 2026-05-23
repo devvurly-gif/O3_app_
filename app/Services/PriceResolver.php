@@ -1,6 +1,4 @@
 <?php
-use AppServicesTaxService;
-
 namespace App\Services;
 
 use App\Models\PriceList;
@@ -8,6 +6,7 @@ use App\Models\PriceListItem;
 use App\Models\Product;
 use App\Models\ThirdPartner;
 use Carbon\Carbon;
+use App\Services\TaxService;
 
 /**
  * Resolves the effective unit price for a product given:
