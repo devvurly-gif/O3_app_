@@ -231,15 +231,15 @@ export const usePosStore = defineStore('pos', () => {
       removeFromCart(productId)
       return
     }
-    item.quantity = qty
-  }
 
-  const updateCartItemPrice = (productId: number, newPrice: number): void => {
+  const updateCartItemPrice = (productId: number, newPrice: number) => {
     const item = cart.value.find((i) => i.product_id === productId)
     if (item && newPrice > 0) {
       item.unit_price = newPrice
-      refreshPricesForCustomer(selectedCustomer.value?.tp_id ?? null)
+      refreshPrices()
     }
+  }
+    item.quantity = qty
   }
 
   function removeFromCart(productId: number): void {
@@ -418,7 +418,6 @@ export const usePosStore = defineStore('pos', () => {
     fetchProducts,
     addToCart,
     updateCartItemQty,
-    updateCartItemPrice,
     removeFromCart,
     clearCart,
     refreshPricesForCustomer,
