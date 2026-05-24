@@ -335,9 +335,14 @@
               </svg>
             </button>
           </div>
-          <p class="text-sm font-semibold text-gray-900 dark:text-white w-20 text-right">
-            {{ formatPrice(item.quantity * item.unit_price * (1 - item.discount_percent / 100)) }}
-          </p>
+          <input
+            :value="item.unit_price"
+            @input="posStore.updateCartItemPrice(item.product_id, parseFloat($event.target.value) || item.unit_price)"
+            type="number"
+            min="0"
+            step="0.01"
+            class="w-32 px-3 py-2 text-base font-bold rounded-xl border-4 border-orange-500 bg-orange-200 text-orange-900 text-right focus:outline-none focus:ring-4 focus:ring-orange-400 shadow-md cursor-pointer"
+          />
           <button
             class="p-1 text-gray-400 dark:text-gray-500 hover:text-red-500 transition"
             @click="posStore.removeFromCart(item.product_id)"
