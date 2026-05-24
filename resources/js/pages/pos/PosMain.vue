@@ -896,9 +896,7 @@ function printTicketReceipt(ticketId: number) {
     }, 5000)
   }
 }
-  }
-}
-
+  
 // Barcode scanner
 /**
  * Wrapper around posStore.addToCart that re-prices the line using the
