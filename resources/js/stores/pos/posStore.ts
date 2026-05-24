@@ -215,7 +215,7 @@ export const usePosStore = defineStore('pos', () => {
       designation: product.p_title,
       reference: product.p_sku ?? product.p_code,
       quantity: 1,
-      unit_price: product.price_ttc,
+      unit_price: product.p_salePrice,
       unit: product.p_unit,
       discount_percent: 0,
       tax_percent: product.p_taxRate,
@@ -232,13 +232,13 @@ export const usePosStore = defineStore('pos', () => {
       return
     }
 
-    updateCartItemPrice(productId: number, newPrice: number) {
-      const item = this.cart.find(i => i.product_id === productId)
-      if (item && newPrice > 0) {
-        item.unit_price = newPrice
-        this.refreshPrices()
-      }
+  const updateCartItemPrice = (productId: number, newPrice: number) => {
+    const item = cart.value.find((i) => i.product_id === productId)
+    if (item && newPrice > 0) {
+      item.unit_price = newPrice
+      refreshPrices()
     }
+  }
     item.quantity = qty
   }
 
@@ -273,7 +273,7 @@ export const usePosStore = defineStore('pos', () => {
       for (const line of cart.value) {
         const priced = byId.get(line.product_id)
         if (!priced) continue
-        line.unit_price = priced.price_ttc
+        line.unit_price = priced.unit_price
         line.tax_percent = priced.tax_percent
       }
     } catch {
