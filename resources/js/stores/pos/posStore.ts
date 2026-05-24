@@ -238,7 +238,7 @@ export const usePosStore = defineStore('pos', () => {
     const item = cart.value.find((i) => i.product_id === productId)
     if (item && newPrice > 0) {
       item.unit_price = newPrice
-      refreshPricesForCustomer(selectedCustomer.value?.tp_id ?? null)
+      // Price manually set by user - do not re-price
     }
   }
 
