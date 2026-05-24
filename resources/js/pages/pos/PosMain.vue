@@ -312,7 +312,7 @@
                 type="number"
                 min="0"
                 step="0.01"
-                class="w-16 px-2 py-1 text-xs rounded border border-gray-300 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                class="w-24 px-2 py-1 text-sm font-medium rounded border-2 border-orange-400 dark:border-orange-600 bg-orange-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
               />
             </div>
           </div>
