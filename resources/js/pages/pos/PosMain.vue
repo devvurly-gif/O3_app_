@@ -344,6 +344,12 @@
             class="w-32 px-3 py-2 text-base font-bold rounded-xl border-4 border-orange-500 bg-orange-200 text-orange-900 text-right focus:outline-none focus:ring-4 focus:ring-orange-400 shadow-md cursor-pointer"
           />
           <button
+          <button
+            @click="openEditModal(item)"
+            class="px-3 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition"
+          >
+            Modifier
+          </button>
             class="p-1 text-gray-400 dark:text-gray-500 hover:text-red-500 transition"
             @click="posStore.removeFromCart(item.product_id)"
           >
@@ -624,6 +630,7 @@ import { usePosStore, type DraftTicket } from '@/stores/pos/posStore'
 import { useBarcodeScanner } from '@/composables/useBarcodeScanner'
 import http from '@/services/http'
 import PosCheckout from './PosCheckout.vue'
+import CartItemModal from "@/components/CartItemModal.vue"
 
 interface PosCustomer {
   id: number
@@ -637,9 +644,29 @@ interface PosCustomer {
 }
 
 const router = useRouter()
+function openEditModal(item: any) {
+  editingItem.value = item
+  showEditModal.value = true
+}
+
+function closeEditModal() {
+  showEditModal.value = false
+  editingItem.value = null
+}
+
+function saveEditModal(data: any) {
+  if (editingItem.value) {
+    editingItem.value.unit_price = data.price
+    editingItem.value.quantity = data.quantity
+    editingItem.value.discount_percent = data.discount
+  }
+  closeEditModal()
+}
 const posStore = usePosStore()
 
 const mobileView = ref<'products' | 'cart'>('products')
+const showEditModal = ref(false)
+const editingItem = ref<any>(null)
 const categories = ref<{ id: number; ctg_title: string }[]>([])
 const showCheckout = ref(false)
 const checkoutMethod = ref('cash')
