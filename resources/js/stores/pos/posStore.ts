@@ -231,6 +231,14 @@ export const usePosStore = defineStore('pos', () => {
       removeFromCart(productId)
       return
     }
+
+    updateCartItemPrice(productId: number, newPrice: number) {
+      const item = this.cart.find(i => i.product_id === productId)
+      if (item && newPrice > 0) {
+        item.unit_price = newPrice
+        this.refreshPrices()
+      }
+    }
     item.quantity = qty
   }
 

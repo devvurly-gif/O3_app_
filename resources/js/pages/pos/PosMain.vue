@@ -304,7 +304,17 @@
         >
           <div class="flex-1 min-w-0">
             <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ item.designation }}</p>
-            <p class="text-xs text-gray-500 dark:text-gray-400">{{ formatPrice(item.unit_price) }} / {{ item.unit }}</p>
+            <div class="flex items-center gap-2">
+              <p class="text-xs text-gray-500 dark:text-gray-400">{{ item.unit }}</p>
+              <input
+                :value="item.unit_price"
+                @input="posStore.updateCartItemPrice(item.product_id, parseFloat($event.target.value) || item.unit_price)"
+                type="number"
+                min="0"
+                step="0.01"
+                class="w-16 px-2 py-1 text-xs rounded border border-gray-300 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
           </div>
           <div class="flex items-center gap-1.5">
             <button
