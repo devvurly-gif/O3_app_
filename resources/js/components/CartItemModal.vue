@@ -29,20 +29,20 @@
 <script setup lang="ts">
 import { ref, watch } from "vue"
 
-defineProps({ isOpen: Boolean, item: Object })
+const props = defineProps({ isOpen: Boolean, item: Object as any })
 const emit = defineEmits(["close", "save"])
 const formData = ref({ price: 0, quantity: 1, discount: 0 })
 
-// Watch item prop and initialize formData when modal opens
-watch(() => ({ item: item, isOpen: isOpen }), ({ item, isOpen }) => {
-  if (isOpen && item) {
+// Watch isOpen and initialize form data when modal opens
+watch(() => props.isOpen, (newVal) => {
+  if (newVal && props.item) {
     formData.value = {
-      price: item.unit_price || 0,
-      quantity: item.quantity || 1,
-      discount: item.discount_percent || 0
+      price: props.item.unit_price || 0,
+      quantity: props.item.quantity || 1,
+      discount: props.item.discount_percent || 0
     }
   }
-}, { deep: true })
+})
 
 const formatPrice = (n: number) => new Intl.NumberFormat("fr-MA", { style: "currency", currency: "MAD" }).format(n)
 const close = () => emit("close")
