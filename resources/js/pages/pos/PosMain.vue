@@ -328,6 +328,10 @@
               </svg>
             </button>
           </div>
+          <div class="text-right min-w-24">
+            <p class="text-sm text-gray-600 dark:text-gray-400">Ligne</p>
+            <p class="text-lg font-bold text-orange-600">{{ formatPrice(item.quantity * item.unit_price * (1 - item.discount_percent / 100)) }}</p>
+          </div>
 
           <button
             @click="openEditModal(item)"
