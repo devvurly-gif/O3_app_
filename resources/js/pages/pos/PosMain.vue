@@ -578,6 +578,15 @@
                 {{ formatPrice(m.amount) }}
               </span>
             </div>
+
+  <!-- Cart Item Edit Modal -->
+  <CartItemModal
+    :isOpen="showEditModal"
+    :item="editingItem"
+    @close="closeEditModal"
+    @save="saveEditModal"
+  />
+
           </template>
         </div>
 
