@@ -579,15 +579,7 @@
               </span>
             </div>
 
-  <!-- Cart Item Edit Modal -->
-  <CartItemModal
-    :isOpen="showEditModal"
-    :item="editingItem"
-    @close="closeEditModal"
-    @save="saveEditModal"
-  />
-
-          </template>
+</template>
         </div>
 
         <!-- Totals -->
@@ -630,6 +622,14 @@
       </div>
     </div>
   </div>
+
+  <!-- Cart Item Edit Modal -->
+  <CartItemModal
+    :isOpen="showEditModal"
+    :item="editingItem"
+    @close="closeEditModal"
+    @save="saveEditModal"
+  />
 </template>
 
 <script setup lang="ts">
