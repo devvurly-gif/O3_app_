@@ -306,14 +306,7 @@
             <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ item.designation }}</p>
             <div class="flex items-center gap-2">
               <p class="text-xs text-gray-500 dark:text-gray-400">{{ item.unit }}</p>
-              <input
-                :value="item.unit_price"
-                @input="posStore.updateCartItemPrice(item.product_id, parseFloat($event.target.value) || item.unit_price)"
-                type="number"
-                min="0"
-                step="0.01"
-                class="w-24 px-2 py-1 text-sm font-medium rounded border-2 border-orange-400 dark:border-orange-600 bg-orange-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-              />
+
             </div>
           </div>
           <div class="flex items-center gap-1.5">
@@ -335,14 +328,7 @@
               </svg>
             </button>
           </div>
-          <input
-            :value="item.unit_price"
-            @input="posStore.updateCartItemPrice(item.product_id, parseFloat($event.target.value) || item.unit_price)"
-            type="number"
-            min="0"
-            step="0.01"
-            class="w-32 px-3 py-2 text-base font-bold rounded-xl border-4 border-orange-500 bg-orange-200 text-orange-900 text-right focus:outline-none focus:ring-4 focus:ring-orange-400 shadow-md cursor-pointer"
-          />
+
           <button
             @click="openEditModal(item)"
             class="px-3 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition"
