@@ -27,13 +27,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue"
+import { ref, watch } from "vue"
 
 defineProps({ isOpen: Boolean, item: Object })
 const emit = defineEmits(["close", "save"])
 const formData = ref({ price: 0, quantity: 1, discount: 0 })
+
+// Watch item prop and initialize formData when modal opens
+watch(() => ({ item: item, isOpen: isOpen }), ({ item, isOpen }) => {
+  if (isOpen && item) {
+    formData.value = {
+      price: item.unit_price || 0,
+      quantity: item.quantity || 1,
+      discount: item.discount_percent || 0
+    }
+  }
+}, { deep: true })
+
 const formatPrice = (n: number) => new Intl.NumberFormat("fr-MA", { style: "currency", currency: "MAD" }).format(n)
 const close = () => emit("close")
 const save = () => emit("save", formData.value)
-defineExpose({ setItem: (i: any) => { formData.value = { price: i.unit_price, quantity: i.quantity, discount: i.discount_percent } } })
 </script>
