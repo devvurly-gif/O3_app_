@@ -2,7 +2,15 @@
 <html lang="fr" dir="ltr">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+
+    {{-- ── PWA / Kiosk mode ───────────────────────────────────────── --}}
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="O3 POS">
+    <meta name="theme-color" content="#f97316">
+    <link rel="manifest" href="/pwa-manifest.json">
 
     {{-- ── Google Analytics (GA4) ──────────────────────────────────── --}}
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZV94W40XP9"></script>
@@ -104,6 +112,36 @@
 
     {{-- ── Vite Assets ─────────────────────────────────────────────── --}}
     @vite(['resources/css/app.css', 'resources/js/app.ts'])
+
+    {{-- ── Touch / Kiosk global CSS ────────────────────────────────── --}}
+    <style>
+        /* Prevent double-tap zoom and tap flash on all interactive elements */
+        button, a, [role="button"], input, select, textarea {
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* Prevent accidental text selection on UI chrome (not inputs) */
+        button, a, label, th, td:not(.selectable), nav, header, [role="button"] {
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        /* Ensure minimum 44px touch targets */
+        button, a {
+            min-height: 36px;
+        }
+        /* Prevent overscroll bounce (especially on iOS) */
+        html, body {
+            overscroll-behavior: none;
+            -webkit-overflow-scrolling: touch;
+        }
+        /* Hide scrollbars on POS panels (touch scroll still works) */
+        .pos-panel::-webkit-scrollbar { display: none; }
+        /* Print: clean page with no browser headers/footers */
+        @media print {
+            @page { margin: 0; }
+            body { margin: 0; }
+        }
+    </style>
 </head>
 <body class="bg-gray-100">
     <div id="app"></div>

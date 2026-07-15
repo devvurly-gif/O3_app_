@@ -20,7 +20,7 @@
     <!-- ── Logo ─────────────────────────────────────────────────── -->
     <div class="flex items-center gap-3 px-3 h-16 border-b border-slate-800 shrink-0 overflow-hidden">
       <div
-        class="w-9 h-9 rounded-xl bg-orange-500 flex items-center justify-center shrink-0 shadow-lg shadow-orange-900/40"
+        class="w-9 h-9 rounded-xl bg-[#7C5CFC] flex items-center justify-center shrink-0 shadow-lg shadow-[#7C5CFC]/40"
       >
         <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -110,7 +110,7 @@
             class="group relative flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition-all duration-150 overflow-hidden"
             :class="
               isActive(item.to)
-                ? 'bg-orange-600 text-white shadow-md shadow-orange-900/30'
+                ? 'bg-[#7C5CFC] text-white shadow-md shadow-[#7C5CFC]/30'
                 : 'text-slate-400 hover:bg-slate-800/70 hover:text-slate-100'
             "
             :title="!showLabels ? (item.labelKey ? $t(item.labelKey) : item.label) : undefined"
@@ -153,7 +153,7 @@
     <!-- ── Footer: real user info ────────────────────────────── -->
     <div class="shrink-0 border-t border-slate-800 p-3 flex items-center gap-3 overflow-hidden">
       <div
-        class="w-9 h-9 rounded-full bg-orange-600 flex items-center justify-center shrink-0 text-white text-xs font-bold uppercase"
+        class="w-9 h-9 rounded-full bg-[#7C5CFC] flex items-center justify-center shrink-0 text-white text-xs font-bold uppercase"
       >
         {{ userInitials }}
       </div>
@@ -239,6 +239,7 @@ function safeIcon(html: string | undefined): string {
 
 const props = defineProps<{
   mobileOpen?: boolean
+  pinned?: boolean
 }>()
 
 const emit = defineEmits(['hover', 'closeMobile'])
@@ -263,7 +264,7 @@ const openGroups = ref(
 )
 
 const isAdmin = computed(() => auth.userRole === 'admin')
-const isExpanded = computed(() => hovered.value)
+const isExpanded = computed(() => props.pinned || hovered.value)
 
 const showLabels = computed(() => props.mobileOpen || isExpanded.value)
 

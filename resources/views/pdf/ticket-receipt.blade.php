@@ -4,13 +4,22 @@
     <meta charset="UTF-8">
     <title>Ticket {{ $ticket->reference }}</title>
     <style>
+        /* 80mm thermal paper — exact format for kiosk-printing */
+        @page {
+            size: 80mm auto;
+            margin: 0;
+        }
+        @media print {
+            html, body { width: 80mm; }
+        }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: DejaVu Sans, monospace;
+            font-family: 'Courier New', DejaVu Sans, monospace;
             font-size: 9px;
             color: #000;
             width: 80mm;
             margin: 0 auto;
+            background: #fff;
         }
         .receipt { padding: 5mm; }
 

@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guide d'utilisation — O3 POS Terminal</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f8fafc; color: #1e293b; font-size: 14px; }
+
+  .nav { position: sticky; top: 0; z-index: 100; background: #f97316; color: white; padding: 0 24px; display: flex; align-items: center; gap: 16px; height: 52px; box-shadow: 0 2px 8px rgba(0,0,0,.2); }
+  .nav-logo { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
+  .nav-title { font-size: 14px; opacity: .85; }
+  .nav-tabs { display: flex; gap: 4px; margin-left: auto; flex-wrap: wrap; }
+  .nav-tab { padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; transition: background .15s; white-space: nowrap; }
+  .nav-tab:hover { background: rgba(255,255,255,.2); }
+  .nav-tab.active { background: rgba(255,255,255,.25); }
+
+  .container { max-width: 960px; margin: 0 auto; padding: 32px 16px 64px; }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  .hero { background: linear-gradient(135deg, #fff7ed, #fff); border: 1px solid #fed7aa; border-radius: 16px; padding: 32px; margin-bottom: 32px; display: flex; gap: 24px; align-items: center; }
+  .hero-icon { font-size: 56px; flex-shrink: 0; }
+  .hero h1 { font-size: 24px; font-weight: 800; color: #f97316; margin-bottom: 6px; }
+  .hero p { color: #64748b; line-height: 1.6; }
+  .hero-badge { display: inline-block; background: #f97316; color: white; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 99px; margin-bottom: 10px; }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; }
+  .card-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 12px; }
+  .card h3 { font-size: 14px; font-weight: 700; margin-bottom: 6px; color: #0f172a; }
+  .card p { font-size: 12px; color: #64748b; line-height: 1.5; }
+
+  .steps { display: flex; flex-direction: column; gap: 0; margin-bottom: 24px; }
+  .step { display: flex; gap: 16px; padding: 20px 0; border-bottom: 1px solid #f1f5f9; }
+  .step:last-child { border-bottom: none; }
+  .step-num { width: 36px; height: 36px; border-radius: 50%; background: #f97316; color: white; font-weight: 800; font-size: 15px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+  .step-body h3 { font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 6px; }
+  .step-body p { font-size: 13px; color: #475569; line-height: 1.55; }
+  .step-body .code { background: #1e293b; color: #7dd3fc; font-family: 'Courier New', monospace; font-size: 11px; padding: 10px 14px; border-radius: 8px; margin-top: 10px; word-break: break-all; }
+  .step-body .tip { background: #fff7ed; border-left: 3px solid #f97316; padding: 8px 12px; border-radius: 0 6px 6px 0; font-size: 12px; color: #92400e; margin-top: 8px; }
+  .step-body .warn { background: #fef2f2; border-left: 3px solid #ef4444; padding: 8px 12px; border-radius: 0 6px 6px 0; font-size: 12px; color: #991b1b; margin-top: 8px; }
+
+  h2.sec { font-size: 18px; font-weight: 800; color: #0f172a; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2px solid #f97316; }
+  h2.sec span { margin-right: 8px; }
+
+  table.guide { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+  table.guide th { background: #f8fafc; text-align: left; padding: 10px 14px; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .5px; border-bottom: 2px solid #e2e8f0; }
+  table.guide td { padding: 10px 14px; font-size: 13px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
+  table.guide tr:last-child td { border-bottom: none; }
+  .badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 99px; }
+  .badge-green { background: #dcfce7; color: #166534; }
+  .badge-orange { background: #fff7ed; color: #9a3412; }
+  .badge-blue { background: #eff6ff; color: #1e40af; }
+  .badge-gray { background: #f1f5f9; color: #475569; }
+
+  .mockup { background: #0f172a; border-radius: 12px; padding: 12px; margin: 16px 0 24px; }
+  .mockup-bar { background: #1e293b; border-radius: 6px 6px 0 0; padding: 8px 12px; display: flex; align-items: center; gap: 8px; }
+  .mockup-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .mockup-url { background: #334155; flex: 1; border-radius: 4px; padding: 4px 10px; font-size: 11px; color: #94a3b8; font-family: monospace; }
+  .mockup-screen { background: #f8fafc; border-radius: 0 0 6px 6px; padding: 16px; }
+  .pos-header { background: white; border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; gap: 10px; margin-bottom: 10px; border: 1px solid #e2e8f0; }
+  .pos-logo { background: #f97316; width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 11px; }
+  .pos-body { display: grid; grid-template-columns: 1fr 280px; gap: 10px; }
+  .pos-products { background: white; border-radius: 8px; padding: 10px; border: 1px solid #e2e8f0; }
+  .pos-products-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 8px; }
+  .pos-product { background: #f8fafc; border-radius: 6px; padding: 8px; text-align: center; font-size: 10px; border: 1px solid #e2e8f0; }
+  .pos-product-price { color: #f97316; font-weight: 700; margin-top: 3px; }
+  .pos-cart { background: white; border-radius: 8px; padding: 10px; border: 1px solid #e2e8f0; }
+  .pos-cart-item { background: #f8fafc; border-radius: 6px; padding: 6px 8px; margin-bottom: 6px; font-size: 10px; display: flex; justify-content: space-between; }
+  .pos-cart-total { border-top: 2px solid #e2e8f0; padding-top: 8px; margin-top: 8px; }
+  .pos-btn { padding: 8px; border-radius: 6px; text-align: center; font-size: 11px; font-weight: 700; margin-top: 6px; }
+  .pos-btn-green { background: #dcfce7; color: #166534; }
+  .pos-btn-orange { background: #f97316; color: white; }
+  .search-bar { background: #f1f5f9; border-radius: 6px; padding: 6px 10px; font-size: 11px; color: #94a3b8; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+
+  .checklist { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+  .check-item { display: flex; align-items: flex-start; gap: 12px; background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 16px; }
+  .check-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+  .check-item h4 { font-size: 13px; font-weight: 700; color: #0f172a; }
+  .check-item p { font-size: 12px; color: #64748b; margin-top: 2px; }
+
+  .alert { border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; display: flex; gap: 10px; align-items: flex-start; font-size: 13px; }
+  .alert-orange { background: #fff7ed; border: 1px solid #fed7aa; color: #92400e; }
+  .alert-blue { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+
+  .print-btn { position: fixed; bottom: 24px; right: 24px; background: #f97316; color: white; border: none; border-radius: 50%; width: 52px; height: 52px; font-size: 22px; cursor: pointer; box-shadow: 0 4px 12px rgba(249,115,22,.4); transition: transform .15s; }
+  .print-btn:hover { transform: scale(1.1); }
+
+  @media (max-width: 600px) {
+    .nav-title { display: none; }
+    .nav-tab { padding: 5px 10px; font-size: 11px; }
+    .hero { flex-direction: column; }
+    .pos-body { grid-template-columns: 1fr; }
+    .pos-products-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @media print {
+    .nav, .print-btn { display: none; }
+    .section { display: block !important; }
+    .container { padding: 0; max-width: 100%; }
+    .hero { break-inside: avoid; }
+    .step { break-inside: avoid; }
+    h2.sec { break-before: auto; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-logo">O3</div>
+  <div class="nav-title">Guide POS Terminal</div>
+  <div class="nav-tabs">
+    <div class="nav-tab active" onclick="showSection('intro', this)">Intro</div>
+    <div class="nav-tab" onclick="showSection('setup', this)">Installation</div>
+    <div class="nav-tab" onclick="showSection('usage', this)">Utilisation</div>
+    <div class="nav-tab" onclick="showSection('print', this)">Impression</div>
+    <div class="nav-tab" onclick="showSection('faq', this)">FAQ</div>
+  </div>
+</nav>
+
+<div class="container">
+
+<!-- INTRO -->
+<div class="section active" id="section-intro">
+  <div class="hero">
+    <div class="hero-icon">🖥️</div>
+    <div>
+      <div class="hero-badge">Guide d'utilisation v1.0</div>
+      <h1>O3 POS — Terminal de Caisse</h1>
+      <p>Ce guide vous accompagne dans la mise en place et l'utilisation quotidienne du logiciel de caisse O3 sur un terminal tactile avec imprimante à tickets.</p>
+    </div>
+  </div>
+
+  <h2 class="sec"><span>📦</span> Ce que contient ce guide</h2>
+  <div class="cards">
+    <div class="card">
+      <div class="card-icon" style="background:#fff7ed">⚙️</div>
+      <h3>Installation</h3>
+      <p>Configuration du PC caisse, Chrome kiosk, imprimante thermique 80mm.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background:#f0fdf4">💳</div>
+      <h3>Utilisation quotidienne</h3>
+      <p>Ouverture de session, vente, paiement, tickets, gestion du panier.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background:#eff6ff">🖨️</div>
+      <h3>Impression tickets</h3>
+      <p>Configuration de l'imprimante, impression silencieuse, format 80mm.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background:#fdf4ff">❓</div>
+      <h3>FAQ & Dépannage</h3>
+      <p>Problèmes courants et solutions rapides pour le caissier.</p>
+    </div>
+  </div>
+
+  <h2 class="sec"><span>🔧</span> Matériel requis</h2>
+  <table class="guide">
+    <thead><tr><th>Composant</th><th>Spécification recommandée</th><th>Statut</th></tr></thead>
+    <tbody>
+      <tr><td>💻 Terminal</td><td>PC/tablette Windows 10+ ou Android, écran tactile 10"+ conseillé</td><td><span class="badge badge-green">Requis</span></td></tr>
+      <tr><td>🖨️ Imprimante</td><td>Thermique 80mm (Epson TM-T20, Bixolon, HPRT…)</td><td><span class="badge badge-green">Requis</span></td></tr>
+      <tr><td>🌐 Connexion</td><td>Internet stable (WiFi ou filaire)</td><td><span class="badge badge-green">Requis</span></td></tr>
+      <tr><td>🌍 Navigateur</td><td>Google Chrome (dernière version)</td><td><span class="badge badge-green">Requis</span></td></tr>
+      <tr><td>📶 Code-barres</td><td>Scanner USB ou Bluetooth HID</td><td><span class="badge badge-orange">Optionnel</span></td></tr>
+      <tr><td>⚡ QZ Tray</td><td>Application impression silencieuse avancée</td><td><span class="badge badge-orange">Optionnel</span></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- SETUP -->
+<div class="section" id="section-setup">
+  <div class="hero">
+    <div class="hero-icon">⚙️</div>
+    <div>
+      <div class="hero-badge">Étape 1/3</div>
+      <h1>Installation du terminal</h1>
+      <p>Suivez ces étapes une seule fois par poste de caisse. Durée estimée : <strong>10 minutes</strong>.</p>
+    </div>
+  </div>
+
+  <h2 class="sec"><span>🖨️</span> A — Configurer l'imprimante</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h3>Installer le pilote de l'imprimante</h3>
+        <p>Connectez l'imprimante thermique (USB ou réseau). Installez le pilote fourni par le fabricant (Epson, Bixolon, HPRT…). Vérifiez qu'elle apparaît dans <strong>Panneau de configuration → Périphériques et imprimantes</strong>.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h3>Définir comme imprimante par défaut</h3>
+        <p>Faites un clic droit sur l'imprimante ticket → <strong>"Définir comme imprimante par défaut"</strong>. C'est sur cette imprimante que les tickets seront envoyés automatiquement.</p>
+        <div class="tip">💡 Désactivez "Windows gère mon imprimante par défaut" dans Paramètres → Imprimantes.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h3>Tester l'impression</h3>
+        <p>Clic droit sur l'imprimante → <strong>"Propriétés de l'imprimante"</strong> → <strong>"Imprimer une page de test"</strong>. Le ticket de test doit sortir correctement.</p>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="sec"><span>🌍</span> B — Créer le raccourci Chrome Kiosk</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h3>Créer un raccourci sur le bureau</h3>
+        <p>Clic droit sur le bureau → <strong>Nouveau → Raccourci</strong>. Coller la commande suivante :</p>
+        <div class="code">"C:\Program Files\Google\Chrome\Application\chrome.exe" --kiosk-printing --app=https://teliphoni.o3app.ma/pos/main</div>
+        <div class="tip">💡 <code>--kiosk-printing</code> = impression directe sans dialog. <code>--app</code> = ouvre Chrome en mode fenêtre sans barre d'adresse.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h3>Nommer le raccourci</h3>
+        <p>Donnez-lui le nom <strong>"O3 POS Caisse"</strong>. Double-cliquez dessus pour vérifier que le POS s'ouvre directement.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h3>(Optionnel) Démarrage automatique</h3>
+        <p>Pour que le POS démarre avec Windows, copiez le raccourci dans :</p>
+        <div class="code">C:\Users\[VotreNom]\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup</div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="sec"><span>💤</span> C — Empêcher la mise en veille</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h3>Désactiver la mise en veille Windows</h3>
+        <p><strong>Paramètres → Système → Alimentation et veille</strong> → Mettre les deux options sur <strong>"Jamais"</strong>.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h3>Désactiver l'écran de veille</h3>
+        <p>Clic droit bureau → <strong>Personnaliser → Écran de veille → "Aucun"</strong>.</p>
+        <div class="tip">💡 L'application O3 POS maintient aussi l'écran éveillé automatiquement via l'API Wake Lock du navigateur.</div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="sec"><span>⚡</span> D — Configurer le terminal dans O3</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h3>Créer le terminal POS</h3>
+        <p>Dans O3 → <strong>Paramètres → Terminaux POS</strong> → Ajouter un terminal avec le nom, le code et l'entrepôt associé.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h3>Configurer l'imprimante dans le POS</h3>
+        <p>Ouvrez le POS → cliquez sur l'icône <strong>⚙️</strong> en haut à droite du panier → saisissez le nom exact de l'imprimante Windows → cliquez <strong>Enregistrer</strong>.</p>
+        <div class="tip">💡 Le nom doit correspondre exactement à ce qui apparaît dans "Périphériques et imprimantes".</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- USAGE -->
+<div class="section" id="section-usage">
+  <div class="hero">
+    <div class="hero-icon">💳</div>
+    <div>
+      <div class="hero-badge">Guide caissier</div>
+      <h1>Utilisation quotidienne</h1>
+      <p>Tout ce qu'un caissier doit savoir pour utiliser le POS au quotidien.</p>
+    </div>
+  </div>
+
+  <h2 class="sec"><span>🌅</span> Ouverture de caisse</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h3>Lancer le POS</h3>
+        <p>Double-cliquer sur le raccourci <strong>"O3 POS Caisse"</strong> sur le bureau. Connectez-vous avec vos identifiants si demandé.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h3>Sélectionner le terminal et ouvrir la session</h3>
+        <p>Choisissez votre terminal (ex: <em>POS_1</em>), saisissez le <strong>fond de caisse</strong> (montant en espèces dans le tiroir), puis cliquez <strong>"Ouvrir la session"</strong>.</p>
+        <div class="tip">💡 Le fond de caisse est généralement 200 MAD ou le montant défini par votre responsable.</div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="sec"><span>🖥️</span> Interface du POS</h2>
+  <div class="mockup">
+    <div class="mockup-bar">
+      <div class="mockup-dot" style="background:#ef4444"></div>
+      <div class="mockup-dot" style="background:#f59e0b"></div>
+      <div class="mockup-dot" style="background:#22c55e"></div>
+      <div class="mockup-url">teliphoni.o3app.ma/pos/main</div>
+    </div>
+    <div class="mockup-screen">
+      <div class="pos-header">
+        <div class="pos-logo">O3</div>
+        <span style="font-size:12px;font-weight:700;color:#f97316">Point de Vente</span>
+        <span style="font-size:11px;background:#f1f5f9;padding:2px 8px;border-radius:4px">POS_1</span>
+        <span style="font-size:11px;color:#94a3b8;margin-left:auto">Session ouverte</span>
+        <span style="font-size:11px;color:#ef4444;cursor:pointer">Quitter POS</span>
+      </div>
+      <div class="pos-body">
+        <div class="pos-products">
+          <div style="display:flex;gap:6px;margin-bottom:8px">
+            <span style="background:#f97316;color:white;padding:3px 10px;border-radius:6px;font-size:10px">Tout</span>
+            <span style="background:#f1f5f9;padding:3px 10px;border-radius:6px;font-size:10px;color:#475569">Laptops</span>
+            <span style="background:#f1f5f9;padding:3px 10px;border-radius:6px;font-size:10px;color:#475569">Tablettes</span>
+          </div>
+          <div class="search-bar">🔍 Rechercher par nom, SKU, code-barres...</div>
+          <div class="pos-products-grid">
+            <div class="pos-product">📱 iPhone 15<div class="pos-product-price">8 999 MAD</div><div style="font-size:9px;color:#22c55e">Stock: 5</div></div>
+            <div class="pos-product">💻 Dell XPS<div class="pos-product-price">12 500 MAD</div><div style="font-size:9px;color:#22c55e">Stock: 2</div></div>
+            <div class="pos-product">⌚ Galaxy Watch<div class="pos-product-price">2 299 MAD</div><div style="font-size:9px;color:#ef4444">Rupture</div></div>
+          </div>
+        </div>
+        <div class="pos-cart">
+          <div style="font-size:12px;font-weight:700;margin-bottom:8px">Panier <span style="background:#fff7ed;color:#f97316;padding:1px 7px;border-radius:99px;font-size:10px">2</span> <span style="float:right;cursor:pointer">⚙️</span></div>
+          <div class="pos-cart-item"><span>iPhone 15</span><span style="font-weight:700">8 999 MAD</span></div>
+          <div class="pos-cart-item"><span>Dell XPS</span><span style="font-weight:700">12 500 MAD</span></div>
+          <div class="pos-cart-total">
+            <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span>Sous-total HT</span><span>17 915 MAD</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:6px"><span>TVA</span><span>1 584 MAD</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:800"><span>TOTAL TTC</span><span style="color:#f97316">19 499 MAD</span></div>
+          </div>
+          <div class="pos-btn pos-btn-green">💵 Espèces</div>
+          <div class="pos-btn pos-btn-orange">✅ Valider la vente</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="sec"><span>🛍️</span> Faire une vente</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h3>Ajouter des articles au panier</h3>
+        <p>Trois méthodes : <strong>toucher la carte produit</strong> dans la grille, <strong>scanner le code-barres</strong> avec le lecteur USB, ou <strong>rechercher par nom</strong> dans la barre de recherche.</p>
+        <div class="tip">💡 Pour un produit avec variantes (taille, couleur…), une fenêtre de sélection s'ouvre automatiquement.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h3>Modifier la quantité ou le prix</h3>
+        <p>Dans le panier, utilisez les boutons <strong>＋ / −</strong> pour ajuster la quantité. Touchez l'icône <strong>✏️</strong> pour modifier le prix unitaire ou appliquer une remise.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h3>(Optionnel) Sélectionner un client</h3>
+        <p>Recherchez un client dans la zone "Client" en haut du panier pour gérer les remises personnalisées et les ventes en compte.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h3>Valider le paiement</h3>
+        <p>Touchez le bouton de paiement souhaité :<br>
+        <span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:4px;font-size:12px;display:inline-block;margin:4px 4px 4px 0">💵 Espèces</span>
+        <span style="background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:4px;font-size:12px;display:inline-block;margin:4px 4px 4px 0">💳 Carte</span>
+        <span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:4px;font-size:12px;display:inline-block;margin:4px">📋 En Compte</span></p>
+        <p style="margin-top:6px">Saisissez le montant reçu si paiement espèces → le rendu monnaie est calculé automatiquement → <strong>Confirmer</strong>.</p>
+        <div class="tip">💡 Le ticket s'imprime automatiquement après chaque vente si l'option est activée.</div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="sec"><span>⏸️</span> Mettre une vente en attente</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h3>Mettre en pause et démarrer un nouveau ticket</h3>
+        <p>Touchez le bouton <strong>"Tickets"</strong> en haut du panier → <strong>"Mettre en attente + nouveau ticket"</strong>. La vente en cours est sauvegardée.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h3>Reprendre un ticket en attente</h3>
+        <p>Touchez à nouveau <strong>"Tickets"</strong> → sélectionnez le ticket en attente dans la liste → il se recharge dans le panier.</p>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="sec"><span>🌙</span> Fermeture de caisse</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h3>Vérifier les ventes de la journée</h3>
+        <p>Touchez <strong>"Ventes"</strong> en haut du panier pour voir le récapitulatif : nombre de tickets, total TTC, répartition par mode de paiement.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h3>Fermer la session</h3>
+        <p>Cliquez sur <strong>"Fermer la session"</strong> → saisissez le montant en caisse (espèces comptées) → <strong>Confirmer</strong>. Un rapport de clôture est généré.</p>
+        <div class="warn">⚠️ Ne fermez pas le navigateur sans fermer la session proprement.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- IMPRESSION -->
+<div class="section" id="section-print">
+  <div class="hero">
+    <div class="hero-icon">🖨️</div>
+    <div>
+      <div class="hero-badge">Impression tickets</div>
+      <h1>Configuration de l'impression</h1>
+      <p>Deux modes d'impression disponibles selon la configuration du poste.</p>
+    </div>
+  </div>
+
+  <table class="guide">
+    <thead><tr><th>Mode</th><th>Comment ça marche</th><th>Prérequis</th><th>Statut</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>🥇 Chrome Kiosk</strong><br><small>Recommandé</small></td>
+        <td>Chrome envoie directement sur l'imprimante par défaut Windows. Aucun dialog.</td>
+        <td>Raccourci avec <code>--kiosk-printing</code> + imprimante par défaut configurée</td>
+        <td><span class="badge badge-green">Sans installation</span></td>
+      </tr>
+      <tr>
+        <td><strong>⚡ QZ Tray</strong><br><small>Avancé</small></td>
+        <td>Impression réseau avancée, plusieurs imprimantes par terminal, impression sur une imprimante non-défaut.</td>
+        <td>Application QZ Tray installée + nom imprimante configuré dans ⚙️</td>
+        <td><span class="badge badge-orange">Installation requise</span></td>
+      </tr>
+      <tr>
+        <td><strong>📄 Dialog navigateur</strong><br><small>Fallback automatique</small></td>
+        <td>Boîte de dialogue standard du navigateur si les autres modes échouent.</td>
+        <td>Aucun</td>
+        <td><span class="badge badge-gray">Automatique</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2 class="sec"><span>⚙️</span> Configurer l'imprimante dans le POS</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h3>Ouvrir les paramètres du terminal</h3>
+        <p>Dans le POS, touchez l'icône <strong>⚙️ engrenage</strong> en haut à droite du panier.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h3>Saisir le nom de l'imprimante</h3>
+        <p>Dans le champ <strong>"Imprimante"</strong>, tapez le nom <strong>exact</strong> tel qu'il apparaît dans Windows → Périphériques et imprimantes. Exemple :</p>
+        <div class="code">EPSON TM-T20III Receipt</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h3>Activer l'impression automatique</h3>
+        <p>Le toggle <strong>"Impression automatique"</strong> imprime le ticket après chaque vente sans action manuelle.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h3>Enregistrer</h3>
+        <p>Touchez <strong>"Enregistrer"</strong>. Le paramètre est mémorisé pour ce terminal.</p>
+        <div class="tip">💡 Si QZ Tray est connecté, un bouton "Test d'impression" apparaît pour valider la configuration immédiatement.</div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="sec"><span>📃</span> Format du ticket (80mm)</h2>
+  <div class="alert alert-blue">
+    ℹ️ Les tickets sont formatés en <strong>80mm de large</strong>, le standard des imprimantes thermiques de caisse. Le contenu s'adapte automatiquement à la longueur du ticket.
+  </div>
+  <table class="guide">
+    <thead><tr><th>Zone</th><th>Contenu</th></tr></thead>
+    <tbody>
+      <tr><td>📋 En-tête</td><td>Nom de l'entreprise, adresse, téléphone, ICE</td></tr>
+      <tr><td>🔖 Infos ticket</td><td>N° ticket, date/heure, caissier, terminal</td></tr>
+      <tr><td>👤 Client</td><td>Nom et téléphone (si sélectionné, hors comptoir)</td></tr>
+      <tr><td>📦 Articles</td><td>Désignation, quantité, prix unitaire, total ligne, remise</td></tr>
+      <tr><td>💰 Totaux</td><td>Sous-total HT, TVA, Total TTC</td></tr>
+      <tr><td>💳 Paiements</td><td>Mode(s) de paiement : Espèces, Carte, En Compte, Chèque…</td></tr>
+      <tr><td>✨ Pied</td><td>"Merci pour votre achat !", téléphone entreprise</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- FAQ -->
+<div class="section" id="section-faq">
+  <div class="hero">
+    <div class="hero-icon">❓</div>
+    <div>
+      <div class="hero-badge">Dépannage</div>
+      <h1>Questions fréquentes</h1>
+      <p>Solutions rapides aux problèmes courants rencontrés sur le terminal de caisse.</p>
+    </div>
+  </div>
+
+  <div class="checklist">
+    <div class="check-item">
+      <div class="check-icon">🖨️</div>
+      <div>
+        <h4>Le ticket ne s'imprime pas automatiquement</h4>
+        <p>Vérifiez : 1) Chrome est ouvert via le raccourci kiosk (<code>--kiosk-printing</code>) 2) l'imprimante est définie comme "par défaut" dans Windows 3) l'option "Impression automatique" est activée dans ⚙️.</p>
+      </div>
+    </div>
+    <div class="check-item">
+      <div class="check-icon">📡</div>
+      <div>
+        <h4>Le POS affiche "Session introuvable" ou redirige vers la connexion</h4>
+        <p>La session a expiré. Fermer et relancer le raccourci Chrome. Si le problème persiste, vider le cache Chrome (Ctrl+Shift+Delete) et se reconnecter.</p>
+      </div>
+    </div>
+    <div class="check-item">
+      <div class="check-icon">📦</div>
+      <div>
+        <h4>Un produit n'apparaît pas dans la grille</h4>
+        <p>Vérifiez dans O3 → Produits que le produit est bien marqué "Disponible en POS" et que son stock est &gt; 0 (ou "Vente sans stock" activée). Rafraîchissez la page.</p>
+      </div>
+    </div>
+    <div class="check-item">
+      <div class="check-icon">💳</div>
+      <div>
+        <h4>La vente "En Compte" est grisée</h4>
+        <p>Ce mode n'est disponible que si un client de type "En Compte" est sélectionné dans la zone Client du panier et que son encours ne dépasse pas son seuil de crédit.</p>
+      </div>
+    </div>
+    <div class="check-item">
+      <div class="check-icon">🔍</div>
+      <div>
+        <h4>Le scanner code-barres ne fonctionne pas</h4>
+        <p>Cliquez d'abord dans la barre de recherche du POS pour l'activer, puis scannez. Le scanner doit être en mode HID (clavier USB). Certains scanners nécessitent une configuration pour envoyer un "Enter" en fin de scan.</p>
+      </div>
+    </div>
+    <div class="check-item">
+      <div class="check-icon">🌐</div>
+      <div>
+        <h4>La page se charge lentement</h4>
+        <p>Vérifiez la connexion internet. Le POS nécessite une connexion stable. En cas de WiFi instable, préférez une connexion filaire (câble Ethernet).</p>
+      </div>
+    </div>
+    <div class="check-item">
+      <div class="check-icon">⚡</div>
+      <div>
+        <h4>Le point QZ Tray reste gris (non connecté)</h4>
+        <p>QZ Tray n'est pas installé sur ce poste. Ce n'est pas bloquant — l'impression fonctionne via Chrome kiosk. Pour l'impression réseau avancée, téléchargez QZ Tray sur <strong>qz.io</strong> et installez-le.</p>
+      </div>
+    </div>
+    <div class="check-item">
+      <div class="check-icon">🔒</div>
+      <div>
+        <h4>Le bouton Retour du navigateur ne fonctionne pas</h4>
+        <p>C'est normal et voulu ! Le POS bloque la navigation arrière pour éviter les sorties accidentelles. Pour quitter le POS, utilisez le bouton <strong>"Quitter POS"</strong> en haut à droite.</p>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="sec"><span>📞</span> Support</h2>
+  <div class="alert alert-orange">
+    Pour tout problème non résolu, contactez le support O3 App :<br><br>
+    📧 <strong>contact@o3app.ma</strong> &nbsp;|&nbsp; 🌐 <strong>o3app.ma</strong>
+  </div>
+</div>
+
+</div><!-- /container -->
+
+<button class="print-btn" onclick="window.print()" title="Imprimer le guide">🖨️</button>
+
+<script>
+function showSection(id, el) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('section-' + id).classList.add('active');
+  el.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>

@@ -1,24 +1,82 @@
-﻿<script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+<script setup lang="ts">
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTenantStore } from '@/stores/central/useTenantStore'
 import { useToastStore } from '@/stores/toastStore'
 
 const router = useRouter()
-const store = useTenantStore()
-const toast = useToastStore()
+const store  = useTenantStore()
+const toast  = useToastStore()
 
-const search = ref('')
+const search     = ref('')
 const planFilter = ref('')
 
-// Build a tenant URL using the SAME protocol as the central admin page.
-// In production (https) → https://tenant.o3app.ma. In local dev (http) → http://tenant.o3app.test.
-function tenantUrl(domain: string, prefix = ''): string {
-  const proto = typeof window !== 'undefined' ? window.location.protocol : 'https:'
-  return `${proto}//${prefix}${domain}`
+// ── URL readiness countdown ────────────────────────────────────────────────
+const PROVISION_SECS = 60
+
+// seconds remaining per tenantId (only set while provisioning)
+const countdowns = ref<Record<string, number>>({})
+let tickTimer: ReturnType<typeof setInterval> | null = null
+const pollTimers: Record<string, ReturnType<typeof setInterval>> = {}
+
+function elapsedSince(iso: string): number {
+  return Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
 }
 
-onMounted(() => store.fetchAll())
+function isUrlReady(tenant: any): boolean {
+  if (tenant.url_ready) return true
+  const cd = countdowns.value[tenant.id]
+  // If no countdown entry, either never started or already expired → show buttons
+  return cd === undefined || cd <= 0
+}
+
+function initTenant(tenant: any) {
+  if (tenant.url_ready) return
+  const remaining = PROVISION_SECS - elapsedSince(tenant.created_at)
+  if (remaining <= 0) return  // already past window
+
+  countdowns.value[tenant.id] = remaining
+  startPolling(tenant.id)
+}
+
+function startPolling(tenantId: string) {
+  if (pollTimers[tenantId]) return
+  pollTimers[tenantId] = setInterval(async () => {
+    try {
+      const active = await store.checkUrlStatus(tenantId)
+      if (active) {
+        clearInterval(pollTimers[tenantId])
+        delete pollTimers[tenantId]
+        delete countdowns.value[tenantId]
+      }
+    } catch { /* ignore */ }
+  }, 5000)
+}
+
+function startTick() {
+  tickTimer = setInterval(() => {
+    for (const id of Object.keys(countdowns.value)) {
+      if (countdowns.value[id] > 0) countdowns.value[id]--
+    }
+  }, 1000)
+}
+
+onMounted(async () => {
+  await store.fetchAll()
+  store.items.forEach(initTenant)
+  startTick()
+})
+
+onUnmounted(() => {
+  if (tickTimer) clearInterval(tickTimer)
+  Object.values(pollTimers).forEach(clearInterval)
+})
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function tenantUrl(domain: string): string {
+  const proto = window.location.protocol
+  return `${proto}//${domain}`
+}
 
 const filtered = computed(() => {
   let list = store.items
@@ -27,30 +85,24 @@ const filtered = computed(() => {
     list = list.filter(t =>
       t.name.toLowerCase().includes(q) ||
       t.email.toLowerCase().includes(q) ||
-      t.id.toLowerCase().includes(q)
+      t.id.toLowerCase().includes(q),
     )
   }
-  if (planFilter.value) {
-    list = list.filter(t => t.plan === planFilter.value)
-  }
+  if (planFilter.value) list = list.filter(t => t.plan === planFilter.value)
   return list
 })
 
-const planPrices: Record<string, number> = {
-  starter: 499,
-  business: 999,
-  enterprise: 1999,
-}
+const planPrices: Record<string, number> = { starter: 499, business: 999, enterprise: 1999 }
 
 const stats = computed(() => {
   const active = store.items.filter(t => t.is_active)
   return {
-    total: store.items.length,
-    active: active.length,
-    starter: store.items.filter(t => t.plan === 'starter').length,
-    business: store.items.filter(t => t.plan === 'business').length,
+    total:      store.items.length,
+    active:     active.length,
+    starter:    store.items.filter(t => t.plan === 'starter').length,
+    business:   store.items.filter(t => t.plan === 'business').length,
     enterprise: store.items.filter(t => t.plan === 'enterprise').length,
-    revenue: active.reduce((sum, t) => sum + (planPrices[t.plan] || 0), 0),
+    revenue:    active.reduce((s, t) => s + (planPrices[t.plan] || 0), 0),
   }
 })
 
@@ -70,11 +122,11 @@ async function deleteTenant(tenant: any) {
 }
 
 function getPlanColor(plan: string) {
-  return {
-    starter: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
-    business: 'bg-orange-100 text-orange-600 dark:bg-orange-900 dark:text-orange-300',
+  return ({
+    starter:    'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
+    business:   'bg-[#F1ECFC] text-[#6D4CE0] dark:bg-[#4C3999] dark:text-[#C4B5FD]',
     enterprise: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
-  }[plan] || 'bg-gray-100 text-gray-700'
+  } as Record<string, string>)[plan] ?? 'bg-gray-100 text-gray-700'
 }
 
 function formatDate(d: string) {
@@ -84,6 +136,7 @@ function formatDate(d: string) {
 
 <template>
   <div class="space-y-6">
+
     <!-- Header -->
     <div class="flex items-center justify-between">
       <div>
@@ -92,7 +145,7 @@ function formatDate(d: string) {
       </div>
       <button
         @click="router.push('/central/tenants/create')"
-        class="inline-flex items-center gap-2 px-4 py-2.5 bg-orange-500 text-white text-sm font-medium rounded-lg hover:bg-orange-600 transition"
+        class="inline-flex items-center gap-2 px-4 py-2.5 bg-[#7C5CFC] text-white text-sm font-medium rounded-lg hover:bg-[#6D4CE0] transition"
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -101,31 +154,17 @@ function formatDate(d: string) {
       </button>
     </div>
 
-    <!-- Stats Cards -->
+    <!-- Stats -->
     <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-      <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-        <p class="text-sm text-gray-500 dark:text-gray-400">Total</p>
-        <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ stats.total }}</p>
-      </div>
-      <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-        <p class="text-sm text-gray-500 dark:text-gray-400">Actifs</p>
-        <p class="text-2xl font-bold text-green-600">{{ stats.active }}</p>
-      </div>
-      <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-        <p class="text-sm text-gray-500 dark:text-gray-400">Starter</p>
-        <p class="text-2xl font-bold text-gray-600">{{ stats.starter }}</p>
-      </div>
-      <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-        <p class="text-sm text-gray-500 dark:text-gray-400">Business</p>
-        <p class="text-2xl font-bold text-orange-500">{{ stats.business }}</p>
-      </div>
-      <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-        <p class="text-sm text-gray-500 dark:text-gray-400">Enterprise</p>
-        <p class="text-2xl font-bold text-purple-600">{{ stats.enterprise }}</p>
+      <div v-for="(val, label) in { Total: stats.total, Actifs: stats.active, Starter: stats.starter, Business: stats.business, Enterprise: stats.enterprise }"
+           :key="label"
+           class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+        <p class="text-sm text-gray-500 dark:text-gray-400">{{ label }}</p>
+        <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ val }}</p>
       </div>
     </div>
 
-    <!-- Revenue Card -->
+    <!-- Revenue -->
     <div class="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-5 text-white">
       <div class="flex items-center justify-between">
         <div>
@@ -147,17 +186,11 @@ function formatDate(d: string) {
         <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
         </svg>
-        <input
-          v-model="search"
-          type="text"
-          placeholder="Rechercher par nom, email ou ID..."
-          class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-        />
+        <input v-model="search" type="text" placeholder="Rechercher par nom, email ou ID..."
+          class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-[#7C5CFC] focus:border-[#7C5CFC]" />
       </div>
-      <select
-        v-model="planFilter"
-        class="px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
-      >
+      <select v-model="planFilter"
+        class="px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm">
         <option value="">Tous les plans</option>
         <option value="starter">Starter</option>
         <option value="business">Business</option>
@@ -168,7 +201,7 @@ function formatDate(d: string) {
     <!-- Table -->
     <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
       <div v-if="store.loading" class="flex items-center justify-center py-12">
-        <svg class="animate-spin h-8 w-8 text-orange-500" fill="none" viewBox="0 0 24 24">
+        <svg class="animate-spin h-8 w-8 text-[#7C5CFC]" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
         </svg>
@@ -189,133 +222,127 @@ function formatDate(d: string) {
         </thead>
         <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
           <tr v-if="filtered.length === 0">
-            <td colspan="8" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
-              Aucun client trouvé.
-            </td>
+            <td colspan="8" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">Aucun client trouvé.</td>
           </tr>
-          <tr
-            v-for="tenant in filtered"
-            :key="tenant.id"
-            class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition"
-          >
+
+          <tr v-for="tenant in filtered" :key="tenant.id"
+              class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
+
+            <!-- Client -->
             <td class="px-6 py-4">
-              <div>
-                <p class="text-sm font-medium text-gray-900 dark:text-white">{{ tenant.name }}</p>
-                <p class="text-xs text-gray-500 dark:text-gray-400">{{ tenant.email }}</p>
-              </div>
+              <p class="text-sm font-medium text-gray-900 dark:text-white">{{ tenant.name }}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">{{ tenant.email }}</p>
             </td>
+
+            <!-- Domaine -->
             <td class="px-6 py-4">
-              <a
-                v-if="tenant.domains?.length"
-                :href="tenantUrl(tenant.domains[0].domain)"
-                target="_blank"
-                class="text-sm text-orange-500 hover:underline"
-              >
+              <a v-if="tenant.domains?.length" :href="tenantUrl(tenant.domains[0].domain)" target="_blank"
+                class="text-sm text-[#7C5CFC] hover:underline">
                 {{ tenant.domains[0].domain }}
               </a>
               <span v-else class="text-sm text-gray-400">-</span>
             </td>
+
+            <!-- Plan -->
             <td class="px-6 py-4">
               <span :class="['px-2.5 py-1 text-xs font-medium rounded-full', getPlanColor(tenant.plan)]">
                 {{ tenant.plan }}
               </span>
             </td>
+
+            <!-- Statut -->
             <td class="px-6 py-4">
-              <span
-                :class="[
-                  'inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full',
-                  tenant.is_active
-                    ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
-                    : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
-                ]"
-              >
+              <span :class="['inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full',
+                tenant.is_active
+                  ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
+                  : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300']">
                 <span :class="['w-1.5 h-1.5 rounded-full', tenant.is_active ? 'bg-green-500' : 'bg-red-500']" />
                 {{ tenant.is_active ? 'Actif' : 'Inactif' }}
               </span>
             </td>
+
+            <!-- Modules -->
             <td class="px-6 py-4">
-              <div class="flex items-center justify-center gap-2">
-                <span
-                  :class="[
-                    'inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full',
-                    tenant.pos_enabled
-                      ? 'bg-orange-100 text-orange-600 dark:bg-orange-900 dark:text-orange-300'
-                      : 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500'
-                  ]"
-                  :title="tenant.pos_enabled ? 'POS activé' : 'POS désactivé'"
-                >
-                  <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                  </svg>
+              <div class="flex items-center justify-center gap-1.5">
+                <span :class="['inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full',
+                  tenant.pos_enabled ? 'bg-[#F1ECFC] text-[#6D4CE0]' : 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500']">
                   POS
                 </span>
-                <span
-                  :class="[
-                    'inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full',
-                    tenant.paiement_bl_enabled
-                      ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
-                      : 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500'
-                  ]"
-                  :title="tenant.paiement_bl_enabled ? 'Paiement BL activé' : 'Paiement BL désactivé'"
-                >
-                  <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
-                  </svg>
+                <span :class="['inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full',
+                  tenant.paiement_bl_enabled ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500']">
                   BL
                 </span>
-                <span
-                  :class="[
-                    'inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full',
-                    tenant.ecom_enabled
-                      ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300'
-                      : 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500'
-                  ]"
-                  :title="tenant.ecom_enabled ? 'eCom activé' : 'eCom désactivé'"
-                >
-                  <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.016A3.001 3.001 0 0021 9.349m-18 0h18" />
-                  </svg>
+                <span :class="['inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full',
+                  tenant.ecom_enabled ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500']">
                   eCom
                 </span>
               </div>
             </td>
+
+            <!-- Essai -->
             <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
               {{ tenant.trial_ends_at ? formatDate(tenant.trial_ends_at) : '-' }}
             </td>
+
+            <!-- Créé le -->
             <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
               {{ formatDate(tenant.created_at) }}
             </td>
+
+            <!-- ── Actions ─────────────────────────────────────────────── -->
             <td class="px-6 py-4 text-right">
-              <div class="flex items-center justify-end gap-2">
-                <button
-                  @click="router.push(`/central/tenants/${tenant.id}`)"
-                  class="p-1.5 text-gray-400 hover:text-orange-500 transition"
-                  title="Voir"
-                >
+
+              <!-- Countdown: URL en cours de provisioning -->
+              <div v-if="!isUrlReady(tenant)" class="flex items-center justify-end">
+                <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg
+                            bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700">
+                  <!-- Circular SVG countdown -->
+                  <div class="relative w-7 h-7 shrink-0">
+                    <svg class="w-7 h-7 -rotate-90" viewBox="0 0 28 28">
+                      <circle cx="14" cy="14" r="11" fill="none" stroke="currentColor"
+                              class="text-amber-200 dark:text-amber-800" stroke-width="2.5" />
+                      <circle cx="14" cy="14" r="11" fill="none" stroke="currentColor"
+                              class="text-amber-500 transition-all duration-1000"
+                              stroke-width="2.5" stroke-linecap="round"
+                              :stroke-dasharray="69.1"
+                              :stroke-dashoffset="69.1 * (1 - (countdowns[tenant.id] ?? 0) / PROVISION_SECS)" />
+                    </svg>
+                    <span class="absolute inset-0 flex items-center justify-center
+                                 text-[9px] font-bold text-amber-600 dark:text-amber-400 tabular-nums">
+                      {{ countdowns[tenant.id] ?? 0 }}
+                    </span>
+                  </div>
+                  <div>
+                    <p class="text-xs font-semibold text-amber-700 dark:text-amber-300 leading-tight">Provisioning…</p>
+                    <p class="text-[10px] text-amber-500 dark:text-amber-400 leading-tight">SSL en cours</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Boutons normaux: URL active -->
+              <div v-else class="flex items-center justify-end gap-2">
+                <button @click="router.push(`/central/tenants/${tenant.id}`)"
+                  class="p-1.5 text-gray-400 hover:text-[#7C5CFC] transition" title="Voir">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                 </button>
-                <button
-                  @click="toggleActive(tenant)"
-                  :class="['p-1.5 transition', tenant.is_active ? 'text-gray-400 hover:text-orange-600' : 'text-gray-400 hover:text-green-600']"
-                  :title="tenant.is_active ? 'Désactiver' : 'Activer'"
-                >
+                <button @click="toggleActive(tenant)"
+                  :class="['p-1.5 transition', tenant.is_active ? 'text-gray-400 hover:text-[#6D4CE0]' : 'text-gray-400 hover:text-green-600']"
+                  :title="tenant.is_active ? 'Désactiver' : 'Activer'">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M5.636 5.636a9 9 0 1012.728 0M12 3v9" />
                   </svg>
                 </button>
-                <button
-                  @click="deleteTenant(tenant)"
-                  class="p-1.5 text-gray-400 hover:text-red-600 transition"
-                  title="Supprimer"
-                >
+                <button @click="deleteTenant(tenant)"
+                  class="p-1.5 text-gray-400 hover:text-red-600 transition" title="Supprimer">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
                   </svg>
                 </button>
               </div>
+
             </td>
           </tr>
         </tbody>

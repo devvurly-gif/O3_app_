@@ -1,12 +1,26 @@
 <template>
   <header
-    class="fixed top-0 right-0 z-20 flex items-center justify-between h-16 px-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm transition-all duration-300 left-0"
+    class="fixed top-0 right-0 z-20 flex items-center justify-between h-16 px-4 bg-white dark:bg-gray-900 border-b border-[#E7E9EE] dark:border-gray-700 shadow-sm transition-all duration-300 left-0"
     :class="sidebarCollapsed ? 'lg:left-16' : 'lg:left-64'"
   >
     <!-- Left: mobile menu toggle -->
     <button
       class="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors lg:hidden"
       @click="emit('menu')"
+    >
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+      </svg>
+    </button>
+
+    <!-- Left: desktop sidebar pin toggle -->
+    <button
+      class="hidden lg:flex items-center justify-center p-2 rounded-lg transition-colors"
+      :class="sidebarPinned
+        ? 'text-[#7C5CFC] bg-[#F1ECFC] dark:bg-[#7C5CFC]/20 hover:bg-[#E4D9FE] dark:hover:bg-[#7C5CFC]/30'
+        : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'"
+      :title="sidebarPinned ? 'Réduire le menu' : 'Épingler le menu'"
+      @click="emit('toggleSidebar')"
     >
       <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
@@ -59,7 +73,7 @@
           class="px-2 py-1 rounded text-xs font-semibold transition-colors"
           :class="
             currentLocale === lang.code
-              ? 'bg-orange-500 text-white'
+              ? 'bg-[#7C5CFC] text-white'
               : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
           "
           @click="switchLang(lang.code)"
@@ -107,7 +121,7 @@
               <span class="font-semibold text-sm text-gray-700 dark:text-gray-200">{{ $t('nav.notifications') }}</span>
               <button
                 v-if="unreadCount > 0"
-                class="text-xs text-orange-400 hover:text-orange-300 font-medium"
+                class="text-xs text-[#A78BFA] hover:text-[#C4B5FD] font-medium"
                 @click="doMarkAllRead"
               >
                 Tout marquer lu
@@ -135,7 +149,7 @@
                   </p>
                   <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{{ timeAgo(n.created_at) }}</p>
                 </div>
-                <span v-if="!n.read_at" class="mt-1.5 w-2 h-2 rounded-full bg-orange-500 shrink-0"></span>
+                <span v-if="!n.read_at" class="mt-1.5 w-2 h-2 rounded-full bg-[#7C5CFC] shrink-0"></span>
               </div>
             </div>
           </div>
@@ -149,7 +163,7 @@
           @click="userOpen = !userOpen"
         >
           <span
-            class="w-8 h-8 rounded-full bg-orange-500 text-white text-sm font-bold flex items-center justify-center select-none"
+            class="w-8 h-8 rounded-full bg-[#7C5CFC] text-white text-sm font-bold flex items-center justify-center select-none"
           >
             {{ initials }}
           </span>
@@ -228,11 +242,12 @@ import { useDarkMode } from '@/composables/useDarkMode'
 
 const props = defineProps({
   sidebarCollapsed: { type: Boolean, default: false },
+  sidebarPinned: { type: Boolean, default: false },
   userName: { type: String, default: 'User' },
   userEmail: { type: String, default: '' },
 })
 
-const emit = defineEmits(['menu', 'logout'])
+const emit = defineEmits(['menu', 'logout', 'toggleSidebar'])
 
 const route = useRoute()
 const { locale } = useI18n()
@@ -271,7 +286,7 @@ function notifIconClass(type) {
   switch (type) {
     case 'low_stock':
     case 'stock_movement':
-      return 'bg-orange-100 text-orange-600'
+      return 'bg-[#F1ECFC] text-[#6D4CE0]'
     case 'order_confirmation':
     case 'payment_received':
       return 'bg-green-100 text-green-600'
