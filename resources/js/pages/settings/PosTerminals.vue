@@ -7,7 +7,7 @@
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Gérer les terminaux de point de vente</p>
       </div>
       <button
-        class="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition"
+        class="flex items-center gap-2 px-4 py-2 bg-[#7C5CFC] hover:bg-[#6D4CE0] text-white text-sm font-semibold rounded-lg transition"
         @click="openCreate"
       >
         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -25,6 +25,7 @@
             <th class="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-400">Code</th>
             <th class="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-400">Nom</th>
             <th class="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-400">Entrepôt</th>
+            <th class="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-400">Imprimante</th>
             <th class="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-400">Statut</th>
             <th class="px-4 py-3"></th>
           </tr>
@@ -34,7 +35,7 @@
             <td colspan="5" class="px-4 py-8 text-center text-gray-400 dark:text-gray-500">Chargement...</td>
           </tr>
           <tr v-else-if="!terminals.length" class="border-b">
-            <td colspan="5" class="px-4 py-8 text-center text-gray-400 dark:text-gray-500">Aucun terminal</td>
+            <td colspan="6" class="px-4 py-8 text-center text-gray-400 dark:text-gray-500">Aucun terminal</td>
           </tr>
           <tr v-for="t in terminals" :key="t.id" class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
             <td class="px-4 py-3">
@@ -42,6 +43,16 @@
             </td>
             <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">{{ t.name }}</td>
             <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{{ t.warehouse?.wh_title ?? '—' }}</td>
+            <td class="px-4 py-3">
+              <div v-if="t.printer_name" class="flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6v-8z"/>
+                </svg>
+                <span class="text-sm text-gray-700 dark:text-gray-300">{{ t.printer_name }}</span>
+                <span v-if="!t.auto_print" class="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">Manuel</span>
+              </div>
+              <span v-else class="text-gray-400 text-sm">—</span>
+            </td>
             <td class="px-4 py-3">
               <span
                 class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
@@ -53,7 +64,7 @@
             <td class="px-4 py-3 text-right">
               <div class="flex items-center justify-end gap-2">
                 <button
-                  class="p-1.5 rounded-lg text-orange-500 hover:bg-orange-50 transition"
+                  class="p-1.5 rounded-lg text-[#7C5CFC] hover:bg-[#F1ECFC] transition"
                   @click="openEdit(t)"
                 >
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -85,7 +96,7 @@
             type="text"
             required
             placeholder="Caisse 1"
-            class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
           />
         </div>
         <div>
@@ -95,7 +106,7 @@
             type="text"
             required
             placeholder="POS-01"
-            class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
           />
         </div>
         <div>
@@ -103,18 +114,45 @@
           <select
             v-model="form.warehouse_id"
             required
-            class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
           >
             <option :value="null" disabled>-- Sélectionner --</option>
             <option v-for="w in warehouses" :key="w.id" :value="w.id">{{ w.wh_title }}</option>
           </select>
+        </div>
+        <!-- Printer section -->
+        <div class="border-t border-gray-100 dark:border-gray-700 pt-4">
+          <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-3">Impression</p>
+          <div class="space-y-3">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nom de l'imprimante</label>
+              <input
+                v-model="form.printer_name"
+                type="text"
+                placeholder="ex: Epson TM-T20 Caisse 1"
+                class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
+              />
+              <p class="text-xs text-gray-400 mt-1">Affiché au caissier comme rappel lors de l'impression.</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <input
+                id="terminal-auto-print"
+                v-model="form.auto_print"
+                type="checkbox"
+                class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-[#7C5CFC] focus:ring-[#7C5CFC]"
+              />
+              <label for="terminal-auto-print" class="text-sm text-gray-700 dark:text-gray-300">
+                Impression automatique après chaque vente
+              </label>
+            </div>
+          </div>
         </div>
         <div class="flex items-center gap-2">
           <input
             id="terminal-active"
             v-model="form.is_active"
             type="checkbox"
-            class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-orange-500 focus:ring-orange-500"
+            class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-[#7C5CFC] focus:ring-[#7C5CFC]"
           />
           <label for="terminal-active" class="text-sm text-gray-700 dark:text-gray-300">Actif</label>
         </div>
@@ -127,7 +165,7 @@
           Annuler
         </button>
         <button
-          class="px-4 py-2 text-sm font-semibold bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition disabled:opacity-60"
+          class="px-4 py-2 text-sm font-semibold bg-[#7C5CFC] hover:bg-[#6D4CE0] text-white rounded-lg transition disabled:opacity-60"
           :disabled="saving"
           @click="submit"
         >
@@ -171,6 +209,8 @@ interface Terminal {
   code: string
   warehouse_id: number
   is_active: boolean
+  printer_name?: string | null
+  auto_print?: boolean
   warehouse?: { id: number; wh_title: string }
 }
 
@@ -190,7 +230,7 @@ const editTarget = ref<Terminal | null>(null)
 const deleteTarget = ref<Terminal | null>(null)
 const toast = ref<InstanceType<typeof BaseNotification> | null>(null)
 
-const emptyForm = () => ({ name: '', code: '', warehouse_id: null as number | null, is_active: true })
+const emptyForm = () => ({ name: '', code: '', warehouse_id: null as number | null, is_active: true, printer_name: '' as string | null, auto_print: true })
 const form = reactive(emptyForm())
 
 onMounted(async () => {
@@ -213,7 +253,7 @@ function openCreate() {
 
 function openEdit(t: Terminal) {
   editTarget.value = t
-  Object.assign(form, { name: t.name, code: t.code, warehouse_id: t.warehouse_id, is_active: t.is_active })
+  Object.assign(form, { name: t.name, code: t.code, warehouse_id: t.warehouse_id, is_active: t.is_active, printer_name: t.printer_name ?? '', auto_print: t.auto_print ?? true })
   showModal.value = true
 }
 

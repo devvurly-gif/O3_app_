@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guide d'utilisation — O3 App</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f8fafc; color: #1e293b; font-size: 14px; }
+
+  /* NAV */
+  .nav { position: sticky; top: 0; z-index: 100; background: #2563eb; color: white; padding: 0 20px; display: flex; align-items: center; gap: 12px; height: 52px; box-shadow: 0 2px 8px rgba(0,0,0,.2); }
+  .nav-logo { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; white-space: nowrap; }
+  .nav-title { font-size: 13px; opacity: .8; white-space: nowrap; }
+  .nav-tabs { display: flex; gap: 3px; margin-left: auto; flex-wrap: wrap; justify-content: flex-end; }
+  .nav-tab { padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; transition: background .15s; white-space: nowrap; }
+  .nav-tab:hover { background: rgba(255,255,255,.2); }
+  .nav-tab.active { background: rgba(255,255,255,.25); }
+
+  .container { max-width: 980px; margin: 0 auto; padding: 32px 16px 64px; }
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* HERO */
+  .hero { background: linear-gradient(135deg, #eff6ff, #fff); border: 1px solid #bfdbfe; border-radius: 16px; padding: 32px; margin-bottom: 32px; display: flex; gap: 24px; align-items: center; }
+  .hero-icon { font-size: 52px; flex-shrink: 0; }
+  .hero h1 { font-size: 22px; font-weight: 800; color: #2563eb; margin-bottom: 6px; }
+  .hero p { color: #64748b; line-height: 1.6; font-size: 13px; }
+  .hero-badge { display: inline-block; background: #2563eb; color: white; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 99px; margin-bottom: 10px; }
+
+  /* SECTION TITLE */
+  h2.sec { font-size: 17px; font-weight: 800; color: #0f172a; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2px solid #2563eb; }
+  h2.sec span { margin-right: 8px; }
+  h3.sub { font-size: 14px; font-weight: 700; color: #1e40af; margin: 20px 0 10px; }
+
+  /* CARDS */
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 24px; }
+  .card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; cursor: default; transition: box-shadow .15s; }
+  .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,.08); }
+  .card-icon { font-size: 28px; margin-bottom: 10px; }
+  .card h3 { font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 5px; }
+  .card p { font-size: 11px; color: #64748b; line-height: 1.5; }
+  .card .tag { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 99px; margin-top: 8px; }
+
+  /* STEPS */
+  .steps { display: flex; flex-direction: column; margin-bottom: 24px; }
+  .step { display: flex; gap: 14px; padding: 16px 0; border-bottom: 1px solid #f1f5f9; }
+  .step:last-child { border-bottom: none; }
+  .step-num { width: 32px; height: 32px; border-radius: 50%; background: #2563eb; color: white; font-weight: 800; font-size: 13px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+  .step-body h3 { font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 5px; }
+  .step-body p { font-size: 12px; color: #475569; line-height: 1.55; }
+  .tip { background: #eff6ff; border-left: 3px solid #2563eb; padding: 7px 12px; border-radius: 0 6px 6px 0; font-size: 12px; color: #1e40af; margin-top: 8px; }
+  .warn { background: #fef2f2; border-left: 3px solid #ef4444; padding: 7px 12px; border-radius: 0 6px 6px 0; font-size: 12px; color: #991b1b; margin-top: 8px; }
+  .success { background: #f0fdf4; border-left: 3px solid #22c55e; padding: 7px 12px; border-radius: 0 6px 6px 0; font-size: 12px; color: #166534; margin-top: 8px; }
+
+  /* TABLE */
+  table.guide { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+  table.guide th { background: #f8fafc; text-align: left; padding: 9px 12px; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .5px; border-bottom: 2px solid #e2e8f0; }
+  table.guide td { padding: 9px 12px; font-size: 12px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
+  table.guide tr:last-child td { border-bottom: none; }
+
+  /* BADGES */
+  .badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 99px; }
+  .bg { background: #dcfce7; color: #166534; }
+  .bo { background: #fff7ed; color: #9a3412; }
+  .bb { background: #eff6ff; color: #1e40af; }
+  .bv { background: #fdf4ff; color: #7e22ce; }
+  .bgr { background: #f1f5f9; color: #475569; }
+
+  /* ALERT */
+  .alert { border-radius: 10px; padding: 12px 16px; margin-bottom: 16px; font-size: 13px; line-height: 1.6; }
+  .alert-blue { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+  .alert-orange { background: #fff7ed; border: 1px solid #fed7aa; color: #92400e; }
+  .alert-green { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+
+  /* FLOW */
+  .flow { display: flex; align-items: center; gap: 0; flex-wrap: wrap; margin: 12px 0 20px; }
+  .flow-step { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; font-size: 12px; font-weight: 600; text-align: center; min-width: 110px; }
+  .flow-step .fs-icon { font-size: 20px; display: block; margin-bottom: 4px; }
+  .flow-arrow { color: #94a3b8; font-size: 20px; padding: 0 6px; }
+
+  /* FEATURE GRID */
+  .feat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+  .feat { background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 16px; }
+  .feat h4 { font-size: 12px; font-weight: 700; color: #0f172a; margin-bottom: 5px; display: flex; align-items: center; gap: 6px; }
+  .feat p { font-size: 11px; color: #64748b; line-height: 1.5; }
+
+  /* SIDEBAR MOCKUP */
+  .app-mockup { background: white; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; margin-bottom: 24px; display: flex; height: 320px; }
+  .sidebar { background: #0f172a; width: 180px; flex-shrink: 0; padding: 12px 0; }
+  .sb-logo { padding: 8px 14px 14px; border-bottom: 1px solid #1e293b; margin-bottom: 8px; }
+  .sb-logo span { font-size: 16px; font-weight: 800; color: white; }
+  .sb-logo small { display: block; font-size: 9px; color: #64748b; }
+  .sb-item { padding: 7px 14px; font-size: 11px; color: #94a3b8; cursor: pointer; display: flex; align-items: center; gap: 8px; border-radius: 0; }
+  .sb-item.active { background: #1e293b; color: white; border-left: 3px solid #2563eb; }
+  .sb-item:hover { background: #1e293b; color: #cbd5e1; }
+  .sb-section { padding: 10px 14px 4px; font-size: 9px; color: #475569; text-transform: uppercase; letter-spacing: .5px; }
+  .main-area { flex: 1; padding: 16px; overflow: auto; background: #f8fafc; }
+  .dash-stat { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+  .stat-card { background: white; border-radius: 8px; padding: 10px 12px; border: 1px solid #e2e8f0; }
+  .stat-card .val { font-size: 16px; font-weight: 800; color: #0f172a; }
+  .stat-card .lbl { font-size: 9px; color: #94a3b8; margin-top: 2px; }
+  .stat-card .chg { font-size: 9px; color: #22c55e; }
+
+  /* PRINT */
+  .print-btn { position: fixed; bottom: 24px; right: 24px; background: #2563eb; color: white; border: none; border-radius: 50%; width: 52px; height: 52px; font-size: 22px; cursor: pointer; box-shadow: 0 4px 12px rgba(37,99,235,.35); transition: transform .15s; }
+  .print-btn:hover { transform: scale(1.1); }
+
+  @media (max-width: 640px) {
+    .nav-title { display: none; }
+    .nav-tab { padding: 4px 9px; font-size: 11px; }
+    .hero { flex-direction: column; }
+    .feat-grid { grid-template-columns: 1fr; }
+    .flow-step { min-width: 80px; font-size: 11px; }
+    .app-mockup { flex-direction: column; height: auto; }
+    .sidebar { width: 100%; display: flex; overflow-x: auto; padding: 6px; }
+    .sb-item { white-space: nowrap; }
+    .sb-section { display: none; }
+  }
+
+  @media print {
+    .nav, .print-btn { display: none; }
+    .section { display: block !important; page-break-before: always; }
+    .section:first-child { page-break-before: auto; }
+    .container { padding: 0; max-width: 100%; }
+    .step { break-inside: avoid; }
+    .hero { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-logo">O3 App</div>
+  <div class="nav-title">Guide d'utilisation</div>
+  <div class="nav-tabs">
+    <div class="nav-tab active" onclick="show('intro',this)">Démarrage</div>
+    <div class="nav-tab" onclick="show('ventes',this)">Ventes</div>
+    <div class="nav-tab" onclick="show('achats',this)">Achats</div>
+    <div class="nav-tab" onclick="show('stock',this)">Stock</div>
+    <div class="nav-tab" onclick="show('pos',this)">POS</div>
+    <div class="nav-tab" onclick="show('params',this)">Paramètres</div>
+    <div class="nav-tab" onclick="show('faq',this)">FAQ</div>
+  </div>
+</nav>
+
+<div class="container">
+
+<!-- ════════════════════ DÉMARRAGE ════════════════════ -->
+<div class="section active" id="section-intro">
+  <div class="hero">
+    <div class="hero-icon">🚀</div>
+    <div>
+      <div class="hero-badge">Guide général v1.0</div>
+      <h1>Bienvenue dans O3 App</h1>
+      <p>O3 App est un ERP cloud marocain couvrant vos Ventes, Achats, Stock, Caisse (POS) et Facturation. Ce guide vous explique comment démarrer et utiliser chaque module.</p>
+    </div>
+  </div>
+
+  <h2 class="sec"><span>🗺️</span> Les modules disponibles</h2>
+  <div class="cards">
+    <div class="card">
+      <div class="card-icon">📄</div>
+      <h3>Ventes</h3>
+      <p>Devis, bons de commande client, factures, avoirs, livraisons.</p>
+      <span class="tag bb">Module Ventes</span>
+    </div>
+    <div class="card">
+      <div class="card-icon">🛒</div>
+      <h3>Achats</h3>
+      <p>Commandes fournisseur, réceptions, factures achat.</p>
+      <span class="tag bo">Module Achats</span>
+    </div>
+    <div class="card">
+      <div class="card-icon">📦</div>
+      <h3>Stock</h3>
+      <p>Entrepôts, mouvements, inventaire, transferts inter-entrepôts.</p>
+      <span class="tag bg">Module Stock</span>
+    </div>
+    <div class="card">
+      <div class="card-icon">🖥️</div>
+      <h3>POS</h3>
+      <p>Caisse tactile, tickets, sessions, impression thermique.</p>
+      <span class="tag bv">Module POS</span>
+    </div>
+    <div class="card">
+      <div class="card-icon">👥</div>
+      <h3>Tiers</h3>
+      <p>Clients, fournisseurs, contacts, comptes en compte.</p>
+      <span class="tag bgr">Répertoire</span>
+    </div>
+    <div class="card">
+      <div class="card-icon">📊</div>
+      <h3>Rapports</h3>
+      <p>CA, marge, stock valorisé, synthèses par période.</p>
+      <span class="tag bb">Analyses</span>
+    </div>
+  </div>
+
+  <h2 class="sec"><span>🖥️</span> Interface — Vue d'ensemble</h2>
+  <div class="app-mockup">
+    <div class="sidebar">
+      <div class="sb-logo"><span>O3</span><small>Teliphoni SARL</small></div>
+      <div class="sb-section">PRINCIPAL</div>
+      <div class="sb-item active">📊 Tableau de bord</div>
+      <div class="sb-section">COMMERCIAL</div>
+      <div class="sb-item">📄 Ventes</div>
+      <div class="sb-item">🛒 Achats</div>
+      <div class="sb-section">LOGISTIQUE</div>
+      <div class="sb-item">📦 Stock</div>
+      <div class="sb-item">🖥️ POS</div>
+      <div class="sb-section">RÉPERTOIRE</div>
+      <div class="sb-item">👥 Tiers</div>
+      <div class="sb-item">🏷️ Produits</div>
+      <div class="sb-section">ADMIN</div>
+      <div class="sb-item">⚙️ Paramètres</div>
+    </div>
+    <div class="main-area">
+      <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:#0f172a">Tableau de bord — Juin 2026</div>
+      <div class="dash-stat">
+        <div class="stat-card"><div class="val">142 500</div><div class="lbl">CA du mois (MAD)</div><div class="chg">↑ +12%</div></div>
+        <div class="stat-card"><div class="val">38</div><div class="lbl">Factures émises</div><div class="chg">↑ +5</div></div>
+        <div class="stat-card"><div class="val">6</div><div class="lbl">Commandes en cours</div><div class="chg" style="color:#f59e0b">→ stable</div></div>
+      </div>
+      <div style="background:white;border-radius:8px;border:1px solid #e2e8f0;padding:10px;font-size:11px;color:#64748b">
+        <div style="font-weight:700;color:#0f172a;margin-bottom:6px">Dernières activités</div>
+        <div style="padding:4px 0;border-bottom:1px solid #f1f5f9">✅ Facture #FA-2406-038 — Client ABC — 8 500 MAD</div>
+        <div style="padding:4px 0;border-bottom:1px solid #f1f5f9">📦 Réception BL #RC-2406-012 — Fournisseur XYZ</div>
+        <div style="padding:4px 0">🖥️ Session POS fermée — Caisse 1 — 22 380 MAD</div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="sec"><span>🔐</span> Connexion et accès</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h3>Accéder à votre espace</h3>
+        <p>Ouvrez votre navigateur et allez sur votre sous-domaine O3 :<br><strong>https://[votre-entreprise].o3app.ma</strong></p>
+        <div class="tip">💡 Ajoutez cette adresse dans vos favoris ou créez un raccourci sur le bureau.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h3>Se connecter</h3>
+        <p>Saisissez votre <strong>email</strong> et votre <strong>mot de passe</strong> fournis par l'administrateur. L'accès aux modules dépend de votre rôle (Vendeur, Gestionnaire, Admin…).</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h3>Tableau de bord</h3>
+        <p>Après connexion, le tableau de bord affiche les indicateurs clés : chiffre d'affaires, commandes en cours, alertes de stock, et les dernières activités.</p>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="sec"><span>📋</span> Flux général de l'application</h2>
+  <div class="flow">
+    <div class="flow-step"><span class="fs-icon">🏷️</span>Produits<br><small style="font-size:9px;color:#94a3b8">Catalogue + Stock</small></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step"><span class="fs-icon">📄</span>Devis<br><small style="font-size:9px;color:#94a3b8">Offre client</small></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step"><span class="fs-icon">📋</span>Commande<br><small style="font-size:9px;color:#94a3b8">Bon de commande</small></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step"><span class="fs-icon">🚚</span>Livraison<br><small style="font-size:9px;color:#94a3b8">Bon de livraison</small></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step"><span class="fs-icon">💰</span>Facture<br><small style="font-size:9px;color:#94a3b8">Document final</small></div>
+  </div>
+</div>
+
+<!-- ════════════════════ VENTES ════════════════════ -->
+<div class="section" id="section-ventes">
+  <div class="hero">
+    <div class="hero-icon">📄</div>
+    <div>
+      <div class="hero-badge">Module Ventes</div>
+      <h1>Gestion des Ventes</h1>
+      <p>Créez des devis, bons de commande, bons de livraison et factures. Suivez l'état de vos ventes en temps réel.</p>
+    </div>
+  </div>
+
+  <h2 class="sec"><span>📊</span> Documents disponibles</h2>
+  <table class="guide">
+    <thead><tr><th>Document</th><th>Rôle</th><th>Peut être converti en</th></tr></thead>
+    <tbody>
+      <tr><td>📝 <strong>Devis</strong></td><td>Offre de prix envoyée au client. Non comptable.</td><td>Bon de commande, Facture</td></tr>
+      <tr><td>📋 <strong>Bon de commande</strong></td><td>Engagement commercial confirmé.</td><td>Bon de livraison, Facture</td></tr>
+      <tr><td>🚚 <strong>Bon de livraison</strong></td><td>Sortie de stock confirmée, remis au client.</td><td>Facture</td></tr>
+      <tr><td>💰 <strong>Facture</strong></td><td>Document comptable final. Génère une créance.</td><td>Avoir</td></tr>
+      <tr><td>↩️ <strong>Avoir</strong></td><td>Annulation partielle ou totale d'une facture.</td><td>—</td></tr>
+    </tbody>
+  </table>
+
+  <h2 class="sec"><span>➕</span> Créer un devis / bon de commande</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h3>Accéder au module Ventes</h3>
+        <p>Dans la barre latérale → <strong>Ventes</strong> → <strong>Devis</strong> ou <strong>Commandes</strong>. Cliquez sur <strong>"Nouveau"</strong>.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h3>Sélectionner le client</h3>
+        <p>Recherchez le client dans le champ "Tiers". S'il n'existe pas, cliquez <strong>"Créer un tiers"</strong> pour l'ajouter à la volée.</p>
+        <div class="tip">💡 Les clients "En Compte" peuvent avoir un délai de paiement et un plafond de crédit définis dans leur fiche.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h3>Ajouter des lignes produits</h3>
+        <p>Cliquez <strong>"Ajouter une ligne"</strong> → recherchez le produit par nom ou SKU → saisissez la quantité et le prix unitaire. Vous pouvez appliquer une remise par ligne (%) ou en montant.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h3>Vérifier les totaux et enregistrer</h3>
+        <p>Le pied de page affiche automatiquement : sous-total HT, TVA par taux, et <strong>Total TTC</strong>. Cliquez <strong>"Enregistrer"</strong> ou <strong>"Valider"</strong> pour finaliser.</p>
+        <div class="warn">⚠️ Un document validé ne peut plus être modifié. Seul un avoir peut l'annuler.</div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="sec"><span>🔄</span> Convertir un document</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h3>Ouvrir le document source</h3>
+        <p>Allez sur le devis ou bon de commande → cliquez sur le bouton <strong>"Convertir en…"</strong> en haut de la fiche.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h3>Choisir le type cible</h3>
+        <p>Selon l'étape : <strong>Bon de livraison</strong> (si vous livrez d'abord), ou <strong>Facture</strong> (si vous facturez directement). Les lignes sont reprises automatiquement.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h3>Ajuster et valider</h3>
+        <p>Modifiez les quantités si livraison partielle → <strong>Valider</strong>. Le stock est décrémenté automatiquement à la livraison.</p>
+        <div class="success">✅ Le bon de livraison validé génère un mouvement de stock automatique.</div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="sec"><span>📤</span> Envoyer une facture</h2>
+  <div class="feat-grid">
+    <div class="feat"><h4>🖨️ Imprimer en PDF</h4><p>Depuis la fiche facture → bouton "PDF" → télécharger ou imprimer directement.</p></div>
+    <div class="feat"><h4>📱 Partager par WhatsApp</h4><p>Bouton "WhatsApp" → génère un lien de partage vers le PDF de la facture.</p></div>
+    <div class="feat"><h4>📧 Envoyer par email</h4><p>Bouton "Email" → saisir l'adresse → O3 envoie la facture en pièce jointe PDF.</p></div>
+    <div class="feat"><h4>📋 Copier le lien</h4><p>Lien public de visualisation à partager directement avec le client.</p></div>
+  </div>
+</div>
+
+<!-- ════════════════════ ACHATS ════════════════════ -->
+<div class="section" id="section-achats">
+  <div class="hero">
+    <div class="hero-icon">🛒</div>
+    <div>
+      <div class="hero-badge">Module Achats</div>
+      <h1>Gestion des Achats</h1>
+      <p>Gérez vos commandes fournisseurs, réceptions de marchandise et factures d'achat. Le stock est mis à jour automatiquement à la réception.</p>
+    </div>
+  </div>
+
+  <h2 class="sec"><span>📊</span> Documents disponibles</h2>
+  <table class="guide">
+    <thead><tr><th>Document</th><th>Rôle</th><th>Impact stock</th></tr></thead>
+    <tbody>
+      <tr><td>📋 <strong>Commande fournisseur</strong></td><td>Bon de commande envoyé au fournisseur.</td><td><span class="badge bgr">Aucun</span></td></tr>
+      <tr><td>📦 <strong>Bon de réception</strong></td><td>Confirmation de la réception physique des marchandises.</td><td><span class="badge bg">Entrée stock ↑</span></td></tr>
+      <tr><td>💳 <strong>Facture fournisseur</strong></td><td>Document comptable lié à un achat.</td><td><span class="badge bgr">Aucun</span></td></tr>
+    </tbody>
+  </table>
+
+  <h2 class="sec"><span>➕</span> Passer une commande fournisseur</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h3>Créer la commande</h3>
+        <p>Achats → <strong>Commandes</strong> → <strong>"Nouvelle commande"</strong> → sélectionner le fournisseur → ajouter les lignes produits.</p>
+        <div class="tip">💡 Le prix d'achat est pré-rempli depuis la fiche produit mais peut être modifié.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h3>Valider la commande</h3>
+        <p>Cliquez <strong>"Valider"</strong>. La commande passe en statut "En cours" et peut être envoyée au fournisseur (PDF/WhatsApp).</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h3>Réceptionner la marchandise</h3>
+        <p>À la livraison → ouvrir la commande → <strong>"Créer une réception"</strong> → ajuster les quantités reçues si livraison partielle → <strong>Valider</strong>.</p>
+        <div class="success">✅ Le stock est incrémenté automatiquement dans l'entrepôt sélectionné.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h3>Enregistrer la facture fournisseur</h3>
+        <p>Une fois la facture papier reçue → depuis la commande → <strong>"Créer une facture achat"</strong> → vérifier les montants → Valider.</p>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="sec"><span>💡</span> Bonnes pratiques achats</h2>
+  <div class="feat-grid">
+    <div class="feat"><h4>📊 Comparer les prix</h4><p>L'historique des prix d'achat par produit permet de négocier avec les fournisseurs.</p></div>
+    <div class="feat"><h4>⚠️ Seuil de réapprovisionnement</h4><p>Définissez un stock minimum par produit → O3 génère des alertes quand le seuil est atteint.</p></div>
+    <div class="feat"><h4>📦 Réception partielle</h4><p>Vous pouvez réceptionner en plusieurs fois sur une même commande. Le reliquat reste "En attente".</p></div>
+    <div class="feat"><h4>🔗 Traçabilité</h4><p>Chaque mouvement de stock est lié à son bon de réception ou bon de livraison pour un audit complet.</p></div>
+  </div>
+</div>
+
+<!-- ════════════════════ STOCK ════════════════════ -->
+<div class="section" id="section-stock">
+  <div class="hero">
+    <div class="hero-icon">📦</div>
+    <div>
+      <div class="hero-badge">Module Stock</div>
+      <h1>Gestion du Stock</h1>
+      <p>Suivez vos niveaux de stock par entrepôt et par produit. Gérez les inventaires, transferts et ajustements manuels.</p>
+    </div>
+  </div>
+
+  <h2 class="sec"><span>📍</span> Entrepôts</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h3>Consulter le stock par entrepôt</h3>
+        <p>Stock → <strong>Entrepôts</strong> → sélectionner un entrepôt → voir le stock actuel de chaque produit avec les quantités disponibles, réservées et en commande.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h3>Transférer du stock entre entrepôts</h3>
+        <p>Stock → <strong>Transferts</strong> → <strong>"Nouveau transfert"</strong> → choisir l'entrepôt source et destination → ajouter les lignes → Valider.</p>
+        <div class="tip">💡 Un transfert validé génère une sortie dans l'entrepôt source et une entrée dans la destination.</div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="sec"><span>📋</span> Inventaire</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h3>Lancer un inventaire</h3>
+        <p>Stock → <strong>Inventaires</strong> → <strong>"Nouvel inventaire"</strong> → sélectionner l'entrepôt et les produits à inventorier (tous ou par catégorie).</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h3>Saisir les quantités réelles</h3>
+        <p>Pour chaque produit, saisir la quantité comptée physiquement. L'écart avec le stock théorique est affiché en temps réel.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h3>Valider l'inventaire</h3>
+        <p>Cliquez <strong>"Valider l'inventaire"</strong> → O3 crée automatiquement des ajustements de stock (positifs ou négatifs) pour corriger les écarts.</p>
+        <div class="warn">⚠️ Un inventaire validé est définitif. Vérifiez toutes les lignes avant de valider.</div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="sec"><span>📈</span> Mouvements de stock</h2>
+  <div class="alert alert-blue">
+    ℹ️ Chaque action dans O3 qui impacte le stock génère un <strong>mouvement tracé</strong> avec la date, l'utilisateur, le document source et les quantités. Accessible via Stock → <strong>Mouvements</strong>.
+  </div>
+  <table class="guide">
+    <thead><tr><th>Type de mouvement</th><th>Source</th><th>Sens</th></tr></thead>
+    <tbody>
+      <tr><td>📦 Entrée achat</td><td>Bon de réception fournisseur</td><td><span class="badge bg">↑ Entrée</span></td></tr>
+      <tr><td>🚚 Sortie vente</td><td>Bon de livraison client</td><td><span class="badge bo">↓ Sortie</span></td></tr>
+      <tr><td>🖥️ Sortie POS</td><td>Ticket de caisse validé</td><td><span class="badge bo">↓ Sortie</span></td></tr>
+      <tr><td>🔄 Transfert</td><td>Bon de transfert inter-entrepôt</td><td><span class="badge bb">↔ Double</span></td></tr>
+      <tr><td>📋 Ajustement</td><td>Inventaire validé</td><td><span class="badge bgr">± Correction</span></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ════════════════════ POS ════════════════════ -->
+<div class="section" id="section-pos">
+  <div class="hero">
+    <div class="hero-icon">🖥️</div>
+    <div>
+      <div class="hero-badge">Module POS</div>
+      <h1>Point de Vente (Caisse)</h1>
+      <p>Le module POS permet de gérer les ventes rapides en caisse avec impression de tickets thermiques. Voir aussi le <a href="/guide-pos.html" style="color:#2563eb;font-weight:700">Guide POS complet</a>.</p>
+    </div>
+  </div>
+
+  <h2 class="sec"><span>⚙️</span> Configurer les terminaux POS</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h3>Créer un terminal</h3>
+        <p>Paramètres → <strong>Terminaux POS</strong> → <strong>"Ajouter"</strong> → nommer le terminal (ex: "POS_1"), choisir l'entrepôt associé, saisir le nom de l'imprimante.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h3>Ouvrir une session de caisse</h3>
+        <p>POS → <strong>"Ouvrir une session"</strong> → choisir le terminal → saisir le fond de caisse → <strong>Démarrer</strong>.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h3>Fermer la session et générer le rapport</h3>
+        <p>En fin de journée → POS → <strong>"Fermer la session"</strong> → compter et saisir le montant en caisse → Valider. Un rapport de clôture est généré.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="alert alert-blue">
+    📖 Pour l'installation du terminal tactile, la configuration de l'imprimante et le guide caissier complet, consultez le <a href="/guide-pos.html" style="color:#1e40af;font-weight:700">Guide POS Terminal →</a>
+  </div>
+</div>
+
+<!-- ════════════════════ PARAMÈTRES ════════════════════ -->
+<div class="section" id="section-params">
+  <div class="hero">
+    <div class="hero-icon">⚙️</div>
+    <div>
+      <div class="hero-badge">Configuration</div>
+      <h1>Paramètres de l'application</h1>
+      <p>Configurez votre entreprise, vos produits, vos tiers et vos préférences avant de commencer à utiliser O3.</p>
+    </div>
+  </div>
+
+  <h2 class="sec"><span>🏢</span> Informations de l'entreprise</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h3>Remplir la fiche entreprise</h3>
+        <p>Paramètres → <strong>Entreprise</strong> → renseigner : nom commercial, adresse, ville, téléphone, ICE, RC, IF, numéro de patente.</p>
+        <div class="tip">💡 Ces informations apparaissent sur toutes vos factures et tickets de caisse. Assurez-vous qu'elles sont correctes dès le départ.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h3>Configurer le logo</h3>
+        <p>Importez votre logo (PNG ou SVG, fond transparent recommandé). Il apparaîtra sur les documents PDF.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h3>Numérotation des documents</h3>
+        <p>Définissez les préfixes pour chaque type de document : <em>FA-</em> pour factures, <em>DE-</em> pour devis, <em>BL-</em> pour livraisons… Le numéro est incrémenté automatiquement.</p>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="sec"><span>🏷️</span> Catalogue produits</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h3>Créer un produit</h3>
+        <p>Produits → <strong>"Nouveau produit"</strong> → renseigner : désignation, SKU/référence, catégorie, unité de mesure, prix de vente HT, taux de TVA, prix d'achat.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h3>Gérer les variantes</h3>
+        <p>Si un produit existe en plusieurs tailles, couleurs… → activer l'option <strong>"Variantes"</strong> → créer les options (ex: Taille : S / M / L / XL). Chaque variante peut avoir son propre stock et prix.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h3>Rendre un produit disponible en POS</h3>
+        <p>Dans la fiche produit → activer <strong>"Disponible en caisse (POS)"</strong>. Le produit apparaîtra dans la grille du module POS.</p>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="sec"><span>👥</span> Gestion des tiers (clients & fournisseurs)</h2>
+  <div class="feat-grid">
+    <div class="feat"><h4>👤 Créer un client</h4><p>Tiers → Clients → "Nouveau" → renseigner nom, téléphone, email, adresse, ICE. Le type "Comptoir" ne nécessite pas de fiche complète.</p></div>
+    <div class="feat"><h4>🏭 Créer un fournisseur</h4><p>Tiers → Fournisseurs → "Nouveau" → mêmes champs + conditions de paiement par défaut.</p></div>
+    <div class="feat"><h4>📋 Client "En Compte"</h4><p>Activez le type "En Compte" dans la fiche client → définissez le plafond de crédit et le délai de paiement (30j, 60j…).</p></div>
+    <div class="feat"><h4>📊 Solde client</h4><p>La fiche client affiche le solde en cours, les factures impayées et l'historique des achats.</p></div>
+  </div>
+
+  <h2 class="sec"><span>👤</span> Gestion des utilisateurs</h2>
+  <table class="guide">
+    <thead><tr><th>Rôle</th><th>Accès</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Administrateur</strong></td><td>Accès complet : paramètres, utilisateurs, suppression, rapports.</td></tr>
+      <tr><td><strong>Gestionnaire</strong></td><td>Ventes, Achats, Stock, POS. Pas d'accès aux paramètres avancés.</td></tr>
+      <tr><td><strong>Vendeur</strong></td><td>Création de devis et commandes. Pas d'accès aux achats ni au stock.</td></tr>
+      <tr><td><strong>Caissier</strong></td><td>Module POS uniquement. Ouverture/fermeture session, ventes.</td></tr>
+    </tbody>
+  </table>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h3>Ajouter un utilisateur</h3>
+        <p>Paramètres → <strong>Utilisateurs</strong> → <strong>"Inviter un utilisateur"</strong> → saisir l'email → choisir le rôle → Envoyer l'invitation. L'utilisateur reçoit un email pour définir son mot de passe.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════ FAQ ════════════════════ -->
+<div class="section" id="section-faq">
+  <div class="hero">
+    <div class="hero-icon">❓</div>
+    <div>
+      <div class="hero-badge">Aide & Dépannage</div>
+      <h1>Questions fréquentes</h1>
+      <p>Réponses aux questions les plus courantes sur l'utilisation quotidienne de O3 App.</p>
+    </div>
+  </div>
+
+  <h2 class="sec"><span>📄</span> Ventes & Facturation</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">?</div>
+      <div class="step-body">
+        <h3>Puis-je modifier une facture déjà validée ?</h3>
+        <p>Non. Une facture validée est définitive. Pour annuler ou corriger, créez un <strong>avoir</strong> depuis la fiche facture. Pour une erreur mineure, certains admins peuvent demander un déverrouillage temporaire.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">?</div>
+      <div class="step-body">
+        <h3>Comment facturer en plusieurs fois (acomptes) ?</h3>
+        <p>Créez une première facture pour l'acompte (% du total), puis une deuxième pour le solde. Indiquez dans les notes la référence de l'acompte.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">?</div>
+      <div class="step-body">
+        <h3>La TVA ne s'applique pas sur certains produits. Comment faire ?</h3>
+        <p>Dans la fiche produit → mettre le <strong>taux de TVA à 0%</strong>. Le produit sera exonéré dans tous les documents.</p>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="sec"><span>📦</span> Stock & Produits</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">?</div>
+      <div class="step-body">
+        <h3>Puis-je vendre un produit sans stock ?</h3>
+        <p>Oui, si l'option <strong>"Vente sans stock"</strong> est activée dans la fiche produit. Sinon, une alerte s'affiche quand le stock est insuffisant.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">?</div>
+      <div class="step-body">
+        <h3>Comment corriger une erreur de stock ?</h3>
+        <p>Stock → <strong>Inventaires</strong> → créer un inventaire sur le produit concerné → saisir la quantité réelle → Valider. O3 génère un ajustement automatique.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">?</div>
+      <div class="step-body">
+        <h3>Comment importer mes produits en masse ?</h3>
+        <p>Produits → <strong>"Importer"</strong> → télécharger le modèle CSV → remplir avec vos données → importer le fichier complété.</p>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="sec"><span>💡</span> Astuces générales</h2>
+  <div class="feat-grid">
+    <div class="feat"><h4>🔍 Recherche globale</h4><p>La barre de recherche en haut trouve des produits, clients, factures et commandes dans tous les modules simultanément.</p></div>
+    <div class="feat"><h4>⌨️ Raccourcis</h4><p>Dans les listes, cliquez sur l'en-tête d'une colonne pour trier. Utilisez les filtres avancés pour des recherches précises par date ou statut.</p></div>
+    <div class="feat"><h4>📥 Export Excel</h4><p>Chaque liste (factures, stock, clients…) peut être exportée en Excel via le bouton "Exporter" en haut à droite.</p></div>
+    <div class="feat"><h4>🔔 Notifications</h4><p>Les alertes stock, factures échues et validations en attente apparaissent dans la cloche de notification en haut à droite.</p></div>
+  </div>
+
+  <h2 class="sec"><span>📞</span> Support</h2>
+  <div class="alert alert-orange">
+    Pour toute question non couverte par ce guide :<br><br>
+    📧 <strong>contact@o3app.ma</strong> &nbsp;|&nbsp; 🌐 <strong>o3app.ma</strong><br><br>
+    📖 Guide POS spécifique : <a href="/guide-pos.html" style="color:#92400e;font-weight:700">guide-pos.html</a>
+  </div>
+</div>
+
+</div><!-- /container -->
+
+<button class="print-btn" onclick="window.print()" title="Imprimer le guide">🖨️</button>
+
+<script>
+function show(id, el) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('section-' + id).classList.add('active');
+  el.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>

@@ -57,7 +57,7 @@ const highlightModes = [
   { key: 'supplier' as HighlightMode, label: 'Fournisseur', color: 'bg-purple-500', lightColor: 'bg-purple-200/50 dark:bg-purple-500/30', borderColor: 'border-purple-500', textColor: 'text-purple-700 dark:text-purple-300', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
   { key: 'invoice_number' as HighlightMode, label: 'N Facture', color: 'bg-blue-500', lightColor: 'bg-blue-200/50 dark:bg-blue-500/30', borderColor: 'border-blue-500', textColor: 'text-blue-700 dark:text-blue-300', icon: 'M7 20l4-16m2 16l4-16M6 9h14M4 15h14' },
   { key: 'date' as HighlightMode, label: 'Date', color: 'bg-teal-500', lightColor: 'bg-teal-200/50 dark:bg-teal-500/30', borderColor: 'border-teal-500', textColor: 'text-teal-700 dark:text-teal-300', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
-  { key: 'items' as HighlightMode, label: 'Articles', color: 'bg-orange-500', lightColor: 'bg-orange-200/50 dark:bg-orange-500/30', borderColor: 'border-orange-500', textColor: 'text-orange-700 dark:text-orange-300', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01' },
+  { key: 'items' as HighlightMode, label: 'Articles', color: 'bg-[#7C5CFC]', lightColor: 'bg-[#E4D9FE]/50 dark:bg-[#7C5CFC]/30', borderColor: 'border-[#7C5CFC]', textColor: 'text-[#5B3FD1] dark:text-[#C4B5FD]', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01' },
   { key: 'totals' as HighlightMode, label: 'Totaux', color: 'bg-green-500', lightColor: 'bg-green-200/50 dark:bg-green-500/30', borderColor: 'border-green-500', textColor: 'text-green-700 dark:text-green-300', icon: 'M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z' },
 ]
 
@@ -88,6 +88,7 @@ const form = reactive({
     tax_percent: number
     match_score: number
     created: boolean
+    ocr_total_ht: number   // original OCR total — used to detect qty parsing errors
   }>,
   total_ht: 0 as number,
   total_tax: 0 as number,
@@ -623,6 +624,7 @@ async function populateForm(data: any) {
     tax_percent: l.tax_percent ?? 20,
     match_score: l.match_score ?? 0,
     created: false,
+    ocr_total_ht: l.total_ht ?? 0,
   }))
 }
 
@@ -638,6 +640,7 @@ function addLine() {
     tax_percent: 20,
     match_score: 0,
     created: false,
+    ocr_total_ht: 0,
   })
 }
 
@@ -647,6 +650,23 @@ function removeLine(index: number) {
 
 function lineHt(l: typeof form.lines[0]) {
   return l.quantity * l.unit_price * (1 - l.discount_percent / 100)
+}
+
+// ── OCR qty sanity check ─────────────────────────────────────────
+// If qty × unit_price diverges from the OCR-extracted total by >10%, the qty is likely wrong.
+function isQtySuspicious(l: typeof form.lines[0]): boolean {
+  if (!l.ocr_total_ht || !l.unit_price || l.quantity <= 0) return false
+  const expected = l.ocr_total_ht / l.unit_price
+  return Math.abs(l.quantity - expected) / expected > 0.1
+}
+
+function suggestedQty(l: typeof form.lines[0]): number {
+  if (!l.ocr_total_ht || !l.unit_price) return l.quantity
+  return Math.round(l.ocr_total_ht / l.unit_price)
+}
+
+function applyQtySuggestion(l: typeof form.lines[0]) {
+  l.quantity = suggestedQty(l)
 }
 
 // ── Confirm & create document ────────────────────────────────────
@@ -744,7 +764,7 @@ function fmt(n: number) {
 function matchBadgeClass(score: number) {
   if (score >= 0.9) return 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
   if (score >= 0.5) return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300'
-  if (score > 0) return 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300'
+  if (score > 0) return 'bg-[#F1ECFC] text-[#5B3FD1] dark:bg-[#4C3999] dark:text-[#C4B5FD]'
   return 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
 }
 
@@ -1081,7 +1101,7 @@ function matchLabel(score: number) {
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div class="flex items-center justify-between mb-3">
             <h2 class="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-              <svg class="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <svg class="w-4 h-4 text-[#7C5CFC]" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
               </svg>
               Lignes ({{ form.lines.length }})
@@ -1098,7 +1118,7 @@ function matchLabel(score: number) {
             <div
               v-for="(line, idx) in form.lines"
               :key="line.key"
-              class="border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 space-y-1.5 hover:border-orange-300 dark:hover:border-orange-500/40 transition"
+              class="border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 space-y-1.5 hover:border-[#C4B5FD] dark:hover:border-[#7C5CFC]/40 transition"
             >
               <!-- Header row -->
               <div class="flex items-center justify-between">
@@ -1129,12 +1149,12 @@ function matchLabel(score: number) {
               <div class="flex items-center gap-1">
                 <input v-model="line.designation" placeholder="Designation"
                   class="flex-1 px-2 py-1 text-xs border rounded focus:ring-1 focus:ring-teal-500 focus:outline-none"
-                  :class="activeField?.type === 'line' && activeField?.lineIdx === idx && activeField?.field === 'designation' ? 'border-orange-400 ring-1 ring-orange-200 bg-orange-50 dark:bg-orange-950' : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 dark:text-gray-200'" />
+                  :class="activeField?.type === 'line' && activeField?.lineIdx === idx && activeField?.field === 'designation' ? 'border-[#A78BFA] ring-1 ring-[#E4D9FE] bg-[#F1ECFC] dark:bg-[#2A2151]' : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 dark:text-gray-200'" />
                 <button type="button" @click="setActiveField({ type:'line', field:'designation', lineIdx: idx, label:`Désignation L${idx+1}` })"
-                  class="p-0.5 rounded hover:bg-orange-100 dark:hover:bg-orange-900 transition flex-shrink-0"
-                  :class="activeField?.type === 'line' && activeField?.lineIdx === idx && activeField?.field === 'designation' ? 'bg-orange-100 dark:bg-orange-900 ring-1 ring-orange-400' : ''"
+                  class="p-0.5 rounded hover:bg-[#F1ECFC] dark:hover:bg-[#4C3999] transition flex-shrink-0"
+                  :class="activeField?.type === 'line' && activeField?.lineIdx === idx && activeField?.field === 'designation' ? 'bg-[#F1ECFC] dark:bg-[#4C3999] ring-1 ring-[#A78BFA]' : ''"
                   title="Remplir depuis le PDF">
-                  <svg class="w-3 h-3 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5"/></svg>
+                  <svg class="w-3 h-3 text-[#7C5CFC]" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5"/></svg>
                 </button>
               </div>
 
@@ -1146,10 +1166,22 @@ function matchLabel(score: number) {
                       class="p-0 rounded hover:bg-yellow-100 transition" :class="activeField?.type === 'line' && activeField?.lineIdx === idx && activeField?.field === 'quantity' ? 'bg-yellow-100 ring-1 ring-yellow-400' : ''">
                       <svg class="w-2.5 h-2.5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5"/></svg>
                     </button>
+                    <!-- ⚠️ Qty mismatch badge: OCR total ÷ unit_price suggests a different qty -->
+                    <button v-if="isQtySuspicious(line)" type="button"
+                      @click="applyQtySuggestion(line)"
+                      :title="`Qté suspecte — le total suggère ${suggestedQty(line).toLocaleString()}. Cliquez pour corriger.`"
+                      class="ml-0.5 text-amber-500 hover:text-amber-600 transition animate-pulse">
+                      <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/>
+                      </svg>
+                    </button>
                   </label>
                   <input v-model.number="line.quantity" type="number" min="0"
                     class="w-full px-1.5 py-0.5 text-xs text-right border rounded focus:ring-1 focus:ring-teal-500 focus:outline-none"
-                    :class="activeField?.type === 'line' && activeField?.lineIdx === idx && activeField?.field === 'quantity' ? 'border-yellow-400 ring-1 ring-yellow-200 bg-yellow-50' : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 dark:text-gray-200'" />
+                    :class="[
+                      activeField?.type === 'line' && activeField?.lineIdx === idx && activeField?.field === 'quantity' ? 'border-yellow-400 ring-1 ring-yellow-200 bg-yellow-50' : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 dark:text-gray-200',
+                      isQtySuspicious(line) ? 'border-amber-400 bg-amber-50 dark:bg-amber-950/30' : '',
+                    ]" />
                 </div>
                 <div>
                   <label class="flex items-center gap-0.5 text-[9px] text-gray-400">PU HT

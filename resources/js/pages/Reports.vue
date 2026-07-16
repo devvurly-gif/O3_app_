@@ -18,7 +18,7 @@
           class="py-3 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap"
           :class="
             activeTab === tab.key
-              ? 'border-orange-500 text-orange-500'
+              ? 'border-primary-500 text-primary-500'
               : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
           "
           @click="activeTab = tab.key"
@@ -29,7 +29,7 @@
     </div>
 
     <!-- Filters -->
-    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
+    <BaseCard>
       <div class="flex flex-wrap items-end gap-4">
         <!-- Date range: sales, purchases -->
         <template v-if="activeTab === 'sales' || activeTab === 'purchases'">
@@ -38,7 +38,7 @@
             <input
               v-model="filters.from"
               type="date"
-              class="block w-44 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-orange-500 focus:border-orange-500"
+              class="block w-44 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
           <div>
@@ -46,7 +46,7 @@
             <input
               v-model="filters.to"
               type="date"
-              class="block w-44 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-orange-500 focus:border-orange-500"
+              class="block w-44 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
         </template>
@@ -57,7 +57,7 @@
             <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Entrepôt</label>
             <select
               v-model="filters.warehouse_id"
-              class="block w-52 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-orange-500 focus:border-orange-500"
+              class="block w-52 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-primary-500 focus:border-primary-500"
             >
               <option value="">Tous les entrepôts</option>
               <option v-for="wh in warehouses" :key="wh.id" :value="wh.id">{{ wh.wh_title }}</option>
@@ -72,44 +72,28 @@
             <input
               v-model="filters.pos_date"
               type="date"
-              class="block w-44 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-orange-500 focus:border-orange-500"
+              class="block w-44 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
         </template>
 
         <!-- Credit: no filters needed -->
 
-        <button
-          type="button"
-          class="inline-flex items-center gap-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 transition"
-          :disabled="loading"
-          @click="fetchReport"
-        >
-          <svg v-if="loading" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-          </svg>
-          Générer
-        </button>
+        <BaseButton variant="primary" :loading="loading" @click="fetchReport">Générer</BaseButton>
 
-        <button
+        <BaseButton
           v-if="reportData && activeTab !== 'credit'"
-          type="button"
-          class="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 transition"
-          :disabled="downloadingPdf"
+          variant="danger"
+          :loading="downloadingPdf"
           @click="downloadPdf"
         >
-          <svg v-if="downloadingPdf" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-          </svg>
-          <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <svg v-if="!downloadingPdf" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
           Télécharger PDF
-        </button>
+        </BaseButton>
       </div>
-    </div>
+    </BaseCard>
 
     <!-- Report data -->
     <BaseSkeleton v-if="loading" type="table" :rows="6" />
@@ -215,8 +199,7 @@
         />
 
         <!-- Réconciliation caisse -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
-          <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-4">Réconciliation Caisse</h3>
+        <BaseCard title="Réconciliation Caisse">
           <div class="space-y-2">
             <div class="flex justify-between text-sm">
               <span class="text-gray-500 dark:text-gray-400">Total fonds de caisse ouverture</span>
@@ -228,12 +211,12 @@
             </div>
             <div class="flex justify-between text-sm pt-2 border-t border-gray-200 dark:border-gray-700">
               <span class="font-semibold text-gray-900 dark:text-white">Écart total</span>
-              <span class="font-bold text-lg" :class="reportData.total_difference >= 0 ? 'text-green-600' : 'text-red-600'">
+              <span class="font-bold text-lg" :class="reportData.total_difference >= 0 ? 'text-success-600' : 'text-danger-600'">
                 {{ fmt(reportData.total_difference) }} MAD
               </span>
             </div>
           </div>
-        </div>
+        </BaseCard>
 
         <!-- Paiements par méthode -->
         <ReportTable
@@ -253,11 +236,7 @@
 
         <!-- Clients list -->
         <div class="space-y-4">
-          <div
-            v-for="client in reportData.clients"
-            :key="client.id"
-            class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm"
-          >
+          <BaseCard v-for="client in reportData.clients" :key="client.id">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
               <div>
                 <div class="flex items-center gap-2">
@@ -265,9 +244,9 @@
                   <span
                     class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
                     :class="{
-                      'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400': client.status === 'normal',
-                      'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400': client.status === 'alerte',
-                      'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400': client.status === 'depasse',
+                      'bg-success-100 text-success-700 dark:bg-success-900/30 dark:text-success-400': client.status === 'normal',
+                      'bg-warning-100 text-warning-700 dark:bg-warning-900/30 dark:text-warning-400': client.status === 'alerte',
+                      'bg-danger-100 text-danger-700 dark:bg-danger-900/30 dark:text-danger-400': client.status === 'depasse',
                     }"
                   >
                     {{ client.status === 'normal' ? 'Normal' : client.status === 'alerte' ? 'Alerte' : 'Dépassé' }}
@@ -278,7 +257,7 @@
                 </p>
               </div>
               <div class="text-right">
-                <p class="text-lg font-bold" :class="client.status === 'depasse' ? 'text-red-600' : 'text-gray-900 dark:text-white'">
+                <p class="text-lg font-bold" :class="client.status === 'depasse' ? 'text-danger-600' : 'text-gray-900 dark:text-white'">
                   {{ fmt(client.encours) }} MAD
                 </p>
                 <p class="text-xs text-gray-500 dark:text-gray-400">
@@ -293,9 +272,9 @@
               <div
                 class="h-2 rounded-full transition-all"
                 :class="{
-                  'bg-green-500': client.usage_pct < 80,
-                  'bg-yellow-500': client.usage_pct >= 80 && client.usage_pct < 100,
-                  'bg-red-500': client.usage_pct >= 100,
+                  'bg-success-500': client.usage_pct < 80,
+                  'bg-warning-500': client.usage_pct >= 80 && client.usage_pct < 100,
+                  'bg-danger-500': client.usage_pct >= 100,
                 }"
                 :style="{ width: Math.min(client.usage_pct, 100) + '%' }"
               />
@@ -326,11 +305,11 @@
                       <td class="py-1.5 pr-3 text-gray-500 dark:text-gray-400">{{ formatDocType(doc.type) }}</td>
                       <td class="py-1.5 pr-3 text-gray-500 dark:text-gray-400">{{ doc.date }}</td>
                       <td class="py-1.5 pr-3 text-right text-gray-900 dark:text-white">{{ fmt(doc.total) }}</td>
-                      <td class="py-1.5 pr-3 text-right font-medium text-red-600">{{ fmt(doc.due) }}</td>
+                      <td class="py-1.5 pr-3 text-right font-medium text-danger-600">{{ fmt(doc.due) }}</td>
                       <td class="py-1.5 text-right">
                         <span
                           class="inline-flex items-center rounded-full px-1.5 py-0.5 text-xs font-medium"
-                          :class="doc.age_days > 30 ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : doc.age_days > 15 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'"
+                          :class="doc.age_days > 30 ? 'bg-danger-100 text-danger-700 dark:bg-danger-900/30 dark:text-danger-400' : doc.age_days > 15 ? 'bg-warning-100 text-warning-700 dark:bg-warning-900/30 dark:text-warning-400' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'"
                         >
                           {{ doc.age_days }}j
                         </span>
@@ -340,7 +319,7 @@
                 </table>
               </div>
             </div>
-          </div>
+          </BaseCard>
         </div>
       </template>
     </template>
@@ -362,6 +341,8 @@ import { useToastStore } from '@/stores/toastStore'
 import KpiCard from '@/components/reports/KpiCard.vue'
 import ReportTable from '@/components/reports/ReportTable.vue'
 import BaseSkeleton from '@/components/BaseSkeleton.vue'
+import BaseButton from '@/components/BaseButton.vue'
+import BaseCard from '@/components/BaseCard.vue'
 
 const toast = useToastStore()
 

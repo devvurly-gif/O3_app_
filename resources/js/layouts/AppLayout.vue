@@ -1,14 +1,16 @@
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-gray-950">
     <!-- Sidebar -->
-    <AppSidebar :mobile-open="mobileOpen" @hover="sidebarExpanded = $event" @close-mobile="mobileOpen = false" />
+    <AppSidebar :mobile-open="mobileOpen" :pinned="sidebarPinned" @hover="sidebarHovered = $event" @close-mobile="mobileOpen = false" />
 
     <!-- Topbar -->
     <AppTopbar
       :sidebar-collapsed="!sidebarExpanded"
+      :sidebar-pinned="sidebarPinned"
       :user-name="userName"
       :user-email="userEmail"
       @menu="mobileOpen = !mobileOpen"
+      @toggle-sidebar="sidebarPinned = !sidebarPinned"
       @logout="handleLogout"
     />
 
@@ -37,7 +39,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import AppSidebar from './AppSidebar.vue'
@@ -50,7 +52,9 @@ const userName = computed(() => auth.userName || 'User')
 const userEmail = computed(() => auth.userEmail || '')
 
 const router = useRouter()
-const sidebarExpanded = ref(false)
+const sidebarPinned = ref(false)
+const sidebarHovered = ref(false)
+const sidebarExpanded = computed(() => sidebarPinned.value || sidebarHovered.value)
 const mobileOpen = ref(false)
 const year = computed(() => new Date().getFullYear())
 

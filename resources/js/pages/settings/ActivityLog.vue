@@ -7,13 +7,13 @@
     </div>
 
     <!-- Filters -->
-    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
+    <BaseCard>
       <div class="flex flex-wrap items-end gap-4">
         <div>
           <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Type</label>
           <select
             v-model="filters.subject_type"
-            class="block w-44 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-orange-500 focus:border-orange-500"
+            class="block w-44 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-primary-500 focus:border-primary-500"
           >
             <option value="">Tous</option>
             <option v-for="t in subjectTypes" :key="t.value" :value="t.value">{{ t.label }}</option>
@@ -23,7 +23,7 @@
           <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Action</label>
           <select
             v-model="filters.event"
-            class="block w-36 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-orange-500 focus:border-orange-500"
+            class="block w-36 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-primary-500 focus:border-primary-500"
           >
             <option value="">Toutes</option>
             <option value="created">Création</option>
@@ -36,7 +36,7 @@
           <input
             v-model="filters.from"
             type="date"
-            class="block w-40 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-orange-500 focus:border-orange-500"
+            class="block w-40 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-primary-500 focus:border-primary-500"
           />
         </div>
         <div>
@@ -44,28 +44,16 @@
           <input
             v-model="filters.to"
             type="date"
-            class="block w-40 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-orange-500 focus:border-orange-500"
+            class="block w-40 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-primary-500 focus:border-primary-500"
           />
         </div>
-        <button
-          type="button"
-          class="inline-flex items-center gap-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 transition"
-          @click="fetchLogs(1)"
-        >
-          Filtrer
-        </button>
-        <button
-          type="button"
-          class="inline-flex items-center gap-2 rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-          @click="resetFilters"
-        >
-          Réinitialiser
-        </button>
+        <BaseButton variant="primary" @click="fetchLogs(1)">Filtrer</BaseButton>
+        <BaseButton variant="secondary" @click="resetFilters">Réinitialiser</BaseButton>
       </div>
-    </div>
+    </BaseCard>
 
     <!-- Table -->
-    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+    <BaseCard :padded="false">
       <BaseSkeleton v-if="loading" type="table" :rows="10" />
       <div v-else class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -98,13 +86,7 @@
               </td>
               <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 max-w-xs truncate">{{ log.description }}</td>
               <td class="px-4 py-3 text-center">
-                <button
-                  type="button"
-                  class="text-orange-500 hover:text-blue-800 text-sm font-medium"
-                  @click="showDetail(log)"
-                >
-                  Voir
-                </button>
+                <BaseButton variant="ghost" size="sm" @click="showDetail(log)">Voir</BaseButton>
               </td>
             </tr>
             <tr v-if="!logs.length">
@@ -116,93 +98,73 @@
         </table>
       </div>
 
-      <!-- Pagination -->
-      <div v-if="pagination.lastPage > 1" class="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-        <p class="text-sm text-gray-600 dark:text-gray-400">
-          {{ pagination.from }}–{{ pagination.to }} sur {{ pagination.total }}
-        </p>
-        <div class="flex gap-1">
-          <button
-            v-for="page in paginationPages"
-            :key="page"
-            type="button"
-            class="px-3 py-1 text-sm rounded-md transition"
-            :class="page === pagination.currentPage ? 'bg-orange-500 text-white' : 'text-gray-600 hover:bg-gray-200'"
-            @click="fetchLogs(page)"
-          >
-            {{ page }}
-          </button>
+      <template v-if="pagination.lastPage > 1" #footer>
+        <div class="flex items-center justify-between w-full">
+          <p class="text-sm text-gray-600 dark:text-gray-400">
+            {{ pagination.from }}–{{ pagination.to }} sur {{ pagination.total }}
+          </p>
+          <div class="flex gap-1">
+            <button
+              v-for="page in paginationPages"
+              :key="page"
+              type="button"
+              class="px-3 py-1 text-sm rounded-md transition"
+              :class="page === pagination.currentPage ? 'bg-primary-500 text-white' : 'text-gray-600 hover:bg-gray-200'"
+              @click="fetchLogs(page)"
+            >
+              {{ page }}
+            </button>
+          </div>
         </div>
-      </div>
-    </div>
+      </template>
+    </BaseCard>
 
     <!-- Detail Modal -->
-    <Teleport to="body">
-      <Transition
-        enter-active-class="transition duration-200"
-        enter-from-class="opacity-0"
-        enter-to-class="opacity-100"
-        leave-active-class="transition duration-150"
-        leave-from-class="opacity-100"
-        leave-to-class="opacity-0"
-      >
-        <div v-if="detailLog" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="detailLog = null">
-          <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
-            <div class="flex items-center justify-between px-6 py-4 border-b">
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Détails de l'activité</h3>
-              <button type="button" class="text-gray-400 dark:text-gray-500 hover:text-gray-600" @click="detailLog = null">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div class="px-6 py-4 space-y-4">
-              <div class="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span class="text-gray-500 dark:text-gray-400">Date :</span>
-                  <span class="ml-2 font-medium">{{ formatDate(detailLog.created_at) }}</span>
-                </div>
-                <div>
-                  <span class="text-gray-500 dark:text-gray-400">Utilisateur :</span>
-                  <span class="ml-2 font-medium">{{ detailLog.causer?.name || 'Système' }}</span>
-                </div>
-                <div>
-                  <span class="text-gray-500 dark:text-gray-400">Action :</span>
-                  <span class="ml-2 font-medium">{{ eventLabel(detailLog.event) }}</span>
-                </div>
-                <div>
-                  <span class="text-gray-500 dark:text-gray-400">Type :</span>
-                  <span class="ml-2 font-medium">{{ subjectLabel(detailLog.subject_type) }}</span>
-                </div>
-                <div class="col-span-2">
-                  <span class="text-gray-500 dark:text-gray-400">Description :</span>
-                  <span class="ml-2 font-medium">{{ detailLog.description }}</span>
-                </div>
-              </div>
+    <BaseModal :model-value="!!detailLog" title="Détails de l'activité" size="lg" @update:model-value="(v) => !v && (detailLog = null)">
+      <div v-if="detailLog" class="space-y-4">
+        <div class="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <span class="text-gray-500 dark:text-gray-400">Date :</span>
+            <span class="ml-2 font-medium">{{ formatDate(detailLog.created_at) }}</span>
+          </div>
+          <div>
+            <span class="text-gray-500 dark:text-gray-400">Utilisateur :</span>
+            <span class="ml-2 font-medium">{{ detailLog.causer?.name || 'Système' }}</span>
+          </div>
+          <div>
+            <span class="text-gray-500 dark:text-gray-400">Action :</span>
+            <span class="ml-2 font-medium">{{ eventLabel(detailLog.event) }}</span>
+          </div>
+          <div>
+            <span class="text-gray-500 dark:text-gray-400">Type :</span>
+            <span class="ml-2 font-medium">{{ subjectLabel(detailLog.subject_type) }}</span>
+          </div>
+          <div class="col-span-2">
+            <span class="text-gray-500 dark:text-gray-400">Description :</span>
+            <span class="ml-2 font-medium">{{ detailLog.description }}</span>
+          </div>
+        </div>
 
-              <!-- Changes -->
-              <div v-if="detailLog.properties?.old || detailLog.properties?.attributes">
-                <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Modifications</h4>
-                <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 space-y-2">
-                  <div
-                    v-for="(val, key) in detailLog.properties?.attributes || {}"
-                    :key="key"
-                    class="flex items-start gap-2 text-sm"
-                  >
-                    <span class="text-gray-500 dark:text-gray-400 font-mono min-w-[140px]">{{ key }}</span>
-                    <span v-if="detailLog.properties?.old?.[key] !== undefined" class="text-red-500 line-through">
-                      {{ detailLog.properties.old[key] }}
-                    </span>
-                    <span v-if="detailLog.properties?.old?.[key] !== undefined" class="text-gray-400 dark:text-gray-500 mx-1">&rarr;</span>
-                    <span class="text-green-600 font-medium">{{ val }}</span>
-                  </div>
-                </div>
-              </div>
+        <!-- Changes -->
+        <div v-if="detailLog.properties?.old || detailLog.properties?.attributes">
+          <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Modifications</h4>
+          <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 space-y-2">
+            <div
+              v-for="(val, key) in detailLog.properties?.attributes || {}"
+              :key="key"
+              class="flex items-start gap-2 text-sm"
+            >
+              <span class="text-gray-500 dark:text-gray-400 font-mono min-w-[140px]">{{ key }}</span>
+              <span v-if="detailLog.properties?.old?.[key] !== undefined" class="text-danger-500 line-through">
+                {{ detailLog.properties.old[key] }}
+              </span>
+              <span v-if="detailLog.properties?.old?.[key] !== undefined" class="text-gray-400 dark:text-gray-500 mx-1">&rarr;</span>
+              <span class="text-success-600 font-medium">{{ val }}</span>
             </div>
           </div>
         </div>
-      </Transition>
-    </Teleport>
+      </div>
+    </BaseModal>
   </div>
 </template>
 
@@ -211,6 +173,9 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import http from '@/services/http'
 import { useToastStore } from '@/stores/toastStore'
 import BaseSkeleton from '@/components/BaseSkeleton.vue'
+import BaseButton from '@/components/BaseButton.vue'
+import BaseCard from '@/components/BaseCard.vue'
+import BaseModal from '@/components/BaseModal.vue'
 
 const toast = useToastStore()
 
@@ -322,9 +287,9 @@ function eventLabel(event: string | null): string {
 
 function eventBadge(event: string | null): string {
   switch (event) {
-    case 'created': return 'bg-green-100 text-green-700'
-    case 'updated': return 'bg-orange-100 text-orange-600'
-    case 'deleted': return 'bg-red-100 text-red-700'
+    case 'created': return 'bg-success-100 text-success-700'
+    case 'updated': return 'bg-warning-100 text-warning-700'
+    case 'deleted': return 'bg-danger-100 text-danger-700'
     default: return 'bg-gray-100 text-gray-700'
   }
 }

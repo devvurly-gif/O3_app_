@@ -2,22 +2,40 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "dev",
-      "runtimeExecutable": "cmd",
-      "runtimeArgs": ["/c", "npm", "run", "dev", "--", "--port", "5173", "--strictPort"],
+      "name": "marchespublics",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "-e",
+        "const http=require('http'),fs=require('fs');const f='C:/Users/hp/AppData/Roaming/Claude/local-agent-mode-sessions/skills-plugin/0b2f67cf-b9e1-4515-81ad-f0ea03c48ff2/5653df57-5bba-4994-b6fc-707579d552f6/skills/web-artifacts-builder/marchespublics-maroc/bundle.html';const s=http.createServer((q,r)=>{r.writeHead(200,{'Content-Type':'text/html;charset=utf-8'});fs.createReadStream(f).pipe(r);});s.listen(3456,()=>console.log('Server ready on 3456'));"
+      ],
+      "port": 3456
+    },
+    {
+      "name": "worldcup2026-vue",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "C:/laragon/www/worldcup2026-vue", "run", "dev"],
       "port": 5173
     },
     {
-      "name": "laravel",
-      "runtimeExecutable": "cmd",
-      "runtimeArgs": ["/c", "php", "artisan", "serve", "--port=8000"],
-      "port": 8000
+      "name": "worldcup2026-app",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "C:/laragon/www/worldcup2026-app", "run", "dev", "--", "--port", "5174"],
+      "port": 5174
     },
     {
-      "name": "apache",
-      "runtimeExecutable": "cmd",
-      "runtimeArgs": ["/c", "echo", "Apache already running on port 80"],
-      "port": 80
+      "name": "o3app-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "C:/laragon/www/O3_app", "run", "dev"],
+      "port": 5175
+    },
+    {
+      "name": "teliphoni-shop",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "-e",
+        "const http=require('http'),fs=require('fs');const f='C:/laragon/www/O3_app/teliphoni-shop/bundle.html';const s=http.createServer((q,r)=>{r.writeHead(200,{'Content-Type':'text/html;charset=utf-8'});fs.createReadStream(f).pipe(r);});s.listen(3457,()=>console.log('Server ready on 3457'));"
+      ],
+      "port": 3457
     }
   ]
 }
