@@ -1,33 +1,64 @@
 ﻿<template>
   <div class="space-y-5">
     <!-- Header -->
-    <div class="flex items-center justify-between">
+    <div class="flex items-start justify-between gap-3 flex-wrap">
       <div>
-        <h2 class="text-xl font-bold text-gray-900 dark:text-white">{{ $t('warehouses.title') }}</h2>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{{ $t('warehouses.subtitle') }}</p>
+        <h2 class="text-[26px] sm:text-[30px] font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white">{{ $t('warehouses.title') }}</h2>
+        <p class="text-sm text-[#8A8F9C] dark:text-gray-400 mt-1">{{ $t('warehouses.subtitle') }}</p>
       </div>
       <button
-        class="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition"
+        class="flex items-center gap-2 px-4 sm:px-5 py-2.5 bg-[#7C5CFC] hover:bg-[#6D4CE0] text-white text-sm font-bold rounded-[11px] shadow-[0_8px_20px_-8px_rgba(124,92,252,0.6)] transition"
         @click="openCreate"
       >
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
         </svg>
         {{ $t('warehouses.add') }}
       </button>
     </div>
 
+    <!-- Stat cards -->
+    <div class="grid grid-cols-3 gap-3 sm:gap-4">
+      <div class="bg-white dark:bg-gray-800 border border-[#ECEEF2] dark:border-gray-700 rounded-2xl p-4 sm:p-5">
+        <div class="w-9 h-9 rounded-[10px] bg-[#EFF1F5] dark:bg-gray-700 flex items-center justify-center mb-3.5">
+          <svg class="w-[17px] h-[17px]" fill="none" stroke="#5B6070" stroke-width="1.6" viewBox="0 0 20 20">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 10l7-7 7 7M4.5 8.5v7a1 1 0 001 1h3v-4h3v4h3a1 1 0 001-1v-7" />
+          </svg>
+        </div>
+        <div class="text-2xl sm:text-[26px] font-extrabold text-gray-900 dark:text-white">{{ items.length }}</div>
+        <div class="text-[13px] text-[#8A8F9C] dark:text-gray-400 mt-0.5">{{ $t('warehouses.title') }}</div>
+      </div>
+      <div class="bg-white dark:bg-gray-800 border border-[#ECEEF2] dark:border-gray-700 rounded-2xl p-4 sm:p-5">
+        <div class="w-9 h-9 rounded-[10px] bg-[#EAF7F0] dark:bg-[#2FA86B]/20 flex items-center justify-center mb-3.5">
+          <svg class="w-[17px] h-[17px]" fill="none" stroke="#2FA86B" stroke-width="1.8" viewBox="0 0 20 20">
+            <path d="M4 12l4 4 8-9" />
+          </svg>
+        </div>
+        <div class="text-2xl sm:text-[26px] font-extrabold text-gray-900 dark:text-white">{{ statActive }}</div>
+        <div class="text-[13px] text-[#8A8F9C] dark:text-gray-400 mt-0.5">{{ $t('common.active') }}</div>
+      </div>
+      <div class="bg-white dark:bg-gray-800 border border-[#ECEEF2] dark:border-gray-700 rounded-2xl p-4 sm:p-5">
+        <div class="w-9 h-9 rounded-[10px] bg-[#F0F1F4] dark:bg-gray-700 flex items-center justify-center mb-3.5">
+          <svg class="w-[17px] h-[17px]" fill="none" stroke="#7A7F8C" stroke-width="1.8" viewBox="0 0 20 20">
+            <circle cx="10" cy="10" r="7" /><line x1="7" y1="7" x2="13" y2="13" />
+          </svg>
+        </div>
+        <div class="text-2xl sm:text-[26px] font-extrabold text-gray-900 dark:text-white">{{ items.length - statActive }}</div>
+        <div class="text-[13px] text-[#8A8F9C] dark:text-gray-400 mt-0.5">{{ $t('common.inactive') }}</div>
+      </div>
+    </div>
+
     <!-- Filters -->
-    <div class="flex flex-wrap items-center gap-3">
+    <div class="flex flex-wrap items-center gap-2.5 sm:gap-3 bg-white dark:bg-gray-800 border border-[#ECEEF2] dark:border-gray-700 rounded-[14px] p-3">
       <input
         v-model="search"
         type="text"
         :placeholder="$t('warehouses.search')"
-        class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent w-64"
+        class="px-3.5 py-2.5 text-sm rounded-[10px] border border-[#E1E3E9] dark:border-gray-600 bg-[#FAFBFC] dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent w-64"
       />
       <select
         v-model="statusFilter"
-        class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+        class="px-3.5 py-2.5 text-[13px] font-semibold rounded-[10px] border border-[#E1E3E9] dark:border-gray-600 bg-[#FAFBFC] dark:bg-gray-700 text-[#4A4F5B] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
       >
         <option value="">{{ $t('common.allStatus') }}</option>
         <option value="1">{{ $t('common.active') }}</option>
@@ -42,11 +73,14 @@
       </template>
       <template #cell-wh_status="{ value }">
         <span
-          class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-          :class="value ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'"
+          class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold"
+          :class="value ? 'bg-[#E5F7ED] text-[#1F8A50]' : 'bg-[#F0F1F4] text-[#7A7F8C]'"
         >
           {{ value ? $t('common.active') : $t('common.inactive') }}
         </span>
+      </template>
+      <template #cell-created_at="{ value }">
+        <span class="text-sm">{{ fmtDate(value) }}</span>
       </template>
       <template #actions="{ row }">
         <div class="flex items-center justify-end gap-2">
@@ -64,7 +98,7 @@
             </svg>
           </button>
           <button
-            class="p-1.5 rounded-lg text-orange-500 hover:bg-orange-50 transition"
+            class="p-1.5 rounded-lg text-[#7C5CFC] hover:bg-[#F1ECFC] transition"
             :title="$t('common.update')"
             @click="openEdit(row)"
           >
@@ -119,7 +153,7 @@
             type="text"
             required
             :placeholder="$t('warehouses.namePlaceholder')"
-            class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
           />
         </div>
         <div class="flex items-center gap-2">
@@ -127,7 +161,7 @@
             id="wh-status"
             v-model="form.wh_status"
             type="checkbox"
-            class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-orange-500 focus:ring-orange-500"
+            class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-[#7C5CFC] focus:ring-[#7C5CFC]"
           />
           <label for="wh-status" class="text-sm text-gray-700 dark:text-gray-300">{{ $t('common.active') }}</label>
         </div>
@@ -140,7 +174,7 @@
           {{ $t('common.cancel') }}
         </button>
         <button
-          class="px-4 py-2 text-sm font-semibold bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition disabled:opacity-60"
+          class="px-4 py-2 text-sm font-semibold bg-[#7C5CFC] hover:bg-[#6D4CE0] text-white rounded-lg transition disabled:opacity-60"
           :disabled="saving"
           @click="submit"
         >
@@ -329,8 +363,10 @@ import BaseTable from '@/components/BaseTable.vue'
 import BasePagination from '@/components/BasePagination.vue'
 import BaseModal from '@/components/BaseModal.vue'
 import BaseNotification from '@/components/BaseNotification.vue'
+import { useFormat } from '@/composables/useFormat'
 
 const { t } = useI18n()
+const { date: fmtDate } = useFormat()
 const store = useWarehouseStore()
 const { items } = storeToRefs(store)
 
@@ -356,6 +392,8 @@ const columns = computed(() => [
   { key: 'wh_status', label: t('common.status') },
   { key: 'created_at', label: t('common.created') },
 ])
+
+const statActive = computed(() => items.value.filter((r: any) => r.wh_status).length)
 
 // ── Client-side filter + paginate ─────────────────────────────────────────
 const filteredRows = computed(() => {
@@ -487,7 +525,7 @@ function exportStockXls() {
 </head><body>
 <table border="1" cellpadding="4" style="border-collapse:collapse;font-family:Calibri;font-size:11pt">
     <tr><td colspan="9" style="font-size:14pt;font-weight:bold;background:#7c3aed;color:white">État du Stock — ${wh.wh_title} (${wh.wh_code})</td></tr>
-    <tr><td colspan="9" style="font-size:9pt;color:#666">Exporté le ${new Date().toLocaleDateString('fr-MA')} — ${items.length} produit(s)</td></tr>
+    <tr><td colspan="9" style="font-size:9pt;color:#666">Exporté le ${fmtDate(new Date())} — ${items.length} produit(s)</td></tr>
     <tr></tr>
     <tr style="background:#f3f4f6;font-weight:bold;font-size:10pt">
         <td>#</td><td>Code</td><td>Produit</td><td>SKU</td><td>EAN13</td><td>Quantité</td><td>Unité</td><td>Coût Moy.</td><td>Valeur (DH)</td>
@@ -521,13 +559,8 @@ function printStockPdf() {
 
   const totalQty = items.reduce((s: number, i: any) => s + Number(i.stockLevel), 0)
   const totalVal = items.reduce((s: number, i: any) => s + Number(i.stockLevel) * Number(i.wh_average ?? 0), 0)
-  const now = new Date().toLocaleDateString('fr-MA', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  const nowDate = new Date()
+  const now = fmtDate(nowDate) + ' ' + nowDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
   const fmt = (n: number) => n.toLocaleString('fr-MA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
   const rows = items

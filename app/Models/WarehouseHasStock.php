@@ -19,16 +19,14 @@ class WarehouseHasStock extends Model
         'stockAtTime',
         'wh_average',
         'user_id',
+        'variant_id',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'stockLevel'  => 'decimal:2',
-            'wh_average'  => 'decimal:2',
-            'stockAtTime' => 'datetime',
-        ];
-    }
+    protected $casts = [
+        'stockLevel'  => 'decimal:2',
+        'wh_average'  => 'decimal:2',
+        'stockAtTime' => 'datetime',
+    ];
 
     public function warehouse(): BelongsTo
     {
@@ -38,6 +36,11 @@ class WarehouseHasStock extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function variant(): BelongsTo
+    {
+        return $this->belongsTo(ProductVariant::class, 'variant_id');
     }
 
     public function lastUpdatedBy(): BelongsTo

@@ -216,6 +216,9 @@
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
 import http from '@/services/http'
+import { useFormat } from '@/composables/useFormat'
+
+const { date: fmtDate } = useFormat()
 
 const positions = [
   { value: '', label: 'Tous' },
@@ -292,7 +295,7 @@ async function fetchSlides() {
 }
 
 function formatDate(d: string): string {
-  return new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  return fmtDate(d)
 }
 
 function openCreate() {

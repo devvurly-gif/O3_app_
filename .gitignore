@@ -18,3 +18,10 @@ yarn-error.log
 /.idea
 /.vscode
 cookies.txt
+
+# Manual backup files created ad-hoc during hotfixes - never commit these
+.env.backup-*
+.env.bak*
+.ee
+*.bak
+*.bak-*

@@ -22,7 +22,7 @@
           </div>
           <div class="flex justify-between">
             <span class="text-gray-600 dark:text-gray-400">Ouvert à</span>
-            <span class="font-medium text-gray-900 dark:text-white">{{ new Date(existingSession.opened_at).toLocaleString('fr-FR') }}</span>
+            <span class="font-medium text-gray-900 dark:text-white">{{ formatDateTime(existingSession.opened_at) }}</span>
           </div>
         </div>
         <button
@@ -82,9 +82,16 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePosStore, type PosTerminal, type PosSessionData } from '@/stores/pos/posStore'
 import http from '@/services/http'
+import { useFormat } from '@/composables/useFormat'
 
 const router = useRouter()
 const posStore = usePosStore()
+const { date: fmtDate } = useFormat()
+
+function formatDateTime(value: string): string {
+  const d = new Date(value)
+  return fmtDate(d) + ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+}
 
 const terminals = ref<PosTerminal[]>([])
 const terminalId = ref<number | null>(null)

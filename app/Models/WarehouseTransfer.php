@@ -21,13 +21,10 @@ class WarehouseTransfer extends Model
         'transferred_at',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'quantity'         => 'decimal:2',
-            'transferred_at'   => 'datetime',
-        ];
-    }
+    protected $casts = [
+        'quantity'         => 'decimal:2',
+        'transferred_at'   => 'datetime',
+    ];
 
     public function fromWarehouse(): BelongsTo
     {

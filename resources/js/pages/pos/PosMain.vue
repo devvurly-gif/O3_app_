@@ -2,7 +2,7 @@
   <div class="flex h-full relative">
     <!-- Mobile cart toggle FAB -->
     <button
-      class="lg:hidden fixed bottom-4 right-4 z-30 w-14 h-14 rounded-full bg-[#7C5CFC] text-white shadow-lg flex items-center justify-center hover:bg-[#6D4CE0] transition"
+      class="lg:hidden fixed bottom-4 right-4 z-30 w-14 h-14 rounded-full bg-orange-500 text-white shadow-lg flex items-center justify-center hover:bg-orange-600 transition"
       @click="mobileView = mobileView === 'cart' ? 'products' : 'cart'"
     >
       <svg v-if="mobileView === 'products'" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -28,7 +28,7 @@
       <div class="flex items-center gap-2 px-4 py-3 border-b border-gray-100 dark:border-gray-700 overflow-x-auto shrink-0">
         <button
           class="shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition"
-          :class="!posStore.selectedCategoryId ? 'bg-[#7C5CFC] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+          :class="!posStore.selectedCategoryId ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
           @click="selectCategory(null)"
         >
           Tout
@@ -37,7 +37,7 @@
           v-for="cat in categories"
           :key="cat.id"
           class="shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition"
-          :class="posStore.selectedCategoryId === cat.id ? 'bg-[#7C5CFC] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+          :class="posStore.selectedCategoryId === cat.id ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
           @click="selectCategory(cat.id)"
         >
           {{ cat.ctg_title }}
@@ -54,7 +54,7 @@
             v-model="posStore.searchQuery"
             type="text"
             placeholder="Rechercher par nom, SKU, code-barres..."
-            class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
+            class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             @input="debouncedSearch"
           />
         </div>
@@ -72,7 +72,7 @@
           <button
             v-for="product in posStore.products"
             :key="product.id"
-            class="flex flex-col bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-3 hover:border-[#A78BFA] hover:shadow-md transition-all text-left group"
+            class="flex flex-col bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-3 hover:border-orange-400 hover:shadow-md transition-all text-left group"
             @click="handleProductClick(product)"
           >
             <div class="w-full aspect-square rounded-lg bg-gray-200 mb-2 overflow-hidden flex items-center justify-center">
@@ -89,7 +89,7 @@
             </div>
             <p class="text-xs font-medium text-gray-900 dark:text-white line-clamp-2 leading-tight mb-1">{{ product.p_title }}</p>
             <div class="mt-auto flex items-center justify-between">
-              <span class="text-sm font-bold text-[#7C5CFC]">{{ formatPrice(product.p_salePrice) }}</span>
+              <span class="text-sm font-bold text-orange-500">{{ formatPrice(product.p_salePrice) }}</span>
               <span v-if="product.variants && product.variants.length > 0"
                 class="text-[10px] px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300">
                 {{ product.variants.length }} var.
@@ -113,7 +113,7 @@
         <div>
           <h2 class="text-sm font-bold text-gray-900 dark:text-white">
             Panier
-            <span v-if="posStore.cartItemCount" class="ml-1 text-xs bg-[#F1ECFC] text-[#7C5CFC] px-2 py-0.5 rounded-full">
+            <span v-if="posStore.cartItemCount" class="ml-1 text-xs bg-orange-100 text-orange-500 px-2 py-0.5 rounded-full">
               {{ posStore.cartItemCount }}
             </span>
           </h2>
@@ -207,7 +207,7 @@
 
           <button
             type="button"
-            class="flex items-center gap-1 text-xs px-2 py-1 rounded-lg bg-[#F1ECFC] text-[#6D4CE0] hover:bg-[#F1ECFC] dark:bg-[#4C3999]/40 dark:text-[#C4B5FD] transition"
+            class="flex items-center gap-1 text-xs px-2 py-1 rounded-lg bg-orange-50 text-orange-600 hover:bg-orange-100 dark:bg-orange-900/40 dark:text-orange-300 transition"
             title="Ventes par mode de paiement"
             @click="openSessionStats"
           >
@@ -217,7 +217,7 @@
             <span>Ventes</span>
             <span
               v-if="(sessionStats?.total_tickets ?? 0) > 0"
-              class="ml-0.5 text-[10px] bg-[#7C5CFC] text-white px-1.5 py-0.5 rounded-full"
+              class="ml-0.5 text-[10px] bg-orange-500 text-white px-1.5 py-0.5 rounded-full"
             >
               {{ sessionStats?.total_tickets }}
             </span>
@@ -250,7 +250,7 @@
       <!-- Customer selector -->
       <div class="px-5 py-3 border-b border-gray-100 dark:border-gray-700 shrink-0">
         <!-- Selected customer display -->
-        <div v-if="selectedCustomer" class="flex items-center gap-3 p-2.5 rounded-xl bg-[#F1ECFC] dark:bg-[#4C3999]/30 border border-[#E4D9FE] dark:border-[#4C3999]">
+        <div v-if="selectedCustomer" class="flex items-center gap-3 p-2.5 rounded-xl bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800">
           <div class="flex-1 min-w-0">
             <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ selectedCustomer.tp_title }}</p>
             <div class="flex items-center gap-2 mt-0.5">
@@ -285,7 +285,7 @@
                 v-model="customerSearch"
                 type="text"
                 placeholder="Client (optionnel)..."
-                class="w-full pl-8 pr-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
+                class="w-full pl-8 pr-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 @input="debouncedCustomerSearch"
                 @focus="showCustomerDropdown = true"
               />
@@ -369,7 +369,7 @@
           <div class="flex items-center justify-between gap-2">
             <!-- Price block -->
             <div>
-              <p class="text-xl font-bold text-[#7C5CFC] leading-none">
+              <p class="text-xl font-bold text-orange-500 leading-none">
                 {{ formatPrice(item.quantity * item.unit_price * (1 - item.discount_percent / 100)) }}
               </p>
               <div class="flex items-center gap-1.5 mt-1">
@@ -393,7 +393,7 @@
               </button>
               <span class="w-8 text-center text-sm font-bold text-gray-800 dark:text-white select-none">{{ item.quantity }}</span>
               <button
-                class="w-7 h-7 rounded-lg bg-[#7C5CFC] hover:bg-[#6D4CE0] shadow-sm flex items-center justify-center text-white transition active:scale-95"
+                class="w-7 h-7 rounded-lg bg-orange-500 hover:bg-orange-600 shadow-sm flex items-center justify-center text-white transition active:scale-95"
                 @click="posStore.updateCartItemQty(item.product_id, item.quantity + 1, item.variant_id ?? null)"
               >
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
@@ -430,7 +430,7 @@
           </button>
           <button
             :disabled="!posStore.cart.length"
-            class="py-3 rounded-xl font-semibold text-sm transition disabled:opacity-40 disabled:cursor-not-allowed bg-[#7C5CFC] hover:bg-[#6D4CE0] text-white"
+            class="py-3 rounded-xl font-semibold text-sm transition disabled:opacity-40 disabled:cursor-not-allowed bg-orange-500 hover:bg-orange-600 text-white"
             @click="payWith('card')"
           >
             Carte
@@ -474,7 +474,7 @@
             <input
               v-model="newCustomer.tp_title"
               type="text"
-              class="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]"
+              class="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
               placeholder="Nom du client"
             />
           </div>
@@ -483,7 +483,7 @@
             <input
               v-model="newCustomer.tp_phone"
               type="text"
-              class="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]"
+              class="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
               placeholder="06 xx xx xx xx"
             />
           </div>
@@ -492,7 +492,7 @@
             <input
               v-model="newCustomer.tp_email"
               type="email"
-              class="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]"
+              class="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
               placeholder="email@exemple.com"
             />
           </div>
@@ -501,7 +501,7 @@
             <div class="flex gap-2">
               <button
                 class="flex-1 py-2 rounded-lg text-sm font-medium transition"
-                :class="newCustomer.type_compte === 'normal' ? 'bg-[#7C5CFC] text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'"
+                :class="newCustomer.type_compte === 'normal' ? 'bg-orange-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'"
                 @click="newCustomer.type_compte = 'normal'"
               >
                 Normal
@@ -522,7 +522,7 @@
               type="number"
               min="0"
               step="100"
-              class="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]"
+              class="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
               placeholder="0 = illimité"
             />
           </div>
@@ -537,7 +537,7 @@
           </button>
           <button
             :disabled="!newCustomer.tp_title.trim() || creatingCustomer"
-            class="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#7C5CFC] hover:bg-[#6D4CE0] transition disabled:opacity-40 disabled:cursor-not-allowed"
+            class="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 transition disabled:opacity-40 disabled:cursor-not-allowed"
             @click="createCustomer"
           >
             {{ creatingCustomer ? 'Création...' : 'Créer' }}
@@ -556,7 +556,7 @@
         <div class="flex items-center justify-between mb-4">
           <div>
             <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              <svg class="w-5 h-5 text-[#7C5CFC]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 3v18h18M7 14l3-3 4 4 6-6" />
               </svg>
               Ventes de la session
@@ -658,7 +658,7 @@
           </button>
           <button
             type="button"
-            class="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#7C5CFC] hover:bg-[#6D4CE0] transition"
+            class="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 transition"
             @click="showSessionStats = false"
           >
             Fermer
@@ -727,22 +727,22 @@
               <!-- No QZ Tray: show kiosk mode tip -->
               <div v-else class="space-y-3">
                 <!-- Kiosk mode tip (recommended) -->
-                <div class="p-3 rounded-xl bg-[#F1ECFC] dark:bg-[#4C3999]/20 border border-[#E4D9FE] dark:border-[#4C3999]">
+                <div class="p-3 rounded-xl bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800">
                   <div class="flex items-center gap-2 mb-2">
-                    <svg class="w-3.5 h-3.5 text-[#7C5CFC] shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <svg class="w-3.5 h-3.5 text-orange-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
                       <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/>
                     </svg>
-                    <p class="text-xs font-semibold text-[#5B3FD1] dark:text-[#C4B5FD]">Impression silencieuse sans logiciel</p>
+                    <p class="text-xs font-semibold text-orange-700 dark:text-orange-300">Impression silencieuse sans logiciel</p>
                   </div>
-                  <p class="text-[10px] text-[#6D4CE0] dark:text-[#A78BFA] leading-relaxed mb-2">
-                    Lancez Chrome avec le flag <code class="bg-[#F1ECFC] dark:bg-[#4C3999] px-1 py-0.5 rounded font-mono">--kiosk-printing</code> pour imprimer sans dialog sur l'imprimante par défaut Windows.
+                  <p class="text-[10px] text-orange-600 dark:text-orange-400 leading-relaxed mb-2">
+                    Lancez Chrome avec le flag <code class="bg-orange-100 dark:bg-orange-900 px-1 py-0.5 rounded font-mono">--kiosk-printing</code> pour imprimer sans dialog sur l'imprimante par défaut Windows.
                   </p>
-                  <div class="bg-[#F1ECFC] dark:bg-[#4C3999]/50 rounded-lg p-2 mt-1">
-                    <p class="text-[10px] font-mono text-[#5B3FD1] dark:text-[#C4B5FD] break-all select-all">
+                  <div class="bg-orange-100 dark:bg-orange-900/50 rounded-lg p-2 mt-1">
+                    <p class="text-[10px] font-mono text-orange-700 dark:text-orange-300 break-all select-all">
                       chrome.exe --kiosk-printing --app={{ currentUrl }}
                     </p>
                   </div>
-                  <p class="text-[10px] text-[#7C5CFC] mt-1.5">Définissez l'imprimante ticket comme imprimante par défaut dans Windows.</p>
+                  <p class="text-[10px] text-orange-500 mt-1.5">Définissez l'imprimante ticket comme imprimante par défaut dans Windows.</p>
                 </div>
 
                 <!-- QZ Tray option -->
@@ -769,7 +769,7 @@
                   v-model="terminalSettingsForm.printer_name"
                   type="text"
                   placeholder="ex: Epson TM-T20 Caisse 1"
-                  class="w-full px-3 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
+                  class="w-full px-3 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 />
                 <p class="text-[10px] text-gray-400 mt-1">
                   Doit correspondre exactement au nom de l'imprimante dans Windows.
@@ -782,7 +782,7 @@
                   type="button"
                   @click="terminalSettingsForm.auto_print = !terminalSettingsForm.auto_print"
                   class="relative shrink-0 w-10 h-5.5 mt-0.5 rounded-full transition-colors duration-200"
-                  :class="terminalSettingsForm.auto_print ? 'bg-[#7C5CFC]' : 'bg-gray-300 dark:bg-gray-600'"
+                  :class="terminalSettingsForm.auto_print ? 'bg-orange-500' : 'bg-gray-300 dark:bg-gray-600'"
                 >
                   <span
                     class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200"
@@ -805,7 +805,7 @@
                   type="button"
                   @click="testPrint"
                   :disabled="testPrinting"
-                  class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-dashed border-gray-300 dark:border-gray-600 text-sm text-gray-500 dark:text-gray-400 hover:border-[#A78BFA] hover:text-[#7C5CFC] transition disabled:opacity-50"
+                  class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-dashed border-gray-300 dark:border-gray-600 text-sm text-gray-500 dark:text-gray-400 hover:border-orange-400 hover:text-orange-500 transition disabled:opacity-50"
                 >
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6v-8z"/>
@@ -827,7 +827,7 @@
               <button
                 @click="saveTerminalSettings"
                 :disabled="savingTerminalSettings"
-                class="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-[#7C5CFC] hover:bg-[#6D4CE0] rounded-xl transition disabled:opacity-60"
+                class="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 rounded-xl transition disabled:opacity-60"
               >
                 {{ savingTerminalSettings ? 'Enregistrement...' : 'Enregistrer' }}
               </button>
@@ -866,7 +866,7 @@
             :disabled="v.stock <= 0"
             class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl border transition text-left"
             :class="v.stock > 0
-              ? 'border-gray-200 dark:border-gray-600 hover:border-[#A78BFA] hover:bg-[#F1ECFC] dark:hover:bg-[#4C3999]/20'
+              ? 'border-gray-200 dark:border-gray-600 hover:border-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20'
               : 'border-gray-100 dark:border-gray-700 opacity-50 cursor-not-allowed'"
           >
             <div>
@@ -874,7 +874,7 @@
               <p v-if="v.sku" class="text-[10px] text-gray-400">{{ v.sku }}</p>
             </div>
             <div class="text-right shrink-0 ml-3">
-              <p class="text-sm font-bold text-[#7C5CFC]">{{ v.price ? formatPrice(v.price) : formatPrice(variantModalProduct.p_salePrice) }}</p>
+              <p class="text-sm font-bold text-orange-500">{{ v.price ? formatPrice(v.price) : formatPrice(variantModalProduct.p_salePrice) }}</p>
               <span class="text-[10px] px-1.5 py-0.5 rounded-full" :class="v.stock > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'">
                 {{ v.stock > 0 ? `Stock: ${v.stock}` : 'Rupture' }}
               </span>
@@ -894,6 +894,7 @@ import { useBarcodeScanner } from '@/composables/useBarcodeScanner'
 import { useQzTray } from '@/composables/useQzTray'
 import http from '@/services/http'
 import { useNumberFormat } from "@/composables/useNumberFormat"
+import { useFormat } from '@/composables/useFormat'
 import { useSettingStore } from '@/stores/setting'
 import PosCheckout from './PosCheckout.vue'
 import CartItemModal from "@/components/CartItemModal.vue"
@@ -931,6 +932,7 @@ function saveEditModal(data: any) {
 const posStore = usePosStore()
 const settingStore = useSettingStore()
 const { formatPrice, formatQuantity } = useNumberFormat()
+const { date: fmtDate } = useFormat()
 const qzTray = useQzTray()
 
 const currentUrl = computed(() => window.location.origin + '/pos/main')
@@ -990,7 +992,7 @@ async function testPrint() {
       <h2>Test d'impression</h2>
       <p>Terminal : ${posStore.currentTerminal?.name}</p>
       <p>Imprimante : ${terminalSettingsForm.value.printer_name}</p>
-      <p>${new Date().toLocaleString()}</p>
+      <p>${fmtDate(new Date())} ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
       <p>— O3 POS —</p>
     </body></html>`
     const sent = await qzTray.printHtml(terminalSettingsForm.value.printer_name, testHtml)
@@ -1019,7 +1021,7 @@ const refreshingStats = ref(false)
 
 const PAYMENT_METHOD_META: Record<string, { title: string; bg: string; dot: string; label: string; muted: string }> = {
   cash:   { title: 'Espèces',   bg: 'bg-green-50 dark:bg-green-900/20',   dot: 'bg-green-500',   label: 'text-green-700 dark:text-green-400',   muted: 'text-green-600/70 dark:text-green-400/60' },
-  card:   { title: 'Carte',     bg: 'bg-[#F1ECFC] dark:bg-[#4C3999]/20',     dot: 'bg-[#7C5CFC]',    label: 'text-[#6D4CE0] dark:text-[#A78BFA]',     muted: 'text-[#7C5CFC]/70 dark:text-[#A78BFA]/60' },
+  card:   { title: 'Carte',     bg: 'bg-orange-50 dark:bg-orange-900/20',     dot: 'bg-orange-500',    label: 'text-orange-600 dark:text-orange-400',     muted: 'text-orange-500/70 dark:text-orange-400/60' },
   credit: { title: 'En compte', bg: 'bg-amber-50 dark:bg-amber-900/20',   dot: 'bg-amber-500',   label: 'text-amber-700 dark:text-amber-400',   muted: 'text-amber-600/70 dark:text-amber-400/60' },
   cheque: { title: 'Chèque',    bg: 'bg-purple-50 dark:bg-purple-900/20', dot: 'bg-purple-500',  label: 'text-purple-700 dark:text-purple-400', muted: 'text-purple-600/70 dark:text-purple-400/60' },
   virement: { title: 'Virement', bg: 'bg-indigo-50 dark:bg-indigo-900/20', dot: 'bg-indigo-500', label: 'text-indigo-700 dark:text-indigo-400', muted: 'text-indigo-600/70 dark:text-indigo-400/60' },

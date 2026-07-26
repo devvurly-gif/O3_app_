@@ -14,9 +14,11 @@
           :key="tab.id"
           @click="activeTab = tab.id"
           class="px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors"
-          :class="activeTab === tab.id
-            ? 'border-[#7C5CFC] text-[#7C5CFC] dark:text-[#A78BFA] dark:border-blue-400'
-            : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'"
+          :class="tab.id === 'danger'
+            ? (activeTab === tab.id ? 'border-red-500 text-red-600 dark:text-red-400' : 'border-transparent text-red-400 dark:text-red-500/70 hover:text-red-600 hover:border-red-300')
+            : activeTab === tab.id
+              ? 'border-orange-500 text-orange-500 dark:text-orange-400 dark:border-blue-400'
+              : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'"
         >
           {{ tab.label }}
         </button>
@@ -49,7 +51,7 @@
               <p class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $t('appSettings.companyLogo') || 'Logo de l\'entreprise' }}</p>
               <p class="text-xs text-gray-400 dark:text-gray-500">{{ $t('appSettings.logoHint') || 'JPG, PNG, WebP ou SVG. Max 2 Mo. Apparaît sur les factures et documents imprimés.' }}</p>
               <div class="flex items-center gap-2">
-                <label class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#F1ECFC] dark:bg-[#4C3999]/20 text-[#7C5CFC] dark:text-[#A78BFA] rounded-lg hover:bg-[#F1ECFC] dark:hover:bg-blue-900/30 transition">
+                <label class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-orange-50 dark:bg-orange-900/20 text-orange-500 dark:text-orange-400 rounded-lg hover:bg-orange-100 dark:hover:bg-blue-900/30 transition">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
                   </svg>
@@ -163,7 +165,7 @@
                 class="sr-only peer"
                 @change="saveSection('invoice', { tax_enabled: invoice.tax_enabled })"
               />
-              <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-[#7C5CFC]"></div>
+              <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-orange-500"></div>
             </label>
           </div>
           <!-- Tax rate — only shown when enabled -->
@@ -263,7 +265,7 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Twilio Auth Token</label>
               <input v-model="whatsapp.twilio_auth_token" :type="showWhatsappToken ? 'text' : 'password'" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" :class="inputClass + ' font-mono text-xs'" />
-              <button @click="showWhatsappToken = !showWhatsappToken" class="text-xs text-[#7C5CFC] mt-1 hover:underline">
+              <button @click="showWhatsappToken = !showWhatsappToken" class="text-xs text-orange-500 mt-1 hover:underline">
                 {{ showWhatsappToken ? $t('appSettings.hide') : $t('appSettings.show') }}
               </button>
             </div>
@@ -308,8 +310,8 @@
       <template v-if="activeTab === 'email'">
         <section class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 space-y-4">
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-[#F1ECFC] dark:bg-[#4C3999]/30 rounded-lg flex items-center justify-center">
-              <svg class="w-5 h-5 text-[#7C5CFC] dark:text-[#A78BFA]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <div class="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
+              <svg class="w-5 h-5 text-orange-500 dark:text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
               </svg>
             </div>
@@ -340,7 +342,7 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.mailPassword') }}</label>
               <input v-model="email.mail_password" :type="showEmailPassword ? 'text' : 'password'" placeholder="********" :class="inputClass" />
-              <button @click="showEmailPassword = !showEmailPassword" class="text-xs text-[#7C5CFC] mt-1 hover:underline">
+              <button @click="showEmailPassword = !showEmailPassword" class="text-xs text-orange-500 mt-1 hover:underline">
                 {{ showEmailPassword ? $t('appSettings.hide') : $t('appSettings.show') }}
               </button>
             </div>
@@ -381,7 +383,7 @@
             <button
               @click="testEmail"
               :disabled="testingEmail"
-              class="px-4 py-2 text-sm font-medium border border-[#7C5CFC] text-[#7C5CFC] dark:text-[#A78BFA] rounded-lg hover:bg-[#F1ECFC] dark:hover:bg-blue-900/20 transition disabled:opacity-60"
+              class="px-4 py-2 text-sm font-medium border border-orange-500 text-orange-500 dark:text-orange-400 rounded-lg hover:bg-orange-50 dark:hover:bg-blue-900/20 transition disabled:opacity-60"
             >
               {{ testingEmail ? $t('appSettings.testing') : $t('appSettings.testEmail') }}
             </button>
@@ -402,15 +404,15 @@
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ $t('appSettings.priceDecimalPlaces') || 'Décimales pour les prix' }}</label>
             <div class="flex gap-4">
               <label class="flex items-center gap-2 cursor-pointer">
-                <input v-model.number="display.price_decimals" type="radio" :value="2" class="w-4 h-4 text-[#7C5CFC]" />
+                <input v-model.number="display.price_decimals" type="radio" :value="2" class="w-4 h-4 text-orange-500" />
                 <span class="text-sm text-gray-700 dark:text-gray-300">2 décimales (120.00 MAD)</span>
               </label>
               <label class="flex items-center gap-2 cursor-pointer">
-                <input v-model.number="display.price_decimals" type="radio" :value="3" class="w-4 h-4 text-[#7C5CFC]" />
+                <input v-model.number="display.price_decimals" type="radio" :value="3" class="w-4 h-4 text-orange-500" />
                 <span class="text-sm text-gray-700 dark:text-gray-300">3 décimales (120.000 MAD)</span>
               </label>
               <label class="flex items-center gap-2 cursor-pointer">
-                <input v-model.number="display.price_decimals" type="radio" :value="4" class="w-4 h-4 text-[#7C5CFC]" />
+                <input v-model.number="display.price_decimals" type="radio" :value="4" class="w-4 h-4 text-orange-500" />
                 <span class="text-sm text-gray-700 dark:text-gray-300">4 décimales (120.0000 MAD)</span>
               </label>
             </div>
@@ -431,7 +433,7 @@
         <section class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 space-y-5">
           <div class="flex items-center justify-between">
             <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 uppercase tracking-wide">Rubriques de variantes</h3>
-            <button @click="startAddType" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#7C5CFC] text-white rounded-lg hover:bg-[#6D4CE0] transition">
+            <button @click="startAddType" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
               Nouvelle rubrique
             </button>
@@ -440,17 +442,17 @@
           <div v-if="variantStore.loading" class="text-sm text-gray-400">Chargement...</div>
 
           <!-- Add type form -->
-          <div v-if="addingType" class="flex items-center gap-2 p-3 bg-[#F1ECFC] dark:bg-[#4C3999]/10 border border-[#E4D9FE] dark:border-[#4C3999] rounded-lg">
+          <div v-if="addingType" class="flex items-center gap-2 p-3 bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-800 rounded-lg">
             <input
               v-model="newTypeName"
               ref="newTypeInput"
               type="text"
               placeholder="Ex: Couleur, Taille, Matière..."
-              class="flex-1 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#A78BFA]"
+              class="flex-1 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-400"
               @keyup.enter="confirmAddType"
               @keyup.escape="addingType = false"
             />
-            <button @click="confirmAddType" :disabled="!newTypeName.trim()" class="px-3 py-1.5 text-xs font-medium bg-[#7C5CFC] text-white rounded-lg hover:bg-[#6D4CE0] disabled:opacity-40 transition">Créer</button>
+            <button @click="confirmAddType" :disabled="!newTypeName.trim()" class="px-3 py-1.5 text-xs font-medium bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-40 transition">Créer</button>
             <button @click="addingType = false" class="px-3 py-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition">Annuler</button>
           </div>
 
@@ -466,14 +468,14 @@
                 v-if="editingTypeId === optType.id"
                 v-model="editingTypeName"
                 type="text"
-                class="flex-1 px-2 py-1 text-sm font-semibold border border-[#A78BFA] rounded bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none"
+                class="flex-1 px-2 py-1 text-sm font-semibold border border-orange-400 rounded bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none"
                 @keyup.enter="saveTypeName(optType)"
                 @keyup.escape="editingTypeId = null"
                 @blur="saveTypeName(optType)"
               />
               <span v-else class="flex-1 text-sm font-semibold text-gray-800 dark:text-gray-200">{{ optType.name }}</span>
 
-              <button v-if="editingTypeId !== optType.id" @click="startEditType(optType)" class="p-1 text-gray-400 hover:text-[#7C5CFC] transition">
+              <button v-if="editingTypeId !== optType.id" @click="startEditType(optType)" class="p-1 text-gray-400 hover:text-orange-500 transition">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" /></svg>
               </button>
               <button @click="variantStore.deleteType(optType.id)" class="p-1 text-gray-400 hover:text-red-500 transition">
@@ -489,7 +491,7 @@
                     :value="val.key"
                     type="text"
                     placeholder="Clé (ex: blanc)"
-                    class="px-2.5 py-1.5 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-[#A78BFA]"
+                    class="px-2.5 py-1.5 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-orange-400"
                     @change="variantStore.updateValue(optType.id, val.id, { key: ($event.target as HTMLInputElement).value })"
                   />
                   <div class="flex items-center gap-1.5">
@@ -497,7 +499,7 @@
                       :value="val.value"
                       type="text"
                       placeholder="Valeur (ex: #FFFFFF ou S)"
-                      class="flex-1 px-2.5 py-1.5 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-[#A78BFA]"
+                      class="flex-1 px-2.5 py-1.5 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-orange-400"
                       @change="variantStore.updateValue(optType.id, val.id, { value: ($event.target as HTMLInputElement).value })"
                     />
                     <!-- Color preview if value looks like hex -->
@@ -516,10 +518,10 @@
               <!-- Add value row -->
               <div v-if="addingValueForType === optType.id" class="flex items-center gap-2">
                 <div class="flex-1 grid grid-cols-2 gap-2">
-                  <input v-model="newValueKey" type="text" placeholder="Clé (ex: blanc)" class="px-2.5 py-1.5 text-sm border border-[#C4B5FD] dark:border-[#5B3FD1] rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-[#A78BFA]" @keyup.enter="confirmAddValue(optType.id)" @keyup.escape="addingValueForType = null" />
-                  <input v-model="newValueVal" type="text" placeholder="Valeur (ex: #FFFFFF)" class="px-2.5 py-1.5 text-sm border border-[#C4B5FD] dark:border-[#5B3FD1] rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-[#A78BFA]" @keyup.enter="confirmAddValue(optType.id)" @keyup.escape="addingValueForType = null" />
+                  <input v-model="newValueKey" type="text" placeholder="Clé (ex: blanc)" class="px-2.5 py-1.5 text-sm border border-orange-300 dark:border-orange-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-orange-400" @keyup.enter="confirmAddValue(optType.id)" @keyup.escape="addingValueForType = null" />
+                  <input v-model="newValueVal" type="text" placeholder="Valeur (ex: #FFFFFF)" class="px-2.5 py-1.5 text-sm border border-orange-300 dark:border-orange-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-orange-400" @keyup.enter="confirmAddValue(optType.id)" @keyup.escape="addingValueForType = null" />
                 </div>
-                <button @click="confirmAddValue(optType.id)" :disabled="!newValueKey.trim() || !newValueVal.trim()" class="p-1 text-[#7C5CFC] hover:text-[#6D4CE0] disabled:opacity-40 transition">
+                <button @click="confirmAddValue(optType.id)" :disabled="!newValueKey.trim() || !newValueVal.trim()" class="p-1 text-orange-500 hover:text-orange-600 disabled:opacity-40 transition">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
                 </button>
                 <button @click="addingValueForType = null" class="p-1 text-gray-400 hover:text-gray-600 transition">
@@ -527,7 +529,7 @@
                 </button>
               </div>
 
-              <button @click="startAddValue(optType.id)" class="inline-flex items-center gap-1 text-xs text-[#7C5CFC] hover:text-[#6D4CE0] font-medium transition mt-1">
+              <button @click="startAddValue(optType.id)" class="inline-flex items-center gap-1 text-xs text-orange-500 hover:text-orange-600 font-medium transition mt-1">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                 Ajouter une valeur
               </button>
@@ -540,8 +542,8 @@
         <section class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 space-y-6">
           <!-- Header -->
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-[#F1ECFC] dark:bg-[#4C3999]/30 rounded-lg flex items-center justify-center">
-              <svg class="w-5 h-5 text-[#7C5CFC]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <div class="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
+              <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.016a3.001 3.001 0 003.75.614m-16.5 0a3.004 3.004 0 01-.621-4.72L4.318 3.44A1.5 1.5 0 015.378 3h13.243a1.5 1.5 0 011.06.44l1.19 2.189a3 3 0 01-.621 4.72m-13.5 8.65h3.75a.75.75 0 00.75-.75V13.5a.75.75 0 00-.75-.75H6.75a.75.75 0 00-.75.75v3.75c0 .415.336.75.75.75z" />
               </svg>
             </div>
@@ -599,7 +601,7 @@
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.ecomDefaultTheme') }}</label>
                 <div class="flex gap-3 mt-1">
                   <label v-for="theme in ['light', 'dark', 'system']" :key="theme" class="flex items-center gap-2 cursor-pointer">
-                    <input v-model="ecommerce.default_theme" type="radio" :value="theme" class="accent-[#7C5CFC]" />
+                    <input v-model="ecommerce.default_theme" type="radio" :value="theme" class="accent-orange-500" />
                     <span class="text-sm text-gray-700 dark:text-gray-300 capitalize">{{ $t('appSettings.ecomTheme_' + theme) }}</span>
                   </label>
                 </div>
@@ -682,7 +684,75 @@
         </section>
       </template>
 
+      <!-- ═══════════════════ TAB: DANGER ZONE ═══════════════════ -->
+      <template v-if="activeTab === 'danger'">
+        <section class="bg-white dark:bg-gray-800 border border-red-200 dark:border-red-900/50 rounded-xl p-5 space-y-4">
+          <h3 class="text-sm font-semibold text-red-600 dark:text-red-400 uppercase tracking-wide">Zone de danger</h3>
+
+          <div class="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/40 rounded-lg p-4 text-sm text-red-800 dark:text-red-300 space-y-2">
+            <p class="font-medium">Réinitialiser les données de l'entreprise</p>
+            <p>Cette action supprime <span class="font-semibold">définitivement et irréversiblement</span> :</p>
+            <ul class="list-disc list-inside space-y-0.5">
+              <li>Toutes les ventes, achats, devis, bons de livraison et avoirs</li>
+              <li>Tous les paiements</li>
+              <li>Tous les mouvements de stock (le stock de chaque produit repasse à 0)</li>
+              <li>Toutes les sessions de caisse (POS)</li>
+              <li>La numérotation des documents (repart à 1)</li>
+            </ul>
+            <p>Sont <span class="font-semibold">conservés</span> : produits, catégories, marques, entrepôts, clients/fournisseurs, utilisateurs et paramètres.</p>
+            <p class="text-xs opacity-80">Une sauvegarde quotidienne automatique existe, mais cette action reste irréversible en pratique — assurez-vous d'avoir vérifié vos données avant de continuer.</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Tapez <span class="font-mono font-semibold">{{ tenantId || '…' }}</span> pour confirmer
+            </label>
+            <input
+              v-model="resetConfirmText"
+              type="text"
+              :placeholder="tenantId || ''"
+              class="w-full sm:w-80 px-3 py-2 text-sm font-mono border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-400"
+            />
+          </div>
+
+          <div class="flex justify-end">
+            <button
+              type="button"
+              class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition"
+              :disabled="!tenantId || resetConfirmText !== tenantId || resettingTenant"
+              @click="showResetModal = true"
+            >
+              {{ resettingTenant ? 'Réinitialisation...' : 'Réinitialiser les données' }}
+            </button>
+          </div>
+        </section>
+      </template>
+
     </div>
+
+    <BaseModal v-model="showResetModal" title="Confirmer la réinitialisation" size="sm">
+      <p class="text-sm text-gray-600 dark:text-gray-300">
+        Vous êtes sur le point de supprimer définitivement toutes les transactions et de remettre le stock à zéro pour
+        <span class="font-mono font-semibold">{{ tenantId }}</span>. Cette action est irréversible.
+      </p>
+      <template #footer>
+        <button
+          type="button"
+          class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
+          @click="showResetModal = false"
+        >
+          Annuler
+        </button>
+        <button
+          type="button"
+          class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-40"
+          :disabled="resettingTenant"
+          @click="confirmResetTenantData"
+        >
+          {{ resettingTenant ? 'Réinitialisation...' : 'Confirmer la suppression' }}
+        </button>
+      </template>
+    </BaseModal>
 
     <BaseNotification ref="toast" />
   </div>
@@ -697,12 +767,34 @@ import type { VariantOptionType } from '@/stores/useVariantOptionsStore'
 import { useFeaturesSettings } from '@/composables/useFeaturesSettings'
 import http from '@/services/http'
 import BaseNotification from '@/components/BaseNotification.vue'
+import BaseModal from '@/components/BaseModal.vue'
 
 const { t } = useI18n()
 const store = useSettingStore()
 const variantStore = useVariantOptionsStore()
 const { isVariantsEnabled } = useFeaturesSettings()
 const toast = ref<InstanceType<typeof BaseNotification> | null>(null)
+
+// ── Danger zone: tenant data reset ──────────────────────────────
+const tenantId = computed(() => (store.settings as Record<string, unknown>).tenant_id as string | undefined)
+const resetConfirmText = ref('')
+const showResetModal = ref(false)
+const resettingTenant = ref(false)
+
+async function confirmResetTenantData() {
+  if (!tenantId.value || resetConfirmText.value !== tenantId.value) return
+  resettingTenant.value = true
+  try {
+    await http.post('/settings/reset-data', { confirm: resetConfirmText.value })
+    toast.value?.notify('Données réinitialisées avec succès.', 'success')
+    resetConfirmText.value = ''
+    showResetModal.value = false
+  } catch (e: any) {
+    toast.value?.notify(e?.response?.data?.message || 'Échec de la réinitialisation.', 'error')
+  } finally {
+    resettingTenant.value = false
+  }
+}
 
 // ── Variant option types ──────────────────────────────────────
 const addingType = ref(false)
@@ -766,6 +858,7 @@ const tabs = computed(() => [
   { id: 'display', label: t('appSettings.tabDisplay') },
   { id: 'ecommerce', label: t('appSettings.tabEcommerce') },
   ...(isVariantsEnabled.value ? [{ id: 'variants', label: 'Variantes' }] : []),
+  { id: 'danger', label: 'Zone de danger' },
 ])
 
 const saving = reactive<Record<string, boolean>>({
@@ -821,9 +914,9 @@ const email = reactive({
   mail_enabled: 'false',
 })
 
-const inputClass = 'w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent'
-const btnClass = 'px-4 py-2 text-sm font-semibold bg-[#7C5CFC] hover:bg-[#6D4CE0] text-white rounded-lg transition disabled:opacity-60'
-const toggleClass = 'w-11 h-6 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#7C5CFC] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[\'\'] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 dark:after:border-gray-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#7C5CFC]'
+const inputClass = 'w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent'
+const btnClass = 'px-4 py-2 text-sm font-semibold bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition disabled:opacity-60'
+const toggleClass = 'w-11 h-6 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-orange-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[\'\'] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 dark:after:border-gray-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500'
 
 /**
  * Merge a settings payload into a reactive form object, but ONLY for keys

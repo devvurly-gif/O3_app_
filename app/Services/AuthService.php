@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\User;
 use App\Repositories\Contracts\UserRepositoryInterface;
+use App\Services\PackageService;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
@@ -89,8 +90,10 @@ class AuthService
         $tenant = function_exists('tenant') ? tenant() : null;
 
         return [
-            'pos'  => (bool) ($tenant?->pos_enabled  ?? false),
-            'ecom' => (bool) ($tenant?->ecom_enabled ?? false),
+            'pos'      => (bool) ($tenant?->pos_enabled       ?? false),
+            'ecom'     => (bool) ($tenant?->ecom_enabled      ?? false),
+            'variants' => (bool) ($tenant?->variants_enabled  ?? false),
+            'ocr_import' => PackageService::isOcrImportEnabled(),
         ];
     }
 }

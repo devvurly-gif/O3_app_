@@ -160,6 +160,7 @@ class PosService
                 $this->lignes->createForDocument($document, [
                     'sort_order'       => $i + 1,
                     'product_id'       => $item['product_id'],
+                    'variant_id'       => $item['variant_id'] ?? null,
                     'line_type'        => 'product',
                     'designation'      => $item['designation'] ?? '',
                     'reference'        => $item['reference'] ?? null,
@@ -303,9 +304,11 @@ class PosService
 
             foreach ($ticket->stockMouvements as $mouvement) {
                 // Create reverse movement
+                $variantId = $mouvement->variant_id ?? null;
                 $currentStock = $this->stocks->getStockLevel(
                     $mouvement->product_id,
-                    $mouvement->warehouse_id
+                    $mouvement->warehouse_id,
+                    $variantId
                 );
 
                 $reverseDirection = $mouvement->direction === 'out' ? 'in' : 'out';
@@ -315,6 +318,7 @@ class PosService
 
                 \App\Models\StockMouvement::create([
                     'product_id'         => $mouvement->product_id,
+                    'variant_id'         => $variantId,
                     'warehouse_id'       => $mouvement->warehouse_id,
                     'document_header_id' => $ticket->id,
                     'document_reference' => $ticket->reference,
@@ -333,7 +337,7 @@ class PosService
                     'stockLevel'  => $stockAfter,
                     'stockAtTime' => now(),
                     'user_id'     => auth()->id(),
-                ]);
+                ], $variantId);
             }
 
             // Delete payments (soft: skip notification reversal, just delete)
@@ -502,14 +506,24 @@ class PosService
             $q->whereBetween('p_salePrice', [$min, $max]);
         }
 
-        $products = $q->with(['category', 'brand', 'primaryImage'])
+        $products = $q->with(['category', 'brand', 'primaryImage', 'variants'])
             ->limit($limit)
             ->get();
 
-        // Attach stock levels
+        // Attach stock levels and variants
         return $products->map(function (Product $product) use ($warehouseId) {
             $arr = $product->toArray();
             $arr['stock'] = $this->stocks->getStockLevel($product->id, $warehouseId);
+            // Attach per-variant stock
+            $arr['variants'] = $product->variants->map(function ($v) use ($warehouseId) {
+                return [
+                    'id'    => $v->id,
+                    'label' => $v->label,
+                    'sku'   => $v->sku,
+                    'price' => $v->price,
+                    'stock' => $this->stocks->getStockLevel($v->product_id, $warehouseId, $v->id),
+                ];
+            })->values()->toArray();
             return $arr;
         })->toArray();
     }

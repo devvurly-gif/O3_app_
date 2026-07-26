@@ -12,6 +12,7 @@ class DocumentLigne extends Model
 
     protected $fillable = [
         'document_header_id',
+        'variant_id',
         'product_id',
         'sort_order',
         'line_type',
@@ -28,18 +29,15 @@ class DocumentLigne extends Model
         'status',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'quantity'         => 'decimal:2',
-            'unit_price'       => 'decimal:2',
-            'discount_percent' => 'decimal:2',
-            'tax_percent'      => 'decimal:2',
-            'total_ligne_ht'   => 'decimal:2',
-            'total_tax'        => 'decimal:2',
-            'total_ttc'        => 'decimal:2',
-        ];
-    }
+    protected $casts = [
+        'quantity'         => 'decimal:2',
+        'unit_price'       => 'decimal:2',
+        'discount_percent' => 'decimal:2',
+        'tax_percent'      => 'decimal:2',
+        'total_ligne_ht'   => 'decimal:2',
+        'total_tax'        => 'decimal:2',
+        'total_ttc'        => 'decimal:2',
+    ];
 
     public function document(): BelongsTo
     {

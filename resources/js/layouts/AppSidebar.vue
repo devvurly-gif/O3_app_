@@ -417,12 +417,12 @@ const tenantNavItems = computed((): SidebarLink[] => {
       groupKey_ref: 'nav.purchases',
       groupFirst: true,
     },
-    {
+    ...(auth.hasModule('ocr_import') ? [{
       to: '/achats/ocr-import',
       labelKey: 'nav.ocrImport',
       icon: icons.scan,
       groupKey_ref: 'nav.purchases',
-    },
+    } as SidebarLink] : []),
 
     { groupKey: 'nav.stock', groupIcon: groupIcons.stock },
     {
@@ -526,6 +526,7 @@ const tenantNavItems = computed((): SidebarLink[] => {
       adminOnly: true,
       groupKey_ref: 'nav.settings',
     },
+
   ]
 
   return items.filter((item) => {

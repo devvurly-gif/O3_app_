@@ -14,7 +14,7 @@
         "laravel/tinker": "^2.8",
         "maatwebsite/excel": "^3.1",
         "pusher/pusher-php-server": "^7.0",
-        "smalot/pdfparser": "^2.0",
+        "smalot/pdfparser": "^2.12",
         "spatie/laravel-activitylog": "^4.12",
         "stancl/tenancy": "^3.8",
         "twilio/sdk": "^8.11"

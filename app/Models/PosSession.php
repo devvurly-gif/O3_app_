@@ -34,17 +34,14 @@ class PosSession extends Model
         'notes',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'opened_at'       => 'datetime',
-            'closed_at'       => 'datetime',
-            'opening_cash'    => 'decimal:2',
-            'closing_cash'    => 'decimal:2',
-            'expected_cash'   => 'decimal:2',
-            'cash_difference' => 'decimal:2',
-        ];
-    }
+    protected $casts = [
+        'opened_at'       => 'datetime',
+        'closed_at'       => 'datetime',
+        'opening_cash'    => 'decimal:2',
+        'closing_cash'    => 'decimal:2',
+        'expected_cash'   => 'decimal:2',
+        'cash_difference' => 'decimal:2',
+    ];
 
     public function terminal(): BelongsTo
     {

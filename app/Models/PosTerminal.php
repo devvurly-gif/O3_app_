@@ -15,15 +15,12 @@ class PosTerminal extends Model
         'name',
         'code',
         'warehouse_id',
-        'is_active',
+        'is_active', 'printer_name', 'auto_print',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'is_active' => 'boolean',
-        ];
-    }
+    protected $casts = [
+        'is_active' => 'boolean', 'auto_print' => 'boolean',
+    ];
 
     public function warehouse(): BelongsTo
     {

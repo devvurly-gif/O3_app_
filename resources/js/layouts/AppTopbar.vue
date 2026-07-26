@@ -1,6 +1,6 @@
 <template>
   <header
-    class="fixed top-0 right-0 z-20 flex items-center justify-between h-16 px-4 bg-white dark:bg-gray-900 border-b border-[#E7E9EE] dark:border-gray-700 shadow-sm transition-all duration-300 left-0"
+    class="fixed top-0 right-0 z-20 flex items-center justify-between h-16 px-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm transition-all duration-300 left-0"
     :class="sidebarCollapsed ? 'lg:left-16' : 'lg:left-64'"
   >
     <!-- Left: mobile menu toggle -->
@@ -17,7 +17,7 @@
     <button
       class="hidden lg:flex items-center justify-center p-2 rounded-lg transition-colors"
       :class="sidebarPinned
-        ? 'text-[#7C5CFC] bg-[#F1ECFC] dark:bg-[#7C5CFC]/20 hover:bg-[#E4D9FE] dark:hover:bg-[#7C5CFC]/30'
+        ? 'text-orange-500 bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30'
         : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'"
       :title="sidebarPinned ? 'Réduire le menu' : 'Épingler le menu'"
       @click="emit('toggleSidebar')"
@@ -73,7 +73,7 @@
           class="px-2 py-1 rounded text-xs font-semibold transition-colors"
           :class="
             currentLocale === lang.code
-              ? 'bg-[#7C5CFC] text-white'
+              ? 'bg-orange-500 text-white'
               : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
           "
           @click="switchLang(lang.code)"
@@ -121,7 +121,7 @@
               <span class="font-semibold text-sm text-gray-700 dark:text-gray-200">{{ $t('nav.notifications') }}</span>
               <button
                 v-if="unreadCount > 0"
-                class="text-xs text-[#A78BFA] hover:text-[#C4B5FD] font-medium"
+                class="text-xs text-orange-400 hover:text-orange-300 font-medium"
                 @click="doMarkAllRead"
               >
                 Tout marquer lu
@@ -149,12 +149,23 @@
                   </p>
                   <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{{ timeAgo(n.created_at) }}</p>
                 </div>
-                <span v-if="!n.read_at" class="mt-1.5 w-2 h-2 rounded-full bg-[#7C5CFC] shrink-0"></span>
+                <span v-if="!n.read_at" class="mt-1.5 w-2 h-2 rounded-full bg-orange-500 shrink-0"></span>
               </div>
             </div>
           </div>
         </Transition>
       </div>
+
+      <!-- Guide link -->
+      <router-link
+        to="/guides"
+        class="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        title="Guides d'utilisation"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+        </svg>
+      </router-link>
 
       <!-- Avatar / User menu -->
       <div class="relative">
@@ -163,7 +174,7 @@
           @click="userOpen = !userOpen"
         >
           <span
-            class="w-8 h-8 rounded-full bg-[#7C5CFC] text-white text-sm font-bold flex items-center justify-center select-none"
+            class="w-8 h-8 rounded-full bg-orange-500 text-white text-sm font-bold flex items-center justify-center select-none"
           >
             {{ initials }}
           </span>
@@ -286,7 +297,7 @@ function notifIconClass(type) {
   switch (type) {
     case 'low_stock':
     case 'stock_movement':
-      return 'bg-[#F1ECFC] text-[#6D4CE0]'
+      return 'bg-orange-100 text-orange-600'
     case 'order_confirmation':
     case 'payment_received':
       return 'bg-green-100 text-green-600'

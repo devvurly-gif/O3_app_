@@ -19,19 +19,39 @@ class WarehouseStockRepository extends BaseRepository implements WarehouseStockR
         return $stock->fresh(['warehouse', 'product']);
     }
 
-    public function getStockLevel(int $productId, int $warehouseId): float
+    public function getStockLevel(int $productId, int $warehouseId, ?int $variantId = null): float
     {
-        return (float) ($this->model
+        $q = $this->model
             ->where('product_id', $productId)
-            ->where('warehouse_id', $warehouseId)
-            ->value('stockLevel') ?? 0);
+            ->where('warehouse_id', $warehouseId);
+
+        $variantId !== null
+            ? $q->where('variant_id', $variantId)
+            : $q->whereNull('variant_id');
+
+        return (float) ($q->value('stockLevel') ?? 0);
     }
 
-    public function upsertStock(int $productId, int $warehouseId, array $data): void
+    public function upsertStock(int $productId, int $warehouseId, array $data, ?int $variantId = null): void
     {
-        $this->model->updateOrCreate(
-            ['product_id' => $productId, 'warehouse_id' => $warehouseId],
-            $data
-        );
+        $q = $this->model
+            ->where('product_id', $productId)
+            ->where('warehouse_id', $warehouseId);
+
+        $variantId !== null
+            ? $q->where('variant_id', $variantId)
+            : $q->whereNull('variant_id');
+
+        $record = $q->first();
+
+        if ($record) {
+            $record->update($data);
+        } else {
+            $this->model->create(array_merge($data, [
+                'product_id'   => $productId,
+                'warehouse_id' => $warehouseId,
+                'variant_id'   => $variantId,
+            ]));
+        }
     }
 }

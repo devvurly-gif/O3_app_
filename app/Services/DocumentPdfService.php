@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\DocumentHeader;
 use App\Models\Setting;
+use App\Services\TaxService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Storage;
 
@@ -41,23 +42,24 @@ class DocumentPdfService
         $company = $this->getCompanyInfo();
 
         return Pdf::loadView('pdf.document', [
-            'doc'       => $document,
-            'company'   => $company,
-            'typeLabel' => self::TYPE_LABELS[$document->document_type] ?? $document->document_type,
+            'doc'        => $document,
+            'company'    => $company,
+            'typeLabel'  => self::TYPE_LABELS[$document->document_type] ?? $document->document_type,
+            'taxEnabled' => TaxService::isTaxActive(),
+            'decimals'   => (int) Setting::get('display', 'price_decimals', '2'),
         ])->setPaper('a4', 'portrait');
     }
 
     public function filename(DocumentHeader $document): string
     {
         $type = self::TYPE_LABELS[$document->document_type] ?? $document->document_type;
-        $ref  = str_replace(['/', '\\', ' '], '-', $document->reference ?? 'DRAFT');
+        $ref  = str_replace(['/', ' '], '-', $document->reference ?? 'DRAFT');
 
         return "{$type}_{$ref}.pdf";
     }
 
     private function getCompanyInfo(): array
     {
-        // Resolve logo to base64 data URI for DomPDF (it can't fetch URLs)
         $logoUrl  = Setting::get('company', 'logo');
         $logoData = null;
 

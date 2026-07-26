@@ -3,11 +3,13 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useTenantStore, type Tenant } from '@/stores/central/useTenantStore'
 import { useToastStore } from '@/stores/toastStore'
+import { useFormat } from '@/composables/useFormat'
 
 const route = useRoute()
 const router = useRouter()
 const store = useTenantStore()
 const toast = useToastStore()
+const { date: fmtDate } = useFormat()
 
 const tenant = ref<Tenant | null>(null)
 const loading = ref(true)
@@ -91,7 +93,7 @@ async function toggleFeature(feature: string, value: boolean) {
   saving.value = true
   try {
     tenant.value = await store.update(tenant.value.id, { [feature]: value } as any)
-    const label = feature === 'pos_enabled' ? 'POS' : feature === 'ecom_enabled' ? 'Boutique eCom' : 'Paiement sur BL'
+    const label = feature === 'pos_enabled' ? 'POS' : feature === 'ecom_enabled' ? 'Boutique eCom' : feature === 'variants_enabled' ? 'Variantes Produits' : 'Paiement sur BL'
     toast.success(`${label} ${value ? 'activé' : 'désactivé'}.`)
   } catch { /* interceptor */ }
   saving.value = false
@@ -316,7 +318,7 @@ async function sendContract() {
 }
 
 function formatDate(d: string) {
-  return new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
+  return fmtDate(d)
 }
 
 function getPlanColor(plan: string) {
@@ -606,6 +608,31 @@ function getPlanColor(plan: string) {
           </div>
         </div>
       </div>
+
+          <!-- Variants Toggle -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-lg flex items-center justify-center" :class="tenant.variants_enabled ? 'bg-purple-100 dark:bg-purple-900/30' : 'bg-gray-100 dark:bg-gray-700'">
+                <svg :class="['w-5 h-5', tenant.variants_enabled ? 'text-purple-600 dark:text-purple-400' : 'text-gray-400']" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zm0 9.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zm9.75-9.75A2.25 2.25 0 0115.75 3.75H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zm0 9.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+                </svg>
+              </div>
+              <div>
+                <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Variantes Produits</p>
+                <p class="text-xs text-gray-400 dark:text-gray-500">Activer la gestion des variantes (couleurs, tailles…)</p>
+              </div>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                :checked="tenant.variants_enabled"
+                @change="toggleFeature('variants_enabled', !tenant.variants_enabled)"
+                class="sr-only peer"
+                :disabled="saving"
+              />
+              <div class="w-11 h-6 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 dark:after:border-gray-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+            </label>
+          </div>
 
       <!-- Reset Password -->
       <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">

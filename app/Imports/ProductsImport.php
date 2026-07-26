@@ -45,6 +45,9 @@ class ProductsImport implements OnEachRow, WithHeadingRow, WithValidation, Skips
     private int $created = 0;
     private int $updated = 0;
 
+    /** @var array<int, array{row: int, sku: ?string, titre: ?string, message: string}> */
+    private array $rowErrors = [];
+
     public function onRow(Row $row): void
     {
         $data = $row->toArray();
@@ -54,6 +57,24 @@ class ProductsImport implements OnEachRow, WithHeadingRow, WithValidation, Skips
             return;
         }
 
+        try {
+            $this->importRow($data);
+        } catch (\Throwable $e) {
+            // Isolate the failure to this row only: log it and move on to the
+            // next row instead of letting it abort the whole import batch
+            // (MySQL does not poison the surrounding transaction on a single
+            // failed statement, so the rows already processed stay intact).
+            $this->rowErrors[] = [
+                'row'     => $row->getIndex() + 2,
+                'sku'     => $data['sku']   ?? null,
+                'titre'   => $data['titre'] ?? null,
+                'message' => $e->getMessage(),
+            ];
+        }
+    }
+
+    private function importRow(array $data): void
+    {
         $category = $this->resolveCategory($data['categorie'] ?? null);
         $brand    = $this->resolveBrand($data['marque'] ?? null);
 
@@ -76,11 +97,17 @@ class ProductsImport implements OnEachRow, WithHeadingRow, WithValidation, Skips
             'brand_id'        => $brand?->id,
         ], fn ($v) => $v !== null && $v !== '');
 
+        // Include soft-deleted rows: the p_sku unique index doesn't exclude
+        // them, so a deleted product would otherwise block re-importing the
+        // same sku with a "duplicate entry" error instead of being restored.
         $existing = !empty($data['sku'])
-            ? Product::where('p_sku', $data['sku'])->first()
+            ? Product::withTrashed()->where('p_sku', $data['sku'])->first()
             : null;
 
         if ($existing) {
+            if ($existing->trashed()) {
+                $existing->restore();
+            }
             $existing->update($attrs);
             $product = $existing->fresh();
             $this->updated++;
@@ -221,4 +248,7 @@ class ProductsImport implements OnEachRow, WithHeadingRow, WithValidation, Skips
 
     public function getCreatedCount(): int { return $this->created; }
     public function getUpdatedCount(): int { return $this->updated; }
+
+    /** @return array<int, array{row: int, sku: ?string, titre: ?string, message: string}> */
+    public function getRowErrors(): array { return $this->rowErrors; }
 }

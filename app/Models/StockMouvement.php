@@ -21,6 +21,7 @@ class StockMouvement extends Model
     }
     protected $fillable = [
         'product_id',
+        'variant_id',
         'warehouse_id',
         'document_header_id',
         'document_reference',
@@ -36,15 +37,12 @@ class StockMouvement extends Model
         'status',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'quantity'     => 'decimal:2',
-            'unit_cost'    => 'decimal:2',
-            'stock_before' => 'decimal:2',
-            'stock_after'  => 'decimal:2',
-        ];
-    }
+    protected $casts = [
+        'quantity'     => 'decimal:2',
+        'unit_cost'    => 'decimal:2',
+        'stock_before' => 'decimal:2',
+        'stock_after'  => 'decimal:2',
+    ];
 
     public function product(): BelongsTo
     {

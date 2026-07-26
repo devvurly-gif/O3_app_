@@ -25,14 +25,11 @@ class Slide extends Model
         'is_active',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'starts_at' => 'datetime',
-            'ends_at'   => 'datetime',
-            'is_active'  => 'boolean',
-        ];
-    }
+    protected $casts = [
+        'starts_at' => 'datetime',
+        'ends_at'   => 'datetime',
+        'is_active'  => 'boolean',
+    ];
 
     // ── Scopes ──────────────────────────────────────────────────
     public function scopeActive($query)

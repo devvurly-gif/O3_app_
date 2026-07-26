@@ -15,7 +15,7 @@ const emit = defineEmits<{
   'update:modelValue': [value: boolean]
 }>()
 
-const { fmt } = useFormat()
+const { fmt, date: fmtDate } = useFormat()
 
 const activeTab = ref('info')
 const loading = ref(false)
@@ -275,7 +275,7 @@ const handleClose = () => {
                   {{ doc.reference }}
                 </td>
                 <td class="py-2 px-3 text-gray-600 dark:text-gray-400">
-                  {{ new Date(doc.issued_at).toLocaleDateString('fr-FR') }}
+                  {{ fmtDate(doc.issued_at) }}
                 </td>
                 <td class="py-2 px-3">
                   <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
@@ -322,7 +322,7 @@ const handleClose = () => {
                 {{ payment._doc_code }} - {{ payment.payment_method || 'Non spécifié' }}
               </p>
               <p class="text-xs text-gray-500 dark:text-gray-400">
-                {{ new Date(payment.paid_at).toLocaleDateString('fr-FR') }}
+                {{ fmtDate(payment.paid_at) }}
               </p>
             </div>
             <p class="text-sm font-mono font-bold text-emerald-600">

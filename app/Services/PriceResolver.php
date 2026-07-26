@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Services;
 
 use App\Models\PriceList;
@@ -7,6 +6,7 @@ use App\Models\PriceListItem;
 use App\Models\Product;
 use App\Models\ThirdPartner;
 use Carbon\Carbon;
+use App\Services\TaxService;
 
 /**
  * Resolves the effective unit price for a product given:
@@ -52,7 +52,7 @@ class PriceResolver
 
         // 3. Fallback to product base price
         $ht = (float) $product->p_salePrice;
-        $ttc = $ht * (1 + ((float) $product->p_taxRate) / 100);
+        $ttc = TaxService::calculateTTC($ht, (float) $product->p_taxRate);
         return [
             'price_ht'      => round($ht, 2),
             'price_ttc'     => round($ttc, 2),

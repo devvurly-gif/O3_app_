@@ -20,13 +20,10 @@ class DocumentIncrementor extends Model
         'operatorSens',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'status'    => 'boolean',
-            'nextTrick' => 'integer',
-        ];
-    }
+    protected $casts = [
+        'status'    => 'boolean',
+        'nextTrick' => 'integer',
+    ];
 
     public function documentHeaders(): HasMany
     {

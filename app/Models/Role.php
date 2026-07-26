@@ -18,12 +18,9 @@ class Role extends Model
         'is_system',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'is_system' => 'boolean',
-        ];
-    }
+    protected $casts = [
+        'is_system' => 'boolean',
+    ];
 
     // ── Relations ─────────────────────────────────────────────────
     public function permissions(): BelongsToMany

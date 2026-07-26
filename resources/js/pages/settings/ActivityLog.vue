@@ -176,8 +176,10 @@ import BaseSkeleton from '@/components/BaseSkeleton.vue'
 import BaseButton from '@/components/BaseButton.vue'
 import BaseCard from '@/components/BaseCard.vue'
 import BaseModal from '@/components/BaseModal.vue'
+import { useFormat } from '@/composables/useFormat'
 
 const toast = useToastStore()
+const { date: fmtDate } = useFormat()
 
 interface ActivityLog {
   id: number
@@ -267,13 +269,9 @@ function showDetail(log: ActivityLog) {
 }
 
 function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleString('fr-FR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  if (!dateStr) return '—'
+  const d = new Date(dateStr)
+  return fmtDate(d) + ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
 }
 
 function eventLabel(event: string | null): string {

@@ -6,9 +6,11 @@ import { useExcelExport } from '@/composables/useExcelExport'
 import BaseTable from '@/components/BaseTable.vue'
 import BaseSkeleton from '@/components/BaseSkeleton.vue'
 import BasePagination from '@/components/BasePagination.vue'
+import { useFormat } from '@/composables/useFormat'
 
 const router = useRouter()
 const store = useDocumentStockStore()
+const { date: fmtDate } = useFormat()
 
 const search = ref('')
 const typeFilter = ref('')
@@ -161,6 +163,10 @@ function viewDoc(row: Record<string, unknown>) {
 
       <template #cell-warehouse="{ row }">
         <span class="text-sm">{{ row.warehouse?.wh_title ?? '—' }}</span>
+      </template>
+
+      <template #cell-issued_at="{ row }">
+        <span class="text-sm">{{ fmtDate(row.issued_at) }}</span>
       </template>
 
       <template #actions="{ row }">

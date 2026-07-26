@@ -1,0 +1,13 @@
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2563eb;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1d4ed8;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#grad)"/>
+  <text x="600" y="200" font-size="90" font-weight="bold" text-anchor="middle" fill="white" font-family="Arial">O3 App</text>
+  <text x="600" y="320" font-size="50" text-anchor="middle" fill="white" font-family="Arial">Gestion Commerciale Cloud</text>
+  <text x="600" y="420" font-size="36" text-anchor="middle" fill="#dbeafe" font-family="Arial">Essai gratuit • Sans engagement</text>
+  <text x="600" y="550" font-size="40" text-anchor="middle" fill="#93c5fd" font-family="Arial">o3app.ma</text>
+</svg>

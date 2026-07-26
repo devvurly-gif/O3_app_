@@ -99,7 +99,8 @@ class StockMouvementService
                 continue;
             }
 
-            $currentStock = $this->stocks->getStockLevel($ligne->product_id, $document->warehouse_id);
+            $variantId    = $ligne->variant_id ?? null;
+            $currentStock = $this->stocks->getStockLevel($ligne->product_id, $document->warehouse_id, $variantId);
             $stockAfter   = $direction === 'in'
                 ? $currentStock + $ligne->quantity
                 : $currentStock - $ligne->quantity;
@@ -119,6 +120,7 @@ class StockMouvementService
             try {
                 $this->mouvements->create([
                     'product_id'         => $ligne->product_id,
+                    'variant_id'         => $variantId,
                     'warehouse_id'       => $document->warehouse_id,
                     'document_header_id' => $document->id,
                     'document_reference' => $document->reference,
@@ -149,7 +151,7 @@ class StockMouvementService
                     'stockLevel'  => $stockAfter,
                     'stockAtTime' => now(),
                     'user_id'     => $document->user_id,
-                ]);
+                ], $variantId);
 
                 $this->checkLowStockAlert($ligne->product_id, $document->warehouse_id, $stockAfter);
             }
@@ -336,7 +338,8 @@ class StockMouvementService
         foreach ($document->lignes as $ligne) {
             if (!$ligne->product_id || $ligne->line_type !== 'product') continue;
 
-            $currentStock = $this->stocks->getStockLevel($ligne->product_id, $document->warehouse_id);
+            $variantId    = $ligne->variant_id ?? null;
+            $currentStock = $this->stocks->getStockLevel($ligne->product_id, $document->warehouse_id, $variantId);
             $targetStock  = (float) $ligne->quantity;
             $delta        = $targetStock - $currentStock;
 
@@ -359,6 +362,7 @@ class StockMouvementService
                 'stock_before'       => $currentStock,
                 'stock_after'        => $stockAfter,
                 'user_id'            => $document->user_id,
+                'variant_id'         => $variantId,
                 'notes'              => 'Ajustement inventaire ' . $document->reference,
                 'status'             => 'applied',
             ]);
@@ -367,7 +371,7 @@ class StockMouvementService
                 'stockLevel'  => $stockAfter,
                 'stockAtTime' => now(),
                 'user_id'     => $document->user_id,
-            ]);
+            ], $variantId);
         }
     }
 

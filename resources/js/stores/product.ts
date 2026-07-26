@@ -24,6 +24,12 @@ export const useProductStore = defineStore('product', () => {
     items.value = items.value.filter((p) => p.id !== id)
   }
 
+  async function duplicate(id: number): Promise<Product> {
+    const { data } = await http.post<Product>(`/products/${id}/duplicate`)
+    items.value.unshift(data)
+    return data
+  }
+
   // ── Image actions ─────────────────────────────────────────────────────
   async function uploadImage(productId: number, formData: FormData): Promise<ProductImage> {
     const { data } = await http.post<ProductImage>(`/products/${productId}/images`, formData)
@@ -75,6 +81,7 @@ export const useProductStore = defineStore('product', () => {
     create,
     update,
     remove,
+    duplicate,
     uploadImage,
     setPrimaryImage,
     deleteImage,

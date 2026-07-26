@@ -20,12 +20,16 @@ const route = useRoute()
 const router = useRouter()
 const store = useDocumentVenteStore()
 const settingStore = useSettingStore()
+const isTaxEnabled = computed(() => {
+  const val = settingStore.settings?.invoice?.tax_enabled
+  return val === undefined || val === 'true'
+})
 
 const paiementSurBl = computed(
   () => settingStore.settings?.ventes?.paiement_sur_bl === 'true',
 )
 
-const { fmt } = useFormat()
+const { fmt, date } = useFormat()
 const toast = useToastStore()
 const { pdfLoading, downloadPdf: doPdfDownload, previewPdf: doPdfPreview } = usePdf()
 
@@ -462,14 +466,32 @@ const paymentProgress = computed(() => {
           <p class="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">
             Date d'émission
           </p>
-          <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ doc.issued_at ?? '—' }}</p>
+          <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ date(doc.issued_at) }}</p>
         </div>
         <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
           <p class="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">
             Date d'échéance
           </p>
-          <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ doc.due_at ?? '—' }}</p>
+          <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ date(doc.due_at) }}</p>
         </div>
+      </div>
+
+      <!-- Shipping snapshot — only present on ecom-originated orders, and may
+           differ from the customer's saved profile address. -->
+      <div
+        v-if="doc.ship_address"
+        class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-6"
+      >
+        <p class="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">
+          Livraison (saisie à la commande)
+        </p>
+        <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">
+          {{ doc.ship_name }}
+          <span v-if="doc.ship_phone" class="font-normal text-gray-500 dark:text-gray-400">— {{ doc.ship_phone }}</span>
+        </p>
+        <p class="text-sm text-gray-600 dark:text-gray-300 mt-0.5">
+          {{ doc.ship_address }}<span v-if="doc.ship_city">, {{ doc.ship_city }}</span>
+        </p>
       </div>
 
       <DocumentLinesTable :lines="doc.lignes ?? []" />
@@ -482,19 +504,19 @@ const paymentProgress = computed(() => {
           </h3>
           <div v-if="doc.footer" class="space-y-3 text-sm">
             <div class="flex justify-between">
-              <span class="text-gray-500 dark:text-gray-400">Total HT</span>
-              <span class="font-medium dark:text-gray-200">{{ fmt(doc.footer.total_ht) }} DH</span>
+              <span v-if="isTaxEnabled" class="text-gray-500 dark:text-gray-400">Total HT</span>
+              <span v-if="isTaxEnabled" class="font-medium dark:text-gray-200">{{ fmt(doc.footer.total_ht) }} DH</span>
             </div>
             <div v-if="Number(doc.footer.total_discount) > 0" class="flex justify-between">
               <span class="text-gray-500 dark:text-gray-400">Remise</span>
               <span class="font-medium text-red-600 dark:text-red-400">-{{ fmt(doc.footer.total_discount) }} DH</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-gray-500 dark:text-gray-400">TVA</span>
-              <span class="font-medium dark:text-gray-200">{{ fmt(doc.footer.total_tax) }} DH</span>
+              <span v-if="isTaxEnabled" class="text-gray-500 dark:text-gray-400">TVA</span>
+              <span v-if="isTaxEnabled" class="font-medium dark:text-gray-200">{{ fmt(doc.footer.total_tax) }} DH</span>
             </div>
             <div class="flex justify-between border-t pt-3 border-gray-200 dark:border-gray-700">
-              <span class="text-gray-900 dark:text-white font-bold text-base">Total TTC</span>
+              <span class="text-gray-900 dark:text-white font-bold text-base">{{ isTaxEnabled ? 'Total TTC' : 'Total' }}</span>
               <span class="text-gray-900 dark:text-white font-bold text-base">{{ fmt(doc.footer.total_ttc) }} DH</span>
             </div>
           </div>
@@ -542,7 +564,7 @@ const paymentProgress = computed(() => {
                 :key="p.id"
                 class="flex items-center justify-between text-xs bg-gray-50 dark:bg-gray-700 rounded-lg px-3 py-2"
               >
-                <span class="text-gray-600 dark:text-gray-300">{{ p.method }} — {{ p.paid_at }}</span>
+                <span class="text-gray-600 dark:text-gray-300">{{ p.method }} — {{ date(p.paid_at) }}</span>
                 <span class="font-medium text-gray-800 dark:text-gray-200">{{ fmt(p.amount) }} DH</span>
               </div>
             </div>

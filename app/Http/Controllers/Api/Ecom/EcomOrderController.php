@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\DocumentIncrementor;
 use App\Models\Product;
 use App\Models\ThirdPartner;
+use App\Models\Warehouse;
 use App\Services\DocumentHeaderService;
 use App\Services\PriceResolver;
+use App\Services\StockMouvementService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -16,12 +18,48 @@ class EcomOrderController extends Controller
     public function __construct(
         private DocumentHeaderService $documentService,
         private PriceResolver $priceResolver,
+        private StockMouvementService $stockService,
     ) {
     }
 
     /**
+     * GET /api/ecom/customers/lookup?email=...
+     * Used by the checkout page's email-first step: tells the storefront
+     * whether this email already belongs to a customer of this tenant so
+     * it can either prefill the delivery form or reveal the blank
+     * "nouveau client" form. Rate-limited by the ecom route group
+     * (throttle:60,1) same as the rest of the public ecom API.
+     */
+    public function lookupCustomer(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'email' => ['required', 'email', 'max:255'],
+        ]);
+
+        $customer = ThirdPartner::where('tp_email', $validated['email'])
+            ->where('tp_Role', 'customer')
+            ->first();
+
+        if (!$customer) {
+            return response()->json(['exists' => false]);
+        }
+
+        return response()->json([
+            'exists'   => true,
+            'customer' => [
+                'name'    => $customer->tp_title,
+                'phone'   => $customer->tp_phone,
+                'address' => $customer->tp_address,
+                'city'    => $customer->tp_city,
+            ],
+        ]);
+    }
+
+    /**
      * POST /api/ecom/orders
-     * Create a customer + devis (QuoteSale) from the ecommerce checkout.
+     * Create a customer + Bon de Livraison (unconfirmed) from the ecommerce checkout.
+     * Staff confirm it from the Documents Vente screen once picked/packed, at which
+     * point stock is actually deducted (see DocumentVenteController::confirmer_bl).
      */
     public function store(Request $request): JsonResponse
     {
@@ -60,11 +98,18 @@ class EcomOrderController extends Controller
             ]);
         }
 
-        // Find the QuoteSale incrementor
-        $incrementor = DocumentIncrementor::where('di_model', 'QuoteSale')->first();
+        // Find the DeliveryNote (BL) incrementor
+        $incrementor = DocumentIncrementor::where('di_model', 'DeliveryNote')->first();
 
         if (!$incrementor) {
-            return response()->json(['message' => 'QuoteSale incrementor not configured'], 500);
+            return response()->json(['message' => 'DeliveryNote incrementor not configured'], 500);
+        }
+
+        // Ecom orders draw stock from the tenant's (single) warehouse
+        $warehouse = Warehouse::query()->orderBy('id')->first();
+
+        if (!$warehouse) {
+            return response()->json(['message' => 'No warehouse configured'], 500);
         }
 
         // Build lines — resolve prices server-side to prevent price tampering
@@ -91,16 +136,26 @@ class EcomOrderController extends Controller
         $totalTax = collect($lines)->sum(fn ($l) => $l['quantity'] * $l['unit_price'] * ($l['tax_percent'] / 100));
         $totalTtc = $totalHt + $totalTax;
 
-        // Create the devis
+        // Create the BL (Bon de Livraison), unconfirmed — stock is only
+        // reserved (pending) here; it's deducted for real when staff confirm it.
         $document = $this->documentService->createWithLinesAndFooter(
             [
                 'document_incrementor_id' => $incrementor->id,
-                'document_type'           => 'QuoteSale',
+                'document_type'           => 'DeliveryNote',
                 'document_title'          => 'Commande eCom - ' . $customerData['name'],
                 'thirdPartner_id'         => $customer->id,
+                'warehouse_id'            => $warehouse->id,
                 'user_id'                 => config('services.ecom.default_user_id', 1),
                 'issued_at'               => now(),
                 'notes'                   => $validated['notes'] ?? null,
+                // Snapshot what the customer typed at checkout — the
+                // customer profile itself is never overwritten here, so a
+                // returning customer shipping to a different address still
+                // has that address recorded against this specific order.
+                'ship_name'               => $customerData['name'],
+                'ship_phone'              => $customerData['phone'],
+                'ship_address'            => $customerData['address'],
+                'ship_city'               => $customerData['city'],
             ],
             $lines,
             [
@@ -113,10 +168,13 @@ class EcomOrderController extends Controller
             ]
         );
 
+        $document->load('lignes');
+        $this->stockService->processDocument($document, pending: true);
+
         return response()->json([
-            'success'   => true,
-            'reference' => $document->reference,
-            'devis_id'  => $document->id,
+            'success'     => true,
+            'reference'   => $document->reference,
+            'document_id' => $document->id,
         ], 201);
     }
 }

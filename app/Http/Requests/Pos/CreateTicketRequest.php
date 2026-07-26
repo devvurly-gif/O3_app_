@@ -17,6 +17,7 @@ class CreateTicketRequest extends FormRequest
             'customer_id'                 => ['nullable', 'integer', 'exists:third_partners,id'],
             'items'                       => ['required', 'array', 'min:1'],
             'items.*.product_id'          => ['required', 'integer', 'exists:products,id'],
+            'items.*.variant_id'          => ['nullable', 'integer', 'exists:product_variants,id'],
             'items.*.designation'         => ['required', 'string', 'max:255'],
             'items.*.reference'           => ['nullable', 'string', 'max:100'],
             'items.*.quantity'            => ['required', 'numeric', 'gt:0'],

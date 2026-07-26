@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import http from '@/services/http'
 import BaseSkeleton from '@/components/BaseSkeleton.vue'
+import { useFormat } from '@/composables/useFormat'
 import { Line } from 'vue-chartjs'
 import {
   Chart as ChartJS,
@@ -14,6 +15,8 @@ import {
 } from 'chart.js'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip)
+
+const { date: fmtDate } = useFormat()
 
 const data = ref<Record<string, any> | null>(null)
 const loading = ref(true)
@@ -573,7 +576,7 @@ const paymentColors: Record<string, string> = {
                 <p class="text-sm text-gray-800 dark:text-gray-200">{{ inv.reference }}</p>
                 <p class="text-xs text-gray-400 dark:text-gray-500">
                   {{ inv.third_partner?.tp_title ?? '—' }}
-                  <span class="text-red-500 dark:text-red-400 font-medium ml-1">Échue le {{ new Date(inv.due_at).toLocaleDateString('fr-FR') }}</span>
+                  <span class="text-red-500 dark:text-red-400 font-medium ml-1">Échue le {{ fmtDate(inv.due_at) }}</span>
                 </p>
               </div>
               <span class="text-sm font-bold text-red-600 dark:text-red-400 shrink-0">{{ fmtCurrency(inv.footer?.amount_due ?? 0) }}</span>

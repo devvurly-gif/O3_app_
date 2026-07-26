@@ -1,4 +1,11 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useSettingStore } from '@/stores/setting'
+const _settingStore = useSettingStore()
+const isTaxEnabled = computed(() => {
+  const val = _settingStore.settings?.invoice?.tax_enabled
+  return val === undefined || val === 'true'
+})
 import { useFormat } from '@/composables/useFormat'
 
 /**
@@ -58,7 +65,7 @@ const { fmt } = useFormat()
           <span>Qté: <strong class="text-gray-700 dark:text-gray-300">{{ (ligne as any).quantity }} {{ (ligne as any).unit }}</strong></span>
           <span v-if="variant === 'commercial'">PU: <strong class="text-gray-700 dark:text-gray-300">{{ fmt((ligne as any).unit_price) }}</strong></span>
           <span v-if="variant === 'commercial' && Number((ligne as any).discount_percent ?? 0) > 0">Remise: <strong class="text-gray-700 dark:text-gray-300">{{ (ligne as any).discount_percent }}%</strong></span>
-          <span v-if="variant === 'commercial'">TVA: <strong class="text-gray-700 dark:text-gray-300">{{ (ligne as any).tax_percent ?? 0 }}%</strong></span>
+          <span v-if="variant === 'commercial' && isTaxEnabled">TVA: <strong class="text-gray-700 dark:text-gray-300">{{ isTaxEnabled ? ((ligne as any).tax_percent ?? 0) + '%' : '' }}</strong></span>
           <span v-if="variant === 'stock'">Coût: <strong class="text-gray-700 dark:text-gray-300">{{ fmt((ligne as any).unit_price) }} DH</strong></span>
         </div>
       </div>
@@ -75,7 +82,7 @@ const { fmt } = useFormat()
             <th class="text-right px-5 py-3">Qté</th>
             <th class="text-right px-5 py-3">PU HT</th>
             <th class="text-right px-5 py-3">Remise</th>
-            <th class="text-right px-5 py-3">TVA</th>
+            <th v-if="isTaxEnabled" class="text-right px-5 py-3">TVA</th>
             <th class="text-right px-5 py-3">Total TTC</th>
           </tr>
         </thead>
@@ -100,7 +107,7 @@ const { fmt } = useFormat()
               {{ (ligne as any).discount_percent ?? 0 }}%
             </td>
             <td class="px-5 py-3 text-right text-gray-600 dark:text-gray-300">
-              {{ (ligne as any).tax_percent ?? 0 }}%
+              {{ isTaxEnabled ? ((ligne as any).tax_percent ?? 0) + '%' : '' }}
             </td>
             <td class="px-5 py-3 text-right font-semibold text-gray-800 dark:text-gray-200">
               {{ fmt((ligne as any).total_ttc) }}

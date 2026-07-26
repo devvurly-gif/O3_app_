@@ -5,7 +5,7 @@
         <!-- Separator -->
         <svg
           v-if="i > 0"
-          class="w-3.5 h-3.5 text-gray-400 dark:text-gray-600 shrink-0"
+          class="w-3.5 h-3.5 text-gray-400 dark:text-gray-600 shrink-0 translate-y-px"
           fill="none"
           stroke="currentColor"
           stroke-width="2"

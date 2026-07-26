@@ -3,10 +3,12 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTenantStore } from '@/stores/central/useTenantStore'
 import { useToastStore } from '@/stores/toastStore'
+import { useFormat } from '@/composables/useFormat'
 
 const router = useRouter()
 const store  = useTenantStore()
 const toast  = useToastStore()
+const { date: fmtDate } = useFormat()
 
 const search     = ref('')
 const planFilter = ref('')
@@ -124,13 +126,13 @@ async function deleteTenant(tenant: any) {
 function getPlanColor(plan: string) {
   return ({
     starter:    'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
-    business:   'bg-[#F1ECFC] text-[#6D4CE0] dark:bg-[#4C3999] dark:text-[#C4B5FD]',
+    business:   'bg-orange-100 text-orange-600 dark:bg-orange-900 dark:text-orange-300',
     enterprise: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
   } as Record<string, string>)[plan] ?? 'bg-gray-100 text-gray-700'
 }
 
 function formatDate(d: string) {
-  return new Date(d).toLocaleDateString('fr-FR')
+  return fmtDate(d)
 }
 </script>
 
@@ -145,7 +147,7 @@ function formatDate(d: string) {
       </div>
       <button
         @click="router.push('/central/tenants/create')"
-        class="inline-flex items-center gap-2 px-4 py-2.5 bg-[#7C5CFC] text-white text-sm font-medium rounded-lg hover:bg-[#6D4CE0] transition"
+        class="inline-flex items-center gap-2 px-4 py-2.5 bg-orange-500 text-white text-sm font-medium rounded-lg hover:bg-orange-600 transition"
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -187,7 +189,7 @@ function formatDate(d: string) {
           <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
         </svg>
         <input v-model="search" type="text" placeholder="Rechercher par nom, email ou ID..."
-          class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-[#7C5CFC] focus:border-[#7C5CFC]" />
+          class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500" />
       </div>
       <select v-model="planFilter"
         class="px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm">
@@ -201,7 +203,7 @@ function formatDate(d: string) {
     <!-- Table -->
     <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
       <div v-if="store.loading" class="flex items-center justify-center py-12">
-        <svg class="animate-spin h-8 w-8 text-[#7C5CFC]" fill="none" viewBox="0 0 24 24">
+        <svg class="animate-spin h-8 w-8 text-orange-500" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
         </svg>
@@ -230,14 +232,19 @@ function formatDate(d: string) {
 
             <!-- Client -->
             <td class="px-6 py-4">
-              <p class="text-sm font-medium text-gray-900 dark:text-white">{{ tenant.name }}</p>
+              <router-link
+                :to="`/central/tenants/${tenant.id}`"
+                class="text-sm font-medium text-gray-900 dark:text-white hover:text-orange-500 hover:underline transition"
+              >
+                {{ tenant.name }}
+              </router-link>
               <p class="text-xs text-gray-500 dark:text-gray-400">{{ tenant.email }}</p>
             </td>
 
             <!-- Domaine -->
             <td class="px-6 py-4">
               <a v-if="tenant.domains?.length" :href="tenantUrl(tenant.domains[0].domain)" target="_blank"
-                class="text-sm text-[#7C5CFC] hover:underline">
+                class="text-sm text-orange-500 hover:underline">
                 {{ tenant.domains[0].domain }}
               </a>
               <span v-else class="text-sm text-gray-400">-</span>
@@ -265,7 +272,7 @@ function formatDate(d: string) {
             <td class="px-6 py-4">
               <div class="flex items-center justify-center gap-1.5">
                 <span :class="['inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full',
-                  tenant.pos_enabled ? 'bg-[#F1ECFC] text-[#6D4CE0]' : 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500']">
+                  tenant.pos_enabled ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500']">
                   POS
                 </span>
                 <span :class="['inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full',
@@ -322,14 +329,14 @@ function formatDate(d: string) {
               <!-- Boutons normaux: URL active -->
               <div v-else class="flex items-center justify-end gap-2">
                 <button @click="router.push(`/central/tenants/${tenant.id}`)"
-                  class="p-1.5 text-gray-400 hover:text-[#7C5CFC] transition" title="Voir">
+                  class="p-1.5 text-gray-400 hover:text-orange-500 transition" title="Voir">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                 </button>
                 <button @click="toggleActive(tenant)"
-                  :class="['p-1.5 transition', tenant.is_active ? 'text-gray-400 hover:text-[#6D4CE0]' : 'text-gray-400 hover:text-green-600']"
+                  :class="['p-1.5 transition', tenant.is_active ? 'text-gray-400 hover:text-orange-600' : 'text-gray-400 hover:text-green-600']"
                   :title="tenant.is_active ? 'Désactiver' : 'Activer'">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M5.636 5.636a9 9 0 1012.728 0M12 3v9" />

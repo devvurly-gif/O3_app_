@@ -1,0 +1,26 @@
+[
+  {
+    slug: gestion-stock-efficace,
+    title: Gestion de Stock Efficace: Guide Complet 2026,
+    description: Optimisez votre gestion de stock et réduisez les coûts avec O3 App,
+    date: 2026-05-01
+  },
+  {
+    slug: erp-cloud-comparaison,
+    title: ERP Cloud vs Logiciel Bureau: Lequel Choisir?,
+    description: Comparaison détaillée pour choisir la meilleure solution pour votre entreprise,
+    date: 2026-04-28
+  },
+  {
+    slug: augmenter-ventes-crm,
+    title: Augmenter vos Ventes avec un CRM,
+    description: Stratégies éprouvées pour augmenter vos ventes avec un CRM efficace,
+    date: 2026-04-25
+  },
+  {
+    slug: facturation-automatisee,
+    title: Facturation Automatisée: Gain de Temps,
+    description: Comment automatiser votre facturation et économiser des heures chaque semaine,
+    date: 2026-04-20
+  }
+]

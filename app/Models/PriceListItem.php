@@ -17,16 +17,13 @@ class PriceListItem extends Model
         'valid_to',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'price_ht'   => 'decimal:2',
-            'price_ttc'  => 'decimal:2',
-            'min_qty'    => 'integer',
-            'valid_from' => 'date',
-            'valid_to'   => 'date',
-        ];
-    }
+    protected $casts = [
+        'price_ht'   => 'decimal:2',
+        'price_ttc'  => 'decimal:2',
+        'min_qty'    => 'integer',
+        'valid_from' => 'date',
+        'valid_to'   => 'date',
+    ];
 
     public function priceList(): BelongsTo
     {
