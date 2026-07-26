@@ -7,6 +7,7 @@ use App\Models\ProductImage;
 use App\Repositories\Contracts\ProductImageRepositoryInterface;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 
 class ProductImageService
 {
@@ -17,6 +18,10 @@ class ProductImageService
     public function upload(Product $product, UploadedFile $file, ?string $title = null, ?string $altContent = null, bool $isPrimary = false): ProductImage
     {
         $path = $file->store('products', 'public');
+
+        if ($path === false) {
+            throw new RuntimeException('Failed to store product image on the public disk.');
+        }
 
         if ($isPrimary) {
             $this->images->clearPrimary($product);
