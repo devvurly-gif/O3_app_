@@ -40,15 +40,16 @@ class DocumentHeader extends Model
         'issued_at',
         'due_at',
         'notes',
+        'ship_name',
+        'ship_phone',
+        'ship_address',
+        'ship_city',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'issued_at' => 'date',
-            'due_at'    => 'date',
-        ];
-    }
+    protected $casts = [
+        'issued_at' => 'date',
+        'due_at'    => 'date',
+    ];
 
     // ── Relations ─────────────────────────────────────────────────
     public function incrementor(): BelongsTo

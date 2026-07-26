@@ -9,7 +9,7 @@ interface WarehouseStockRepositoryInterface extends BaseRepositoryInterface
 {
     public function updateStock(WarehouseHasStock $stock, array $data): Model;
 
-    public function getStockLevel(int $productId, int $warehouseId): float;
+    public function getStockLevel(int $productId, int $warehouseId, ?int $variantId = null): float;
 
-    public function upsertStock(int $productId, int $warehouseId, array $data): void;
+    public function upsertStock(int $productId, int $warehouseId, array $data, ?int $variantId = null): void;
 }

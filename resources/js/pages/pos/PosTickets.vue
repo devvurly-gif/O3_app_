@@ -45,7 +45,7 @@
               </span>
             </div>
             <p class="text-xs text-gray-500 dark:text-gray-400">
-              {{ new Date(ticket.created_at).toLocaleString('fr-FR') }}
+              {{ formatDateTime(ticket.created_at) }}
               <span v-if="ticket.third_partner && ticket.third_partner.tp_code !== 'CLIENT-COMPTOIR'">
                 — {{ ticket.third_partner.tp_title }}
               </span>
@@ -99,7 +99,7 @@
             </div>
             <div>
               <p class="text-gray-500 dark:text-gray-400 text-xs uppercase font-semibold mb-1">Date</p>
-              <p class="font-medium text-gray-900 dark:text-white">{{ new Date(ticketDetail.created_at).toLocaleString('fr-FR') }}</p>
+              <p class="font-medium text-gray-900 dark:text-white">{{ formatDateTime(ticketDetail.created_at) }}</p>
             </div>
             <div>
               <p class="text-gray-500 dark:text-gray-400 text-xs uppercase font-semibold mb-1">Statut</p>
@@ -180,6 +180,14 @@
 import { ref, onMounted } from 'vue'
 import { usePosStore } from '@/stores/pos/posStore'
 import http from '@/services/http'
+import { useFormat } from '@/composables/useFormat'
+
+const { date: fmtDate } = useFormat()
+
+function formatDateTime(value: string): string {
+  const d = new Date(value)
+  return fmtDate(d) + ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+}
 
 interface PosDocument {
   id: number

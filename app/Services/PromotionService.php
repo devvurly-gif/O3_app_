@@ -179,7 +179,42 @@ class PromotionService
             'discount_percent'  => $promoData['discount_percent'],
             'promotion_name'    => $promoData['promotion_name'],
             'promotion_slug'    => $promoData['promotion_slug'],
+            'has_variants'      => false,
+            'variants'          => [],
         ];
+    }
+
+    public function transformForEcomWithVariants(Product $product): array
+    {
+        $base = $this->transformForEcom($product);
+
+        $product->loadMissing(['variants.warehouseStocks']);
+
+        if ($product->variants->isEmpty()) {
+            return $base;
+        }
+
+        $variants = $product->variants
+            ->where('is_active', true)
+            ->map(fn ($v) => [
+                'id'              => $v->id,
+                'label'           => $v->label,
+                'sku'             => $v->sku,
+                'price'           => $v->price ? (float) $v->price : $base['price'],
+                'price_ttc'       => $v->price
+                    ? round((float) $v->price * (1 + (float) $product->p_taxRate / 100), 2)
+                    : $base['price_ttc'],
+                'stock_available' => (float) $v->warehouseStocks->sum('stockLevel'),
+                'in_stock'        => $v->warehouseStocks->sum('stockLevel') > 0,
+            ])
+            ->values();
+
+        $base['has_variants'] = true;
+        $base['variants']     = $variants;
+        $base['in_stock']     = $variants->contains('in_stock', true);
+        $base['stock_level']  = $variants->sum('stock_available');
+
+        return $base;
     }
 
     /**

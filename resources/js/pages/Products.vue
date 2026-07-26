@@ -92,7 +92,7 @@
             class="w-full pl-9 pr-3.5 py-2.5 text-sm rounded-[10px] border border-[#E1E3E9] dark:border-gray-600 bg-[#FAFBFC] dark:bg-gray-700 text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
           />
         </div>
-        <div class="flex gap-2">
+        <div class="flex flex-wrap gap-2">
           <select
             v-model="statusFilter"
             class="flex-1 sm:flex-none px-3.5 py-2.5 text-[13px] font-semibold rounded-[10px] border border-[#E1E3E9] dark:border-gray-600 bg-[#FAFBFC] dark:bg-gray-700 text-[#4A4F5B] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
@@ -120,12 +120,87 @@
             <option value="1">Publié</option>
             <option value="0">Non publié</option>
           </select>
+          <select
+            v-model="promoFilter"
+            class="flex-1 sm:flex-none px-3.5 py-2.5 text-[13px] font-semibold rounded-[10px] border border-[#E1E3E9] dark:border-gray-600 bg-[#FAFBFC] dark:bg-gray-700 text-[#4A4F5B] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
+            title="Filtrer par promotion active"
+          >
+            <option value="">Promo : tous</option>
+            <option value="1">En promo</option>
+            <option value="0">Sans promo</option>
+          </select>
+          <div class="hidden sm:flex items-center bg-[#F0F1F4] dark:bg-gray-700 rounded-[10px] p-[3px] gap-0.5 shrink-0">
+            <button
+              type="button"
+              class="w-[34px] h-[30px] rounded-lg flex items-center justify-center transition"
+              :class="viewMode === 'list' ? 'bg-white dark:bg-gray-800 shadow-sm' : ''"
+              :title="$t('products.viewList') ?? 'Vue liste'"
+              @click="viewMode = 'list'"
+            >
+              <svg class="w-[15px] h-[15px]" fill="none" :stroke="viewMode === 'list' ? '#181B22' : '#9599A6'" stroke-width="1.8" viewBox="0 0 20 20">
+                <line x1="3" y1="6" x2="17" y2="6" /><line x1="3" y1="10" x2="17" y2="10" /><line x1="3" y1="14" x2="17" y2="14" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              class="w-[34px] h-[30px] rounded-lg flex items-center justify-center transition"
+              :class="viewMode === 'grid' ? 'bg-white dark:bg-gray-800 shadow-sm' : ''"
+              :title="$t('products.viewGrid') ?? 'Vue grille'"
+              @click="viewMode = 'grid'"
+            >
+              <svg class="w-[15px] h-[15px]" fill="none" :stroke="viewMode === 'grid' ? '#181B22' : '#9599A6'" stroke-width="1.8" viewBox="0 0 20 20">
+                <rect x="3" y="3" width="6" height="6" rx="1" /><rect x="11" y="3" width="6" height="6" rx="1" />
+                <rect x="3" y="11" width="6" height="6" rx="1" /><rect x="11" y="11" width="6" height="6" rx="1" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Table -->
-    <BaseTable :columns="columns" :rows="items" :empty-text="$t('products.notFound')">
+    <!-- Grid view -->
+    <div v-if="viewMode === 'grid'" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      <div
+        v-for="row in items"
+        :key="row.id"
+        class="bg-white dark:bg-gray-800 border border-[#ECEEF2] dark:border-gray-700 rounded-2xl p-4 cursor-pointer hover:shadow-md transition"
+        @click="openEdit(row)"
+      >
+        <div class="w-full h-[110px] rounded-xl overflow-hidden bg-[#EFF1F5] dark:bg-gray-700 mb-3 flex items-center justify-center">
+          <img
+            v-if="row.primary_image || (row.images && row.images.length)"
+            :src="(row.primary_image || row.images[0]).url"
+            :alt="row.p_title"
+            class="w-full h-full object-cover"
+            @error="($event: Event) => (($event.target as HTMLImageElement).style.display = 'none')"
+          />
+          <svg v-else class="w-9 h-9 text-gray-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5M3.75 3.75h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6a2.25 2.25 0 012.25-2.25z"
+            />
+          </svg>
+        </div>
+        <div class="text-sm font-bold text-gray-900 dark:text-white truncate">{{ row.p_title }}</div>
+        <div class="text-xs text-[#9599A6] mt-0.5 font-mono truncate">{{ row.p_code }}</div>
+        <div class="flex items-center gap-1.5 mt-2.5 flex-wrap">
+          <span v-if="row.category" class="bg-[#F1ECFC] text-[#7C5CFC] text-[11px] font-semibold px-2 py-0.5 rounded-full">
+            {{ row.category.ctg_title }}
+          </span>
+          <span v-if="row.brand" class="text-xs text-[#9599A6]">{{ row.brand.br_title }}</span>
+        </div>
+        <div class="flex items-center justify-between mt-3">
+          <span class="text-[15px] font-extrabold text-gray-900 dark:text-white">{{ Number(row.p_salePrice).toFixed(2) }} MAD</span>
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold" :class="statusBadgeClass(row)">
+            {{ statusBadgeLabel(row) }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table (list view) -->
+    <BaseTable v-else :columns="columns" :rows="items" :empty-text="$t('products.notFound')">
       <!-- show primary iamge -->
       <template #cell-primary_image="{ row }">
         <div class="w-20 h-15 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center shrink-0">
@@ -219,6 +294,20 @@
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+              />
+            </svg>
+          </button>
+          <button
+            class="p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 transition disabled:opacity-50"
+            :title="$t('products.duplicate')"
+            :disabled="duplicatingId === row.id"
+            @click="onDuplicate(row)"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
               />
             </svg>
           </button>
@@ -666,8 +755,42 @@
 
             <!-- Warehouse Breakdown -->
             <div class="space-y-1.5">
-              <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Warehouse Breakdown</h3>
-              <div v-if="warehouseStocksList.length" class="overflow-x-auto">
+              <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                {{ variantsEnabled && productVariants.length ? 'Stock par Variante' : 'Warehouse Breakdown' }}
+              </h3>
+
+              <!-- WITH VARIANTS -->
+              <div v-if="variantsEnabled && productVariants.length" class="overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead class="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                      <th class="px-2.5 py-1.5 text-left text-gray-600 dark:text-gray-300 font-medium">Variante</th>
+                      <th class="px-2.5 py-1.5 text-left text-gray-600 dark:text-gray-300 font-medium">SKU</th>
+                      <th class="px-2.5 py-1.5 text-right text-gray-600 dark:text-gray-300 font-medium">Stock</th>
+                      <th class="px-2.5 py-1.5 text-center text-gray-600 dark:text-gray-300 font-medium">Statut</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                    <tr v-for="v in productVariants" :key="v.id ?? v.label" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                      <td class="px-2.5 py-1.5 text-gray-800 dark:text-gray-200 font-medium">{{ v.label }}</td>
+                      <td class="px-2.5 py-1.5 text-gray-500 dark:text-gray-400 font-mono text-xs">{{ v.sku || '—' }}</td>
+                      <td class="px-2.5 py-1.5 text-right font-mono">{{ Number(v.stock ?? 0).toFixed(2) }} {{ editTarget.p_unit ?? 'pcs' }}</td>
+                      <td class="px-2.5 py-1.5 text-center">
+                        <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
+                          :class="Number(v.stock ?? 0) > 0 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'">
+                          {{ Number(v.stock ?? 0) > 0 ? 'En stock' : 'Epuise' }}
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+                <p class="mt-2 text-xs text-gray-400 dark:text-gray-500 italic">
+                  Stock lu depuis warehouse_has_stock. Saisie via documents de stock.
+                </p>
+              </div>
+
+              <!-- WITHOUT VARIANTS -->
+              <div v-else-if="warehouseStocksList.length" class="overflow-x-auto">
                 <table class="w-full text-sm">
                   <thead class="bg-gray-50 dark:bg-gray-700">
                     <tr>
@@ -681,10 +804,8 @@
                       <td class="px-2.5 py-1.5 text-gray-800 dark:text-gray-200">{{ ws.warehouse?.wh_title ?? ws.warehouse?.wh_name ?? '—' }}</td>
                       <td class="px-2.5 py-1.5 text-right font-mono">{{ Number(ws.stockLevel ?? ws.stock_level ?? 0).toFixed(2) }} {{ editTarget.p_unit ?? 'pcs' }}</td>
                       <td class="px-2.5 py-1.5 text-center">
-                        <span
-                          class="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
-                          :class="Number(ws.stockLevel ?? ws.stock_level ?? 0) > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
-                        >
+                        <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
+                          :class="Number(ws.stockLevel ?? ws.stock_level ?? 0) > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'">
                           {{ Number(ws.stockLevel ?? ws.stock_level ?? 0) > 0 ? 'In Stock' : 'Out' }}
                         </span>
                       </td>
@@ -732,7 +853,7 @@
                         : 'border-l-2 border-l-red-500 dark:border-l-red-400'"
                     >
                       <td class="px-2 py-1.5 whitespace-nowrap text-gray-600 dark:text-gray-400 font-mono text-[10px]">
-                        <div>{{ new Date(mov.created_at).toLocaleDateString() }}</div>
+                        <div>{{ fmtDate(mov.created_at) }}</div>
                         <div class="text-gray-400">{{ new Date(mov.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }}</div>
                       </td>
                       <td class="px-2 py-1.5 text-center">
@@ -852,7 +973,7 @@
                 </div>
                 <div class="bg-[#F1ECFC] dark:bg-[#7C5CFC]/20 px-3 py-2 rounded border border-[#E4D9FE] dark:border-[#4C3999]">
                   <p class="text-xs text-[#6D4CE0] dark:text-[#A78BFA] font-medium">Purchase Transactions</p>
-                  <p class="text-lg font-bold text-[#3D2E85] dark:text-[#D8CCFC] leading-tight">{{ statistics?.purchases?.count ?? 0 }}</p>
+                  <p class="text-lg font-bold text-[#3D2E85] dark:text-[#E4D9FE] leading-tight">{{ statistics?.purchases?.count ?? 0 }}</p>
                 </div>
               </div>
             </div>
@@ -945,6 +1066,64 @@
             {{ $t('products.stockAfterSave') ?? 'Gallery available after saving the product.' }}
           </div>
         </div>
+        <!-- Tab: Variantes -->
+        <div v-if="currentTab === 5 && variantsEnabled" class="space-y-3 py-2">
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-xs text-gray-500 dark:text-gray-400">Configurez les variantes pour ce produit.</p>
+            <div class="flex gap-2">
+              <button type="button"
+                class="px-3 py-1.5 text-xs font-medium border border-indigo-300 text-indigo-600 rounded-lg hover:bg-indigo-50 dark:border-indigo-700 dark:text-indigo-400 transition"
+                @click="applyGenerated">Generer combinaisons</button>
+              <button type="button"
+                class="px-3 py-1.5 text-xs font-medium bg-[#7C5CFC] text-white rounded-lg hover:bg-[#6D4CE0] transition"
+                @click="addVariantRow">+ Ajouter</button>
+            </div>
+          </div>
+          <div v-if="!productVariants.length" class="text-sm text-gray-400 dark:text-gray-500 text-center py-8 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg">
+            Aucune variante. Cliquez sur Generer ou Ajouter.
+          </div>
+          <div v-else class="overflow-x-auto">
+            <table class="w-full text-xs">
+              <thead>
+                <tr class="text-left text-gray-500 border-b border-gray-200 dark:border-gray-700">
+                  <th class="py-2 pr-2">Label</th>
+                  <th class="py-2 pr-2">SKU</th>
+                  <th class="py-2 pr-2 w-24">Prix</th>
+                  <th class="py-2 pr-2 w-20">Stock</th>
+                  <th class="py-2 pr-2 w-16 text-center">Actif</th>
+                  <th class="py-2 w-8"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(v, idx) in productVariants" :key="idx" class="border-b border-gray-100 dark:border-gray-800">
+                  <td class="py-1.5 pr-2">
+                    <input v-model="v.label" @input="variantsDirty = true" type="text" placeholder="Rouge / XL"
+                      class="w-full px-2 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-xs text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-[#7C5CFC]" />
+                  </td>
+                  <td class="py-1.5 pr-2">
+                    <input v-model="v.sku" @input="variantsDirty = true" type="text" placeholder="SKU"
+                      class="w-full px-2 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-xs text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-[#7C5CFC]" />
+                  </td>
+                  <td class="py-1.5 pr-2">
+                    <input v-model.number="v.price" @input="variantsDirty = true" type="number" step="0.01" placeholder="—"
+                      class="w-full px-2 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-xs text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-[#7C5CFC]" />
+                  </td>
+
+                  <td class="py-1.5 pr-2 text-center">
+                    <input type="checkbox" v-model="v.is_active" @change="variantsDirty = true" class="w-4 h-4 text-[#7C5CFC] rounded" />
+                  </td>
+                  <td class="py-1.5">
+                    <button type="button" @click="removeVariant(idx)" class="p-1 text-red-400 hover:text-red-600 rounded transition">
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </form>
 
       <template #footer>
@@ -1002,23 +1181,28 @@ import { useBrandStore } from '@/stores/brand'
 import { usePriceListStore } from '@/stores/priceList'
 import { useAuthStore } from '@/stores/authStore'
 import http from '@/services/http'
+import { useVariantOptionsStore } from '@/stores/useVariantOptionsStore'
 import { useExcelExport } from '@/composables/useExcelExport'
 import BaseTable from '@/components/BaseTable.vue'
 import BasePagination from '@/components/BasePagination.vue'
 import BaseModal from '@/components/BaseModal.vue'
 import BaseNotification from '@/components/BaseNotification.vue'
+import { useFormat } from '@/composables/useFormat'
 
 const { t } = useI18n()
+const { date: fmtDate } = useFormat()
 const store = useProductStore()
 const categoryStore = useCategoryStore()
 const brandStore = useBrandStore()
 const priceListStore = usePriceListStore()
 const auth = useAuthStore()
+const variantStore = useVariantOptionsStore()
 
 // E-commerce module gating: the "Publier dans la boutique" toggle and slug
 // field only appear when the tenant has the ecom feature enabled (driven
 // by the central tenants.ecom_enabled flag, surfaced via auth.hasModule).
 const ecomEnabled = computed(() => auth.hasModule('ecom'))
+const variantsEnabled = computed(() => auth.hasModule('variants'))
 // Best-effort hint for the storefront URL shown beside the toggle.
 const tenantDomain = computed(() => {
   if (typeof window === 'undefined') return ''
@@ -1043,6 +1227,8 @@ const search = ref('')
 const statusFilter = ref('')
 const stockFilter = ref('')
 const ecomFilter = ref('')
+const promoFilter = ref('')
+const viewMode = ref<'grid' | 'list'>('grid')
 const toast = ref(null)
 const currentTab = ref(0)
 
@@ -1080,6 +1266,7 @@ const deleting = ref(false)
 const uploadingImage = ref(false)
 const editTarget = ref(null)
 const deleteTarget = ref(null)
+const duplicatingId = ref(null)
 
 // Images for the currently-edited product (reactive copy)
 const editImages = ref([])
@@ -1107,13 +1294,55 @@ const newTier = reactive({
   price_ht: 0,
 })
 
-const tabs = [
+// variants
+const productVariants = ref([])
+const variantsDirty = ref(false)
+
+async function loadVariants(productId) {
+  if (!variantsEnabled.value || !productId) return
+  try {
+    const { data } = await http.get('/products/' + productId + '/variants')
+    productVariants.value = data
+  } catch { productVariants.value = [] }
+}
+
+async function saveVariants(productId) {
+  if (!variantsEnabled.value || !variantsDirty.value) return
+  await http.post('/products/' + productId + '/variants/sync', { variants: productVariants.value })
+  variantsDirty.value = false
+}
+
+function addVariantRow() {
+  productVariants.value.push({ label: '', sku: '', price: null, is_active: true })
+  variantsDirty.value = true
+}
+
+function removeVariant(idx) {
+  productVariants.value.splice(idx, 1)
+  variantsDirty.value = true
+}
+
+function applyGenerated() {
+  if (!variantStore.items.length) return
+  const combos = variantStore.items.reduce((acc, type) => {
+    if (!type.values || !type.values.length) return acc
+    if (!acc.length) return type.values.map(v => v.key)
+    return acc.flatMap(a => type.values.map(v => a + ' / ' + v.key))
+  }, [])
+  const existing = new Set(productVariants.value.map(v => v.label))
+  const newOnes = combos.filter(c => !existing.has(c)).map(label => ({ label, sku: '', price: null, is_active: true }))
+  productVariants.value = [...productVariants.value, ...newOnes]
+  variantsDirty.value = true
+}
+
+const tabs = computed(() => [
   { label: t('products.tabInfo') ?? 'Info' },
   { label: t('products.tabTarifs') ?? 'Tarifs' },
   { label: t('products.tabStock') ?? 'Stock' },
   { label: t('products.tabStatistics') ?? 'Statistics' },
   { label: t('products.tabGallery') ?? 'Gallery' },
-]
+  ...(variantsEnabled.value ? [{ label: 'Variantes' }] : []),
+])
 
 const emptyForm = () => ({
   p_title: '',
@@ -1261,6 +1490,7 @@ function buildParams(): Record<string, string> {
   if (statusFilter.value !== '') p.status = statusFilter.value
   if (stockFilter.value !== '') p.in_stock = stockFilter.value
   if (ecomFilter.value !== '') p.is_ecom = ecomFilter.value
+  if (promoFilter.value !== '') p.on_promo = promoFilter.value
   return p
 }
 
@@ -1274,7 +1504,7 @@ function onPageChange(page) {
   loadPage(page)
 }
 
-watch([search, statusFilter, stockFilter, ecomFilter], () => {
+watch([search, statusFilter, stockFilter, ecomFilter, promoFilter], () => {
   clearTimeout(searchTimer)
   searchTimer = setTimeout(() => loadPage(1), 350)
 })
@@ -1364,13 +1594,17 @@ async function submit() {
   if (!form.p_title.trim()) return
   saving.value = true
   try {
+    let savedId
     if (editTarget.value) {
       await store.update(editTarget.value.id, form)
+      savedId = editTarget.value.id
       toast.value?.notify(t('products.updated'), 'success')
     } else {
-      await store.create(form)
+      const res = await store.create(form)
+      savedId = res?.id ?? res?.data?.id
       toast.value?.notify(t('products.created'), 'success')
     }
+    if (savedId) await saveVariants(savedId)
     showModal.value = false
   } catch (err: unknown) {
     const e = err as { response?: { data?: { message?: string } } }
@@ -1383,6 +1617,18 @@ async function submit() {
 function confirmDelete(row) {
   deleteTarget.value = row
   showDelete.value = true
+}
+
+async function onDuplicate(row) {
+  duplicatingId.value = row.id
+  try {
+    await store.duplicate(row.id)
+    toast.value?.notify(t('products.duplicated'), 'success')
+  } catch {
+    toast.value?.notify(t('products.duplicateFailed'), 'error')
+  } finally {
+    duplicatingId.value = null
+  }
 }
 
 async function doDelete() {

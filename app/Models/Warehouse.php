@@ -28,10 +28,7 @@ class Warehouse extends Model
 
     protected $fillable = ['wh_title', 'wh_code', 'wh_status', 'structure_id'];
 
-    protected function casts(): array
-    {
-        return ['wh_status' => 'boolean'];
-    }
+    protected $casts = ['wh_status' => 'boolean'];
 
     public function structure(): BelongsTo
     {

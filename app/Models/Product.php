@@ -53,17 +53,14 @@ class Product extends Model
         'p_notes',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'p_purchasePrice' => 'decimal:2',
-            'p_salePrice'     => 'decimal:2',
-            'p_cost'          => 'decimal:2',
-            'p_taxRate'       => 'decimal:2',
-            'p_status'        => 'boolean',
-            'is_ecom'         => 'boolean',
-        ];
-    }
+    protected $casts = [
+        'p_purchasePrice' => 'decimal:2',
+        'p_salePrice'     => 'decimal:2',
+        'p_cost'          => 'decimal:2',
+        'p_taxRate'       => 'decimal:2',
+        'p_status'        => 'boolean',
+        'is_ecom'         => 'boolean',
+    ];
 
     // ── Relations ─────────────────────────────────────────────────
     public function category(): BelongsTo
@@ -101,6 +98,11 @@ class Product extends Model
         return $this->belongsToMany(Warehouse::class, 'warehouse_has_stock')
                     ->withPivot(['stockLevel', 'stockAtTime', 'wh_average'])
                     ->withTimestamps();
+    }
+
+    public function variants(): HasMany
+    {
+        return $this->hasMany(ProductVariant::class)->orderBy('position');
     }
 
     public function stockMouvements(): HasMany
@@ -184,7 +186,15 @@ class Product extends Model
      */
     public function getTotalStockAttribute(): float
     {
-        // If warehouseStocks is already loaded, use the collection to avoid N+1
+        // When variants exist, total stock = sum of variant-level warehouse stocks
+        if ($this->relationLoaded('variants') && $this->variants->isNotEmpty()) {
+            return (float) $this->variants->sum(fn ($v) => $v->warehouseStocks->sum('stockLevel'));
+        }
+        // Check DB without loading all variants if not already loaded
+        if ($this->variants()->exists()) {
+            return (float) WarehouseHasStock::whereIn('variant_id', $this->variants()->pluck('id'))->sum('stockLevel');
+        }
+        // No variants — standard product-level stock
         if ($this->relationLoaded('warehouseStocks')) {
             return (float) $this->warehouseStocks->sum('stockLevel');
         }

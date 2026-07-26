@@ -7,9 +7,11 @@ import BaseTable from '@/components/BaseTable.vue'
 import BaseSkeleton from '@/components/BaseSkeleton.vue'
 import BasePagination from '@/components/BasePagination.vue'
 import BaseModal from '@/components/BaseModal.vue'
+import { useFormat } from '@/composables/useFormat'
 
 const router = useRouter()
 const store = useDocumentVenteStore()
+const { date: fmtDate } = useFormat()
 
 const search = ref('')
 const typeFilter = ref('')
@@ -233,6 +235,10 @@ async function submitPayment() {
 
       <template #cell-third_partner="{ row }">
         <span class="text-sm">{{ row.third_partner?.tp_title ?? '—' }}</span>
+      </template>
+
+      <template #cell-issued_at="{ row }">
+        <span class="text-sm">{{ fmtDate(row.issued_at) }}</span>
       </template>
 
       <template #actions="{ row }">

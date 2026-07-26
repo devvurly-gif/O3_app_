@@ -135,6 +135,9 @@ export default {
     updated: 'Produit mis à jour.',
     created: 'Produit créé.',
     deleted: 'Produit supprimé.',
+    duplicate: 'Dupliquer',
+    duplicated: 'Produit dupliqué.',
+    duplicateFailed: 'Échec de la duplication.',
     sku: 'SKU',
     ean: 'EAN-13',
     purchasePrice: "Prix d'achat",
@@ -177,6 +180,8 @@ export default {
     statStockValue: 'Valeur du stock',
     statActive: 'Produits actifs',
     outOfStock: 'Rupture',
+    viewList: 'Vue liste',
+    viewGrid: 'Vue grille',
   },
 
   // ── Categories ────────────────────────────────────────────────────────
@@ -290,6 +295,8 @@ export default {
     creditLimit: 'Seuil de crédit',
     creditAvailable: 'Crédit disponible',
     balanceAutoCalculated: "L'encours est calculé automatiquement à partir des factures et règlements.",
+    statOverLimit: 'En dépassement',
+    statEncours: 'Encours total (DH)',
   },
 
   // ── Suppliers ─────────────────────────────────────────────────────────
@@ -321,6 +328,8 @@ export default {
     creditLimit: 'Seuil de crédit',
     creditLimitPlaceholder: '0.00',
     creditAvailable: 'Crédit disponible',
+    statOverLimit: 'En dépassement',
+    statEncours: 'Encours total (DH)',
   },
 
   // ── Warehouses ────────────────────────────────────────────────────────

@@ -4,16 +4,16 @@
       <div>
         <h2 class="text-xl font-bold">{{ item?.designation }}</h2>
         <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-          Prix actuel: <span class="font-semibold text-orange-600">{{ formatPrice(formData.price) }}</span>
+          Prix actuel: <span class="font-semibold text-[#6D4CE0]">{{ formatPrice(formData.price) }}</span>
         </p>
       </div>
       <div>
         <label class="block text-sm font-medium mb-2">Prix Unitaire</label>
-        <input v-model.number="formData.price" type="number" min="0" step="0.01" class="w-full px-3 py-2 border-2 border-orange-400 rounded-lg bg-orange-50 text-lg font-semibold" />
+        <input v-model.number="formData.price" type="number" min="0" step="0.01" class="w-full px-3 py-2 border-2 border-[#A78BFA] rounded-lg bg-[#F1ECFC] text-lg font-semibold" />
       </div>
       <div>
         <label class="block text-sm font-medium mb-2">Quantité</label>
-        <input v-model.number="formData.quantity" type="number" min="1" class="w-full px-3 py-2 border-2 border-blue-400 rounded-lg bg-blue-50 text-lg font-semibold" />
+        <input v-model.number="formData.quantity" type="number" min="1" class="w-full px-3 py-2 border-2 border-blue-400 rounded-lg bg-blue-50 text-lg font-semibold" placeholder="0" />
       </div>
       <div>
         <label class="block text-sm font-medium mb-2">Remise (%)</label>
@@ -25,7 +25,7 @@
       </div>
       <div class="flex gap-3">
         <button @click="close" class="flex-1 px-4 py-2 bg-gray-300 rounded-lg font-medium hover:bg-gray-400">Annuler</button>
-        <button @click="save" class="flex-1 px-4 py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600">Sauvegarder</button>
+        <button @click="save" class="flex-1 px-4 py-2 bg-[#7C5CFC] text-white rounded-lg font-medium hover:bg-[#6D4CE0]">Sauvegarder</button>
       </div>
     </div>
   </div>
@@ -33,10 +33,14 @@
 
 <script setup lang="ts">
 import { ref, watch } from "vue"
+import { useNumberFormat } from "@/composables/useNumberFormat"
 
 const props = defineProps({ isOpen: Boolean, item: Object as any })
 const emit = defineEmits(["close", "save"])
 const formData = ref({ price: 0, quantity: 1, discount: 0 })
+
+// Use the number formatting composable
+const { formatPrice } = useNumberFormat()
 
 // Watch isOpen and initialize form data when modal opens
 watch(() => props.isOpen, (newVal) => {
@@ -49,7 +53,6 @@ watch(() => props.isOpen, (newVal) => {
   }
 })
 
-const formatPrice = (n: number) => new Intl.NumberFormat("fr-MA", { style: "currency", currency: "MAD" }).format(n)
 const close = () => emit("close")
 const save = () => emit("save", formData.value)
 </script>

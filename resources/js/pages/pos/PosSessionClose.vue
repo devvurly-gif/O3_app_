@@ -15,7 +15,7 @@
         <div class="flex justify-between">
           <span class="text-gray-500 dark:text-gray-400">Ouverture</span>
           <span class="font-medium text-gray-900 dark:text-white">
-            {{ new Date(posStore.currentSession.opened_at).toLocaleString('fr-FR') }}
+            {{ formatDateTime(posStore.currentSession.opened_at) }}
           </span>
         </div>
         <div class="flex justify-between">
@@ -174,9 +174,16 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePosStore, type PosSessionData } from '@/stores/pos/posStore'
 import http from '@/services/http'
+import { useFormat } from '@/composables/useFormat'
 
 const router = useRouter()
 const posStore = usePosStore()
+const { date: fmtDate } = useFormat()
+
+function formatDateTime(value: string): string {
+  const d = new Date(value)
+  return fmtDate(d) + ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+}
 
 const closingCash = ref(0)
 const notes = ref('')

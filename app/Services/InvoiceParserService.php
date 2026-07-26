@@ -48,13 +48,23 @@ class InvoiceParserService
     {
         // Try common patterns for company names in Moroccan invoices
         $patterns = [
-            '/(?:Société|Ste|Sté|Ets|SARL|SA|SAS)\s+([A-ZÀ-Ü][A-Za-zÀ-ü\s&\-\.]{2,40})/u',
-            '/^([A-ZÀ-Ü][A-ZÀ-Ü\s&\-\.]{3,40})\s*$/mu', // All-caps line (company name)
+            // Label-based: "Fournisseur: XYZ" or "Supplier: XYZ"
+            '/(?:Fournisseur|Supplier|Vendeur|Emetteur|Societe|Entreprise)\s*[:\-]\s*(.+)/iu',
+            // Legal form BEFORE name: "SARL XYZ" or "SA XYZ" (must be on same line)
+            '/(?:Société|Ste|Sté|Ets|SARL|SA|SAS)\s+([A-ZÀ-Ü][A-Za-zÀ-ü\s&\-\.]{2,40})$/mu',
+            // Legal form AT END of company name: "XYZ SARL" — capture the words before
+            '/^([A-ZÀ-Ü][A-ZÀ-Ü\s&\-\.]{3,40})\s+(?:SARL|SA|SAS|EURL|SARLAU)\s*$/mu',
+            // All-caps standalone line (company name) — but avoid ICE/RC/TVA/HT labels
+            '/^([A-ZÀ-Ü][A-ZÀ-Ü\s&\-\.]{5,40})\s*$/mu',
         ];
 
         foreach ($patterns as $pattern) {
             if (preg_match($pattern, $text, $m)) {
-                return trim($m[1] ?? $m[0]);
+                $candidate = trim($m[1] ?? $m[0]);
+                // Reject short abbreviations (ICE, RC, TVA, etc.)
+                $reject = ['ICE', 'RC', 'IF', 'TVA', 'HT', 'TTC', 'MAD', 'DH', 'NET'];
+                if (in_array(strtoupper($candidate), $reject)) continue;
+                return $candidate;
             }
         }
 
@@ -190,6 +200,23 @@ class InvoiceParserService
     {
         $lines = [];
 
+        // Strategy 0: Tab-separated columns (most reliable — pdfparser preserves tabs)
+        $tabLines = $this->parseLineItemsTabSeparated($text, $priceType);
+        if (!empty($tabLines)) {
+            return $tabLines;
+        }
+
+        // Strategy 1: No-delimiter (ECG-style: columns concatenated on one line, QTY last).
+        // Must run on RAW text before pre-processing to avoid cross-boundary number corruption.
+        $noDelimLines = $this->parseLineItemsNoDelimiter($text);
+        if (!empty($noDelimLines)) {
+            return $noDelimLines;
+        }
+
+        // Pre-process: collapse space-thousands (e.g. "16 394" -> "16394").
+        // Use lookbehind/ahead to avoid merging numbers across column boundaries.
+        $text = preg_replace('/(?<![0-9])(\d{1,3}) (\d{3})(?![0-9])/', '$1$2', $text);
+
         // Strategy: Find table-like patterns with designation, qty, price, amount
         // Pattern 1: designation followed by numbers (qty, unit_price, total)
         $pattern = '/^[\s]*(.{5,60}?)\s+(\d+[\.,]?\d*)\s+(\d+[\s\.,]*\d*[\.,]\d{2})\s+(\d+[\s\.,]*\d*[\.,]\d{2})\s*$/m';
@@ -279,6 +306,109 @@ class InvoiceParserService
     }
 
     /**
+     * Parse lines where pdfparser concatenated columns without delimiters.
+     * Format (ECG-style): {REF}{DESIGNATION}{PU_TTC: X,DDD}{TOTAL_TTC: D+,DD}{QTY: D+}
+     * After space-thousands pre-processing, pattern is unambiguous.
+     */
+    private function parseLineItemsNoDelimiter(string $text): array
+    {
+        $lines = [];
+        // PU_TTC is always Moroccan X,DDD format (3 decimal digits e.g. "6,100" = 6.1 MAD)
+        // TOTAL_TTC ends with ,DD (2 decimal digits e.g. "100000,12")
+        // QTY is plain digits (no comma after pre-processing)
+        // Total may have space-thousands (e.g. "100 000,12"), QTY too ("16 394").
+        $pattern = '/^(.+?)(\d+,\d{3})(\d[\d ]*,\d{2})(\d[\d ]*)$/mu';
+
+        if (!preg_match_all($pattern, $text, $matches, PREG_SET_ORDER)) {
+            return [];
+        }
+
+        foreach ($matches as $m) {
+            $designation = trim($m[1]);
+            if ($this->isTableHeader($designation)) continue;
+            if (mb_strlen($designation) < 5) continue;
+
+            $unitPriceTtc = $this->parseNumber($m[2]);
+            $totalTtc     = $this->parseNumber($m[3]);
+            $qty          = $this->parseNumber($m[4]);
+
+            if ($qty <= 0 || $unitPriceTtc <= 0) continue;
+
+            $lines[] = $this->buildLine($designation, $qty, $unitPriceTtc, $totalTtc, 'ttc');
+        }
+
+        return $lines;
+    }
+
+    /**
+     * Parse lines from tab-separated text (pdfparser preserves tabs for table columns).
+     * Handles thousand-separated numbers like "16 394" or "100 000,12".
+     */
+    private function parseLineItemsTabSeparated(string $text, string $priceType = 'ht'): array
+    {
+        $lines = [];
+        $textLines = explode("
+", $text);
+
+        foreach ($textLines as $raw) {
+            // Only process lines that have tab characters (column separators)
+            if (!str_contains($raw, "	")) continue;
+
+            $cols = explode("	", $raw);
+            $cols = array_map('trim', $cols);
+            $cols = array_values(array_filter($cols, fn($c) => $c !== ''));
+
+            if (count($cols) < 3) continue;
+
+            // Try to identify numeric columns from the right
+            // Expected layout variants:
+            //   [ref, designation, qty, pu, total]      → 5 cols
+            //   [designation, qty, pu, total]            → 4 cols
+            //   [ref, designation, qty, pu]              → 4 cols (no total)
+            //   [designation, qty, pu]                   → 3 cols
+
+            $n = count($cols);
+
+            // Test if a string is a valid number (allows spaces, commas, dots)
+            $isNum = fn(string $s): bool => (bool) preg_match('/^\d[\d\s\.,]*$/', $s);
+
+            // Detect numeric columns from the right
+            $numericTail = 0;
+            for ($i = $n - 1; $i >= 0; $i--) {
+                if ($isNum($cols[$i])) $numericTail++;
+                else break;
+            }
+
+            // Need at least 2 numeric columns (qty + price) and at least 1 text column
+            if ($numericTail < 2 || ($n - $numericTail) < 1) continue;
+
+            // Extract qty and unit_price (last or second-to-last numeric cols)
+            if ($numericTail >= 3) {
+                // [... qty, unit_price, total]
+                $qty       = $this->parseNumber($cols[$n - $numericTail]);
+                $unitPrice = $this->parseNumber($cols[$n - $numericTail + 1]);
+                $totalLine = $this->parseNumber($cols[$n - 1]);
+            } else {
+                // [... qty, unit_price]  or  [... designation_with_num, qty, price]
+                $qty       = $this->parseNumber($cols[$n - 2]);
+                $unitPrice = $this->parseNumber($cols[$n - 1]);
+                $totalLine = null;
+            }
+
+            // Designation = join non-numeric leading columns
+            $textCols = array_slice($cols, 0, $n - $numericTail);
+            $designation = implode(' ', $textCols);
+
+            if ($this->isTableHeader($designation)) continue;
+            if ($qty <= 0 || $unitPrice <= 0) continue;
+
+            $lines[] = $this->buildLine($designation, $qty, $unitPrice, $totalLine, $priceType);
+        }
+
+        return $lines;
+    }
+
+    /**
      * Advanced line parsing: split text into blocks, find product ref codes + numbers.
      */
     private function parseLineItemsAdvanced(string $text, string $priceType = 'ht'): array
@@ -344,10 +474,10 @@ class InvoiceParserService
     private function parseTotals(string $text): array
     {
         // Standard: label then value
-        $totalHt = $this->extractAmount($text, '/Total\s*H\.?T\.?\s*[:\-]?\s*([\d\s\.,]+)/i');
+        $totalHt = $this->extractAmount($text, '/Total\s*H\.?T\.?\s*:\s*(\d[\d\s\.,]*)/i');
         // Reversed: value then label (e.g. "16 666,68Total  HT  :")
         if (!$totalHt) {
-            $totalHt = $this->extractAmount($text, '/([\d][\d\s\.,]+?)Total\s*H\.?T\.?\s*[:\-]?/i');
+            $totalHt = $this->extractAmount($text, '/(\d[\d\s\.,]{2,}?)Total\s*H\.?T\.?\s*:/i');
         }
 
         $totalTax = $this->extractAmount($text, '/(?:TVA|T\.V\.A\.?|Montant\s*TVA)\s*(?:\d{1,2}\s*%\s*)?[:\-]?\s*([\d\s\.,]+)/i');

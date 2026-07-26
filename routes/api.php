@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\StockMouvementController;
 use App\Http\Controllers\Api\StockOperationController;
 use App\Http\Controllers\Api\StructureIncrementorController;
+use App\Http\Controllers\Api\TaxSettingsController;
 use App\Http\Controllers\Api\ThirdPartnerController;
 use App\Http\Controllers\Api\WarehouseController;
 use App\Http\Controllers\Api\WarehouseStockController;
@@ -40,6 +41,8 @@ use App\Http\Controllers\Api\Pos\PosTicketController;
 use App\Http\Controllers\Api\WarehouseTransferController;
 use App\Http\Controllers\Api\PromotionController;
 use App\Http\Controllers\Api\SlideController;
+use App\Http\Controllers\Api\VariantOptionController;
+use App\Http\Controllers\Api\ProductVariantController;
 use App\Http\Controllers\Api\Ecom\EcomCatalogueController;
 use App\Http\Controllers\Api\Ecom\EcomPromotionController;
 use App\Http\Controllers\Api\Ecom\EcomOrderController;
@@ -85,7 +88,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ── Dashboard ────────────────────────────────────────────────────────
     Route::get('dashboard', [DashboardController::class, 'index']);
-    Route::get("tax-settings", [AppHttpControllersApiTaxSettingsController::class, "index"]);
+    Route::get("tax-settings", [TaxSettingsController::class, "index"]);
 
     // ── Notifications ──────────────────────────────────────────────────
     Route::get('notifications',                [NotificationController::class, 'index']);
@@ -164,6 +167,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('products/{product}',             [ProductController::class, 'update']);
         Route::patch('products/{product}',           [ProductController::class, 'update']);
         Route::delete('products/{product}',          [ProductController::class, 'destroy']);
+        Route::post('products/{product}/duplicate',  [ProductController::class, 'duplicate']);
 
         Route::post('products/{product}/images',                     [ProductImageController::class, 'store']);
         Route::patch('products/{product}/images/{image}/set-primary',[ProductImageController::class, 'setPrimary']);
@@ -284,6 +288,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('tickets/{ticket}/void',   [PosTicketController::class, 'void'])->middleware('permission:pos.void_ticket');
         Route::post('tickets/{document}/retour', [PosTicketController::class, 'retour'])->middleware('permission:pos.void_ticket');
         Route::get('tickets/{ticket}/print',   [PosTicketController::class, 'print']);
+        Route::get('tickets/{ticket}/print-html', [PosTicketController::class, 'printHtml']);
 
         // Session closing report
         Route::get('sessions/{session}/report', [PosSessionController::class, 'closingReport']);
@@ -317,9 +322,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('permissions/grouped',           [PermissionController::class, 'grouped']);
         Route::get('structures',                         [StructureIncrementorController::class, 'index']);
         Route::post('structures',                        [StructureIncrementorController::class, 'store']);
-        Route::get('structures/{structure}',             [StructureIncrementorController::class, 'show']);
-        Route::put('structures/{structure}',             [StructureIncrementorController::class, 'update']);
-        Route::delete('structures/{structure}',          [StructureIncrementorController::class, 'destroy']);
+        Route::get('structures/{structureIncrementor}',             [StructureIncrementorController::class, 'show']);
+        Route::put('structures/{structureIncrementor}',             [StructureIncrementorController::class, 'update']);
+        Route::delete('structures/{structureIncrementor}',          [StructureIncrementorController::class, 'destroy']);
 
         Route::get('document-incrementors',                              [DocumentIncrementorController::class, 'index']);
         Route::post('document-incrementors',                             [DocumentIncrementorController::class, 'store']);
@@ -333,6 +338,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('settings/logo',        [SettingController::class, 'deleteLogo']);
         Route::post('settings/test-email',    [SettingController::class, 'testEmail']);
         Route::post('settings/test-whatsapp', [SettingController::class, 'testWhatsapp']);
+        Route::post('settings/reset-data',    [SettingController::class, 'resetTenantData']);
 
         Route::post('cache/flush', [SettingController::class, 'flushCache']);
 
@@ -342,6 +348,11 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // ── Price resolver (all authenticated: POS + ecom internal consumers) ─
+    // Product variants
+    Route::get('products/{id}/variants',          [ProductVariantController::class, 'index']);
+    Route::post('products/{id}/variants/sync',    [ProductVariantController::class, 'sync']);
+    Route::delete('products/{id}/variants/{vid}', [ProductVariantController::class, 'destroy']);
+
     Route::get('price-lists-resolve', [PriceListController::class, 'resolve']);
 
     // ── Price Lists / Tarifs (admin, manager) ────────────────────────────
@@ -371,6 +382,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('slides/{slide}',       [SlideController::class, 'update']);
         Route::delete('slides/{slide}',      [SlideController::class, 'destroy']);
         Route::post('slides/reorder',        [SlideController::class, 'reorder']);
+
+        // Variant Options
+        Route::get('variant-options',                             [VariantOptionController::class, 'index']);
+        Route::post('variant-options',                            [VariantOptionController::class, 'store']);
+        Route::put('variant-options/{id}',                        [VariantOptionController::class, 'update']);
+        Route::delete('variant-options/{id}',                     [VariantOptionController::class, 'destroy']);
+        Route::post('variant-options/{id}/values',                [VariantOptionController::class, 'storeValue']);
+        Route::put('variant-options/{id}/values/{valueId}',       [VariantOptionController::class, 'updateValue']);
+        Route::delete('variant-options/{id}/values/{valueId}',    [VariantOptionController::class, 'destroyValue']);
     });
 });
 
@@ -393,8 +413,9 @@ Route::prefix('ecom')->middleware(['ecom.key', 'throttle:60,1'])->group(function
 
     // Orders
     Route::post('orders',            [EcomOrderController::class, 'store']);
+    Route::get('customers/lookup',   [EcomOrderController::class, 'lookupCustomer']);
 });
 
 // Package and Features info
-Route::get('/package-info', 'Api\PackageInfoController@getPackageInfo');
-Route::get('/feature/{feature}/enabled', 'Api\PackageInfoController@isFeatureEnabled');
+Route::get('/package-info', [\App\Http\Controllers\Api\PackageInfoController::class, 'getPackageInfo']);
+Route::get('/feature/{feature}/enabled', [\App\Http\Controllers\Api\PackageInfoController::class, 'isFeatureEnabled']);

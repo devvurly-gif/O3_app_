@@ -11,9 +11,6 @@ class Tenant extends BaseTenant implements TenantWithDatabase
 {
     use HasDatabase, HasDomains;
 
-    /**
-     * Custom columns (not stored in 'data' JSON).
-     */
     public static function getCustomColumns(): array
     {
         return [
@@ -29,6 +26,7 @@ class Tenant extends BaseTenant implements TenantWithDatabase
     protected $casts = [
         'is_active'      => 'boolean',
         'trial_ends_at'  => 'date',
+        'url_ready'      => 'boolean',  // stored in JSON data column
     ];
 
     public function isOnTrial(): bool

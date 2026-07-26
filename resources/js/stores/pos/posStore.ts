@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
 import http from '@/services/http'
+import { useSettingStore } from '@/stores/setting'
 
 export interface DraftCustomer {
   id: number
@@ -23,6 +24,8 @@ export interface DraftTicket {
 
 export interface CartItem {
   product_id: number
+  variant_id: number | null
+  variant_label?: string | null
   designation: string
   reference: string | null
   quantity: number
@@ -40,6 +43,8 @@ export interface PosTerminal {
   code: string
   warehouse_id: number
   is_active: boolean
+  printer_name?: string | null
+  auto_print?: boolean
   warehouse?: { id: number; wh_title: string }
 }
 
@@ -71,6 +76,7 @@ export interface PosProduct {
   category?: { id: number; ctg_title: string }
   primary_image?: { url: string } | null
   stock: number
+  variants?: { id: number; label: string; sku: string | null; price: number | null }[]
 }
 
 export const usePosStore = defineStore('pos', () => {
@@ -143,12 +149,19 @@ export const usePosStore = defineStore('pos', () => {
     }, 0),
   )
 
-  const cartTax = computed(() =>
-    cart.value.reduce((sum, item) => {
+  const isTaxEnabled = computed(() => {
+    const settingStore = useSettingStore()
+    const val = settingStore.settings?.invoice?.tax_enabled
+    return val === undefined || val === 'true'
+  })
+
+  const cartTax = computed(() => {
+    if (!isTaxEnabled.value) return 0
+    return cart.value.reduce((sum, item) => {
       const lineHt = item.quantity * item.unit_price * (1 - item.discount_percent / 100)
       return sum + lineHt * (item.tax_percent / 100)
-    }, 0),
-  )
+    }, 0)
+  })
 
   const cartTotal = computed(() => cartSubtotal.value + cartTax.value)
 
@@ -204,18 +217,20 @@ export const usePosStore = defineStore('pos', () => {
     }
   }
 
-  function addToCart(product: PosProduct): void {
-    const existing = cart.value.find((i) => i.product_id === product.id)
+  function addToCart(product: PosProduct, variantId: number | null = null, variantLabel: string | null = null): void {
+    const existing = cart.value.find((i) => i.product_id === product.id && i.variant_id === variantId)
     if (existing) {
       existing.quantity += 1
       return
     }
     cart.value.push({
       product_id: product.id,
-      designation: product.p_title,
+      variant_id: variantId,
+      variant_label: variantLabel,
+      designation: variantLabel ? `${product.p_title} — ${variantLabel}` : product.p_title,
       reference: product.p_sku ?? product.p_code,
       quantity: 1,
-      unit_price: product.p_salePrice,
+      unit_price: variantId ? (product.variants?.find(v => v.id === variantId)?.price ?? product.p_salePrice) : product.p_salePrice,
       unit: product.p_unit,
       discount_percent: 0,
       tax_percent: product.p_taxRate,
@@ -224,11 +239,11 @@ export const usePosStore = defineStore('pos', () => {
     })
   }
 
-  function updateCartItemQty(productId: number, qty: number): void {
-    const item = cart.value.find((i) => i.product_id === productId)
+  function updateCartItemQty(productId: number, qty: number, variantId: number | null = null): void {
+    const item = cart.value.find((i) => i.product_id === productId && i.variant_id === variantId)
     if (!item) return
     if (qty <= 0) {
-      removeFromCart(productId)
+      removeFromCart(productId, variantId)
       return
     }
     item.quantity = qty
@@ -242,8 +257,8 @@ export const usePosStore = defineStore('pos', () => {
     }
   }
 
-  function removeFromCart(productId: number): void {
-    cart.value = cart.value.filter((i) => i.product_id !== productId)
+  function removeFromCart(productId: number, variantId: number | null = null): void {
+    cart.value = cart.value.filter((i) => !(i.product_id === productId && i.variant_id === variantId))
   }
 
   function clearCart(): void {
@@ -358,6 +373,7 @@ export const usePosStore = defineStore('pos', () => {
     const { data } = await http.post('/pos/tickets', {
       items: cart.value.map((item) => ({
         product_id: item.product_id,
+        variant_id: item.variant_id ?? null,
         designation: item.designation,
         reference: item.reference,
         quantity: item.quantity,

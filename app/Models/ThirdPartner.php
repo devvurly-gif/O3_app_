@@ -53,14 +53,11 @@ class ThirdPartner extends Model
         'price_list_id',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'tp_status'       => 'boolean',
-            'encours_actuel'  => 'decimal:2',
-            'seuil_credit'    => 'decimal:2',
-        ];
-    }
+    protected $casts = [
+        'tp_status'       => 'boolean',
+        'encours_actuel'  => 'decimal:2',
+        'seuil_credit'    => 'decimal:2',
+    ];
 
     // ── Incrementor resolution ────────────────────────────────────
     // Suppliers and customers use separate code sequences.

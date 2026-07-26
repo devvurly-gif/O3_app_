@@ -22,6 +22,7 @@ class PackageInfoController
                 'BUSINESS' => $packageService->getPackageInfo('BUSINESS'),
             ],
             'is_ocr_import_enabled' => $packageService->isOcrImportEnabled(),
+            'variants_enabled' => (bool) (tenancy()->tenant?->variants_enabled ?? false),
         ]);
     }
 

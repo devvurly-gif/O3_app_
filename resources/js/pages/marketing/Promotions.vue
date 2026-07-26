@@ -567,6 +567,9 @@
 <script setup lang="ts">
 import { ref, reactive, watch, onMounted } from 'vue'
 import http from '@/services/http'
+import { useFormat } from '@/composables/useFormat'
+
+const { date: fmtDate } = useFormat()
 
 // ── Shared state ──────────────────────────────────────────────────
 const activeTab = ref<'promos' | 'slides'>('promos')
@@ -575,7 +578,7 @@ const showDeleteModal = ref(false)
 const deleteTarget = reactive({ type: '' as 'promo' | 'slide', id: 0, label: '', name: '' })
 
 function formatDate(d: string): string {
-  return new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  return fmtDate(d)
 }
 
 // ── PROMOTIONS ────────────────────────────────────────────────────

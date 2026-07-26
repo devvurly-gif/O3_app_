@@ -62,6 +62,7 @@ class TenantController extends Controller
             'pos_enabled'         => 'sometimes|boolean',
             'paiement_bl_enabled' => 'sometimes|boolean',
             'ecom_enabled'        => 'sometimes|boolean',
+            'variants_enabled'    => 'sometimes|boolean',
         ]);
 
         $tenant = Tenant::create([
@@ -76,6 +77,7 @@ class TenantController extends Controller
         $tenant->pos_enabled = $validated['pos_enabled'] ?? in_array($validated['plan'], ['business', 'enterprise']);
         $tenant->paiement_bl_enabled = $validated['paiement_bl_enabled'] ?? false;
         $tenant->ecom_enabled = $validated['ecom_enabled'] ?? false;
+        $tenant->variants_enabled = $validated['variants_enabled'] ?? false;
         // Auto-generate unique API key for ecom
         $tenant->ecom_api_key = 'ecom_' . bin2hex(random_bytes(20));
         $tenant->save();
@@ -144,6 +146,7 @@ class TenantController extends Controller
             'pos_enabled'         => 'sometimes|boolean',
             'paiement_bl_enabled' => 'sometimes|boolean',
             'ecom_enabled'        => 'sometimes|boolean',
+            'variants_enabled'    => 'sometimes|boolean',
         ]);
 
         // Generate ecom API key if enabling ecom for the first time
@@ -761,6 +764,27 @@ class TenantController extends Controller
             'message' => "Contrat envoyé à {$to}.",
             'to'      => $to,
             'cc'      => $validated['cc'] ?? [],
+        ]);
+    }
+
+
+    /**
+     * Check if the tenant URL is reachable (used by frontend countdown).
+     */
+    public function urlStatus(Tenant $tenant): JsonResponse
+    {
+        $active = \App\Observers\TenantObserver::checkUrlActive($tenant);
+
+        $tenant->url_ready = $active;
+        $tenant->saveQuietly();
+
+        $domain = $tenant->domains()->first()?->domain;
+
+        return response()->json([
+            'active'    => $active,
+            'url_ready' => $active,
+            'domain'    => $domain,
+            'url'       => $domain ? 'https://' . $domain : null,
         ]);
     }
 

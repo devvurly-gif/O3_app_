@@ -8,7 +8,7 @@ class TaxService
 {
     public static function isTaxActive(): bool
     {
-        return Setting::get('general', 'tva_active', 'true') === 'true';
+        return Setting::get('invoice', 'tax_enabled', 'true') === 'true';
     }
 
     public static function getDefaultTaxRate(): float

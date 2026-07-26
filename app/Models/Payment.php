@@ -46,13 +46,10 @@ class Payment extends Model
         'notes',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'amount'  => 'decimal:2',
-            'paid_at' => 'date',
-        ];
-    }
+    protected $casts = [
+        'amount'  => 'decimal:2',
+        'paid_at' => 'date',
+    ];
 
     public function document(): BelongsTo
     {

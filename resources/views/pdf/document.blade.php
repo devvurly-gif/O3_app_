@@ -172,8 +172,8 @@
                 <th class="right" style="width: 10%;">Qté</th>
                 <th class="right" style="width: 12%;">PU HT</th>
                 <th class="right" style="width: 10%;">Rem %</th>
-                <th class="right" style="width: 10%;">TVA %</th>
-                <th class="right" style="width: 18%;">Total TTC</th>
+                @if($taxEnabled)<th class="right" style="width: 10%;">TVA %</th>@endif
+                <th class="right" style="width: 18%;">{{ $taxEnabled ? 'Total TTC' : 'Total HT' }}</th>
             </tr>
         </thead>
         <tbody>
@@ -186,11 +186,11 @@
                         <br><span style="font-size:8px;color:#888;">Réf : {{ $ligne->reference }}</span>
                     @endif
                 </td>
-                <td class="right">{{ number_format($ligne->quantity, 2, ',', ' ') }}</td>
-                <td class="right">{{ number_format($ligne->unit_price, 2, ',', ' ') }}</td>
-                <td class="right">{{ $ligne->discount_percent > 0 ? number_format($ligne->discount_percent, 2, ',', ' ') . '%' : '—' }}</td>
-                <td class="right">{{ number_format($ligne->tax_percent, 0) }}%</td>
-                <td class="right">{{ number_format($ligne->total_ttc, 2, ',', ' ') }}</td>
+                <td class="right">{{ number_format($ligne->quantity, $decimals, ',', ' ') }}</td>
+                <td class="right">{{ number_format($ligne->unit_price, $decimals, ',', ' ') }}</td>
+                <td class="right">{{ $ligne->discount_percent > 0 ? number_format($ligne->discount_percent, $decimals, ',', ' ') . '%' : '—' }}</td>
+                @if($taxEnabled)<td class="right">{{ number_format($ligne->tax_percent, 0) }}%</td>@endif
+                <td class="right">{{ $taxEnabled ? number_format($ligne->total_ttc, $decimals, ',', ' ') : number_format($ligne->total_ht, $decimals, ',', ' ') }}</td>
             </tr>
             @endforeach
         </tbody>
@@ -203,23 +203,27 @@
         <div class="totals-spacer"></div>
         <div class="totals-box">
             <table class="totals-table">
+                @if($taxEnabled)
                 <tr>
                     <td class="label">Total HT</td>
-                    <td class="value">{{ number_format($doc->footer->total_ht, 2, ',', ' ') }} MAD</td>
+                    <td class="value">{{ number_format($doc->footer->total_ht, $decimals, ',', ' ') }} MAD</td>
                 </tr>
+                @endif
                 @if($doc->footer->total_discount > 0)
                 <tr>
                     <td class="label">Remise</td>
-                    <td class="value">- {{ number_format($doc->footer->total_discount, 2, ',', ' ') }} MAD</td>
+                    <td class="value">- {{ number_format($doc->footer->total_discount, $decimals, ',', ' ') }} MAD</td>
                 </tr>
                 @endif
+                @if($taxEnabled)
                 <tr>
                     <td class="label">TVA</td>
-                    <td class="value">{{ number_format($doc->footer->total_tax, 2, ',', ' ') }} MAD</td>
+                    <td class="value">{{ number_format($doc->footer->total_tax, $decimals, ',', ' ') }} MAD</td>
                 </tr>
+                @endif
                 <tr class="grand-total">
-                    <td class="label">Total TTC</td>
-                    <td class="value">{{ number_format($doc->footer->total_ttc, 2, ',', ' ') }} MAD</td>
+                    <td class="label">{{ $taxEnabled ? 'Total TTC' : 'Total' }}</td>
+                    <td class="value">{{ number_format($doc->footer->total_ttc, $decimals, ',', ' ') }} MAD</td>
                 </tr>
                 @if($doc->payments->count())
                 @php
@@ -228,12 +232,12 @@
                 @endphp
                 <tr>
                     <td class="label">Montant payé</td>
-                    <td class="value">{{ number_format($paidSum, 2, ',', ' ') }} MAD</td>
+                    <td class="value">{{ number_format($paidSum, $decimals, ',', ' ') }} MAD</td>
                 </tr>
                 <tr>
                     <td class="label" style="font-weight:bold;">Reste à payer</td>
                     <td class="value" style="color: {{ $dueSum > 0 ? '#dc2626' : '#16a34a' }};">
-                        {{ number_format($dueSum, 2, ',', ' ') }} MAD
+                        {{ number_format($dueSum, $decimals, ',', ' ') }} MAD
                     </td>
                 </tr>
                 @endif
@@ -271,7 +275,7 @@
                     <td>{{ $payment->paid_at ? \Carbon\Carbon::parse($payment->paid_at)->format('d/m/Y') : '—' }}</td>
                     <td>{{ ucfirst($payment->method) }}</td>
                     <td>{{ $payment->reference ?: '—' }}</td>
-                    <td class="right">{{ number_format($payment->amount, 2, ',', ' ') }} MAD</td>
+                    <td class="right">{{ number_format($payment->amount, $decimals, ',', ' ') }} MAD</td>
                     <td>{{ $payment->notes ?: '—' }}</td>
                 </tr>
                 @endforeach
@@ -283,10 +287,10 @@
             $remaining = $totalTtc - $totalPaid;
         @endphp
         <div class="payments-summary">
-            <strong>Total payé :</strong> {{ number_format($totalPaid, 2, ',', ' ') }} MAD
+            <strong>Total payé :</strong> {{ number_format($totalPaid, $decimals, ',', ' ') }} MAD
             @if($remaining > 0)
                 &nbsp;&nbsp;|&nbsp;&nbsp;
-                <strong style="color: #dc2626;">Reste à payer : {{ number_format($remaining, 2, ',', ' ') }} MAD</strong>
+                <strong style="color: #dc2626;">Reste à payer : {{ number_format($remaining, $decimals, ',', ' ') }} MAD</strong>
             @else
                 &nbsp;&nbsp;|&nbsp;&nbsp;
                 <strong style="color: #16a34a;">Entièrement payé</strong>

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Repositories\Contracts\SettingRepositoryInterface;
 use App\Services\DynamicMailService;
+use App\Services\TenantResetService;
 use App\Services\WhatsAppService;
 use App\Models\Setting;
 use Illuminate\Http\JsonResponse;
@@ -29,10 +30,12 @@ class SettingController extends Controller
         'company'  => ['name', 'phone', 'email', 'ice', 'rc', 'if', 'patente', 'address', 'city', 'logo'],
         'general'  => ['company_name', 'phone', 'email'],
         'locale'   => ['currency', 'currency_symbol', 'timezone', 'date_format', 'language'],
-        'invoice'  => ['default_tax_rate', 'payment_terms_days', 'footer_note'],
+        'invoice'  => ['default_tax_rate', 'payment_terms_days', 'footer_note', 'tax_enabled'],
+        'display'  => ['price_decimals'],
         'stock'    => ['autoriser_stock_negatif', 'seuil_alerte_stock'],
         'ventes'   => ['paiement_sur_bl'],
         'whatsapp' => ['twilio_sid', 'twilio_auth_token', 'twilio_whatsapp_from', 'whatsapp_enabled', 'enabled'],
+        'ecommerce' => ['promo_banner', 'promo_banner_enabled', 'primary_color', 'default_theme', 'delivery_threshold', 'address', 'location', 'phone', 'email', 'instagram_url', 'facebook_url', 'whatsapp_number', 'shop_tagline'],
         'email'    => ['mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_encryption', 'mail_from_address', 'mail_from_name', 'mail_enabled'],
         'mail'     => ['enabled'],
     ];
@@ -43,7 +46,10 @@ class SettingController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        return response()->json($this->settings->allByDomain($request->domain));
+        $data = $this->settings->allByDomain($request->domain);
+        $data['tenant_id'] = tenant('id');
+
+        return response()->json($data);
     }
 
     public function upsert(Request $request): JsonResponse
@@ -67,7 +73,7 @@ class SettingController extends Controller
         }
 
         foreach ($data['settings'] as $key => $value) {
-            $this->settings->upsert($data['domain'], $key, $value);
+            $this->settings->upsert($data["domain"], $key, $value ?? "");
         }
 
         return response()->json(['message' => 'Settings saved.']);
@@ -187,6 +193,33 @@ class SettingController extends Controller
     {
         Cache::flush();
         return response()->json(['message' => 'Cache vidé avec succès.']);
+    }
+
+    /**
+     * Wipe all transactions/payments/stock movements for the current
+     * tenant and reset stock levels to zero. Irreversible — gated by
+     * requiring the caller to type the exact tenant id, mirroring how
+     * GitHub gates repo deletion. See TenantResetService for the
+     * deletion order and what's preserved (catalog/users/settings).
+     */
+    public function resetTenantData(Request $request, TenantResetService $service): JsonResponse
+    {
+        $data = $request->validate([
+            'confirm' => ['required', 'string'],
+        ]);
+
+        if ($data['confirm'] !== tenant('id')) {
+            return response()->json([
+                'message' => 'Confirmation invalide. Le texte saisi ne correspond pas à l\'identifiant du tenant.',
+            ], 422);
+        }
+
+        $summary = $service->reset($request->user()->id);
+
+        return response()->json([
+            'message' => 'Données du tenant réinitialisées avec succès.',
+            'summary' => $summary,
+        ]);
     }
 
     /**

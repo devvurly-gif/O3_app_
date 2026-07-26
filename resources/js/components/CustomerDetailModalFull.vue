@@ -3,20 +3,33 @@ import { ref, computed, watch } from 'vue'
 import BaseModal from '@/components/BaseModal.vue'
 import http from '@/services/http'
 import { useFormat } from '@/composables/useFormat'
+import { useSettingStore } from '@/stores/setting'
 
 interface Props {
   modelValue: boolean
   customerId?: number | null
   customer?: any
   type?: 'customer' | 'supplier'
+  allowPayment?: boolean
+  allowEdit?: boolean
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  allowPayment: false,
+  allowEdit: false,
+})
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
+  'record-payment': [customer: any]
+  'edit': [customer: any]
 }>()
 
-const { fmt: formatNumber } = useFormat()
+const { fmt: formatNumber, date: fmtDate } = useFormat()
+const settingStore = useSettingStore()
+
+// "Paiement sur BL" setting: when active, delivery notes count toward
+// the customer's cumulative totals alongside invoices.
+const paiementSurBl = computed(() => settingStore.settings?.ventes?.paiement_sur_bl === 'true')
 
 // State
 const loading = ref(false)
@@ -67,10 +80,42 @@ const creditPercent = computed(() => {
 
 const creditAvailable = computed(() => (customerDetail.value?.seuil_credit ?? 0) - (customerDetail.value?.encours_actuel ?? 0))
 
+/**
+ * Whether a document is a BL that has already been converted to an invoice.
+ * Uses status === 'converted' (set since 2026-05-06) with a fallback for
+ * historical BLs that have an InvoiceSale child but no 'converted' status.
+ */
+function isBilledBl(doc: any): boolean {
+  if (doc.document_type !== 'DeliveryNote') return false
+  if (doc.status === 'converted') return true
+  return (doc.children ?? []).some((c: any) => c.document_type === 'InvoiceSale')
+}
+
+// Documents that should weigh in on the cumulative totals shown in the modal.
+// Only Factures (InvoiceSale) are always counted. BLs (DeliveryNote) are
+// counted only when "paiement sur BL" is active. Billed BLs (converted to
+// invoice) are always excluded to prevent double-counting. Quotes, customer
+// orders, and cancelled/draft documents are excluded.
+const countableDocTypes = computed(() => {
+  const types = ['InvoiceSale']
+  if (paiementSurBl.value) types.push('DeliveryNote')
+  return types
+})
+
+const countableDocuments = computed(() =>
+  customerDocuments.value.filter(
+    (inv: any) =>
+      countableDocTypes.value.includes(inv.document_type) &&
+      inv.status !== 'cancelled' &&
+      inv.status !== 'draft' &&
+      !isBilledBl(inv),
+  ),
+)
+
 // Statistics
 const unpaidCount = computed(() => customerDocuments.value.filter((inv: any) => Number(inv.footer?.amount_due ?? 0) > 0).length)
-const totalTTC = computed(() => customerDocuments.value.reduce((sum: number, inv: any) => sum + Number(inv.footer?.total_ttc ?? 0), 0))
-const totalDue = computed(() => customerDocuments.value.reduce((sum: number, inv: any) => sum + Number(inv.footer?.amount_due ?? 0), 0))
+const totalTTC = computed(() => countableDocuments.value.reduce((sum: number, inv: any) => sum + Number(inv.footer?.total_ttc ?? 0), 0))
+const totalDue = computed(() => countableDocuments.value.reduce((sum: number, inv: any) => sum + Number(inv.footer?.amount_due ?? 0), 0))
 const totalPayments = computed(() => customerPayments.value.reduce((sum: number, p: any) => sum + Number(p.amount ?? 0), 0))
 const paymentRate = computed(() => (totalTTC.value > 0 ? (totalPayments.value / totalTTC.value) * 100 : 0))
 
@@ -90,7 +135,7 @@ async function loadCustomerDetail() {
 
   loading.value = true
   try {
-    const { data } = await http.get(`/third-parties/${idToFetch}`)
+    const { data } = await http.get(`/third-partners/${idToFetch}`)
     customerDetail.value = data
     activeTab.value = 'info'
   } catch (error) {
@@ -116,8 +161,7 @@ function toggleDocumentExpand(docId: number) {
 
 // Helper functions
 function formatDate(date: string) {
-  if (!date) return '—'
-  return new Date(date).toLocaleDateString('fr-FR', { year: 'numeric', month: '2-digit', day: '2-digit' })
+  return fmtDate(date)
 }
 
 function docTypeLabel(type: string) {
@@ -480,7 +524,13 @@ function handleClose() {
             <tfoot>
               <tr class="border-t-2 border-gray-200 dark:border-gray-700 font-semibold bg-gray-50 dark:bg-gray-900">
                 <td colspan="3" class="py-2.5 px-3 text-sm text-gray-600 dark:text-gray-400">
-                  {{ customerDocuments.length }} document(s)
+                  {{ countableDocuments.length }} document(s) comptabilisé(s)
+                  <span
+                    v-if="customerDocuments.length !== countableDocuments.length"
+                    class="text-xs font-normal text-gray-400 dark:text-gray-500 ml-1"
+                  >
+                    (sur {{ customerDocuments.length }} — factures{{ paiementSurBl ? ' + BL' : '' }} uniquement)
+                  </span>
                 </td>
                 <td class="py-2.5 px-3 text-right font-mono">
                   {{ formatNumber(totalTTC) }} <span class="text-gray-400 dark:text-gray-500 text-xs">DH</span>
@@ -500,6 +550,20 @@ function handleClose() {
 
       <!-- TAB: Paiements -->
       <div v-show="activeTab === 'paiements'">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Historique des paiements</h3>
+          <button
+            v-if="allowPayment"
+            type="button"
+            class="flex items-center gap-2 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition"
+            @click="emit('record-payment', customerDetail)"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            Enregistrer un paiement
+          </button>
+        </div>
         <div v-if="customerPayments.length === 0" class="text-center py-12 text-gray-400 dark:text-gray-500">
           <svg
             class="w-12 h-12 mx-auto mb-3 text-gray-300"
@@ -520,14 +584,17 @@ function handleClose() {
           <table class="w-full text-sm">
             <thead>
               <tr class="border-b border-gray-200 dark:border-gray-700 text-left">
+                <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase">Code</th>
                 <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase">Facture</th>
                 <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase">Date</th>
                 <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase">Méthode</th>
                 <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase text-right">Montant</th>
+                <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase">Référence</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
               <tr v-for="pay in customerPayments" :key="pay.id" class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                <td class="py-2.5 px-3 font-mono text-xs">{{ pay.payment_code }}</td>
                 <td class="py-2.5 px-3 font-mono text-xs text-orange-500">{{ pay._doc_code }}</td>
                 <td class="py-2.5 px-3 text-gray-600 dark:text-gray-400">{{ formatDate(pay.paid_at) }}</td>
                 <td class="py-2.5 px-3">
@@ -538,14 +605,16 @@ function handleClose() {
                 <td class="py-2.5 px-3 text-right font-mono font-medium text-emerald-600">
                   {{ formatNumber(Number(pay.amount)) }} <span class="text-gray-400 dark:text-gray-500 text-xs">DH</span>
                 </td>
+                <td class="py-2.5 px-3 text-gray-500 dark:text-gray-400 text-xs">{{ pay.reference || '—' }}</td>
               </tr>
             </tbody>
             <tfoot>
               <tr class="border-t-2 border-gray-200 dark:border-gray-700 font-semibold bg-gray-50 dark:bg-gray-900">
-                <td colspan="3" class="py-2.5 px-3 text-sm text-gray-600 dark:text-gray-400">{{ customerPayments.length }} paiement(s)</td>
+                <td colspan="4" class="py-2.5 px-3 text-sm text-gray-600 dark:text-gray-400">{{ customerPayments.length }} paiement(s)</td>
                 <td class="py-2.5 px-3 text-right font-mono text-emerald-600">
                   {{ formatNumber(totalPayments) }} <span class="text-gray-400 dark:text-gray-500 text-xs">DH</span>
                 </td>
+                <td></td>
               </tr>
             </tfoot>
           </table>
@@ -617,6 +686,20 @@ function handleClose() {
         @click="handleClose"
       >
         Fermer
+      </button>
+      <button
+        v-if="allowEdit"
+        class="px-4 py-2 text-sm font-semibold bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition"
+        @click="handleClose(); emit('edit', customerDetail)"
+      >
+        <svg class="w-4 h-4 inline -mt-0.5 mr-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+          />
+        </svg>
+        Modifier
       </button>
     </template>
   </BaseModal>

@@ -239,6 +239,11 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../pages/settings/ActivityLog.vue'),
     meta: { layout: 'app', title: "Piste d'audit", breadcrumb: "Piste d'audit", adminOnly: true },
   },
+  {
+    path: '/guides',
+    component: () => import('../pages/Guides.vue'),
+    meta: { layout: 'app', title: 'Guides', breadcrumb: "Guides d'utilisation" },
+  },
 
   // ── Central Admin (Tenant Management) ────────────────────────────
   {

@@ -8,6 +8,7 @@ export interface Tenant {
   email: string
   plan: 'starter' | 'business' | 'enterprise'
   is_active: boolean
+  url_ready: boolean | null
   pos_enabled: boolean
   paiement_bl_enabled: boolean
   ecom_enabled: boolean
@@ -92,22 +93,23 @@ export const useTenantStore = defineStore('tenant', () => {
     return data
   }
 
+  async function checkUrlStatus(id: string): Promise<boolean> {
+    const { data } = await http.get(`/central/tenants/${id}/url-status`)
+    const idx = items.value.findIndex(t => t.id === id)
+    if (idx !== -1) items.value[idx].url_ready = data.active
+    return data.active
+  }
+
   async function scrapeProducts(url: string): Promise<{ products: ScrapedProduct[]; source: string; count: number }> {
     const { data } = await http.post('/central/tenants/scrape-products', { url })
     return data
   }
 
   async function importProducts(id: string, products: ScrapedProduct[], category: string): Promise<{ message: string; created: number; skipped: number; errors: string[] }> {
-    const { data } = await http.post(`/central/tenants/${id}/import-products`, { products, category }, { timeout: 600000 }) // 10 min
+    const { data } = await http.post(`/central/tenants/${id}/import-products`, { products, category }, { timeout: 600000 })
     return data
   }
 
-  /**
-   * Download the SaaS service contract template (.docx) for the given tenant.
-   * Triggers a browser download — does NOT return parsed data.
-   *
-   * @param doc 'contrat' (default) or 'fiche' for the subscription intake form.
-   */
   async function downloadContract(id: string, doc: 'contrat' | 'fiche' = 'contrat'): Promise<void> {
     const response = await http.get(`/central/tenants/${id}/contract`, {
       params: { doc: doc === 'fiche' ? 'fiche' : undefined },
@@ -119,7 +121,6 @@ export const useTenantStore = defineStore('tenant', () => {
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    // Try to honor the Content-Disposition filename, fallback to a safe default.
     const cd = (response.headers as Record<string, string>)['content-disposition'] || ''
     const match = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(cd)
     a.download = match?.[1] ? decodeURIComponent(match[1]) : `${doc}-${id}.docx`
@@ -129,10 +130,6 @@ export const useTenantStore = defineStore('tenant', () => {
     window.URL.revokeObjectURL(url)
   }
 
-  /**
-   * Send the contract (and optionally the intake form) by email to the tenant
-   * (or to a custom recipient).
-   */
   async function sendContract(
     id: string,
     payload: { to?: string; cc?: string[]; message?: string; include_intake_form?: boolean } = {},
@@ -145,6 +142,7 @@ export const useTenantStore = defineStore('tenant', () => {
     items, loading, error,
     fetchAll, fetchOne, create, update, remove,
     resetPassword, resetDatabase, purgeFiles,
+    checkUrlStatus,
     scrapeProducts, importProducts,
     downloadContract, sendContract,
   }

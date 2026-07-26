@@ -14,7 +14,7 @@ const route = useRoute()
 const router = useRouter()
 const store = useDocumentStockStore()
 
-const { fmt } = useFormat()
+const { fmt, date } = useFormat()
 const toast = useToastStore()
 
 const doc = ref<DocumentHeader | null>(null)
@@ -228,7 +228,7 @@ async function deleteDocument() {
           <p class="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">
             Date d'émission
           </p>
-          <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ doc.issued_at ?? '—' }}</p>
+          <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ date(doc.issued_at) }}</p>
         </div>
         <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm p-4">
           <p class="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">Créé par</p>

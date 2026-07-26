@@ -10,6 +10,8 @@ use App\Services\CacheService;
 use App\Services\PriceResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class ProductController extends Controller
@@ -37,6 +39,8 @@ class ProductController extends Controller
                     'brand_id'    => $request->brand_id,
                     'p_status'    => $request->has('status') ? $request->boolean('status') : null,
                     'in_stock'    => $request->has('in_stock') ? $request->boolean('in_stock') : null,
+                    'is_ecom'     => $request->has('is_ecom') ? $request->boolean('is_ecom') : null,
+                    'on_promo'    => $request->has('on_promo') ? $request->boolean('on_promo') : null,
                 ], fn ($v) => $v !== null)
             )
         );
@@ -289,5 +293,72 @@ class ProductController extends Controller
         CacheService::flushProducts();
 
         return response()->json(null, 204);
+    }
+
+    /**
+     * Duplicate a product: new SKU/code/EAN/IMEI/slug (identifying
+     * codes must stay unique), variants and price-list tariffs copied,
+     * warehouse stock left at zero (physical inventory isn't cloned).
+     */
+    public function duplicate(Product $product): JsonResponse
+    {
+        $product->load(['images', 'variants', 'priceListItems']);
+
+        $copy = DB::transaction(function () use ($product) {
+            $copy = $product->replicate(['p_sku', 'p_code', 'p_ean13', 'p_imei', 'p_slug']);
+            $copy->p_title = $product->p_title . ' (copie)';
+
+            if ($copy->is_ecom) {
+                $base = Str::slug($copy->p_title);
+                $slug = $base;
+                $i = 1;
+                while (Product::where('p_slug', $slug)->exists()) {
+                    $slug = $base . '-' . $i++;
+                }
+                $copy->p_slug = $slug;
+            }
+
+            $copy->save();
+
+            foreach ($product->images as $image) {
+                $copy->images()->create([
+                    'title'      => $image->title,
+                    'altContent' => $image->altContent,
+                    'url'        => $image->url,
+                    'isPrimary'  => $image->isPrimary,
+                ]);
+            }
+
+            foreach ($product->variants as $variant) {
+                $copy->variants()->create([
+                    'label'      => $variant->label,
+                    'attributes' => $variant->attributes,
+                    'price'      => $variant->price,
+                    'stock'      => 0,
+                    'is_active'  => $variant->is_active,
+                    'position'   => $variant->position,
+                ]);
+            }
+
+            foreach ($product->priceListItems as $item) {
+                $copy->priceListItems()->create([
+                    'price_list_id' => $item->price_list_id,
+                    'price_ht'      => $item->price_ht,
+                    'price_ttc'     => $item->price_ttc,
+                    'min_qty'       => $item->min_qty,
+                    'valid_from'    => $item->valid_from,
+                    'valid_to'      => $item->valid_to,
+                ]);
+            }
+
+            return $copy;
+        });
+
+        CacheService::flushProducts();
+
+        return response()->json(
+            $copy->load(['category', 'brand', 'images', 'primaryImage', 'variants']),
+            201
+        );
     }
 }

@@ -1,17 +1,17 @@
 ﻿<template>
   <div class="space-y-5">
     <!-- Header -->
-    <div class="flex items-center justify-between">
+    <div class="flex items-start justify-between gap-3 flex-wrap">
       <div>
-        <h2 class="text-xl font-bold text-gray-900 dark:text-white">{{ $t('pricelists.title') }}</h2>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{{ $t('pricelists.subtitle') }}</p>
+        <h2 class="text-[26px] sm:text-[30px] font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white">{{ $t('pricelists.title') }}</h2>
+        <p class="text-sm text-[#8A8F9C] dark:text-gray-400 mt-1">{{ $t('pricelists.subtitle') }}</p>
       </div>
       <div class="flex items-center gap-2">
         <button
-          class="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition"
+          class="flex items-center gap-2 px-4 sm:px-5 py-2.5 bg-[#7C5CFC] hover:bg-[#6D4CE0] text-white text-sm font-bold rounded-[11px] shadow-[0_8px_20px_-8px_rgba(124,92,252,0.6)] transition"
           @click="openCreate"
         >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
           </svg>
           {{ $t('pricelists.add') }}
@@ -19,17 +19,48 @@
       </div>
     </div>
 
+    <!-- Stat cards -->
+    <div class="grid grid-cols-3 gap-3 sm:gap-4">
+      <div class="bg-white dark:bg-gray-800 border border-[#ECEEF2] dark:border-gray-700 rounded-2xl p-4 sm:p-5">
+        <div class="w-9 h-9 rounded-[10px] bg-[#EFF1F5] dark:bg-gray-700 flex items-center justify-center mb-3.5">
+          <svg class="w-[17px] h-[17px]" fill="none" stroke="#5B6070" stroke-width="1.6" viewBox="0 0 20 20">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2 3h16v4H2V3zm0 7h11v4H2v-4zm0 7h16v4H2v-4z" />
+          </svg>
+        </div>
+        <div class="text-2xl sm:text-[26px] font-extrabold text-gray-900 dark:text-white">{{ items.length }}</div>
+        <div class="text-[13px] text-[#8A8F9C] dark:text-gray-400 mt-0.5">{{ $t('pricelists.title') }}</div>
+      </div>
+      <div class="bg-white dark:bg-gray-800 border border-[#ECEEF2] dark:border-gray-700 rounded-2xl p-4 sm:p-5">
+        <div class="w-9 h-9 rounded-[10px] bg-[#EAF7F0] dark:bg-[#2FA86B]/20 flex items-center justify-center mb-3.5">
+          <svg class="w-[17px] h-[17px]" fill="none" stroke="#2FA86B" stroke-width="1.8" viewBox="0 0 20 20">
+            <path d="M4 12l4 4 8-9" />
+          </svg>
+        </div>
+        <div class="text-2xl sm:text-[26px] font-extrabold text-gray-900 dark:text-white">{{ statActive }}</div>
+        <div class="text-[13px] text-[#8A8F9C] dark:text-gray-400 mt-0.5">{{ $t('common.active') }}</div>
+      </div>
+      <div class="bg-white dark:bg-gray-800 border border-[#ECEEF2] dark:border-gray-700 rounded-2xl p-4 sm:p-5">
+        <div class="w-9 h-9 rounded-[10px] bg-[#F0F1F4] dark:bg-gray-700 flex items-center justify-center mb-3.5">
+          <svg class="w-[17px] h-[17px]" fill="none" stroke="#7A7F8C" stroke-width="1.8" viewBox="0 0 20 20">
+            <circle cx="10" cy="10" r="7" /><line x1="7" y1="7" x2="13" y2="13" />
+          </svg>
+        </div>
+        <div class="text-2xl sm:text-[26px] font-extrabold text-gray-900 dark:text-white">{{ items.length - statActive }}</div>
+        <div class="text-[13px] text-[#8A8F9C] dark:text-gray-400 mt-0.5">{{ $t('common.inactive') }}</div>
+      </div>
+    </div>
+
     <!-- Filters -->
-    <div class="flex flex-wrap items-center gap-3">
+    <div class="flex flex-wrap items-center gap-2.5 sm:gap-3 bg-white dark:bg-gray-800 border border-[#ECEEF2] dark:border-gray-700 rounded-[14px] p-3">
       <input
         v-model="search"
         type="text"
         :placeholder="$t('pricelists.search')"
-        class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent w-64"
+        class="px-3.5 py-2.5 text-sm rounded-[10px] border border-[#E1E3E9] dark:border-gray-600 bg-[#FAFBFC] dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent w-64"
       />
       <select
         v-model="channelFilter"
-        class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+        class="px-3.5 py-2.5 text-[13px] font-semibold rounded-[10px] border border-[#E1E3E9] dark:border-gray-600 bg-[#FAFBFC] dark:bg-gray-700 text-[#4A4F5B] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
       >
         <option value="">{{ $t('common.allStatus') }}</option>
         <option value="all">{{ $t('pricelists.channelAll') }}</option>
@@ -45,7 +76,7 @@
           <span class="font-medium text-gray-900 dark:text-gray-100">{{ row.name }}</span>
           <span
             v-if="row.is_default"
-            class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 text-orange-600"
+            class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#F1ECFC] text-[#7C5CFC]"
           >
             {{ $t('pricelists.defaultBadge') }}
           </span>
@@ -72,8 +103,8 @@
       </template>
       <template #cell-is_active="{ value }">
         <span
-          class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-          :class="value ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'"
+          class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold"
+          :class="value ? 'bg-[#E5F7ED] text-[#1F8A50]' : 'bg-[#F0F1F4] text-[#7A7F8C]'"
         >
           {{ value ? $t('common.active') : $t('common.inactive') }}
         </span>
@@ -90,7 +121,7 @@
             </svg>
           </button>
           <button
-            class="p-1.5 rounded-lg text-orange-500 hover:bg-orange-50 transition"
+            class="p-1.5 rounded-lg text-[#7C5CFC] hover:bg-[#F1ECFC] transition"
             :title="$t('common.update')"
             @click="openEdit(row)"
           >
@@ -134,7 +165,7 @@
             type="text"
             required
             :placeholder="$t('pricelists.namePlaceholder')"
-            class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
           />
         </div>
         <div>
@@ -144,7 +175,7 @@
           <textarea
             v-model="form.description"
             rows="2"
-            class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
           />
         </div>
         <div class="grid grid-cols-2 gap-4">
@@ -154,7 +185,7 @@
             </label>
             <select
               v-model="form.channel"
-              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
             >
               <option value="all">{{ $t('pricelists.channelAll') }}</option>
               <option value="pos">{{ $t('pricelists.channelPos') }}</option>
@@ -169,7 +200,7 @@
               v-model.number="form.priority"
               type="number"
               min="0"
-              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
             />
           </div>
         </div>
@@ -179,7 +210,7 @@
               id="pl-default"
               v-model="form.is_default"
               type="checkbox"
-              class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-orange-500 focus:ring-orange-500"
+              class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-[#7C5CFC] focus:ring-[#7C5CFC]"
             />
             <label for="pl-default" class="text-sm text-gray-700 dark:text-gray-300">{{ $t('pricelists.isDefault') }}</label>
           </div>
@@ -188,7 +219,7 @@
               id="pl-active"
               v-model="form.is_active"
               type="checkbox"
-              class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-orange-500 focus:ring-orange-500"
+              class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-[#7C5CFC] focus:ring-[#7C5CFC]"
             />
             <label for="pl-active" class="text-sm text-gray-700 dark:text-gray-300">{{ $t('pricelists.isActive') }}</label>
           </div>
@@ -202,7 +233,7 @@
           {{ $t('common.cancel') }}
         </button>
         <button
-          class="px-4 py-2 text-sm font-semibold bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition disabled:opacity-60"
+          class="px-4 py-2 text-sm font-semibold bg-[#7C5CFC] hover:bg-[#6D4CE0] text-white rounded-lg transition disabled:opacity-60"
           :disabled="saving"
           @click="submit"
         >
@@ -224,7 +255,7 @@
               v-model="productSearch"
               type="text"
               :placeholder="$t('pricelists.search')"
-              class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500"
+              class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]"
               @focus="productDropdown = true"
             />
             <div
@@ -235,7 +266,7 @@
                 v-for="p in productResults"
                 :key="p.id"
                 type="button"
-                class="w-full text-left px-3 py-2 text-sm hover:bg-orange-50 dark:hover:bg-gray-700 flex items-center justify-between gap-2"
+                class="w-full text-left px-3 py-2 text-sm hover:bg-[#F1ECFC] dark:hover:bg-gray-700 flex items-center justify-between gap-2"
                 @click="pickProduct(p)"
               >
                 <span class="truncate">{{ p.p_title }}</span>
@@ -252,7 +283,7 @@
               type="number"
               step="0.01"
               min="0"
-              class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500"
+              class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]"
             />
           </div>
           <div class="w-24">
@@ -263,7 +294,7 @@
               v-model.number="newItem.min_qty"
               type="number"
               min="1"
-              class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500"
+              class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]"
             />
           </div>
           <div class="w-36">
@@ -273,7 +304,7 @@
             <input
               v-model="newItem.valid_from"
               type="date"
-              class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500"
+              class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]"
             />
           </div>
           <div class="w-36">
@@ -283,7 +314,7 @@
             <input
               v-model="newItem.valid_to"
               type="date"
-              class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500"
+              class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]"
             />
           </div>
           <button
@@ -437,6 +468,8 @@ const columns = computed(() => [
   { key: 'priority', label: t('pricelists.priority') },
   { key: 'is_active', label: t('common.status') },
 ])
+
+const statActive = computed(() => items.value.filter((r: any) => r.is_active).length)
 
 // ── Filter + paginate ─────────────────────────────────────────────────────
 const filteredRows = computed(() => {

@@ -19,13 +19,10 @@ class StructureIncrementor extends Model
         'si_status',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'si_status'    => 'boolean',
-            'si_nextTrick' => 'integer',
-        ];
-    }
+    protected $casts = [
+        'si_status'    => 'boolean',
+        'si_nextTrick' => 'integer',
+    ];
 
     /**
      * Generate the next code from the template and atomically increment the counter.

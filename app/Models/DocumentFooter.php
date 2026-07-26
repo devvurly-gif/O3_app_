@@ -30,22 +30,19 @@ class DocumentFooter extends Model
         'legal_mentions',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'total_ht'       => 'decimal:2',
-            'total_discount' => 'decimal:2',
-            'total_tax'      => 'decimal:2',
-            'total_ttc'      => 'decimal:2',
-            'amount_paid'    => 'decimal:2',
-            'amount_due'     => 'decimal:2',
-            'is_signed'      => 'boolean',
-            'is_printed'     => 'boolean',
-            'is_sent'        => 'boolean',
-            'sent_via'       => 'array',
-            'payment_date'   => 'date',
-        ];
-    }
+    protected $casts = [
+        'total_ht'       => 'decimal:2',
+        'total_discount' => 'decimal:2',
+        'total_tax'      => 'decimal:2',
+        'total_ttc'      => 'decimal:2',
+        'amount_paid'    => 'decimal:2',
+        'amount_due'     => 'decimal:2',
+        'is_signed'      => 'boolean',
+        'is_printed'     => 'boolean',
+        'is_sent'        => 'boolean',
+        'sent_via'       => 'array',
+        'payment_date'   => 'date',
+    ];
 
     public function header(): BelongsTo
     {

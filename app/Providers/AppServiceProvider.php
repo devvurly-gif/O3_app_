@@ -6,6 +6,7 @@ use App\Mail\Transport\ResendTransport;
 use App\Models\DocumentHeader;
 use App\Models\Payment;
 use App\Models\ProductImage;
+use App\Models\Tenant;
 use App\Observers\DocumentAchatObserver;
 use App\Observers\DocumentHeaderObserver;
 use App\Observers\DocumentNotificationObserver;
@@ -13,6 +14,7 @@ use App\Observers\DocumentVenteObserver;
 use App\Observers\NotificationObserver;
 use App\Observers\PaymentObserver;
 use App\Observers\ProductImageObserver;
+use App\Observers\TenantObserver;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\ServiceProvider;
@@ -37,7 +39,7 @@ class AppServiceProvider extends ServiceProvider
         DocumentHeader::observe(DocumentHeaderObserver::class);
         Payment::observe(PaymentObserver::class);
         ProductImage::observe(ProductImageObserver::class);
-
         DatabaseNotification::observe(NotificationObserver::class);
+        Tenant::observe(TenantObserver::class);
     }
 }

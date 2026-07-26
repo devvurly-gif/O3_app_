@@ -23,6 +23,8 @@ class PosTerminalController extends Controller
             'code'         => ['required', 'string', 'max:50', 'unique:pos_terminals,code'],
             'warehouse_id' => ['required', 'integer', 'exists:warehouses,id'],
             'is_active'    => ['sometimes', 'boolean'],
+            'printer_name' => ['sometimes', 'nullable', 'string', 'max:150'],
+            'auto_print'   => ['sometimes', 'boolean'],
         ]);
 
         $terminal = PosTerminal::create($data);
@@ -42,6 +44,8 @@ class PosTerminalController extends Controller
             'code'         => ['sometimes', 'string', 'max:50', 'unique:pos_terminals,code,' . $terminal->id],
             'warehouse_id' => ['sometimes', 'integer', 'exists:warehouses,id'],
             'is_active'    => ['sometimes', 'boolean'],
+            'printer_name' => ['sometimes', 'nullable', 'string', 'max:150'],
+            'auto_print'   => ['sometimes', 'boolean'],
         ]);
 
         $terminal->update($data);

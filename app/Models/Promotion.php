@@ -38,17 +38,14 @@ class Promotion extends Model
         'priority',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'value'        => 'decimal:2',
-            'min_purchase' => 'decimal:2',
-            'max_discount' => 'decimal:2',
-            'starts_at'    => 'datetime',
-            'ends_at'      => 'datetime',
-            'is_active'    => 'boolean',
-        ];
-    }
+    protected $casts = [
+        'value'        => 'decimal:2',
+        'min_purchase' => 'decimal:2',
+        'max_discount' => 'decimal:2',
+        'starts_at'    => 'datetime',
+        'ends_at'      => 'datetime',
+        'is_active'    => 'boolean',
+    ];
 
     // ── Boot ────────────────────────────────────────────────────
     protected static function booted(): void

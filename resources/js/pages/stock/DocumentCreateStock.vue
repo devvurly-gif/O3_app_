@@ -50,11 +50,19 @@ const header = reactive({
 interface StockLine {
   key: number
   product_id: number | null
+  variant_id: number | null
   designation: string
   reference: string
   quantity: number
   unit: string
   unit_price: number
+}
+
+interface ProductVariant {
+  id: number
+  label: string
+  sku: string | null
+  price: number | null
 }
 
 let lineKeyCounter = 0
@@ -63,6 +71,7 @@ function createEmptyLine(): StockLine {
   return {
     key: ++lineKeyCounter,
     product_id: null,
+    variant_id: null,
     designation: '',
     reference: '',
     quantity: 1,
@@ -88,12 +97,14 @@ const filteredPendingProducts = computed(() => {
 
 function selectPendingProduct(product: Product) {
   pendingLine.product_id = product.id
+  pendingLine.variant_id = null
   pendingLine.designation = product.p_title
   pendingLine.reference = product.p_code ?? ''
   pendingLine.unit = product.p_unit ?? 'pcs'
   pendingLine.unit_price = product.p_purchasePrice ?? 0
   pendingSearch.value = product.p_title
   showPendingDropdown.value = false
+  loadVariants(product.id)
 }
 
 function canAddArticle(): boolean {
@@ -125,11 +136,13 @@ function filteredProducts(lineKey: number): Product[] {
 
 function selectProduct(line: StockLine, product: Product) {
   line.product_id = product.id
+  line.variant_id = null
   line.designation = product.p_title
   line.reference = product.p_code ?? ''
   line.unit = product.p_unit ?? 'pcs'
   line.unit_price = product.p_purchasePrice ?? 0
   delete productSearches[line.key]
+  loadVariants(product.id)
 }
 
 function openProductDropdown(lineKey: number) {
@@ -138,6 +151,19 @@ function openProductDropdown(lineKey: number) {
 function closeProductDropdown() {
   showProductDropdown.value = null
 }
+// ── Variants per product ─────────────────────────────────────────────────
+const variantsMap = reactive<Record<number, ProductVariant[]>>({})
+
+async function loadVariants(productId: number) {
+  if (variantsMap[productId] !== undefined) return
+  try {
+    const { data } = await http.get<ProductVariant[]>(`/products/${productId}/variants`)
+    variantsMap[productId] = data
+  } catch {
+    variantsMap[productId] = []
+  }
+}
+
 function delayedCloseProduct(lineKey: number) {
   setTimeout(() => {
     if (showProductDropdown.value === lineKey) closeProductDropdown()
@@ -222,6 +248,7 @@ async function submit() {
       notes: header.notes || null,
       lines: lines.value.map((l) => ({
         product_id: l.product_id || null,
+        variant_id: l.variant_id || null,
         designation: l.designation,
         reference: l.reference || null,
         quantity: l.quantity,
@@ -411,6 +438,23 @@ async function submit() {
               </div>
             </div>
 
+            <!-- Variant selector (shows only if product has variants) -->
+            <div
+              v-if="pendingLine.product_id && variantsMap[pendingLine.product_id]?.length"
+              class="w-44"
+            >
+              <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Variante</label>
+              <select
+                v-model.number="pendingLine.variant_id"
+                class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-500 transition"
+              >
+                <option :value="null">— Toutes variantes</option>
+                <option v-for="v in variantsMap[pendingLine.product_id]" :key="v.id" :value="v.id">
+                  {{ v.label }}{{ v.sku ? ' · ' + v.sku : '' }}
+                </option>
+              </select>
+            </div>
+
             <!-- Quantity -->
             <div class="w-28">
               <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{{ qtyLabel }}</label>
@@ -520,8 +564,21 @@ async function submit() {
                   </div>
                 </td>
 
+                <!-- Variant (inline in product cell shown below) -->
+
                 <!-- Quantity -->
                 <td class="px-4 py-3 align-top pt-4">
+                  <!-- Variant selector inside qty cell when product has variants -->
+                  <select
+                    v-if="line.product_id && variantsMap[line.product_id]?.length"
+                    v-model.number="line.variant_id"
+                    class="w-full mb-1.5 px-2 py-1 text-xs rounded border border-violet-300 dark:border-violet-700 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-violet-400"
+                  >
+                    <option :value="null">— Variante</option>
+                    <option v-for="v in variantsMap[line.product_id]" :key="v.id" :value="v.id">
+                      {{ v.label }}{{ v.sku ? ' · ' + v.sku : '' }}
+                    </option>
+                  </select>
                   <input
                     v-model.number="line.quantity"
                     type="number"

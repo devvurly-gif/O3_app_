@@ -1,6 +1,7 @@
 ﻿<script setup lang="ts">
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import http from '@/services/http'
+import { useSettingStore } from '@/stores/setting'
 import BaseModal from '@/components/BaseModal.vue'
 import type { ThirdPartner, Warehouse, Product, DocumentIncrementor } from '@/types'
 
@@ -288,6 +289,7 @@ function lineHt(line: LineItem): number {
 }
 
 function lineTax(line: LineItem): number {
+  if (!isTaxEnabled.value) return 0
   return (lineHt(line) * line.tax_percent) / 100
 }
 
@@ -301,6 +303,11 @@ const totalDiscount = computed(() =>
 )
 const totalTax = computed(() => lines.value.reduce((s, l) => s + lineTax(l), 0))
 const totalTtc = computed(() => totalHt.value + totalTax.value)
+const settingStore = useSettingStore()
+const isTaxEnabled = computed(() => {
+  const val = settingStore.settings?.invoice?.tax_enabled
+  return val === undefined || val === 'true'
+})
 
 const filteredPartners = computed(() => {
   const q = partnerSearch.value.toLowerCase().trim()
@@ -419,7 +426,7 @@ function onSubmit() {
         unit: l.unit,
         unit_price: l.unit_price,
         discount_percent: l.discount_percent,
-        tax_percent: l.tax_percent,
+        tax_percent: isTaxEnabled.value ? l.tax_percent : 0,
         line_type: 'product',
       })),
     footer: {
@@ -443,6 +450,7 @@ function setValidationErrors(errors: Record<string, string[]>) {
 defineExpose({ setValidationErrors })
 
 onMounted(async () => {
+  if (!settingStore.settings?.invoice) await settingStore.fetchAll()
   const [incRes, partRes, whRes, prodRes] = await Promise.all([
     http.get<DocumentIncrementor[]>('/document-incrementors'),
     http.get('/third-partners', { params: { per_page: 200 } }),
@@ -490,8 +498,9 @@ onMounted(async () => {
   }
 })
 
-function fmt(n: number): string {
-  return n.toFixed(2)
+function fmt(n: number | string | undefined | null): string {
+  const d = Number(settingStore.settings?.display?.price_decimals ?? 2)
+  return Number(n ?? 0).toFixed(d)
 }
 
 function getStockClass(stock: number): string {
@@ -745,8 +754,8 @@ function getStockClass(stock: number): string {
               <th class="text-left px-3 py-3 w-16">Unité</th>
               <th class="text-right px-3 py-3 w-28">PU HT</th>
               <th class="text-right px-3 py-3 w-20">Remise %</th>
-              <th class="text-right px-3 py-3 w-20">TVA %</th>
-              <th class="text-right px-3 py-3 w-28">Total TTC</th>
+              <th v-if="isTaxEnabled" class="text-right px-3 py-3 w-20">TVA %</th>
+              <th class="text-right px-3 py-3 w-28">{{ isTaxEnabled ? 'Total TTC' : 'Total' }}</th>
               <th class="px-3 py-3 w-10"></th>
             </tr>
           </thead>
@@ -855,7 +864,7 @@ function getStockClass(stock: number): string {
                 />
               </td>
 
-              <td class="px-3 py-2">
+              <td v-if="isTaxEnabled" class="px-3 py-2">
                 <input
                   v-model.number="line.tax_percent"
                   type="number"
@@ -899,7 +908,7 @@ function getStockClass(stock: number): string {
     <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm p-6">
       <div class="flex justify-end">
         <div class="w-72 space-y-3 text-sm">
-          <div class="flex justify-between">
+          <div v-if="isTaxEnabled" class="flex justify-between">
             <span class="text-gray-500 dark:text-gray-400">Total HT</span>
             <span class="font-medium text-gray-800 dark:text-gray-200">{{ fmt(totalHt) }} DH</span>
           </div>
@@ -907,12 +916,12 @@ function getStockClass(stock: number): string {
             <span class="text-gray-500 dark:text-gray-400">Remise</span>
             <span class="font-medium text-red-600 dark:text-red-400">-{{ fmt(totalDiscount) }} DH</span>
           </div>
-          <div class="flex justify-between">
+          <div v-if="isTaxEnabled" class="flex justify-between">
             <span class="text-gray-500 dark:text-gray-400">TVA</span>
             <span class="font-medium text-gray-800 dark:text-gray-200">{{ fmt(totalTax) }} DH</span>
           </div>
           <div class="flex justify-between border-t border-gray-200 dark:border-gray-700 pt-3">
-            <span class="text-gray-900 dark:text-white font-bold text-base">Total TTC</span>
+            <span class="text-gray-900 dark:text-white font-bold text-base">{{ isTaxEnabled ? 'Total TTC' : 'Total' }}</span>
             <span class="text-gray-900 dark:text-white font-bold text-base">{{ fmt(totalTtc) }} DH</span>
           </div>
         </div>

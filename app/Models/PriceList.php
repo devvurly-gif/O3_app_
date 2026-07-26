@@ -17,14 +17,11 @@ class PriceList extends Model
         'priority',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'is_default' => 'boolean',
-            'is_active'  => 'boolean',
-            'priority'   => 'integer',
-        ];
-    }
+    protected $casts = [
+        'is_default' => 'boolean',
+        'is_active'  => 'boolean',
+        'priority'   => 'integer',
+    ];
 
     public function items(): HasMany
     {

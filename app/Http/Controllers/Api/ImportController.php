@@ -136,12 +136,28 @@ class ImportController extends Controller
                     'errors'    => $f->errors(),
                 ])->take(50),
             ], 422);
+        } catch (\Throwable $e) {
+            // A row-level DB error that wasn't caught internally (e.g. an
+            // import class with no per-row isolation) would otherwise bubble
+            // up as a raw 500 and leave the user with no explanation.
+            report($e);
+
+            return response()->json([
+                'message' => "Erreur pendant l'import : ".$e->getMessage(),
+            ], 500);
         }
 
+        // Row-level failures caught internally by the import class (when
+        // supported) — the rest of the file still imported successfully.
+        $rowErrors = method_exists($import, 'getRowErrors') ? $import->getRowErrors() : [];
+
         return response()->json([
-            'message' => 'Import terminé.',
-            'created' => $import->getCreatedCount(),
-            'updated' => $import->getUpdatedCount(),
+            'message'    => $rowErrors
+                ? count($rowErrors).' ligne(s) ignorée(s) suite à une erreur, le reste a été importé.'
+                : 'Import terminé.',
+            'created'    => $import->getCreatedCount(),
+            'updated'    => $import->getUpdatedCount(),
+            'row_errors' => $rowErrors,
         ]);
     }
 

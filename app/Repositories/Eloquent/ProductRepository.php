@@ -14,11 +14,14 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
     }
 
     /**
-     * Override paginate to handle the special `in_stock` filter:
-     *   in_stock = true  → only products with at least one warehouse
+     * Override paginate to handle special filters that don't map to a plain
+     * column comparison:
+     *   in_stock  = true  → only products with at least one warehouse
      *                       whose stockLevel > 0
-     *   in_stock = false → only products with NO warehouse stock > 0
+     *             = false → only products with NO warehouse stock > 0
      *                       (rupture: zero everywhere or no warehouse row at all)
+     *   on_promo  = true  → only products with a currently-active promotion
+     *             = false → only products with no currently-active promotion
      *
      * All other filters fall through to BaseRepository::paginate.
      */
@@ -31,6 +34,9 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
     ): LengthAwarePaginator {
         $inStock = $filters['in_stock'] ?? null;
         unset($filters['in_stock']);
+
+        $onPromo = $filters['on_promo'] ?? null;
+        unset($filters['on_promo']);
 
         // Build the standard query via the parent helper but capture it via
         // a temporary override: we re-implement the foreach to keep the
@@ -61,6 +67,12 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
             $query->whereHas('warehouseStocks', fn ($q) => $q->where('stockLevel', '>', 0));
         } elseif ($inStock === false) {
             $query->whereDoesntHave('warehouseStocks', fn ($q) => $q->where('stockLevel', '>', 0));
+        }
+
+        if ($onPromo === true) {
+            $query->whereHas('promotions', fn ($q) => $q->active());
+        } elseif ($onPromo === false) {
+            $query->whereDoesntHave('promotions', fn ($q) => $q->active());
         }
 
         return $query->orderBy($orderBy, $direction)->paginate($perPage);

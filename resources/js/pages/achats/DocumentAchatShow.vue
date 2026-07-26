@@ -19,7 +19,7 @@ const route = useRoute()
 const router = useRouter()
 const store = useDocumentAchatStore()
 
-const { fmt } = useFormat()
+const { fmt, date } = useFormat()
 const toast = useToastStore()
 const { pdfLoading, downloadPdf: doPdfDownload, previewPdf: doPdfPreview } = usePdf()
 
@@ -439,13 +439,13 @@ const paymentProgress = computed(() => {
           <p class="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">
             Date d'émission
           </p>
-          <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ doc.issued_at ?? '—' }}</p>
+          <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ date(doc.issued_at) }}</p>
         </div>
         <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
           <p class="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">
             Date d'échéance
           </p>
-          <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ doc.due_at ?? '—' }}</p>
+          <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ date(doc.due_at) }}</p>
         </div>
       </div>
 
@@ -517,7 +517,7 @@ const paymentProgress = computed(() => {
                 :key="p.id"
                 class="flex items-center justify-between text-xs bg-gray-50 dark:bg-gray-700 rounded-lg px-3 py-2"
               >
-                <span class="text-gray-600 dark:text-gray-300">{{ p.method }} — {{ p.paid_at }}</span>
+                <span class="text-gray-600 dark:text-gray-300">{{ p.method }} — {{ date(p.paid_at) }}</span>
                 <span class="font-medium text-gray-800 dark:text-gray-200">{{ fmt(p.amount) }} DH</span>
               </div>
             </div>

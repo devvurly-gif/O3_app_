@@ -4,8 +4,10 @@ import { useStockOperationStore } from '@/stores/stock/useStockOperationStore'
 import { useExcelExport } from '@/composables/useExcelExport'
 import BaseTable from '@/components/BaseTable.vue'
 import BasePagination from '@/components/BasePagination.vue'
+import { useFormat } from '@/composables/useFormat'
 
 const store = useStockOperationStore()
+const { date: fmtDate } = useFormat()
 
 const dirFilter = ref('')
 const reasonFilter = ref('')
@@ -55,8 +57,7 @@ const { exporting, exportExcel } = useExcelExport()
 function formatDate(dateStr: string) {
   if (!dateStr) return '—'
   const d = new Date(dateStr)
-  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) +
-    ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+  return fmtDate(d) + ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
 }
 
 function onExport() {
