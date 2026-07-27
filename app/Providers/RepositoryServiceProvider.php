@@ -16,6 +16,8 @@ use App\Repositories\Contracts\PosSessionRepositoryInterface;
 use App\Repositories\Contracts\PosTerminalRepositoryInterface;
 use App\Repositories\Contracts\RoleRepositoryInterface;
 use App\Repositories\Contracts\ProductImageRepositoryInterface;
+use App\Repositories\Contracts\ProductVideoRepositoryInterface;
+use App\Repositories\Contracts\ProductDocumentRepositoryInterface;
 use App\Repositories\Contracts\ProductRepositoryInterface;
 use App\Repositories\Contracts\SettingRepositoryInterface;
 use App\Repositories\Contracts\StockMouvementRepositoryInterface;
@@ -38,6 +40,8 @@ use App\Repositories\Eloquent\PosSessionRepository;
 use App\Repositories\Eloquent\PosTerminalRepository;
 use App\Repositories\Eloquent\RoleRepository;
 use App\Repositories\Eloquent\ProductImageRepository;
+use App\Repositories\Eloquent\ProductVideoRepository;
+use App\Repositories\Eloquent\ProductDocumentRepository;
 use App\Repositories\Eloquent\ProductRepository;
 use App\Repositories\Eloquent\SettingRepository;
 use App\Repositories\Eloquent\StockMouvementRepository;
@@ -63,6 +67,8 @@ class RepositoryServiceProvider extends ServiceProvider
         PosTerminalRepositoryInterface::class          => PosTerminalRepository::class,
         RoleRepositoryInterface::class                 => RoleRepository::class,
         ProductImageRepositoryInterface::class         => ProductImageRepository::class,
+        ProductVideoRepositoryInterface::class         => ProductVideoRepository::class,
+        ProductDocumentRepositoryInterface::class      => ProductDocumentRepository::class,
         ProductRepositoryInterface::class              => ProductRepository::class,
         SettingRepositoryInterface::class              => SettingRepository::class,
         StockMouvementRepositoryInterface::class       => StockMouvementRepository::class,

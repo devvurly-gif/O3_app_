@@ -88,6 +88,16 @@ class Product extends Model
         return $this->hasOne(ProductImage::class, 'product_id')->where('isPrimary', true);
     }
 
+    public function videos(): HasMany
+    {
+        return $this->hasMany(ProductVideo::class, 'product_id');
+    }
+
+    public function documents(): HasMany
+    {
+        return $this->hasMany(ProductDocument::class, 'product_id');
+    }
+
     public function warehouseStocks(): HasMany
     {
         return $this->hasMany(WarehouseHasStock::class, 'product_id');

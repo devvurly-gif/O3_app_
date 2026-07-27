@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import http from '@/services/http'
 import { usePaginatedApi } from '@/composables/usePaginatedApi'
-import type { Product, ProductImage } from '@/types'
+import type { Product, ProductImage, ProductVideo, ProductDocument } from '@/types'
 
 export const useProductStore = defineStore('product', () => {
   const { items, meta, loading, error, params, fetchPage, goToPage } = usePaginatedApi<Product>('/products')
@@ -70,6 +70,44 @@ export const useProductStore = defineStore('product', () => {
     }
   }
 
+  // ── Video actions ─────────────────────────────────────────────────────
+  async function addVideo(productId: number, payload: { title?: string; url: string }): Promise<ProductVideo> {
+    const { data } = await http.post<ProductVideo>(`/products/${productId}/videos`, payload)
+    const idx = items.value.findIndex((p) => p.id === productId)
+    if (idx !== -1) {
+      if (!items.value[idx].videos) items.value[idx].videos = []
+      items.value[idx].videos!.push(data)
+    }
+    return data
+  }
+
+  async function deleteVideo(productId: number, videoId: number): Promise<void> {
+    await http.delete(`/products/${productId}/videos/${videoId}`)
+    const idx = items.value.findIndex((p) => p.id === productId)
+    if (idx !== -1 && items.value[idx].videos) {
+      items.value[idx].videos = items.value[idx].videos!.filter((v) => v.id !== videoId)
+    }
+  }
+
+  // ── Document actions ───────────────────────────────────────────────────
+  async function uploadDocument(productId: number, formData: FormData): Promise<ProductDocument> {
+    const { data } = await http.post<ProductDocument>(`/products/${productId}/documents`, formData)
+    const idx = items.value.findIndex((p) => p.id === productId)
+    if (idx !== -1) {
+      if (!items.value[idx].documents) items.value[idx].documents = []
+      items.value[idx].documents!.push(data)
+    }
+    return data
+  }
+
+  async function deleteDocument(productId: number, documentId: number): Promise<void> {
+    await http.delete(`/products/${productId}/documents/${documentId}`)
+    const idx = items.value.findIndex((p) => p.id === productId)
+    if (idx !== -1 && items.value[idx].documents) {
+      items.value[idx].documents = items.value[idx].documents!.filter((d) => d.id !== documentId)
+    }
+  }
+
   return {
     items,
     meta,
@@ -85,5 +123,9 @@ export const useProductStore = defineStore('product', () => {
     uploadImage,
     setPrimaryImage,
     deleteImage,
+    addVideo,
+    deleteVideo,
+    uploadDocument,
+    deleteDocument,
   }
 })

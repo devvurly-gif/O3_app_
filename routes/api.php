@@ -12,6 +12,8 @@ use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PriceListController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ProductImageController;
+use App\Http\Controllers\Api\ProductVideoController;
+use App\Http\Controllers\Api\ProductDocumentController;
 use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\StockMouvementController;
 use App\Http\Controllers\Api\StockOperationController;
@@ -110,6 +112,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('products/{product}/stock-history',   [ProductController::class, 'stockHistory']);
     Route::get('products/{product}/price-lists',     [ProductController::class, 'priceLists']);
     Route::get('products/{product}/images',          [ProductImageController::class, 'index']);
+    Route::get('products/{product}/videos',          [ProductVideoController::class, 'index']);
+    Route::get('products/{product}/documents',       [ProductDocumentController::class, 'index']);
     Route::get('third-partners',                     [ThirdPartnerController::class, 'index']);
     Route::get('third-partners/{thirdPartner}',      [ThirdPartnerController::class, 'show']);
     Route::get('warehouses',                         [WarehouseController::class, 'index']);
@@ -172,6 +176,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('products/{product}/images',                     [ProductImageController::class, 'store']);
         Route::patch('products/{product}/images/{image}/set-primary',[ProductImageController::class, 'setPrimary']);
         Route::delete('products/{product}/images/{image}',           [ProductImageController::class, 'destroy']);
+
+        Route::post('products/{product}/videos',                     [ProductVideoController::class, 'store']);
+        Route::delete('products/{product}/videos/{video}',           [ProductVideoController::class, 'destroy']);
+
+        Route::post('products/{product}/documents',                  [ProductDocumentController::class, 'store']);
+        Route::delete('products/{product}/documents/{document}',     [ProductDocumentController::class, 'destroy']);
 
         Route::post('storage/products/upload',                       [StorageGalleryController::class, 'upload']);
         Route::post('storage/products/assign',                       [StorageGalleryController::class, 'assign']);

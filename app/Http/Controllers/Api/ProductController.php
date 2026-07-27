@@ -27,7 +27,7 @@ class ProductController extends Controller
         return response()->json(
             $this->products->paginate(
                 perPage: (int) $request->input('per_page', 15),
-                with: ['category', 'brand', 'images', 'primaryImage', 'warehouseStocks'],
+                with: ['category', 'brand', 'images', 'primaryImage', 'videos', 'documents', 'warehouseStocks'],
                 orderBy: $request->input('sort', 'p_title'),
                 direction: $request->input('order', 'asc'),
                 filters: array_filter([
@@ -77,14 +77,14 @@ class ProductController extends Controller
         $product = $this->products->create($data);
         CacheService::flushProducts();
 
-        return response()->json($product->load(['category', 'brand', 'images', 'primaryImage', 'warehouseStocks']), 201);
+        return response()->json($product->load(['category', 'brand', 'images', 'primaryImage', 'videos', 'documents', 'warehouseStocks']), 201);
     }
 
     public function show(Product $product): JsonResponse
     {
         return response()->json(
             $product->load([
-                'category', 'brand', 'images', 'primaryImage',
+                'category', 'brand', 'images', 'primaryImage', 'videos', 'documents',
                 'warehouseStocks.warehouse', 'priceListItems.priceList'
             ])
         );
@@ -272,7 +272,7 @@ class ProductController extends Controller
         $this->products->update($product, $data);
         CacheService::flushProducts();
 
-        return response()->json($product->load(['category', 'brand', 'images', 'primaryImage', 'warehouseStocks']));
+        return response()->json($product->load(['category', 'brand', 'images', 'primaryImage', 'videos', 'documents', 'warehouseStocks']));
     }
 
     /**
@@ -302,7 +302,7 @@ class ProductController extends Controller
      */
     public function duplicate(Product $product): JsonResponse
     {
-        $product->load(['images', 'variants', 'priceListItems']);
+        $product->load(['images', 'videos', 'documents', 'variants', 'priceListItems']);
 
         $copy = DB::transaction(function () use ($product) {
             $copy = $product->replicate(['p_sku', 'p_code', 'p_ean13', 'p_imei', 'p_slug']);
@@ -326,6 +326,23 @@ class ProductController extends Controller
                     'altContent' => $image->altContent,
                     'url'        => $image->url,
                     'isPrimary'  => $image->isPrimary,
+                ]);
+            }
+
+            foreach ($product->videos as $video) {
+                $copy->videos()->create([
+                    'title' => $video->title,
+                    'url'   => $video->url,
+                ]);
+            }
+
+            foreach ($product->documents as $document) {
+                $copy->documents()->create([
+                    'title'     => $document->title,
+                    'file_name' => $document->file_name,
+                    'url'       => $document->url,
+                    'mime_type' => $document->mime_type,
+                    'size'      => $document->size,
                 ]);
             }
 
@@ -357,7 +374,7 @@ class ProductController extends Controller
         CacheService::flushProducts();
 
         return response()->json(
-            $copy->load(['category', 'brand', 'images', 'primaryImage', 'variants']),
+            $copy->load(['category', 'brand', 'images', 'primaryImage', 'videos', 'documents', 'variants']),
             201
         );
     }

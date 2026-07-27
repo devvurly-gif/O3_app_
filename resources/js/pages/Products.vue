@@ -1061,9 +1061,119 @@
             <p v-if="!editImages.length" class="text-xs text-gray-400 dark:text-gray-500 text-center mt-2">
               {{ $t('products.noImages') }}
             </p>
+
+            <!-- Videos section -->
+            <div class="mt-5">
+              <h4 class="font-semibold text-gray-900 dark:text-white text-sm mb-2">{{ $t('products.videos') ?? 'Videos' }}</h4>
+              <div class="space-y-2">
+                <div
+                  v-for="video in editVideos"
+                  :key="video.id"
+                  class="flex items-center gap-2.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900"
+                >
+                  <svg class="w-5 h-5 flex-shrink-0 text-[#7C5CFC]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" />
+                  </svg>
+                  <a :href="video.url" target="_blank" rel="noopener" class="flex-1 min-w-0 truncate text-sm text-gray-700 dark:text-gray-200 hover:underline">
+                    {{ video.title || video.url }}
+                  </a>
+                  <button
+                    type="button"
+                    class="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition flex-shrink-0"
+                    :title="$t('common.delete')"
+                    @click="doDeleteVideo(video)"
+                  >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <p v-if="!editVideos.length" class="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                {{ $t('products.noVideos') ?? 'No videos.' }}
+              </p>
+              <div class="flex flex-col sm:flex-row gap-2 mt-2.5">
+                <input
+                  v-model="newVideoTitle"
+                  type="text"
+                  :placeholder="$t('products.videoTitlePlaceholder') ?? 'Title (optional)'"
+                  class="flex-1 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:text-white"
+                />
+                <input
+                  v-model="newVideoUrl"
+                  type="url"
+                  :placeholder="$t('products.videoUrlPlaceholder') ?? 'https://youtube.com/watch?v=...'"
+                  class="flex-[2] px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:text-white"
+                  @keyup.enter="handleAddVideo"
+                />
+                <button
+                  type="button"
+                  class="px-3 py-1.5 text-xs font-medium bg-[#7C5CFC] text-white rounded-lg hover:bg-[#6D4CE0] transition disabled:opacity-50"
+                  :disabled="addingVideo || !newVideoUrl.trim()"
+                  @click="handleAddVideo"
+                >
+                  {{ addingVideo ? $t('products.uploadingImage') : ($t('products.addVideo') ?? 'Add') }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Documents section -->
+            <div class="mt-5">
+              <h4 class="font-semibold text-gray-900 dark:text-white text-sm mb-2">{{ $t('products.documents') ?? 'Documents' }}</h4>
+              <div class="space-y-2">
+                <div
+                  v-for="doc in editDocuments"
+                  :key="doc.id"
+                  class="flex items-center gap-2.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900"
+                >
+                  <svg class="w-5 h-5 flex-shrink-0 text-[#7C5CFC]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                  </svg>
+                  <a :href="doc.url" target="_blank" rel="noopener" download class="flex-1 min-w-0 truncate text-sm text-gray-700 dark:text-gray-200 hover:underline">
+                    {{ doc.title || doc.file_name }}
+                  </a>
+                  <span v-if="doc.size" class="text-[10px] text-gray-400 flex-shrink-0">{{ (doc.size / 1024).toFixed(0) }} KB</span>
+                  <button
+                    type="button"
+                    class="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition flex-shrink-0"
+                    :title="$t('common.delete')"
+                    @click="doDeleteDocument(doc)"
+                  >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <p v-if="!editDocuments.length" class="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                {{ $t('products.noDocuments') ?? 'No documents.' }}
+              </p>
+              <label
+                class="mt-2.5 flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-blue-400 bg-gray-50 dark:bg-gray-900 cursor-pointer transition text-gray-400 dark:text-gray-500 hover:text-[#7C5CFC] w-fit"
+              >
+                <svg v-if="!uploadingDocument" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                <svg v-else class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                </svg>
+                <span class="text-xs font-medium">
+                  {{ uploadingDocument ? $t('products.uploadingDocument') : ($t('products.addDocument') ?? 'Add document') }}
+                </span>
+                <input
+                  type="file"
+                  multiple
+                  accept=".doc,.docx,.xls,.xlsx,.pdf"
+                  class="hidden"
+                  :disabled="uploadingDocument"
+                  @change="handleDocumentUpload"
+                />
+              </label>
+            </div>
           </div>
           <div v-else class="text-sm text-gray-500 dark:text-gray-400 text-center py-8">
-            {{ $t('products.stockAfterSave') ?? 'Gallery available after saving the product.' }}
+            {{ $t('products.stockAfterSave') ?? 'Media available after saving the product.' }}
           </div>
         </div>
         <!-- Tab: Variantes -->
@@ -1264,12 +1374,18 @@ const showDelete = ref(false)
 const saving = ref(false)
 const deleting = ref(false)
 const uploadingImage = ref(false)
+const uploadingDocument = ref(false)
+const addingVideo = ref(false)
 const editTarget = ref(null)
 const deleteTarget = ref(null)
 const duplicatingId = ref(null)
 
-// Images for the currently-edited product (reactive copy)
+// Images/videos/documents for the currently-edited product (reactive copies)
 const editImages = ref([])
+const editVideos = ref([])
+const editDocuments = ref([])
+const newVideoTitle = ref('')
+const newVideoUrl = ref('')
 
 // Statistics, movements, and price lists for the currently-edited product
 const statistics = ref(null)
@@ -1340,7 +1456,7 @@ const tabs = computed(() => [
   { label: t('products.tabTarifs') ?? 'Tarifs' },
   { label: t('products.tabStock') ?? 'Stock' },
   { label: t('products.tabStatistics') ?? 'Statistics' },
-  { label: t('products.tabGallery') ?? 'Gallery' },
+  { label: t('products.tabGallery') ?? 'Media' },
   ...(variantsEnabled.value ? [{ label: 'Variantes' }] : []),
 ])
 
@@ -1513,6 +1629,8 @@ watch([search, statusFilter, stockFilter, ecomFilter, promoFilter], () => {
 function openCreate() {
   editTarget.value = null
   editImages.value = []
+  editVideos.value = []
+  editDocuments.value = []
   currentTab.value = 0
   Object.assign(form, emptyForm())
   showModal.value = true
@@ -1521,6 +1639,8 @@ function openCreate() {
 async function openEdit(row) {
   editTarget.value = row
   editImages.value = [...(row.images ?? [])]
+  editVideos.value = [...(row.videos ?? [])]
+  editDocuments.value = [...(row.documents ?? [])]
   currentTab.value = 0
   Object.assign(form, {
     p_title: row.p_title,
@@ -1692,6 +1812,70 @@ async function doDeleteImage(img) {
     editImages.value = editImages.value.filter((i) => i.id !== img.id)
     toast.value?.notify(t('products.imageDeleted'), 'success')
     await store.fetchPage()
+  } catch {
+    toast.value?.notify(t('common.failedDelete'), 'error')
+  }
+}
+
+// ── Video links ────────────────────────────────────────────────────────────
+async function handleAddVideo() {
+  const url = newVideoUrl.value.trim()
+  if (!url || !editTarget.value) return
+
+  addingVideo.value = true
+  try {
+    const video = await store.addVideo(editTarget.value.id, {
+      title: newVideoTitle.value.trim() || undefined,
+      url,
+    })
+    editVideos.value.push(video)
+    newVideoTitle.value = ''
+    newVideoUrl.value = ''
+    toast.value?.notify(t('products.videoAdded'), 'success')
+  } catch {
+    toast.value?.notify(t('products.videoFailed'), 'error')
+  } finally {
+    addingVideo.value = false
+  }
+}
+
+async function doDeleteVideo(video) {
+  try {
+    await store.deleteVideo(editTarget.value.id, video.id)
+    editVideos.value = editVideos.value.filter((v) => v.id !== video.id)
+    toast.value?.notify(t('products.videoDeleted'), 'success')
+  } catch {
+    toast.value?.notify(t('common.failedDelete'), 'error')
+  }
+}
+
+// ── Document upload ──────────────────────────────────────────────────────
+async function handleDocumentUpload(e) {
+  const files = e.target.files
+  if (!files || !editTarget.value) return
+  e.target.value = ''
+
+  uploadingDocument.value = true
+  try {
+    for (let i = 0; i < files.length; i++) {
+      const fd = new FormData()
+      fd.append('file', files[i])
+      const doc = await store.uploadDocument(editTarget.value.id, fd)
+      editDocuments.value.push(doc)
+    }
+    toast.value?.notify(t('products.documentUploaded'), 'success')
+  } catch {
+    toast.value?.notify(t('products.documentFailed'), 'error')
+  } finally {
+    uploadingDocument.value = false
+  }
+}
+
+async function doDeleteDocument(doc) {
+  try {
+    await store.deleteDocument(editTarget.value.id, doc.id)
+    editDocuments.value = editDocuments.value.filter((d) => d.id !== doc.id)
+    toast.value?.notify(t('products.documentDeleted'), 'success')
   } catch {
     toast.value?.notify(t('common.failedDelete'), 'error')
   }

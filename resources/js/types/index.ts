@@ -100,6 +100,19 @@ export interface ProductImage extends BaseModel {
   isPrimary: boolean
 }
 
+export interface ProductVideo extends BaseModel {
+  url: string
+  title?: string
+}
+
+export interface ProductDocument extends BaseModel {
+  url: string
+  title?: string
+  file_name?: string
+  mime_type?: string
+  size?: number
+}
+
 export interface Product extends BaseModel {
   p_title: string
   p_code: string
@@ -118,6 +131,8 @@ export interface Product extends BaseModel {
   brand?: Brand
   images?: ProductImage[]
   primary_image?: ProductImage | null
+  videos?: ProductVideo[]
+  documents?: ProductDocument[]
 }
 
 export interface ProductForm {
