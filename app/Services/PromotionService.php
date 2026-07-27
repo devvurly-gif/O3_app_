@@ -169,6 +169,19 @@ class PromotionService
                 'alt'       => $img->altContent,
                 'isPrimary' => $img->isPrimary,
             ]),
+            'videos'            => $product->relationLoaded('videos') ? $product->videos->map(fn ($video) => [
+                'id'    => $video->id,
+                'title' => $video->title,
+                'url'   => $video->url,
+            ]) : [],
+            'documents'         => $product->relationLoaded('documents') ? $product->documents->map(fn ($doc) => [
+                'id'        => $doc->id,
+                'title'     => $doc->title,
+                'file_name' => $doc->file_name,
+                'url'       => $doc->url,
+                'mime_type' => $doc->mime_type,
+                'size'      => $doc->size,
+            ]) : [],
             'is_new'            => $product->created_at->gte(now()->subDays(30)),
             // Promo data
             'has_promo'         => $promoData['has_promo'],

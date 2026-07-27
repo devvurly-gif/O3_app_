@@ -123,7 +123,7 @@ class EcomCatalogueController extends Controller
                 $q->whereNull('brand_id')
                   ->orWhereHas('brand', fn ($b) => $b->where('is_ecom', true));
             })
-            ->with(['primaryImage', 'images', 'category', 'brand', 'warehouseStocks', 'variants.warehouseStocks'])
+            ->with(['primaryImage', 'images', 'videos', 'documents', 'category', 'brand', 'warehouseStocks', 'variants.warehouseStocks'])
             ->firstOrFail();
 
         return response()->json($this->promotionService->transformForEcomWithVariants($product));
