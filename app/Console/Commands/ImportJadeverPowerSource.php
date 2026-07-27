@@ -11,7 +11,7 @@ use Illuminate\Support\Str;
 
 class ImportJadeverPowerSource extends Command
 {
-    protected $signature = 'import:jadever-power-source {tenant=jadema : Tenant ID to import into}';
+    protected $signature = 'import:jadever-power-source {tenant=jadema : Tenant ID to import into} {--fresh : Force-delete any existing products with these SKUs before importing}';
     protected $description = 'Import Jadever "Source d\'energie" (power source) products from jadevermall.com into a single category';
 
     private array $products = [
@@ -126,9 +126,16 @@ class ImportJadeverPowerSource extends Command
             return 1;
         }
 
+        $fresh = $this->option('fresh');
         $this->info('Importing ' . count($this->products) . " Jadever power-source products into tenant '{$tenant->name}'...");
 
-        $tenant->run(function () {
+        $tenant->run(function () use ($fresh) {
+            if ($fresh) {
+                $skus = array_column($this->products, 'sku');
+                $deleted = Product::withTrashed()->whereIn('p_sku', $skus)->forceDelete();
+                $this->warn("Fresh: force-deleted {$deleted} existing product(s) matching these SKUs.");
+            }
+
             $brand = Brand::firstOrCreate(
                 ['br_code' => 'JADEVER'],
                 ['br_title' => 'JADEVER', 'br_status' => true]
