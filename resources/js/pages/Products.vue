@@ -1666,6 +1666,7 @@ async function handleImageUpload(e) {
       }
     }
     toast.value?.notify(`${files.length} image(s) uploaded`, 'success')
+    await store.fetchPage()
   } catch {
     toast.value?.notify(t('products.imageFailed'), 'error')
   } finally {
@@ -1679,6 +1680,7 @@ async function doSetPrimary(img) {
     editImages.value.forEach((i) => {
       i.isPrimary = i.id === img.id
     })
+    await store.fetchPage()
   } catch {
     toast.value?.notify(t('common.failedSave'), 'error')
   }
@@ -1689,6 +1691,7 @@ async function doDeleteImage(img) {
     await store.deleteImage(editTarget.value.id, img.id)
     editImages.value = editImages.value.filter((i) => i.id !== img.id)
     toast.value?.notify(t('products.imageDeleted'), 'success')
+    await store.fetchPage()
   } catch {
     toast.value?.notify(t('common.failedDelete'), 'error')
   }
