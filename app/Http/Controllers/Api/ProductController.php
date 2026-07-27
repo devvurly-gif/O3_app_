@@ -77,7 +77,7 @@ class ProductController extends Controller
         $product = $this->products->create($data);
         CacheService::flushProducts();
 
-        return response()->json($product->load(['category', 'brand']), 201);
+        return response()->json($product->load(['category', 'brand', 'images', 'primaryImage', 'warehouseStocks']), 201);
     }
 
     public function show(Product $product): JsonResponse
@@ -272,7 +272,7 @@ class ProductController extends Controller
         $this->products->update($product, $data);
         CacheService::flushProducts();
 
-        return response()->json($product->load(['category', 'brand']));
+        return response()->json($product->load(['category', 'brand', 'images', 'primaryImage', 'warehouseStocks']));
     }
 
     /**
