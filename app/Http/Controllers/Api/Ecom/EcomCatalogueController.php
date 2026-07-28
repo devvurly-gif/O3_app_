@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Ecom;
 
 use App\Http\Controllers\Controller;
+use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Services\PromotionService;
@@ -71,6 +72,13 @@ class EcomCatalogueController extends Controller
         // Filter: brand
         if ($request->filled('brand_id')) {
             $query->where('brand_id', $request->input('brand_id'));
+        }
+
+        // Filter: price range
+        if ($request->filled('price_min') || $request->filled('price_max')) {
+            $min = $request->input('price_min', 0);
+            $max = $request->input('price_max', PHP_FLOAT_MAX);
+            $query->whereBetween('p_salePrice', [$min, $max]);
         }
 
         // Filter: search
@@ -152,5 +160,30 @@ class EcomCatalogueController extends Controller
             ]);
 
         return response()->json(['data' => $categories]);
+    }
+
+    /**
+     * GET /api/ecom/brands
+     * List brands that have eCom products.
+     */
+    public function brands(): JsonResponse
+    {
+        // Storefront brand list = brands themselves marked
+        // is_ecom = true AND containing at least one published product.
+        $brands = Brand::where('is_ecom', true)
+            ->whereHas('products', function ($q) {
+                $q->where('is_ecom', true)->where('p_status', true);
+            })
+            ->withCount(['products' => fn ($q) => $q->where('is_ecom', true)->where('p_status', true)])
+            ->orderBy('br_title')
+            ->get()
+            ->map(fn ($brand) => [
+                'id'             => $brand->id,
+                'name'           => $brand->br_title,
+                'code'           => $brand->br_code,
+                'products_count' => $brand->products_count,
+            ]);
+
+        return response()->json(['data' => $brands]);
     }
 }

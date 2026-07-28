@@ -413,6 +413,7 @@ Route::prefix('ecom')->middleware(['ecom.key', 'throttle:60,1'])->group(function
     Route::get('products',           [EcomCatalogueController::class, 'products']);
     Route::get('products/{slug}',    [EcomCatalogueController::class, 'product']);
     Route::get('categories',         [EcomCatalogueController::class, 'categories']);
+    Route::get('brands',             [EcomCatalogueController::class, 'brands']);
 
     // Promotions
     Route::get('promotions',         [EcomPromotionController::class, 'index']);
