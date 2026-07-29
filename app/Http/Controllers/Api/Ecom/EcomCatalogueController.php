@@ -90,6 +90,23 @@ class EcomCatalogueController extends Controller
                   ->orWhere('p_ean13', 'like', "%{$search}%")
                   ->orWhere('p_description', 'like', "%{$search}%");
             });
+
+            // Relevance ranking: an exact SKU/EAN/title match (or a title/sku
+            // that starts with the query) surfaces first, ahead of products
+            // that only matched via a substring/description hit. Otherwise
+            // the result the customer searched for could land anywhere in
+            // the grid depending on the secondary sort below.
+            $query->orderByRaw(
+                'CASE
+                    WHEN p_sku = ? THEN 0
+                    WHEN p_ean13 = ? THEN 0
+                    WHEN p_title = ? THEN 1
+                    WHEN p_sku LIKE ? THEN 2
+                    WHEN p_title LIKE ? THEN 3
+                    ELSE 4
+                END',
+                [$search, $search, $search, "{$search}%", "{$search}%"]
+            );
         }
 
         // Sort
