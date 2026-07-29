@@ -1625,8 +1625,16 @@ function buildParams(): Record<string, string> {
 }
 
 function loadPage(page = 1) {
+  const p = buildParams()
   store.params.page = page
-  Object.assign(store.params, buildParams())
+  // Assign every filter explicitly (not just the ones present in `p`) so a
+  // cleared field actually clears the stored param instead of leaving a
+  // stale value behind — usePaginatedApi drops null/'' before the request.
+  store.params.search = p.search ?? null
+  store.params.status = p.status ?? null
+  store.params.in_stock = p.in_stock ?? null
+  store.params.is_ecom = p.is_ecom ?? null
+  store.params.on_promo = p.on_promo ?? null
   store.fetchPage(page)
 }
 
