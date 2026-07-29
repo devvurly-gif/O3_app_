@@ -33,11 +33,19 @@ class EcomOrderController extends Controller
     public function lookupCustomer(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'email' => ['required', 'email', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255', 'required_without:phone'],
+            'phone' => ['nullable', 'string', 'max:50', 'required_without:email'],
         ]);
 
-        $customer = ThirdPartner::where('tp_email', $validated['email'])
-            ->where('tp_Role', 'customer')
+        $customer = ThirdPartner::where('tp_Role', 'customer')
+            ->where(function ($q) use ($validated) {
+                if (!empty($validated['email'])) {
+                    $q->orWhere('tp_email', $validated['email']);
+                }
+                if (!empty($validated['phone'])) {
+                    $q->orWhere('tp_phone', $validated['phone']);
+                }
+            })
             ->first();
 
         if (!$customer) {
@@ -49,6 +57,7 @@ class EcomOrderController extends Controller
             'customer' => [
                 'name'    => $customer->tp_title,
                 'phone'   => $customer->tp_phone,
+                'email'   => $customer->tp_email,
                 'address' => $customer->tp_address,
                 'city'    => $customer->tp_city,
             ],
