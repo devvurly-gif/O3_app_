@@ -61,7 +61,6 @@ export default {
     dashboard: 'Dashboard',
     catalogue: 'Catalogue',
     products: 'Products',
-    productsTrashed: 'Trash',
     categories: 'Categories',
     brands: 'Brands',
     pricelists: 'Price Lists',

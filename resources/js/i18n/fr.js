@@ -61,7 +61,6 @@ export default {
     dashboard: 'Tableau de bord',
     catalogue: 'Catalogue',
     products: 'Produits',
-    productsTrashed: 'Corbeille',
     categories: 'Catégories',
     brands: 'Marques',
     pricelists: 'Tarifs',
