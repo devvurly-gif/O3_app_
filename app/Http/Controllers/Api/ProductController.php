@@ -46,6 +46,32 @@ class ProductController extends Controller
         );
     }
 
+    /**
+     * GET /api/products/trashed
+     * List soft-deleted products so an accidental delete can be restored
+     * instead of re-created (re-creating fails on the p_sku/p_ean13 unique
+     * constraints, which don't exclude soft-deleted rows).
+     */
+    public function trashed(Request $request): JsonResponse
+    {
+        $query = Product::onlyTrashed()
+            ->with(['category', 'brand'])
+            ->orderBy('deleted_at', 'desc');
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('p_title', 'like', "%{$search}%")
+                  ->orWhere('p_sku', 'like', "%{$search}%")
+                  ->orWhere('p_code', 'like', "%{$search}%");
+            });
+        }
+
+        return response()->json(
+            $query->paginate((int) $request->input('per_page', 15))
+        );
+    }
+
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
@@ -293,6 +319,26 @@ class ProductController extends Controller
         CacheService::flushProducts();
 
         return response()->json(null, 204);
+    }
+
+    /**
+     * POST /api/products/{id}/restore
+     * Un-delete a soft-deleted product. Uses a plain {id} route param
+     * (not {product}) since implicit route-model binding excludes
+     * trashed rows.
+     */
+    public function restore(int $id): JsonResponse
+    {
+        $product = Product::withTrashed()->findOrFail($id);
+
+        if (!$product->trashed()) {
+            return response()->json(['message' => "Ce produit n'est pas supprimé."], 422);
+        }
+
+        $product->restore();
+        CacheService::flushProducts();
+
+        return response()->json($product->load(['category', 'brand', 'images', 'primaryImage']));
     }
 
     /**

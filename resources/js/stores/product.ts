@@ -6,6 +6,22 @@ import type { Product, ProductImage, ProductVideo, ProductDocument } from '@/typ
 export const useProductStore = defineStore('product', () => {
   const { items, meta, loading, error, params, fetchPage, goToPage } = usePaginatedApi<Product>('/products')
 
+  const {
+    items: trashedItems,
+    meta: trashedMeta,
+    loading: trashedLoading,
+    error: trashedError,
+    params: trashedParams,
+    fetchPage: fetchTrashedPage,
+    goToPage: goToTrashedPage,
+  } = usePaginatedApi<Product>('/products/trashed')
+
+  async function restore(id: number): Promise<Product> {
+    const { data } = await http.post<Product>(`/products/${id}/restore`)
+    trashedItems.value = trashedItems.value.filter((p) => p.id !== id)
+    return data
+  }
+
   async function create(payload: Partial<Product>): Promise<Product> {
     const { data } = await http.post<Product>('/products', payload)
     items.value.unshift(data)
@@ -120,6 +136,14 @@ export const useProductStore = defineStore('product', () => {
     update,
     remove,
     duplicate,
+    trashedItems,
+    trashedMeta,
+    trashedLoading,
+    trashedError,
+    trashedParams,
+    fetchTrashedPage,
+    goToTrashedPage,
+    restore,
     uploadImage,
     setPrimaryImage,
     deleteImage,

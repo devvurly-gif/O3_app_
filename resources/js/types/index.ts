@@ -133,6 +133,7 @@ export interface Product extends BaseModel {
   primary_image?: ProductImage | null
   videos?: ProductVideo[]
   documents?: ProductDocument[]
+  deleted_at?: string | null
 }
 
 export interface ProductForm {

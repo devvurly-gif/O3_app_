@@ -39,6 +39,11 @@ const routes: RouteRecordRaw[] = [
     meta: { layout: 'app', title: 'Products', breadcrumb: 'Products' },
   },
   {
+    path: '/products/trashed',
+    component: () => import('../pages/ProductsTrashed.vue'),
+    meta: { layout: 'app', title: 'Produits supprimés', breadcrumb: 'Corbeille' },
+  },
+  {
     path: '/categories',
     component: () => import('../pages/Categories.vue'),
     meta: { layout: 'app', title: 'Categories', breadcrumb: 'Categories' },
