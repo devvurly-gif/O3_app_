@@ -3,15 +3,21 @@
 namespace App\Http\Controllers\Api\Ecom;
 
 use App\Http\Controllers\Controller;
+use App\Mail\EcomOrderConfirmationMail;
 use App\Models\DocumentIncrementor;
 use App\Models\Product;
 use App\Models\ThirdPartner;
+use App\Models\User;
 use App\Models\Warehouse;
+use App\Notifications\NewEcomOrderNotification;
 use App\Services\DocumentHeaderService;
+use App\Services\DynamicMailService;
 use App\Services\PriceResolver;
 use App\Services\StockMouvementService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class EcomOrderController extends Controller
 {
@@ -180,10 +186,43 @@ class EcomOrderController extends Controller
         $document->load('lignes');
         $this->stockService->processDocument($document, pending: true);
 
+        $this->sendOrderEmails($document, $customer);
+
         return response()->json([
             'success'     => true,
             'reference'   => $document->reference,
             'document_id' => $document->id,
         ], 201);
+    }
+
+    /**
+     * Send both order emails (customer confirmation + staff new-order alert)
+     * gated by the tenant's "Send Email" toggle in Réglages > Email. Both are
+     * queued (ShouldQueue), so a slow/unreachable SMTP server can never delay
+     * the checkout response — failures are logged, not surfaced to the buyer.
+     */
+    private function sendOrderEmails($document, ThirdPartner $customer): void
+    {
+        if (!DynamicMailService::isEnabled()) {
+            return;
+        }
+
+        try {
+            Mail::to($customer->tp_email)->send(new EcomOrderConfirmationMail($document));
+        } catch (\Throwable $e) {
+            Log::warning("EcomOrder: customer confirmation email failed for {$document->reference}: {$e->getMessage()}");
+        }
+
+        try {
+            $recipients = User::whereHas('role', fn ($q) => $q->whereIn('name', ['admin', 'manager']))
+                ->where('is_active', true)
+                ->get();
+
+            foreach ($recipients as $user) {
+                $user->notify(new NewEcomOrderNotification($document));
+            }
+        } catch (\Throwable $e) {
+            Log::warning("EcomOrder: staff new-order notification failed for {$document->reference}: {$e->getMessage()}");
+        }
     }
 }

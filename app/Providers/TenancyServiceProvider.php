@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Services\DynamicMailService;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
@@ -70,6 +71,14 @@ class TenancyServiceProvider extends ServiceProvider
             Events\InitializingTenancy::class => [],
             Events\TenancyInitialized::class => [
                 Listeners\BootstrapTenancy::class,
+                // Re-apply tenant-scoped mail settings (host/port/creds/from) now that
+                // the DB connection actually points at the tenant's own `settings` table.
+                // DynamicConfigServiceProvider::boot() runs before tenancy is initialized,
+                // so without this, every real send used the central platform's shared
+                // mailer regardless of what a tenant configured — only the "Send Test
+                // Email" endpoint (which calls applySettings() itself, mid-request,
+                // already inside tenant context) ever reflected tenant SMTP settings.
+                fn () => DynamicMailService::applySettings(),
             ],
 
             Events\EndingTenancy::class => [],
