@@ -506,25 +506,25 @@ function round1(v: number) {
 function startDrag(e: PointerEvent, key: FieldKey) {
   e.preventDefault()
   activeField.value = key
-  const el = e.currentTarget as HTMLElement
-  el.setPointerCapture(e.pointerId)
 
   const startX = e.clientX
   const startY = e.clientY
   const origX = layout[key].x
   const origY = layout[key].y
 
+  // Listeners go on window rather than the dragged element so the field keeps
+  // following the cursor even when it briefly leaves the element (or the
+  // canvas) mid-drag — the element itself is only a few millimetres wide.
   const move = (ev: PointerEvent) => {
     layout[key].x = round1(clamp(origX + (ev.clientX - startX) / PX_PER_MM, 0, label.width))
     layout[key].y = round1(clamp(origY + (ev.clientY - startY) / PX_PER_MM, 0, label.height))
   }
-  const up = (ev: PointerEvent) => {
-    el.releasePointerCapture(ev.pointerId)
-    el.removeEventListener('pointermove', move)
-    el.removeEventListener('pointerup', up)
+  const up = () => {
+    window.removeEventListener('pointermove', move)
+    window.removeEventListener('pointerup', up)
   }
-  el.addEventListener('pointermove', move)
-  el.addEventListener('pointerup', up)
+  window.addEventListener('pointermove', move)
+  window.addEventListener('pointerup', up)
 }
 
 // ── Print ────────────────────────────────────────────────────────
