@@ -3,114 +3,256 @@
     <div class="flex items-center justify-between flex-wrap gap-3">
       <div>
         <h1 class="text-xl font-bold text-gray-900 dark:text-white">Étiquettes produits</h1>
-        <p class="text-sm text-gray-500 dark:text-gray-400">Sélectionnez des produits, les champs à afficher, puis imprimez.</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400">Définissez le format, placez les champs, puis imprimez.</p>
       </div>
-      <button
-        type="button"
-        :disabled="!selectedList.length"
-        class="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-2"
-        @click="printLabels"
-      >
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 00-1.913-.247M6.34 18H5.25A2.25 2.25 0 013 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 011.913-.247m10.5 0a48.536 48.536 0 00-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5zm-3 0h.008v.008H15V10.5z" />
-        </svg>
-        Imprimer ({{ totalLabelCount }})
-      </button>
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          class="px-3 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+          @click="resetTemplate"
+        >
+          Réinitialiser
+        </button>
+        <button
+          type="button"
+          :disabled="!selectedList.length"
+          class="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-2"
+          @click="printLabels"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 00-1.913-.247M6.34 18H5.25A2.25 2.25 0 013 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 011.913-.247m10.5 0a48.536 48.536 0 00-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5zm-3 0h.008v.008H15V10.5z" />
+          </svg>
+          Imprimer ({{ totalLabelCount }})
+        </button>
+      </div>
     </div>
 
-    <!-- Options -->
-    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 flex flex-wrap gap-6">
+    <!-- Label format -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 flex flex-wrap items-end gap-5">
       <div>
-        <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Champs à afficher</p>
-        <div class="flex flex-wrap gap-3">
-          <label v-for="f in availableFields" :key="f.key" class="flex items-center gap-1.5 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
-            <input type="checkbox" v-model="fields[f.key]" class="rounded border-gray-300 text-orange-500 focus:ring-orange-500" />
-            {{ f.label }}
-          </label>
-        </div>
+        <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Largeur (mm)</label>
+        <input v-model.number="label.width" type="number" min="10" max="210" step="1" :class="numClass" />
       </div>
       <div>
-        <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Colonnes par page</p>
+        <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Hauteur (mm)</label>
+        <input v-model.number="label.height" type="number" min="10" max="297" step="1" :class="numClass" />
+      </div>
+      <div>
+        <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Format courant</p>
         <div class="flex gap-1.5">
           <button
-            v-for="n in [2, 3, 4, 5]"
-            :key="n"
+            v-for="p in presets"
+            :key="p.label"
             type="button"
-            class="w-8 h-8 rounded-lg text-sm font-medium border transition"
-            :class="columns === n
+            class="px-2.5 h-9 rounded-lg text-xs font-medium border transition"
+            :class="label.width === p.w && label.height === p.h
               ? 'bg-orange-500 border-orange-500 text-white'
               : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'"
-            @click="columns = n"
+            @click="label.width = p.w; label.height = p.h"
           >
-            {{ n }}
+            {{ p.label }}
           </button>
         </div>
+      </div>
+      <div>
+        <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Impression</p>
+        <div class="flex gap-1.5">
+          <button
+            v-for="m in printModes"
+            :key="m.value"
+            type="button"
+            class="px-3 h-9 rounded-lg text-xs font-medium border transition"
+            :class="printMode === m.value
+              ? 'bg-orange-500 border-orange-500 text-white'
+              : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'"
+            @click="printMode = m.value"
+          >
+            {{ m.label }}
+          </button>
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Bordure</label>
+        <label class="flex items-center gap-1.5 h-9 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+          <input v-model="label.border" type="checkbox" class="rounded border-gray-300 text-orange-500 focus:ring-orange-500" />
+          Afficher
+        </label>
       </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <!-- Product picker -->
-      <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 flex flex-col min-h-[420px]">
-        <div class="relative mb-3">
-          <input
-            v-model="search"
-            type="text"
-            placeholder="Rechercher un produit (titre, SKU, code)..."
-            class="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
-          />
-          <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-          </svg>
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+      <!-- ── Designer ─────────────────────────────────────────── -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 space-y-4">
+        <div class="flex items-center justify-between">
+          <p class="text-sm font-semibold text-gray-700 dark:text-gray-300">Maquette</p>
+          <p class="text-xs text-gray-400">Glissez les champs pour les positionner</p>
         </div>
 
-        <div class="flex-1 overflow-y-auto -mx-1 px-1 space-y-1">
-          <div v-if="store.loading" class="text-sm text-gray-400 text-center py-8">Chargement...</div>
-          <div v-else-if="!store.items.length" class="text-sm text-gray-400 text-center py-8">Aucun produit trouvé.</div>
-          <label
-            v-for="p in store.items"
-            :key="p.id"
-            class="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
+        <!-- Canvas -->
+        <div class="bg-gray-100 dark:bg-gray-900 rounded-lg p-6 flex justify-center overflow-auto">
+          <div
+            ref="canvasEl"
+            class="relative bg-white shadow-sm shrink-0"
+            :class="label.border ? 'border border-gray-400' : 'border border-dashed border-gray-300'"
+            :style="{ width: label.width * PX_PER_MM + 'px', height: label.height * PX_PER_MM + 'px' }"
           >
-            <input
-              type="checkbox"
-              :checked="selected.has(p.id)"
-              class="rounded border-gray-300 text-orange-500 focus:ring-orange-500 shrink-0"
-              @change="toggleProduct(p)"
-            />
-            <div class="min-w-0 flex-1">
-              <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ p.p_title }}</p>
-              <p class="text-xs text-gray-400 font-mono">{{ p.p_sku || p.p_code }} <span v-if="p.p_ean13">· {{ p.p_ean13 }}</span></p>
+            <div
+              v-for="f in enabledFields"
+              :key="f.key"
+              class="absolute cursor-move select-none"
+              :class="[
+                activeField === f.key ? 'outline outline-2 outline-orange-500' : 'hover:outline hover:outline-1 hover:outline-orange-300',
+                layout[f.key].boxed ? 'border-2 border-black px-1' : '',
+              ]"
+              :style="fieldStyle(f.key)"
+              @pointerdown="startDrag($event, f.key)"
+            >
+              <img
+                v-if="f.key === 'barcode'"
+                :src="sampleBarcode"
+                class="pointer-events-none block"
+                :style="{ width: layout.barcode.size * PX_PER_MM + 'px', height: layout.barcode.height * PX_PER_MM + 'px' }"
+                draggable="false"
+              />
+              <span v-else class="pointer-events-none whitespace-nowrap leading-none">{{ fieldText(f.key, sampleProduct) }}</span>
             </div>
-            <span class="text-sm font-semibold text-gray-700 dark:text-gray-300 shrink-0">{{ Number(p.p_salePrice).toFixed(2) }} DH</span>
-          </label>
+          </div>
         </div>
 
-        <BasePagination
-          v-if="store.meta.last_page > 1"
-          :current-page="store.meta.current_page"
-          :last-page="store.meta.last_page"
-          :total="store.meta.total"
-          :per-page="store.meta.per_page"
-          class="mt-3"
-          @change="store.goToPage"
-        />
+        <!-- Field controls -->
+        <div class="overflow-x-auto -mx-1 px-1">
+          <table class="w-full text-xs">
+            <thead>
+              <tr class="text-gray-400 dark:text-gray-500">
+                <th class="text-left font-medium py-1.5 pr-2">Champ</th>
+                <th class="font-medium py-1.5 px-1 w-16">X (mm)</th>
+                <th class="font-medium py-1.5 px-1 w-16">Y (mm)</th>
+                <th class="font-medium py-1.5 px-1 w-16">{{ 'Taille' }}</th>
+                <th class="font-medium py-1.5 px-1 w-16">Haut.</th>
+                <th class="font-medium py-1.5 px-1 w-10">G</th>
+                <th class="font-medium py-1.5 px-1 w-10">Cadre</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="f in availableFields"
+                :key="f.key"
+                class="border-t border-gray-100 dark:border-gray-700"
+                :class="activeField === f.key ? 'bg-orange-50 dark:bg-orange-900/20' : ''"
+              >
+                <td class="py-1.5 pr-2">
+                  <label class="flex items-center gap-1.5 cursor-pointer text-gray-700 dark:text-gray-300">
+                    <input
+                      v-model="layout[f.key].enabled"
+                      type="checkbox"
+                      class="rounded border-gray-300 text-orange-500 focus:ring-orange-500"
+                    />
+                    {{ f.label }}
+                  </label>
+                </td>
+                <td class="px-1"><input v-model.number="layout[f.key].x" :disabled="!layout[f.key].enabled" type="number" step="0.5" :class="cellClass" /></td>
+                <td class="px-1"><input v-model.number="layout[f.key].y" :disabled="!layout[f.key].enabled" type="number" step="0.5" :class="cellClass" /></td>
+                <td class="px-1"><input v-model.number="layout[f.key].size" :disabled="!layout[f.key].enabled" type="number" step="0.5" min="1" :class="cellClass" /></td>
+                <td class="px-1">
+                  <input
+                    v-if="f.key === 'barcode'"
+                    v-model.number="layout.barcode.height"
+                    :disabled="!layout.barcode.enabled"
+                    type="number"
+                    step="0.5"
+                    min="1"
+                    :class="cellClass"
+                  />
+                  <span v-else class="text-gray-300 dark:text-gray-600">—</span>
+                </td>
+                <td class="px-1 text-center">
+                  <input
+                    v-if="f.key !== 'barcode'"
+                    v-model="layout[f.key].bold"
+                    :disabled="!layout[f.key].enabled"
+                    type="checkbox"
+                    class="rounded border-gray-300 text-orange-500 focus:ring-orange-500"
+                  />
+                </td>
+                <td class="px-1 text-center">
+                  <input
+                    v-if="f.key !== 'barcode'"
+                    v-model="layout[f.key].boxed"
+                    :disabled="!layout[f.key].enabled"
+                    type="checkbox"
+                    class="rounded border-gray-300 text-orange-500 focus:ring-orange-500"
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="text-[11px] text-gray-400 mt-2">
+            « Taille » = corps du texte en pt (largeur en mm pour le code-barres). « G » = gras.
+          </p>
+        </div>
       </div>
 
-      <!-- Selected products + preview -->
-      <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 flex flex-col min-h-[420px]">
-        <div class="flex items-center justify-between mb-3">
-          <p class="text-sm font-semibold text-gray-700 dark:text-gray-300">Sélection ({{ selectedList.length }})</p>
-          <button v-if="selectedList.length" type="button" class="text-xs text-red-500 hover:underline" @click="clearSelection">
-            Tout retirer
-          </button>
+      <!-- ── Products ─────────────────────────────────────────── -->
+      <div class="space-y-4">
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 flex flex-col h-[400px]">
+          <div class="relative mb-3">
+            <input
+              v-model="search"
+              type="text"
+              placeholder="Rechercher un produit (titre, SKU, code)..."
+              class="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
+            />
+            <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+            </svg>
+          </div>
+
+          <div class="flex-1 overflow-y-auto -mx-1 px-1 space-y-1">
+            <div v-if="store.loading" class="text-sm text-gray-400 text-center py-8">Chargement...</div>
+            <div v-else-if="!store.items.length" class="text-sm text-gray-400 text-center py-8">Aucun produit trouvé.</div>
+            <label
+              v-for="p in store.items"
+              :key="p.id"
+              class="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
+            >
+              <input
+                type="checkbox"
+                :checked="selected.has(p.id)"
+                class="rounded border-gray-300 text-orange-500 focus:ring-orange-500 shrink-0"
+                @change="toggleProduct(p)"
+              />
+              <div class="min-w-0 flex-1">
+                <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ p.p_title }}</p>
+                <p class="text-xs text-gray-400 font-mono">{{ p.p_sku || p.p_code }} <span v-if="p.p_ean13">· {{ p.p_ean13 }}</span></p>
+              </div>
+              <span class="text-sm font-semibold text-gray-700 dark:text-gray-300 shrink-0">{{ formatPriceDh(Number(p.p_salePrice)) }}</span>
+            </label>
+          </div>
+
+          <BasePagination
+            v-if="store.meta.last_page > 1"
+            :current-page="store.meta.current_page"
+            :last-page="store.meta.last_page"
+            :total="store.meta.total"
+            :per-page="store.meta.per_page"
+            class="mt-3"
+            @change="store.goToPage"
+          />
         </div>
 
-        <div v-if="!selectedList.length" class="flex-1 flex items-center justify-center text-sm text-gray-400 text-center px-6">
-          Cochez des produits à gauche pour prévisualiser leurs étiquettes ici.
-        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+          <div class="flex items-center justify-between mb-3">
+            <p class="text-sm font-semibold text-gray-700 dark:text-gray-300">Sélection ({{ selectedList.length }})</p>
+            <button v-if="selectedList.length" type="button" class="text-xs text-red-500 hover:underline" @click="clearSelection">
+              Tout retirer
+            </button>
+          </div>
 
-        <template v-else>
-          <div class="space-y-1 mb-4 max-h-40 overflow-y-auto">
+          <p v-if="!selectedList.length" class="text-sm text-gray-400 py-4 text-center">
+            Cochez des produits ci-dessus. La maquette utilise le premier produit sélectionné comme aperçu.
+          </p>
+
+          <div v-else class="space-y-1 max-h-48 overflow-y-auto">
             <div v-for="s in selectedList" :key="s.product.id" class="flex items-center gap-2 text-sm px-2 py-1.5 rounded-lg bg-gray-50 dark:bg-gray-900">
               <span class="flex-1 truncate text-gray-800 dark:text-gray-200">{{ s.product.p_title }}</span>
               <input
@@ -127,26 +269,14 @@
               </button>
             </div>
           </div>
-
-          <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Aperçu</p>
-          <div class="flex-1 overflow-y-auto bg-gray-100 dark:bg-gray-900 rounded-lg p-3">
-            <div class="grid gap-2" :style="{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }">
-              <LabelCard
-                v-for="(item, idx) in previewLabels"
-                :key="idx"
-                :product="item.product"
-                :show-fields="fields"
-              />
-            </div>
-          </div>
-        </template>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch, onMounted, h, defineComponent } from 'vue'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useProductStore } from '@/stores/product'
 import BasePagination from '@/components/BasePagination.vue'
 import type { Product } from '@/types'
@@ -154,6 +284,17 @@ import { renderBarcodeDataUrl } from '@/composables/useBarcode'
 
 const store = useProductStore()
 
+// Preview scale: how many screen pixels represent one millimetre.
+const PX_PER_MM = 5
+// 1pt = 1/72 inch = 0.3528mm — used to show pt font sizes at canvas scale.
+const PT_TO_MM = 0.352778
+
+const numClass =
+  'w-24 h-9 px-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500'
+const cellClass =
+  'w-full px-1 py-1 text-center rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 disabled:opacity-40 focus:outline-none focus:ring-1 focus:ring-orange-500'
+
+// ── Search / listing ─────────────────────────────────────────────
 const search = ref('')
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
 watch(search, (val) => {
@@ -167,47 +308,117 @@ watch(search, (val) => {
 onMounted(() => {
   store.params.per_page = 20
   store.fetchPage(1)
+  loadTemplate()
 })
 
-// ── Field selection ──────────────────────────────────────────────
+// ── Template (label format + per-field placement) ────────────────
 const availableFields = [
   { key: 'title', label: 'Titre' },
-  { key: 'barcode', label: 'Code-barres (EAN13)' },
+  { key: 'barcode', label: 'Code-barres' },
   { key: 'sku', label: 'SKU' },
   { key: 'salePrice', label: 'Prix de vente' },
   { key: 'purchasePrice', label: "Prix d'achat" },
   { key: 'category', label: 'Catégorie' },
   { key: 'brand', label: 'Marque' },
 ] as const
-type FieldKey = typeof availableFields[number]['key']
+type FieldKey = (typeof availableFields)[number]['key']
 
-const fields = reactive<Record<FieldKey, boolean>>({
-  title: true,
-  barcode: true,
-  sku: false,
-  salePrice: true,
-  purchasePrice: false,
-  category: false,
-  brand: true,
-})
-
-function formatPriceDh(value: number): string {
-  return value.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' dhs'
+interface FieldLayout {
+  enabled: boolean
+  x: number // mm from left edge
+  y: number // mm from top edge
+  size: number // pt for text, mm width for the barcode
+  height: number // mm, barcode only
+  bold: boolean
+  boxed: boolean
 }
 
-const columns = ref(3)
+const presets = [
+  { label: '50×30', w: 50, h: 30 },
+  { label: '40×30', w: 40, h: 30 },
+  { label: '60×40', w: 60, h: 40 },
+  { label: '100×50', w: 100, h: 50 },
+]
 
-// ── Selection state ──────────────────────────────────────────────
-interface SelectedEntry { product: Product; qty: number }
+const printModes = [
+  { value: 'sheet' as const, label: 'Planche A4' },
+  { value: 'roll' as const, label: 'Rouleau' },
+]
+
+function defaultLabel() {
+  return { width: 50, height: 30, border: true }
+}
+
+function defaultLayout(): Record<FieldKey, FieldLayout> {
+  return {
+    title: { enabled: true, x: 2, y: 2, size: 8, height: 0, bold: true, boxed: false },
+    barcode: { enabled: true, x: 8, y: 8, size: 34, height: 11, bold: false, boxed: false },
+    sku: { enabled: false, x: 2, y: 6, size: 6, height: 0, bold: false, boxed: false },
+    salePrice: { enabled: true, x: 28, y: 23, size: 10, height: 0, bold: true, boxed: true },
+    purchasePrice: { enabled: false, x: 2, y: 20, size: 6, height: 0, bold: false, boxed: false },
+    category: { enabled: false, x: 2, y: 6, size: 6, height: 0, bold: false, boxed: false },
+    brand: { enabled: true, x: 2, y: 24, size: 8, height: 0, bold: true, boxed: false },
+  }
+}
+
+const label = reactive(defaultLabel())
+const layout = reactive<Record<FieldKey, FieldLayout>>(defaultLayout())
+const printMode = ref<'sheet' | 'roll'>('sheet')
+
+const enabledFields = computed(() => availableFields.filter((f) => layout[f.key].enabled))
+
+// ── Persistence (per tenant — each runs on its own origin) ───────
+const STORAGE_KEY = 'o3.labelTemplate.v1'
+
+function saveTemplate() {
+  try {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ label: { ...label }, layout: JSON.parse(JSON.stringify(layout)), printMode: printMode.value })
+    )
+  } catch {
+    // storage unavailable (private mode / quota) — the designer still works,
+    // the template just won't survive a reload.
+  }
+}
+
+function loadTemplate() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return
+    const saved = JSON.parse(raw)
+    if (saved.label) Object.assign(label, saved.label)
+    if (saved.printMode) printMode.value = saved.printMode
+    if (saved.layout) {
+      for (const f of availableFields) {
+        if (saved.layout[f.key]) Object.assign(layout[f.key], saved.layout[f.key])
+      }
+    }
+  } catch {
+    // corrupt payload — fall back to defaults rather than breaking the page.
+  }
+}
+
+function resetTemplate() {
+  Object.assign(label, defaultLabel())
+  const d = defaultLayout()
+  for (const f of availableFields) Object.assign(layout[f.key], d[f.key])
+  printMode.value = 'sheet'
+}
+
+watch([label, layout, printMode], saveTemplate, { deep: true })
+
+// ── Selection ────────────────────────────────────────────────────
+interface SelectedEntry {
+  product: Product
+  qty: number
+}
 const selected = reactive(new Map<number, SelectedEntry>())
 const selectedList = computed(() => Array.from(selected.values()))
 
 function toggleProduct(p: Product) {
-  if (selected.has(p.id)) {
-    selected.delete(p.id)
-  } else {
-    selected.set(p.id, { product: p, qty: 1 })
-  }
+  if (selected.has(p.id)) selected.delete(p.id)
+  else selected.set(p.id, { product: p, qty: 1 })
 }
 function removeProduct(id: number) {
   selected.delete(id)
@@ -217,84 +428,129 @@ function clearSelection() {
 }
 
 const previewLabels = computed(() => {
-  const out: { product: Product }[] = []
+  const out: Product[] = []
   for (const s of selectedList.value) {
-    for (let i = 0; i < Math.max(1, s.qty || 1); i++) out.push({ product: s.product })
+    for (let i = 0; i < Math.max(1, s.qty || 1); i++) out.push(s.product)
   }
   return out
 })
 const totalLabelCount = computed(() => previewLabels.value.length)
 
-// ── Label preview card (also reused to build the print HTML) ─────
-// Layout mirrors the ZebraDesigner template: title top-left, small
-// meta (SKU/category/purchase price if enabled) under it, barcode
-// centered, brand bottom-left, sale price boxed bottom-right.
-const LabelCard = defineComponent({
-  props: { product: { type: Object as () => Product, required: true }, showFields: { type: Object, required: true } },
-  setup(props) {
-    return () => {
-      const p = props.product
-      const f = props.showFields
-      const meta: string[] = []
-      if (f.sku && (p.p_sku || p.p_code)) meta.push(String(p.p_sku || p.p_code))
-      if (f.category && p.category) meta.push(p.category.ctg_title)
-      if (f.purchasePrice) meta.push('Achat: ' + formatPriceDh(Number(p.p_purchasePrice)))
+// The designer needs something to draw before any product is picked.
+const PLACEHOLDER = {
+  id: 0,
+  p_title: 'Nom du produit',
+  p_code: 'PRD-0000',
+  p_sku: 'SKU-0000',
+  p_ean13: '6923736790424',
+  p_salePrice: 699,
+  p_purchasePrice: 500,
+  category: { ctg_title: 'Catégorie' },
+  brand: { br_title: 'MARQUE' },
+} as unknown as Product
 
-      return h('div', { class: 'bg-white border border-gray-300 rounded-md p-2.5 flex flex-col gap-1.5 text-left' }, [
-        f.title ? h('p', { class: 'text-[12px] font-bold text-gray-900 leading-tight line-clamp-2' }, p.p_title) : null,
-        meta.length ? h('p', { class: 'text-[8px] text-gray-500' }, meta.join(' · ')) : null,
-        f.barcode
-          ? h('div', { class: 'flex justify-center py-1' }, [
-              p.p_ean13
-                ? h('img', { src: renderBarcodeDataUrl(p.p_ean13), class: 'max-w-[85%] h-auto' })
-                : h('p', { class: 'text-[9px] text-gray-400 italic' }, 'Pas de code EAN'),
-            ])
-          : null,
-        (f.brand || f.salePrice)
-          ? h('div', { class: 'flex items-end justify-between mt-auto pt-1' }, [
-              f.brand && p.brand ? h('p', { class: 'text-[11px] font-bold text-gray-900' }, p.brand.br_title) : h('span'),
-              f.salePrice
-                ? h('div', { class: 'border-2 border-gray-900 rounded px-1.5 py-0.5' }, [
-                    h('p', { class: 'text-[13px] font-bold text-gray-900 leading-none' }, formatPriceDh(Number(p.p_salePrice))),
-                  ])
-                : null,
-            ])
-          : null,
-      ].filter(Boolean))
-    }
-  },
-})
+const sampleProduct = computed<Product>(() => selectedList.value[0]?.product ?? PLACEHOLDER)
+const sampleBarcode = computed(() =>
+  sampleProduct.value.p_ean13 ? renderBarcodeDataUrl(sampleProduct.value.p_ean13) : renderBarcodeDataUrl('6923736790424')
+)
 
-// ── Print ──────────────────────────────────────────────────────────
+// ── Field content ────────────────────────────────────────────────
+function formatPriceDh(value: number): string {
+  return value.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' dhs'
+}
+
+function fieldText(key: FieldKey, p: Product): string {
+  switch (key) {
+    case 'title':
+      return p.p_title
+    case 'sku':
+      return p.p_sku || p.p_code
+    case 'salePrice':
+      return formatPriceDh(Number(p.p_salePrice))
+    case 'purchasePrice':
+      return formatPriceDh(Number(p.p_purchasePrice))
+    case 'category':
+      return p.category?.ctg_title ?? ''
+    case 'brand':
+      return p.brand?.br_title ?? ''
+    default:
+      return ''
+  }
+}
+
+function fieldStyle(key: FieldKey) {
+  const f = layout[key]
+  const base: Record<string, string> = {
+    left: f.x * PX_PER_MM + 'px',
+    top: f.y * PX_PER_MM + 'px',
+  }
+  if (key !== 'barcode') {
+    base.fontSize = f.size * PT_TO_MM * PX_PER_MM + 'px'
+    base.fontWeight = f.bold ? '700' : '400'
+    base.color = '#111827'
+  }
+  return base
+}
+
+// ── Drag to position ─────────────────────────────────────────────
+const canvasEl = ref<HTMLElement | null>(null)
+const activeField = ref<FieldKey | null>(null)
+
+function clamp(v: number, min: number, max: number) {
+  return Math.min(Math.max(v, min), max)
+}
+function round1(v: number) {
+  return Math.round(v * 2) / 2
+}
+
+function startDrag(e: PointerEvent, key: FieldKey) {
+  e.preventDefault()
+  activeField.value = key
+  const el = e.currentTarget as HTMLElement
+  el.setPointerCapture(e.pointerId)
+
+  const startX = e.clientX
+  const startY = e.clientY
+  const origX = layout[key].x
+  const origY = layout[key].y
+
+  const move = (ev: PointerEvent) => {
+    layout[key].x = round1(clamp(origX + (ev.clientX - startX) / PX_PER_MM, 0, label.width))
+    layout[key].y = round1(clamp(origY + (ev.clientY - startY) / PX_PER_MM, 0, label.height))
+  }
+  const up = (ev: PointerEvent) => {
+    el.releasePointerCapture(ev.pointerId)
+    el.removeEventListener('pointermove', move)
+    el.removeEventListener('pointerup', up)
+  }
+  el.addEventListener('pointermove', move)
+  el.addEventListener('pointerup', up)
+}
+
+// ── Print ────────────────────────────────────────────────────────
 function esc(v: unknown): string {
-  return String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string))
+  return String(v ?? '').replace(
+    /[&<>"']/g,
+    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string
+  )
 }
 
 function labelHtml(p: Product): string {
-  const parts: string[] = []
-  if (fields.title) parts.push(`<div class="t">${esc(p.p_title)}</div>`)
+  const parts = enabledFields.value.map((f) => {
+    const l = layout[f.key]
+    const pos = `position:absolute;left:${l.x}mm;top:${l.y}mm;`
 
-  const meta: string[] = []
-  if (fields.sku && (p.p_sku || p.p_code)) meta.push(esc(p.p_sku || p.p_code))
-  if (fields.category && p.category) meta.push(esc(p.category.ctg_title))
-  if (fields.purchasePrice) meta.push('Achat: ' + esc(formatPriceDh(Number(p.p_purchasePrice))))
-  if (meta.length) parts.push(`<div class="meta">${meta.join(' &middot; ')}</div>`)
+    if (f.key === 'barcode') {
+      const src = p.p_ean13 ? renderBarcodeDataUrl(p.p_ean13) : ''
+      return src
+        ? `<img style="${pos}width:${l.size}mm;height:${l.height}mm" src="${src}" />`
+        : `<div style="${pos}font-size:6pt;color:#9ca3af;font-style:italic">Pas de code EAN</div>`
+    }
 
-  if (fields.barcode) {
-    parts.push(
-      `<div class="bc-wrap">` +
-      (p.p_ean13
-        ? `<img class="bc" src="${renderBarcodeDataUrl(p.p_ean13)}" />`
-        : `<div class="meta italic">Pas de code EAN</div>`) +
-      `</div>`
-    )
-  }
-
-  if (fields.brand || fields.salePrice) {
-    const brandHtml = fields.brand && p.brand ? `<div class="brand">${esc(p.brand.br_title)}</div>` : `<div></div>`
-    const priceHtml = fields.salePrice ? `<div class="price-box"><div class="price">${esc(formatPriceDh(Number(p.p_salePrice)))}</div></div>` : ''
-    parts.push(`<div class="bottom-row">${brandHtml}${priceHtml}</div>`)
-  }
+    const box = l.boxed ? 'border:1.5pt solid #111827;padding:0.3mm 1mm;' : ''
+    const style = `${pos}font-size:${l.size}pt;font-weight:${l.bold ? 700 : 400};line-height:1;white-space:nowrap;${box}`
+    return `<div style="${style}">${esc(fieldText(f.key, p))}</div>`
+  })
 
   return `<div class="label">${parts.join('')}</div>`
 }
@@ -302,24 +558,33 @@ function labelHtml(p: Product): string {
 function printLabels() {
   if (!previewLabels.value.length) return
 
-  const labels = previewLabels.value.map((l) => labelHtml(l.product)).join('')
+  const labels = previewLabels.value.map(labelHtml).join('')
+  const border = label.border ? 'border:0.2mm solid #9ca3af;' : ''
+
+  // Roll printers (e.g. Zebra GC420t) feed one label at a time, so the page
+  // itself is the label. Sheet mode flows them across an A4 page instead.
+  const pageCss =
+    printMode.value === 'roll'
+      ? `@page { size: ${label.width}mm ${label.height}mm; margin: 0; }
+         .label { page-break-after: always; }`
+      : `@page { size: A4; margin: 8mm; }
+         .label { margin: 0 2mm 2mm 0; }`
 
   const html = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>Étiquettes produits</title>
 <style>
-  @page { size: A4; margin: 10mm; }
-  body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; }
-  .sheet { display: grid; grid-template-columns: repeat(${columns.value}, 1fr); gap: 3mm; }
-  .label { border: 1px solid #d1d5db; border-radius: 3mm; padding: 3.5mm; display: flex; flex-direction: column; gap: 1.5mm; text-align: left; page-break-inside: avoid; }
-  .t { font-size: 11px; font-weight: 700; color: #111827; line-height: 1.25; }
-  .meta { font-size: 7.5px; color: #6b7280; }
-  .meta.italic { font-style: italic; color: #9ca3af; }
-  .bc-wrap { display: flex; justify-content: center; padding: 1mm 0; }
-  .bc { width: 85%; max-width: 45mm; height: auto; }
-  .bottom-row { display: flex; align-items: flex-end; justify-content: space-between; margin-top: auto; padding-top: 1mm; }
-  .brand { font-size: 10.5px; font-weight: 700; color: #111827; }
-  .price-box { border: 1.5pt solid #111827; border-radius: 1mm; padding: 0.5mm 2mm; }
-  .price { font-size: 12.5px; font-weight: 700; color: #111827; line-height: 1.3; white-space: nowrap; }
+  ${pageCss}
+  body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; color: #111827; }
+  .sheet { display: flex; flex-wrap: wrap; }
+  .label {
+    position: relative;
+    width: ${label.width}mm;
+    height: ${label.height}mm;
+    ${border}
+    box-sizing: border-box;
+    overflow: hidden;
+    page-break-inside: avoid;
+  }
 </style></head><body>
 <div class="sheet">${labels}</div>
 </body></html>`

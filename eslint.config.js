@@ -47,6 +47,7 @@ export default [
         fetch: 'readonly',
         AbortController: 'readonly',
         Event: 'readonly',
+        PointerEvent: 'readonly',
         HTMLElement: 'readonly',
         HTMLInputElement: 'readonly',
         localStorage: 'readonly',
