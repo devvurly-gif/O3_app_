@@ -40,7 +40,19 @@ class PosTicketController extends Controller
     {
         $session = PosSession::where('user_id', auth()->id())
             ->whereNull('closed_at')
-            ->firstOrFail();
+            ->first();
+
+        // Session may have been closed (by this cashier in another tab, an
+        // admin's force-close, or a stale page left open) while the cart was
+        // being filled. Without this check, firstOrFail() throws a raw
+        // ModelNotFoundException — a confusing English Eloquent message
+        // ("No query results for model...") shown straight to the cashier
+        // instead of a clear instruction to open a new session.
+        if (!$session) {
+            return response()->json([
+                'message' => "Votre session de caisse est fermée. Veuillez ouvrir une nouvelle session pour encaisser.",
+            ], 422);
+        }
 
         $ticket = $this->posService->createTicket(
             $session,

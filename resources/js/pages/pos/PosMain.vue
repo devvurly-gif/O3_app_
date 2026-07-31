@@ -1224,7 +1224,7 @@ function payWithCredit() {
 async function confirmPayment(payments: { amount: number; method: string }[]) {
   try {
     const ticket = await posStore.checkout(payments, selectedCustomer.value?.id) as any
-    
+
     // Print the ticket receipt (respect terminal auto_print setting; default true)
     if (ticket?.id && posStore.currentTerminal?.auto_print !== false) {
       setTimeout(() => printTicketReceipt(ticket.id), 500)
@@ -1235,8 +1235,21 @@ async function confirmPayment(payments: { amount: number; method: string }[]) {
     // cashier sees the new ticket immediately reflected in the totals.
     fetchSessionStats()
   } catch (err: unknown) {
-    const e = err as { response?: { data?: { message?: string } } }
+    const e = err as { response?: { status?: number; data?: { message?: string } } }
     alert(e.response?.data?.message ?? 'Erreur lors du paiement')
+
+    // Session was closed elsewhere (force-close, another tab, a session left
+    // open overnight) while this cart was being filled — the cart is kept
+    // intact (checkout() only clears it on success), but the cashier can't
+    // pay against a closed session. Send them back to reopen one instead of
+    // leaving them stuck retyping into a dead payment screen.
+    if (e.response?.status === 422) {
+      showCheckout.value = false
+      await posStore.fetchCurrentSession()
+      if (!posStore.hasOpenSession) {
+        router.replace('/pos')
+      }
+    }
   }
 }
 
