@@ -6,6 +6,7 @@
         <p class="text-sm text-gray-500 dark:text-gray-400">Définissez le format, placez les champs, puis imprimez.</p>
       </div>
       <div class="flex items-center gap-2">
+        <span class="text-xs" :class="saveStatus.class">{{ saveStatus.text }}</span>
         <button
           type="button"
           class="px-3 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
@@ -278,11 +279,14 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useProductStore } from '@/stores/product'
+import { useAuthStore } from '@/stores/authStore'
 import BasePagination from '@/components/BasePagination.vue'
+import http from '@/services/http'
 import type { Product } from '@/types'
 import { renderBarcodeDataUrl } from '@/composables/useBarcode'
 
 const store = useProductStore()
+const auth = useAuthStore()
 
 // Preview scale: how many screen pixels represent one millimetre.
 const PX_PER_MM = 5
@@ -367,36 +371,86 @@ const printMode = ref<'sheet' | 'roll'>('sheet')
 
 const enabledFields = computed(() => availableFields.filter((f) => layout[f.key].enabled))
 
-// ── Persistence (per tenant — each runs on its own origin) ───────
-const STORAGE_KEY = 'o3.labelTemplate.v1'
+// ── Persistence ──────────────────────────────────────────────────
+// The template lives in the tenant's `settings` table (domain `labels`,
+// key `template`) as a JSON blob, so one layout is shared by every user
+// and every device of the shop. Reading is open to all authenticated
+// users; writing is admin-only (POST /settings sits behind the admin
+// middleware), so non-admins can still tweak and print locally but their
+// changes are session-only.
+type SaveState = 'idle' | 'saving' | 'saved' | 'error' | 'readonly'
+const saveState = ref<SaveState>('idle')
+const templateLoaded = ref(false)
 
-function saveTemplate() {
-  try {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({ label: { ...label }, layout: JSON.parse(JSON.stringify(layout)), printMode: printMode.value })
-    )
-  } catch {
-    // storage unavailable (private mode / quota) — the designer still works,
-    // the template just won't survive a reload.
+function serializeTemplate(): string {
+  return JSON.stringify({
+    label: { ...label },
+    layout: JSON.parse(JSON.stringify(layout)),
+    printMode: printMode.value,
+  })
+}
+
+function applyTemplate(raw: string) {
+  const saved = JSON.parse(raw)
+  if (saved.label) Object.assign(label, saved.label)
+  if (saved.printMode) printMode.value = saved.printMode
+  if (saved.layout) {
+    for (const f of availableFields) {
+      if (saved.layout[f.key]) Object.assign(layout[f.key], saved.layout[f.key])
+    }
   }
 }
 
-function loadTemplate() {
+async function loadTemplate() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return
-    const saved = JSON.parse(raw)
-    if (saved.label) Object.assign(label, saved.label)
-    if (saved.printMode) printMode.value = saved.printMode
-    if (saved.layout) {
-      for (const f of availableFields) {
-        if (saved.layout[f.key]) Object.assign(layout[f.key], saved.layout[f.key])
-      }
-    }
+    const { data } = await http.get('/settings', { params: { domain: 'labels' } })
+    if (data?.template) applyTemplate(data.template)
   } catch {
-    // corrupt payload — fall back to defaults rather than breaking the page.
+    // No saved template yet, or the request failed — defaults stay in place.
+  } finally {
+    // Only start auto-saving once the stored template has been applied,
+    // otherwise the initial defaults would immediately overwrite it.
+    templateLoaded.value = true
+    if (!auth.isAdmin) saveState.value = 'readonly'
   }
+}
+
+let saveTimer: ReturnType<typeof setTimeout> | null = null
+
+async function persistTemplate() {
+  if (!auth.isAdmin) {
+    saveState.value = 'readonly'
+    return
+  }
+  saveState.value = 'saving'
+  try {
+    await http.post('/settings', { domain: 'labels', settings: { template: serializeTemplate() } })
+    saveState.value = 'saved'
+  } catch {
+    saveState.value = 'error'
+  }
+}
+
+const saveStatus = computed(() => {
+  switch (saveState.value) {
+    case 'saving':
+      return { text: 'Enregistrement...', class: 'text-gray-400' }
+    case 'saved':
+      return { text: 'Modèle enregistré', class: 'text-green-600 dark:text-green-400' }
+    case 'error':
+      return { text: 'Échec de l’enregistrement', class: 'text-red-600 dark:text-red-400' }
+    case 'readonly':
+      return { text: 'Lecture seule (admin requis)', class: 'text-amber-600 dark:text-amber-400' }
+    default:
+      return { text: '', class: '' }
+  }
+})
+
+function scheduleSave() {
+  if (!templateLoaded.value) return
+  if (saveTimer) clearTimeout(saveTimer)
+  // Dragging fires continuously — debounce so one gesture is a single write.
+  saveTimer = setTimeout(persistTemplate, 700)
 }
 
 function resetTemplate() {
@@ -406,7 +460,7 @@ function resetTemplate() {
   printMode.value = 'sheet'
 }
 
-watch([label, layout, printMode], saveTemplate, { deep: true })
+watch([label, layout, printMode], scheduleSave, { deep: true })
 
 // ── Selection ────────────────────────────────────────────────────
 interface SelectedEntry {

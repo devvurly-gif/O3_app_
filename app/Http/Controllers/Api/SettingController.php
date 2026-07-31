@@ -38,6 +38,10 @@ class SettingController extends Controller
         'ecommerce' => ['promo_banner', 'promo_banner_enabled', 'primary_color', 'default_theme', 'delivery_threshold', 'address', 'location', 'phone', 'email', 'instagram_url', 'facebook_url', 'whatsapp_number', 'shop_tagline'],
         'email'    => ['mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_encryption', 'mail_from_address', 'mail_from_name', 'mail_enabled'],
         'mail'     => ['enabled'],
+        // Product-label designer template (label size + per-field placement),
+        // stored as a JSON blob so the layout is shared by every user and
+        // device of the tenant rather than living in one browser.
+        'labels'   => ['template'],
     ];
 
     public function __construct(private SettingRepositoryInterface $settings)
