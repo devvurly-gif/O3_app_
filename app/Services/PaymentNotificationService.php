@@ -44,17 +44,21 @@ class PaymentNotificationService
         $encoursActuel = (float) ($partner->encours_actuel ?? 0);
         $seuilCredit   = (float) ($partner->seuil_credit ?? 0);
 
-        // Send email only if enabled in settings
-        $emailEnabled = Setting::get('mail', 'enabled', '0');
-        if ($emailEnabled === '1' || $emailEnabled === 'true' || $emailEnabled === true) {
+        // Send email only if enabled in settings.
+        // NOTE: this used to read Setting::get('mail', 'enabled', '0') — a key the
+        // Email settings tab never writes (it saves 'email'/'mail_enabled'), so this
+        // gate always evaluated to disabled regardless of tenant configuration.
+        if (DynamicMailService::isEnabled()) {
             $this->sendEmail($partner, $totalPaid, $method, $reference, $affectedInvoices, $totalDueRemaining, $encoursActuel, $seuilCredit);
         } else {
             Log::info("PaymentNotification: Email disabled in settings, skipping.");
         }
 
-        // Send WhatsApp only if enabled in settings
-        $whatsappEnabled = Setting::get('whatsapp', 'enabled', '0');
-        if ($whatsappEnabled === '1' || $whatsappEnabled === 'true' || $whatsappEnabled === true) {
+        // Send WhatsApp only if enabled in settings.
+        // Same bug as above: was reading Setting::get('whatsapp', 'enabled', '0')
+        // instead of the key the WhatsApp settings tab actually saves.
+        $whatsappEnabled = Setting::get('whatsapp', 'whatsapp_enabled', 'true');
+        if ($whatsappEnabled !== 'false') {
             $this->sendWhatsApp($partner, $totalPaid, $method, $reference, $affectedInvoices, $totalDueRemaining, $encoursActuel, $seuilCredit);
         } else {
             Log::info("PaymentNotification: WhatsApp disabled in settings, skipping.");
