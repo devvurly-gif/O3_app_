@@ -50,7 +50,7 @@ class OrderConfirmation extends Notification implements ShouldQueue
             ->line("Le document **{$this->document->reference}** ({$typeLabel}) a été confirmé.")
             ->line("Client / Fournisseur : **{$partner}**")
             ->line("Montant TTC : **" . number_format($total, 2, ',', ' ') . " MAD**")
-            ->action('Voir le document', url($this->documentUrl()))
+            ->action('Voir le document', tenant()->appUrl($this->documentUrl()))
             ->line('Ce document est maintenant actif.');
     }
 

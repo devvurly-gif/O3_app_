@@ -36,7 +36,7 @@ class NewEcomOrderNotification extends Notification implements ShouldQueue
             ->line("Référence : **{$this->document->reference}**")
             ->line("Client : **{$partner}**")
             ->line("Montant TTC : **" . number_format($total, 2, ',', ' ') . " MAD**")
-            ->action('Voir la commande', url('/ventes/documents/' . $this->document->id))
+            ->action('Voir la commande', tenant()->appUrl('/ventes/documents/' . $this->document->id))
             ->line("Elle attend d'être confirmée puis préparée.");
     }
 

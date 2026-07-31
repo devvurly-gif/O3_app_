@@ -39,6 +39,25 @@ class Tenant extends BaseTenant implements TenantWithDatabase
         return $this->trial_ends_at && $this->trial_ends_at->isPast() && $this->plan === 'trial';
     }
 
+    /**
+     * Build an absolute URL against this tenant's own domain, not the
+     * central app's. Needed anywhere a link is generated outside an HTTP
+     * request context (queued notifications/mailables) — Laravel's url()
+     * helper falls back to config('app.url') there, which is the central
+     * domain, so e.g. a "view this document" email link would send staff
+     * to the central admin instead of the tenant's own app.
+     */
+    public function appUrl(string $path = ''): string
+    {
+        $domain = $this->domains()->first()?->domain;
+
+        if (!$domain) {
+            return url($path);
+        }
+
+        return 'https://' . $domain . '/' . ltrim($path, '/');
+    }
+
     public function hasModule(string $module): bool
     {
         $modules = match ($this->plan) {
