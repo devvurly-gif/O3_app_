@@ -403,8 +403,9 @@ function applyTemplate(raw: string) {
 
 async function loadTemplate() {
   try {
+    // GET /settings nests values under their domain: { labels: { template } }
     const { data } = await http.get('/settings', { params: { domain: 'labels' } })
-    if (data?.template) applyTemplate(data.template)
+    if (data?.labels?.template) applyTemplate(data.labels.template)
   } catch {
     // No saved template yet, or the request failed — defaults stay in place.
   } finally {
