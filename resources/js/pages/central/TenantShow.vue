@@ -93,7 +93,14 @@ async function toggleFeature(feature: string, value: boolean) {
   saving.value = true
   try {
     tenant.value = await store.update(tenant.value.id, { [feature]: value } as any)
-    const label = feature === 'pos_enabled' ? 'POS' : feature === 'ecom_enabled' ? 'Boutique eCom' : feature === 'variants_enabled' ? 'Variantes Produits' : 'Paiement sur BL'
+    const labels: Record<string, string> = {
+      pos_enabled: 'POS',
+      ecom_enabled: 'Boutique eCom',
+      variants_enabled: 'Variantes Produits',
+      imei_enabled: 'IMEI / N° de série',
+      paiement_bl_enabled: 'Paiement sur BL',
+    }
+    const label = labels[feature] ?? feature
     toast.success(`${label} ${value ? 'activé' : 'désactivé'}.`)
   } catch { /* interceptor */ }
   saving.value = false
@@ -631,6 +638,31 @@ function getPlanColor(plan: string) {
                 :disabled="saving"
               />
               <div class="w-11 h-6 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 dark:after:border-gray-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+            </label>
+          </div>
+
+          <!-- IMEI Toggle -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-lg flex items-center justify-center" :class="tenant.imei_enabled ? 'bg-sky-100 dark:bg-sky-900/30' : 'bg-gray-100 dark:bg-gray-700'">
+                <svg :class="['w-5 h-5', tenant.imei_enabled ? 'text-sky-600 dark:text-sky-400' : 'text-gray-400']" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
+                </svg>
+              </div>
+              <div>
+                <p class="text-sm font-medium text-gray-700 dark:text-gray-300">IMEI / N° de série</p>
+                <p class="text-xs text-gray-400 dark:text-gray-500">Activer le suivi IMEI des produits (téléphonie, électronique)</p>
+              </div>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                :checked="tenant.imei_enabled"
+                @change="toggleFeature('imei_enabled', !tenant.imei_enabled)"
+                class="sr-only peer"
+                :disabled="saving"
+              />
+              <div class="w-11 h-6 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-sky-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 dark:after:border-gray-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-600"></div>
             </label>
           </div>
 

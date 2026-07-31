@@ -118,6 +118,7 @@ export interface Product extends BaseModel {
   p_code: string
   p_sku: string | null
   p_ean13: string | null
+  p_imei: string | null
   p_description: string | null
   p_purchasePrice: number
   p_salePrice: number

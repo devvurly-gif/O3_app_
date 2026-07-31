@@ -83,7 +83,7 @@ class AuthService
     /**
      * Read tenant feature flags from central tenants table.
      *
-     * @return array{pos: bool, ecom: bool}
+     * @return array{pos: bool, ecom: bool, variants: bool, imei: bool, ocr_import: bool}
      */
     private function tenantFeatures(): array
     {
@@ -93,6 +93,7 @@ class AuthService
             'pos'      => (bool) ($tenant?->pos_enabled       ?? false),
             'ecom'     => (bool) ($tenant?->ecom_enabled      ?? false),
             'variants' => (bool) ($tenant?->variants_enabled  ?? false),
+            'imei'     => (bool) ($tenant?->imei_enabled      ?? false),
             'ocr_import' => PackageService::isOcrImportEnabled(),
         ];
     }

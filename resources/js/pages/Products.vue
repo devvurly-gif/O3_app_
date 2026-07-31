@@ -427,8 +427,8 @@
               />
             </div>
 
-            <!-- IMEI -->
-            <div class="sm:col-span-2 lg:col-span-3">
+            <!-- IMEI — only for tenants tracking serial numbers -->
+            <div v-if="imeiEnabled" class="sm:col-span-2 lg:col-span-3">
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">IMEI</label>
               <input
                 v-model="form.p_imei"
@@ -1327,6 +1327,7 @@ const variantStore = useVariantOptionsStore()
 // by the central tenants.ecom_enabled flag, surfaced via auth.hasModule).
 const ecomEnabled = computed(() => auth.hasModule('ecom'))
 const variantsEnabled = computed(() => auth.hasModule('variants'))
+const imeiEnabled = computed(() => auth.hasModule('imei'))
 // Best-effort hint for the storefront URL shown beside the toggle.
 const tenantDomain = computed(() => {
   if (typeof window === 'undefined') return ''

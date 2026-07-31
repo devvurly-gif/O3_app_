@@ -316,16 +316,22 @@ onMounted(() => {
 })
 
 // ── Template (label format + per-field placement) ────────────────
-const availableFields = [
+const ALL_FIELDS = [
   { key: 'title', label: 'Titre' },
   { key: 'barcode', label: 'Code-barres' },
   { key: 'sku', label: 'SKU' },
+  { key: 'imei', label: 'IMEI' },
   { key: 'salePrice', label: 'Prix de vente' },
   { key: 'purchasePrice', label: "Prix d'achat" },
   { key: 'category', label: 'Catégorie' },
   { key: 'brand', label: 'Marque' },
 ] as const
-type FieldKey = (typeof availableFields)[number]['key']
+type FieldKey = (typeof ALL_FIELDS)[number]['key']
+
+// IMEI only makes sense for tenants tracking serial numbers (téléphonie,
+// électronique), so it's gated on the tenant's IMEI module. The template
+// still carries its placement, so toggling the module back on restores it.
+const availableFields = computed(() => ALL_FIELDS.filter((f) => f.key !== 'imei' || auth.hasModule('imei')))
 
 interface FieldLayout {
   enabled: boolean
@@ -358,6 +364,7 @@ function defaultLayout(): Record<FieldKey, FieldLayout> {
     title: { enabled: true, x: 2, y: 2, size: 8, height: 0, bold: true, boxed: false },
     barcode: { enabled: true, x: 8, y: 8, size: 34, height: 11, bold: false, boxed: false },
     sku: { enabled: false, x: 2, y: 6, size: 6, height: 0, bold: false, boxed: false },
+    imei: { enabled: false, x: 2, y: 21, size: 6, height: 0, bold: false, boxed: false },
     salePrice: { enabled: true, x: 28, y: 23, size: 10, height: 0, bold: true, boxed: true },
     purchasePrice: { enabled: false, x: 2, y: 20, size: 6, height: 0, bold: false, boxed: false },
     category: { enabled: false, x: 2, y: 6, size: 6, height: 0, bold: false, boxed: false },
@@ -369,7 +376,7 @@ const label = reactive(defaultLabel())
 const layout = reactive<Record<FieldKey, FieldLayout>>(defaultLayout())
 const printMode = ref<'sheet' | 'roll'>('sheet')
 
-const enabledFields = computed(() => availableFields.filter((f) => layout[f.key].enabled))
+const enabledFields = computed(() => availableFields.value.filter((f) => layout[f.key].enabled))
 
 // ── Persistence ──────────────────────────────────────────────────
 // The template lives in the tenant's `settings` table (domain `labels`,
@@ -395,7 +402,7 @@ function applyTemplate(raw: string) {
   if (saved.label) Object.assign(label, saved.label)
   if (saved.printMode) printMode.value = saved.printMode
   if (saved.layout) {
-    for (const f of availableFields) {
+    for (const f of ALL_FIELDS) {
       if (saved.layout[f.key]) Object.assign(layout[f.key], saved.layout[f.key])
     }
   }
@@ -457,7 +464,7 @@ function scheduleSave() {
 function resetTemplate() {
   Object.assign(label, defaultLabel())
   const d = defaultLayout()
-  for (const f of availableFields) Object.assign(layout[f.key], d[f.key])
+  for (const f of ALL_FIELDS) Object.assign(layout[f.key], d[f.key])
   printMode.value = 'sheet'
 }
 
@@ -520,6 +527,8 @@ function fieldText(key: FieldKey, p: Product): string {
       return p.p_title
     case 'sku':
       return p.p_sku || p.p_code
+    case 'imei':
+      return p.p_imei ?? ''
     case 'salePrice':
       return formatPriceDh(Number(p.p_salePrice))
     case 'purchasePrice':

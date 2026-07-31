@@ -63,6 +63,7 @@ class TenantController extends Controller
             'paiement_bl_enabled' => 'sometimes|boolean',
             'ecom_enabled'        => 'sometimes|boolean',
             'variants_enabled'    => 'sometimes|boolean',
+            'imei_enabled'        => 'sometimes|boolean',
         ]);
 
         $tenant = Tenant::create([
@@ -78,6 +79,7 @@ class TenantController extends Controller
         $tenant->paiement_bl_enabled = $validated['paiement_bl_enabled'] ?? false;
         $tenant->ecom_enabled = $validated['ecom_enabled'] ?? false;
         $tenant->variants_enabled = $validated['variants_enabled'] ?? false;
+        $tenant->imei_enabled = $validated['imei_enabled'] ?? false;
         // Auto-generate unique API key for ecom
         $tenant->ecom_api_key = 'ecom_' . bin2hex(random_bytes(20));
         $tenant->save();
@@ -147,6 +149,7 @@ class TenantController extends Controller
             'paiement_bl_enabled' => 'sometimes|boolean',
             'ecom_enabled'        => 'sometimes|boolean',
             'variants_enabled'    => 'sometimes|boolean',
+            'imei_enabled'        => 'sometimes|boolean',
         ]);
 
         // Generate ecom API key if enabling ecom for the first time
