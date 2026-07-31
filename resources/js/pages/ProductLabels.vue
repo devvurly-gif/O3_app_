@@ -188,8 +188,12 @@ const fields = reactive<Record<FieldKey, boolean>>({
   salePrice: true,
   purchasePrice: false,
   category: false,
-  brand: false,
+  brand: true,
 })
+
+function formatPriceDh(value: number): string {
+  return value.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' dhs'
+}
 
 const columns = ref(3)
 
@@ -222,23 +226,42 @@ const previewLabels = computed(() => {
 const totalLabelCount = computed(() => previewLabels.value.length)
 
 // ── Label preview card (also reused to build the print HTML) ─────
+// Layout mirrors the ZebraDesigner template: title top-left, small
+// meta (SKU/category/purchase price if enabled) under it, barcode
+// centered, brand bottom-left, sale price boxed bottom-right.
 const LabelCard = defineComponent({
   props: { product: { type: Object as () => Product, required: true }, showFields: { type: Object, required: true } },
   setup(props) {
-    return () =>
-      h('div', { class: 'bg-white border border-gray-300 rounded-md p-2 flex flex-col items-center text-center gap-0.5' }, [
-        props.showFields.title ? h('p', { class: 'text-[11px] font-semibold text-gray-900 leading-tight line-clamp-2' }, props.product.p_title) : null,
-        props.showFields.category && props.product.category ? h('p', { class: 'text-[9px] text-gray-500' }, props.product.category.ctg_title) : null,
-        props.showFields.brand && props.product.brand ? h('p', { class: 'text-[9px] text-gray-500' }, props.product.brand.br_title) : null,
-        props.showFields.barcode
-          ? (props.product.p_ean13
-              ? h('img', { src: renderBarcodeDataUrl(props.product.p_ean13), class: 'w-full max-w-[140px] h-auto' })
-              : h('p', { class: 'text-[9px] text-gray-400 italic' }, 'Pas de code EAN'))
+    return () => {
+      const p = props.product
+      const f = props.showFields
+      const meta: string[] = []
+      if (f.sku && (p.p_sku || p.p_code)) meta.push(String(p.p_sku || p.p_code))
+      if (f.category && p.category) meta.push(p.category.ctg_title)
+      if (f.purchasePrice) meta.push('Achat: ' + formatPriceDh(Number(p.p_purchasePrice)))
+
+      return h('div', { class: 'bg-white border border-gray-300 rounded-md p-2.5 flex flex-col gap-1.5 text-left' }, [
+        f.title ? h('p', { class: 'text-[12px] font-bold text-gray-900 leading-tight line-clamp-2' }, p.p_title) : null,
+        meta.length ? h('p', { class: 'text-[8px] text-gray-500' }, meta.join(' · ')) : null,
+        f.barcode
+          ? h('div', { class: 'flex justify-center py-1' }, [
+              p.p_ean13
+                ? h('img', { src: renderBarcodeDataUrl(p.p_ean13), class: 'max-w-[85%] h-auto' })
+                : h('p', { class: 'text-[9px] text-gray-400 italic' }, 'Pas de code EAN'),
+            ])
           : null,
-        props.showFields.sku ? h('p', { class: 'text-[9px] font-mono text-gray-500' }, props.product.p_sku || props.product.p_code) : null,
-        props.showFields.salePrice ? h('p', { class: 'text-sm font-bold text-gray-900' }, Number(props.product.p_salePrice).toFixed(2) + ' DH') : null,
-        props.showFields.purchasePrice ? h('p', { class: 'text-[9px] text-gray-400' }, 'Achat: ' + Number(props.product.p_purchasePrice).toFixed(2) + ' DH') : null,
+        (f.brand || f.salePrice)
+          ? h('div', { class: 'flex items-end justify-between mt-auto pt-1' }, [
+              f.brand && p.brand ? h('p', { class: 'text-[11px] font-bold text-gray-900' }, p.brand.br_title) : h('span'),
+              f.salePrice
+                ? h('div', { class: 'border-2 border-gray-900 rounded px-1.5 py-0.5' }, [
+                    h('p', { class: 'text-[13px] font-bold text-gray-900 leading-none' }, formatPriceDh(Number(p.p_salePrice))),
+                  ])
+                : null,
+            ])
+          : null,
       ].filter(Boolean))
+    }
   },
 })
 
@@ -250,18 +273,29 @@ function esc(v: unknown): string {
 function labelHtml(p: Product): string {
   const parts: string[] = []
   if (fields.title) parts.push(`<div class="t">${esc(p.p_title)}</div>`)
-  if (fields.category && p.category) parts.push(`<div class="meta">${esc(p.category.ctg_title)}</div>`)
-  if (fields.brand && p.brand) parts.push(`<div class="meta">${esc(p.brand.br_title)}</div>`)
+
+  const meta: string[] = []
+  if (fields.sku && (p.p_sku || p.p_code)) meta.push(esc(p.p_sku || p.p_code))
+  if (fields.category && p.category) meta.push(esc(p.category.ctg_title))
+  if (fields.purchasePrice) meta.push('Achat: ' + esc(formatPriceDh(Number(p.p_purchasePrice))))
+  if (meta.length) parts.push(`<div class="meta">${meta.join(' &middot; ')}</div>`)
+
   if (fields.barcode) {
     parts.push(
-      p.p_ean13
+      `<div class="bc-wrap">` +
+      (p.p_ean13
         ? `<img class="bc" src="${renderBarcodeDataUrl(p.p_ean13)}" />`
-        : `<div class="meta italic">Pas de code EAN</div>`
+        : `<div class="meta italic">Pas de code EAN</div>`) +
+      `</div>`
     )
   }
-  if (fields.sku) parts.push(`<div class="sku">${esc(p.p_sku || p.p_code)}</div>`)
-  if (fields.salePrice) parts.push(`<div class="price">${Number(p.p_salePrice).toFixed(2)} DH</div>`)
-  if (fields.purchasePrice) parts.push(`<div class="meta">Achat: ${Number(p.p_purchasePrice).toFixed(2)} DH</div>`)
+
+  if (fields.brand || fields.salePrice) {
+    const brandHtml = fields.brand && p.brand ? `<div class="brand">${esc(p.brand.br_title)}</div>` : `<div></div>`
+    const priceHtml = fields.salePrice ? `<div class="price-box"><div class="price">${esc(formatPriceDh(Number(p.p_salePrice)))}</div></div>` : ''
+    parts.push(`<div class="bottom-row">${brandHtml}${priceHtml}</div>`)
+  }
+
   return `<div class="label">${parts.join('')}</div>`
 }
 
@@ -276,13 +310,16 @@ function printLabels() {
   @page { size: A4; margin: 10mm; }
   body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; }
   .sheet { display: grid; grid-template-columns: repeat(${columns.value}, 1fr); gap: 3mm; }
-  .label { border: 1px solid #d1d5db; border-radius: 3mm; padding: 3mm; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 1mm; page-break-inside: avoid; }
-  .t { font-size: 10.5px; font-weight: 600; color: #111827; line-height: 1.2; }
-  .meta { font-size: 8.5px; color: #6b7280; }
+  .label { border: 1px solid #d1d5db; border-radius: 3mm; padding: 3.5mm; display: flex; flex-direction: column; gap: 1.5mm; text-align: left; page-break-inside: avoid; }
+  .t { font-size: 11px; font-weight: 700; color: #111827; line-height: 1.25; }
+  .meta { font-size: 7.5px; color: #6b7280; }
   .meta.italic { font-style: italic; color: #9ca3af; }
-  .sku { font-size: 8.5px; font-family: 'Courier New', monospace; color: #6b7280; }
-  .price { font-size: 13px; font-weight: 700; color: #111827; }
-  .bc { width: 100%; max-width: 45mm; height: auto; }
+  .bc-wrap { display: flex; justify-content: center; padding: 1mm 0; }
+  .bc { width: 85%; max-width: 45mm; height: auto; }
+  .bottom-row { display: flex; align-items: flex-end; justify-content: space-between; margin-top: auto; padding-top: 1mm; }
+  .brand { font-size: 10.5px; font-weight: 700; color: #111827; }
+  .price-box { border: 1.5pt solid #111827; border-radius: 1mm; padding: 0.5mm 2mm; }
+  .price { font-size: 12.5px; font-weight: 700; color: #111827; line-height: 1.3; white-space: nowrap; }
 </style></head><body>
 <div class="sheet">${labels}</div>
 </body></html>`
