@@ -85,6 +85,17 @@
       </div>
     </div>
 
+    <!-- The browser rescales the page when the printer's paper size differs
+         from the @page size, which silently crops fields off the stock.
+         Spell out the three settings that give true 1:1 millimetres. -->
+    <div class="rounded-lg border border-sky-200 dark:border-sky-800 bg-sky-50 dark:bg-sky-900/20 px-4 py-2.5 text-xs text-sky-800 dark:text-sky-300">
+      <span class="font-semibold">Réglages d'impression (impératif pour une taille réelle) :</span>
+      Format papier <span class="font-mono font-semibold">{{ label.width }} × {{ label.height }} mm</span>
+      (identique à l'étiquette ci-dessus) · Marges <span class="font-semibold">Aucune</span> ·
+      Échelle <span class="font-semibold">100 %</span> (pas « ajuster à la page »).
+      Si le format papier de votre imprimante diffère, le navigateur agrandit la page et les champs sont rognés.
+    </div>
+
     <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
       <!-- ── Designer ─────────────────────────────────────────── -->
       <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 space-y-4">
