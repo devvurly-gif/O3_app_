@@ -28,6 +28,10 @@
       </div>
     </div>
 
+    <div v-if="printError" class="rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 px-4 py-3 text-sm text-amber-800 dark:text-amber-300">
+      {{ printError }}
+    </div>
+
     <!-- Label format -->
     <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 flex flex-wrap items-end gap-5">
       <div>
@@ -375,6 +379,7 @@ function defaultLayout(): Record<FieldKey, FieldLayout> {
 const label = reactive(defaultLabel())
 const layout = reactive<Record<FieldKey, FieldLayout>>(defaultLayout())
 const printMode = ref<'sheet' | 'roll'>('sheet')
+const printError = ref('')
 
 const enabledFields = computed(() => availableFields.value.filter((f) => layout[f.key].enabled))
 
@@ -654,7 +659,12 @@ function printLabels() {
 </body></html>`
 
   const printWindow = window.open('', '_blank')
-  if (!printWindow) return
+  if (!printWindow) {
+    // Popup blocked — without this the click looks like it did nothing at all.
+    printError.value = "Impression bloquée par le navigateur. Autorisez les fenêtres pop-up pour ce site, puis réessayez."
+    return
+  }
+  printError.value = ''
   printWindow.document.write(html)
   printWindow.document.close()
   printWindow.onload = () => {
