@@ -16,20 +16,23 @@
         </button>
         <button
           type="button"
-          :disabled="!selectedList.length"
+          :disabled="!selectedList.length || printing"
           class="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-2"
           @click="printLabels"
         >
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 00-1.913-.247M6.34 18H5.25A2.25 2.25 0 013 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 011.913-.247m10.5 0a48.536 48.536 0 00-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5zm-3 0h.008v.008H15V10.5z" />
           </svg>
-          Imprimer ({{ totalLabelCount }})
+          {{ printing ? 'Envoi…' : `Imprimer (${totalLabelCount})` }}
         </button>
       </div>
     </div>
 
     <div v-if="printError" class="rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 px-4 py-3 text-sm text-amber-800 dark:text-amber-300">
       {{ printError }}
+    </div>
+    <div v-if="printInfo" class="rounded-lg border border-green-300 dark:border-green-800 bg-green-50 dark:bg-green-900/20 px-4 py-3 text-sm text-green-800 dark:text-green-300">
+      {{ printInfo }}
     </div>
 
     <!-- Label format -->
@@ -77,6 +80,24 @@
         </div>
       </div>
       <div>
+        <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Sortie</p>
+        <div class="flex gap-1.5">
+          <button
+            v-for="t in transports"
+            :key="t.value"
+            type="button"
+            class="px-3 h-9 rounded-lg text-xs font-medium border transition"
+            :class="printer.transport === t.value
+              ? 'bg-orange-500 border-orange-500 text-white'
+              : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'"
+            :title="t.hint"
+            @click="printer.transport = t.value"
+          >
+            {{ t.label }}
+          </button>
+        </div>
+      </div>
+      <div>
         <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Bordure</label>
         <label class="flex items-center gap-1.5 h-9 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
           <input v-model="label.border" type="checkbox" class="rounded border-gray-300 text-orange-500 focus:ring-orange-500" />
@@ -85,10 +106,135 @@
       </div>
     </div>
 
+    <!-- Thermal transports bypass the browser entirely: Laravel renders TSPL
+         and it goes straight into the printer, so these are the printer's own
+         parameters rather than page-setup ones. -->
+    <div
+      v-if="printer.transport !== 'browser'"
+      class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 flex flex-wrap items-end gap-4"
+    >
+      <template v-if="printer.transport === 'agent'">
+        <div class="min-w-[16rem]">
+          <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Imprimante</label>
+          <div class="flex gap-1.5">
+            <select
+              :value="printer.name"
+              class="flex-1 h-9 px-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
+              @change="selectPrinter(($event.target as HTMLSelectElement).value)"
+            >
+              <option value="">— choisir —</option>
+              <!-- L'imprimante enregistrée peut ne pas être dans la liste si
+                   l'agent est éteint : on la garde visible pour ne pas
+                   silencieusement désélectionner la configuration du magasin. -->
+              <option v-if="printer.name && !printers.some((p) => p.name === printer.name)" :value="printer.name">
+                {{ printer.name }} (agent hors ligne)
+              </option>
+              <option v-for="p in printers" :key="p.name" :value="p.name">
+                {{ p.name }}{{ p.isDefault ? ' (par défaut)' : '' }}
+              </option>
+            </select>
+            <button
+              type="button"
+              class="px-2.5 h-9 rounded-lg text-xs font-medium border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40 transition"
+              :disabled="printersLoading"
+              title="Relire les imprimantes du poste"
+              @click="fetchPrinters"
+            >
+              {{ printersLoading ? '…' : '⟳' }}
+            </button>
+          </div>
+        </div>
+        <div v-if="selectedPrinter?.papers?.length" class="min-w-[13rem]">
+          <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Format papier du pilote</label>
+          <select
+            :value="printer.paper"
+            class="w-full h-9 px-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
+            @change="selectPaper(($event.target as HTMLSelectElement).value)"
+          >
+            <option value="">— aucun —</option>
+            <option v-for="p in selectedPrinter.papers" :key="p.name" :value="p.name">
+              {{ p.name }} — {{ p.widthMm }} × {{ p.heightMm }} mm
+            </option>
+          </select>
+        </div>
+      </template>
+      <div v-if="printer.transport === 'agent'" class="min-w-[16rem]">
+        <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">URL de l'agent local</label>
+        <input v-model="printer.agent_url" type="text" class="w-full h-9 px-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500" />
+      </div>
+      <template v-if="printer.transport === 'server'">
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">IP imprimante</label>
+          <input v-model="printer.host" type="text" placeholder="192.168.1.50" :class="numClass" class="!w-36" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Port</label>
+          <input v-model.number="printer.port" type="number" min="1" max="65535" :class="numClass" class="!w-20" />
+        </div>
+      </template>
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">DPI</label>
+        <select v-model.number="printer.dpi" :class="numClass" class="!w-24">
+          <option :value="203">203</option>
+          <option :value="300">300</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Densité</label>
+        <input v-model.number="printer.darkness" type="number" min="0" max="15" :class="numClass" class="!w-20" />
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Vitesse</label>
+        <input v-model.number="printer.speed" type="number" min="1" max="12" step="0.5" :class="numClass" class="!w-20" />
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Gap (mm)</label>
+        <input v-model.number="printer.gap" type="number" min="0" max="10" step="0.5" :class="numClass" class="!w-20" />
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Sens</label>
+        <select v-model.number="printer.direction" :class="numClass" class="!w-24">
+          <option :value="1">Normal</option>
+          <option :value="0">Inversé</option>
+        </select>
+      </div>
+      <p v-if="printersError" class="text-xs text-amber-700 dark:text-amber-400 basis-full">
+        {{ printersError }}
+      </p>
+      <p class="text-xs text-gray-500 dark:text-gray-400 basis-full">
+        Densité 8–10 et vitesse 3–4 donnent les barres les plus nettes sur du thermique direct.
+        Si l'étiquette sort à l'envers, basculez le sens.
+        <span v-if="selectedPrinter"> · 1 point = {{ (25.4 / printer.dpi).toFixed(3) }} mm à {{ printer.dpi }} dpi.</span>
+      </p>
+    </div>
+
+    <!-- L'aperçu ne vaut que s'il correspond au papier réellement chargé. -->
+    <div
+      v-if="paperMismatch"
+      class="rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 px-4 py-2.5 text-xs text-amber-800 dark:text-amber-300 flex items-center justify-between gap-3"
+    >
+      <span>
+        L'étiquette fait <span class="font-mono font-semibold">{{ label.width }} × {{ label.height }} mm</span>
+        alors que le pilote annonce
+        <span class="font-mono font-semibold">{{ paperMismatch.widthMm }} × {{ paperMismatch.heightMm }} mm</span>
+        pour « {{ paperMismatch.name }} ». Le pilote rognera ou décalera la sortie.
+      </span>
+      <button
+        type="button"
+        class="shrink-0 px-2.5 h-8 rounded-lg text-xs font-semibold border border-amber-400 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition"
+        @click="applyPaperSize(paperMismatch)"
+      >
+        Aligner sur le papier
+      </button>
+    </div>
+
     <!-- The browser rescales the page when the printer's paper size differs
          from the @page size, which silently crops fields off the stock.
          Spell out the three settings that give true 1:1 millimetres. -->
-    <div class="rounded-lg border border-sky-200 dark:border-sky-800 bg-sky-50 dark:bg-sky-900/20 px-4 py-2.5 text-xs text-sky-800 dark:text-sky-300">
+    <div
+      v-if="printer.transport === 'browser'"
+      class="rounded-lg border border-sky-200 dark:border-sky-800 bg-sky-50 dark:bg-sky-900/20 px-4 py-2.5 text-xs text-sky-800 dark:text-sky-300"
+    >
       <span class="font-semibold">Réglages d'impression (impératif pour une taille réelle) :</span>
       Format papier <span class="font-mono font-semibold">{{ label.width }} × {{ label.height }} mm</span>
       (identique à l'étiquette ci-dessus) · Marges <span class="font-semibold">Aucune</span> ·
@@ -108,9 +254,12 @@
           v-if="overflowing.length"
           class="rounded-lg border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-3 py-2 text-xs text-red-700 dark:text-red-300"
         >
-          <span class="font-semibold">Hors de l'étiquette :</span> {{ overflowNames }} —
+          <span class="font-semibold">Hors zone imprimable :</span> {{ overflowNames }} —
           ce qui dépasse le cadre sera coupé à l'impression. Repositionnez le champ, réduisez sa taille,
           ou agrandissez l'étiquette.
+          <template v-if="printerMargins">
+            Le liseré rouge pointillé marque les marges que « {{ printer.name }} » ne peut pas atteindre.
+          </template>
         </div>
 
         <!-- Canvas -->
@@ -121,6 +270,14 @@
             :class="label.border ? 'border border-gray-400' : 'border border-dashed border-gray-300'"
             :style="{ width: label.width * PX_PER_MM + 'px', height: label.height * PX_PER_MM + 'px' }"
           >
+            <!-- Marges non imprimables déclarées par le pilote : la tête ne
+                 peut physiquement rien y déposer, un champ posé dessus est
+                 perdu même s'il tient dans l'étiquette. -->
+            <div
+              v-if="printableInset"
+              class="absolute pointer-events-none border border-dashed border-red-400/70"
+              :style="printableInset"
+            />
             <div
               v-for="f in enabledFields"
               :key="f.key"
@@ -384,6 +541,54 @@ const printModes = [
   { value: 'roll' as const, label: 'Rouleau' },
 ]
 
+// How the job reaches paper. `browser` renders HTML and lets the print
+// pipeline rasterise it — universal, but the driver rescales to the head's
+// dot grid and barcode bars land on fractional dots. The two TSPL transports
+// have Laravel emit the printer's native language instead, so coordinates are
+// dots and the firmware draws the barcode: exact 1:1, no rescaling.
+type Transport = 'browser' | 'agent' | 'server'
+const transports = [
+  { value: 'browser' as const, label: 'Navigateur', hint: 'Impression HTML via la boîte de dialogue du navigateur' },
+  { value: 'agent' as const, label: 'Thermique (agent)', hint: 'TSPL envoyé à l\'agent local du poste de caisse' },
+  { value: 'server' as const, label: 'Thermique (réseau)', hint: 'TSPL envoyé par le serveur — imprimante joignable depuis l\'application' },
+]
+
+/** Shape returned by the agent's /printers inventory (windows-printers.ps1). */
+interface PrinterPaper {
+  name: string
+  widthMm: number
+  heightMm: number
+}
+interface PrinterInfo {
+  name: string
+  isDefault: boolean
+  papers: PrinterPaper[]
+  resolutions: { x: number; y: number }[]
+  paper: PrinterPaper | null
+  printable: { leftMm: number; topMm: number; widthMm: number; heightMm: number } | null
+}
+
+function defaultPrinter() {
+  return {
+    transport: 'browser' as Transport,
+    // Windows print queue chosen from the agent's inventory.
+    name: '',
+    paper: '',
+    // Snapshot of the chosen printer's capabilities, persisted so the preview
+    // still reflects the real hardware on a machine where the agent is not
+    // running (back office, phone) — the layout is shared shop-wide.
+    caps: null as PrinterInfo | null,
+    host: '',
+    port: 9100,
+    agent_url: 'http://127.0.0.1:9110/print',
+    dpi: 203,
+    darkness: 10,
+    speed: 4,
+    gap: 2,
+    direction: 1,
+  }
+}
+
 function defaultLabel() {
   return { width: 50, height: 30, border: true }
 }
@@ -404,7 +609,127 @@ function defaultLayout(): Record<FieldKey, FieldLayout> {
 const label = reactive(defaultLabel())
 const layout = reactive<Record<FieldKey, FieldLayout>>(defaultLayout())
 const printMode = ref<'sheet' | 'roll'>('sheet')
+const printer = reactive(defaultPrinter())
 const printError = ref('')
+const printInfo = ref('')
+
+// ── Printer inventory (via the local agent) ──────────────────────
+// No browser API exposes the system's printers, so the list can only come
+// from the agent running on the cashier's machine.
+const printers = ref<PrinterInfo[]>([])
+const printersLoading = ref(false)
+const printersError = ref('')
+
+/** The agent URL is stored as the /print endpoint; other routes hang off it. */
+function agentBase(): string {
+  return printer.agent_url.replace(/\/print\/?$/, '')
+}
+
+const selectedPrinter = computed<PrinterInfo | null>(
+  () => printers.value.find((p) => p.name === printer.name) ?? printer.caps
+)
+
+async function fetchPrinters() {
+  if (printersLoading.value) return
+  printersLoading.value = true
+  printersError.value = ''
+  try {
+    const res = await fetch(`${agentBase()}/printers`)
+    const body = await res.json()
+    if (!res.ok || !body.ok) throw new Error(body?.error ?? `HTTP ${res.status}`)
+
+    printers.value = body.printers as PrinterInfo[]
+
+    // First run: adopt the machine's default printer so the preview is
+    // calibrated without the user having to pick anything.
+    if (!printer.name) {
+      const fallback = printers.value.find((p) => p.isDefault) ?? printers.value[0]
+      if (fallback) selectPrinter(fallback.name)
+    } else {
+      const current = printers.value.find((p) => p.name === printer.name)
+      if (current) printer.caps = current
+    }
+  } catch (e: unknown) {
+    printersError.value =
+      e instanceof TypeError
+        ? `Agent injoignable sur ${agentBase()} — impossible de lister les imprimantes du poste. Démarrez-le, puis relancez la lecture.`
+        : `Lecture des imprimantes impossible : ${e instanceof Error ? e.message : String(e)}`
+  } finally {
+    printersLoading.value = false
+  }
+}
+
+function selectPrinter(name: string) {
+  printer.name = name
+  const info = printers.value.find((p) => p.name === name) ?? null
+  printer.caps = info
+  if (!info) return
+
+  // The driver's own resolution beats whatever was typed: it decides the dot
+  // grid every coordinate is rounded onto.
+  const best = info.resolutions.reduce((a, r) => Math.max(a, r.x), 0)
+  if (best > 0) printer.dpi = best
+
+  if (info.paper) selectPaper(info.paper.name)
+}
+
+function selectPaper(name: string) {
+  printer.paper = name
+  const paper = selectedPrinter.value?.papers.find((p) => p.name === name)
+  if (paper) applyPaperSize(paper)
+}
+
+/** Snap the label to the stock the driver is actually set up for. */
+function applyPaperSize(paper: PrinterPaper) {
+  label.width = Math.round(paper.widthMm * 10) / 10
+  label.height = Math.round(paper.heightMm * 10) / 10
+}
+
+const currentPaper = computed<PrinterPaper | null>(
+  () => selectedPrinter.value?.papers.find((p) => p.name === printer.paper) ?? null
+)
+
+/**
+ * Non-printable margins, in mm. The driver reports the printable area of its
+ * *default* paper, so we read the four bands off that and carry them over to
+ * whatever stock is selected — an approximation, but the right order of
+ * magnitude (0 on thermal label printers, 4–5 mm on laser).
+ */
+const printerMargins = computed(() => {
+  const info = selectedPrinter.value
+  const base = info?.paper
+  const area = info?.printable
+  if (!info || !base || !area) return null
+
+  const m = {
+    left: Math.max(0, area.leftMm),
+    top: Math.max(0, area.topMm),
+    right: Math.max(0, base.widthMm - (area.leftMm + area.widthMm)),
+    bottom: Math.max(0, base.heightMm - (area.topMm + area.heightMm)),
+  }
+  // Sub-tenth-of-a-millimetre bands are rounding noise in the driver's own
+  // numbers, not a real dead zone worth drawing.
+  return m.left + m.top + m.right + m.bottom < 0.4 ? null : m
+})
+
+const printableInset = computed(() => {
+  const m = printerMargins.value
+  if (!m) return null
+  return {
+    left: m.left * PX_PER_MM + 'px',
+    top: m.top * PX_PER_MM + 'px',
+    width: Math.max(0, label.width - m.left - m.right) * PX_PER_MM + 'px',
+    height: Math.max(0, label.height - m.top - m.bottom) * PX_PER_MM + 'px',
+  }
+})
+
+/** Flags a label size that the selected driver stock cannot produce 1:1. */
+const paperMismatch = computed<PrinterPaper | null>(() => {
+  const paper = currentPaper.value
+  if (!paper) return null
+  const off = Math.abs(paper.widthMm - label.width) > 0.6 || Math.abs(paper.heightMm - label.height) > 0.6
+  return off ? paper : null
+})
 
 const enabledFields = computed(() => availableFields.value.filter((f) => layout[f.key].enabled))
 
@@ -438,11 +763,74 @@ function applyTemplate(raw: string) {
   }
 }
 
+/**
+ * Printer wiring lives in its own settings keys rather than inside the
+ * template blob: one shop has one printer, but may keep several label
+ * layouts, and the backend reads these keys directly when rendering TSPL.
+ */
+function applyPrinter(raw: Record<string, string> | undefined) {
+  if (!raw) return
+  const num = (key: string, fallback: number) => {
+    const v = Number(raw[key])
+    return Number.isFinite(v) && raw[key] !== '' && raw[key] != null ? v : fallback
+  }
+  if (raw.printer_transport === 'agent' || raw.printer_transport === 'server' || raw.printer_transport === 'browser') {
+    printer.transport = raw.printer_transport
+  }
+  if (raw.printer_host) printer.host = raw.printer_host
+  if (raw.agent_url) printer.agent_url = raw.agent_url
+  if (raw.printer_name) printer.name = raw.printer_name
+  if (raw.printer_caps) {
+    try {
+      const caps = JSON.parse(raw.printer_caps) as PrinterInfo
+      printer.caps = caps
+      printer.paper = caps.paper?.name ?? ''
+    } catch {
+      // Stored snapshot unreadable — the preview falls back to plain
+      // millimetres until the agent is queried again.
+    }
+  }
+  printer.port = num('printer_port', printer.port)
+  printer.dpi = num('printer_dpi', printer.dpi)
+  printer.darkness = num('printer_darkness', printer.darkness)
+  printer.speed = num('printer_speed', printer.speed)
+  printer.gap = num('printer_gap', printer.gap)
+  printer.direction = num('printer_direction', printer.direction)
+}
+
+function serializePrinter(): Record<string, string> {
+  return {
+    printer_transport: printer.transport,
+    printer_name: printer.name,
+    // Only the fields the preview reads: a full driver dump can list several
+    // hundred paper sizes, which has no business in a settings row.
+    printer_caps: printer.caps
+      ? JSON.stringify({
+          name: printer.caps.name,
+          isDefault: printer.caps.isDefault,
+          resolutions: printer.caps.resolutions,
+          printable: printer.caps.printable,
+          paper: currentPaper.value ?? printer.caps.paper,
+          papers: currentPaper.value ? [currentPaper.value] : [],
+        })
+      : '',
+    printer_host: printer.host,
+    printer_port: String(printer.port),
+    agent_url: printer.agent_url,
+    printer_dpi: String(printer.dpi),
+    printer_darkness: String(printer.darkness),
+    printer_speed: String(printer.speed),
+    printer_gap: String(printer.gap),
+    printer_direction: String(printer.direction),
+  }
+}
+
 async function loadTemplate() {
   try {
     // GET /settings nests values under their domain: { labels: { template } }
     const { data } = await http.get('/settings', { params: { domain: 'labels' } })
     if (data?.labels?.template) applyTemplate(data.labels.template)
+    applyPrinter(data?.labels)
   } catch {
     // No saved template yet, or the request failed — defaults stay in place.
   } finally {
@@ -450,6 +838,9 @@ async function loadTemplate() {
     // otherwise the initial defaults would immediately overwrite it.
     templateLoaded.value = true
     if (!auth.isAdmin) saveState.value = 'readonly'
+    // Refresh the inventory against this machine: the saved snapshot may come
+    // from another till whose printer list differs.
+    if (printer.transport === 'agent') fetchPrinters()
   }
 }
 
@@ -462,7 +853,10 @@ async function persistTemplate() {
   }
   saveState.value = 'saving'
   try {
-    await http.post('/settings', { domain: 'labels', settings: { template: serializeTemplate() } })
+    await http.post('/settings', {
+      domain: 'labels',
+      settings: { template: serializeTemplate(), ...serializePrinter() },
+    })
     saveState.value = 'saved'
   } catch {
     saveState.value = 'error'
@@ -498,7 +892,7 @@ function resetTemplate() {
   printMode.value = 'sheet'
 }
 
-watch([label, layout, printMode], scheduleSave, { deep: true })
+watch([label, layout, printMode, printer], scheduleSave, { deep: true })
 
 // ── Selection ────────────────────────────────────────────────────
 interface SelectedEntry {
@@ -607,12 +1001,27 @@ async function checkOverflow() {
   const c = canvas.getBoundingClientRect()
   const tol = 1 // px, absorbs the canvas border and sub-pixel rounding
 
+  // The usable area is the label minus whatever the driver declares it cannot
+  // reach — a field sitting in that band is lost even though it fits the stock.
+  const m = printerMargins.value
+  const bounds = {
+    left: c.left + (m ? m.left * PX_PER_MM : 0),
+    top: c.top + (m ? m.top * PX_PER_MM : 0),
+    right: c.right - (m ? m.right * PX_PER_MM : 0),
+    bottom: c.bottom - (m ? m.bottom * PX_PER_MM : 0),
+  }
+
   overflowing.value = enabledFields.value
     .filter((f) => {
       const el = fieldEls[f.key]
       if (!el) return false
       const r = el.getBoundingClientRect()
-      return r.right > c.right + tol || r.bottom > c.bottom + tol || r.left < c.left - tol || r.top < c.top - tol
+      return (
+        r.right > bounds.right + tol ||
+        r.bottom > bounds.bottom + tol ||
+        r.left < bounds.left - tol ||
+        r.top < bounds.top - tol
+      )
     })
     .map((f) => f.key)
 }
@@ -684,27 +1093,119 @@ function labelHtml(p: Product): string {
   return `<div class="label">${parts.join('')}</div>`
 }
 
-function printLabels() {
-  if (!previewLabels.value.length) return
+const printing = ref(false)
 
+async function printLabels() {
+  if (!previewLabels.value.length || printing.value) return
+
+  printError.value = ''
+  printInfo.value = ''
+
+  if (printer.transport === 'browser') {
+    printViaBrowser()
+    return
+  }
+
+  await printViaTspl()
+}
+
+/**
+ * Native thermal path: Laravel turns the template into TSPL, which reaches
+ * the printer either through the agent running on this machine or straight
+ * from the server, depending on which side can see the printer.
+ */
+async function printViaTspl() {
+  printing.value = true
+
+  const body = {
+    items: selectedList.value.map((s) => ({
+      product_id: s.product.id,
+      qty: Math.max(1, s.qty || 1),
+    })),
+    // Sent explicitly rather than read from the stored settings, so a
+    // non-admin's unsaved tweaks still print the way they see them.
+    template: { label: { ...label }, layout: JSON.parse(JSON.stringify(layout)) },
+  }
+  // The queue is resolved client-side: it names a printer on *this* machine,
+  // which is the one the agent can actually reach.
+  const queue = printer.name
+
+  try {
+    if (printer.transport === 'server') {
+      const { data } = await http.post('/labels/print', body)
+      printInfo.value = data?.message ?? 'Travail envoyé à l’imprimante.'
+      return
+    }
+
+    const { data } = await http.post('/labels/tspl', body)
+
+    const res = await fetch(printer.agent_url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ payload_base64: data.payload_base64, printer: queue }),
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => null)
+      throw new Error(err?.error ?? `Agent d’impression : HTTP ${res.status}`)
+    }
+
+    printInfo.value = `${totalLabelCount.value} étiquette(s) envoyée(s) à l’imprimante.`
+  } catch (e: unknown) {
+    printError.value = tsplError(e)
+  } finally {
+    printing.value = false
+  }
+}
+
+function tsplError(e: unknown): string {
+  // fetch() rejects with a bare TypeError when nothing is listening — by far
+  // the most common failure, and the least self-explanatory.
+  if (e instanceof TypeError) {
+    return `Agent d’impression injoignable sur ${printer.agent_url}. Démarrez-le sur ce poste (tools/label-print-agent), puis réessayez.`
+  }
+  const res = (e as { response?: { data?: { message?: string } } }).response
+  if (res?.data?.message) return res.data.message
+  return e instanceof Error ? e.message : "Échec de l’impression."
+}
+
+function printViaBrowser() {
   const labels = previewLabels.value.map(labelHtml).join('')
   const border = label.border ? 'border:0.2mm solid #9ca3af;' : ''
 
   // Roll printers (e.g. Zebra GC420t) feed one label at a time, so the page
   // itself is the label. Sheet mode flows them across an A4 page instead.
+  //
+  // Roll mode pins html/body to the exact stock size on purpose: a page whose
+  // content is narrower than the sheet is what makes Firefox's "ajuster à la
+  // largeur" kick in and silently blow the label up.
   const pageCss =
     printMode.value === 'roll'
       ? `@page { size: ${label.width}mm ${label.height}mm; margin: 0; }
-         .label { page-break-after: always; }`
+         html, body { width: ${label.width}mm; }
+         .sheet { display: block; }
+         .label { break-after: page; page-break-after: always; }
+         /* Sans ça, la dernière étiquette entraîne l'avance d'une étiquette
+            vierge — une perdue à chaque impression sur un rouleau. */
+         .label:last-child { break-after: auto; page-break-after: auto; }`
       : `@page { size: A4; margin: 8mm; }
+         .sheet { display: flex; flex-wrap: wrap; align-content: flex-start; }
          .label { margin: 0 2mm 2mm 0; }`
 
   const html = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>Étiquettes produits</title>
 <style>
   ${pageCss}
-  body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; color: #111827; }
-  .sheet { display: flex; flex-wrap: wrap; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    color: #111827;
+    /* Métriques de texte calculées sur la géométrie et non arrondies au
+       pixel écran : sur 30 mm, l'arrondi décale visiblement les champs. */
+    text-rendering: geometricPrecision;
+  }
+  /* Les navigateurs suppriment couleurs et fonds à l'impression par défaut :
+     le cadre du prix et le liseré de l'étiquette sortiraient délavés. */
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .label {
     position: relative;
     width: ${label.width}mm;
@@ -712,23 +1213,70 @@ function printLabels() {
     ${border}
     box-sizing: border-box;
     overflow: hidden;
+    break-inside: avoid;
     page-break-inside: avoid;
+  }
+  /* Le code-barres est un PNG d'environ 230 px agrandi à ~340 points sur une
+     tête 203 dpi. Le lissage par défaut transforme les barres en dégradés de
+     gris que les douchettes lisent mal ; on force des bords francs. */
+  .label img {
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
   }
 </style></head><body>
 <div class="sheet">${labels}</div>
 </body></html>`
 
-  const printWindow = window.open('', '_blank')
-  if (!printWindow) {
-    // Popup blocked — without this the click looks like it did nothing at all.
-    printError.value = "Impression bloquée par le navigateur. Autorisez les fenêtres pop-up pour ce site, puis réessayez."
+  sendToPrinter(html)
+}
+
+// The job is rendered in a hidden same-origin iframe rather than a popup
+// window: no tab is opened, nothing for the popup blocker to swallow, and the
+// click goes straight to the print pipeline. With Chrome started under
+// --kiosk-printing it prints on the default printer without any dialog at all.
+function sendToPrinter(html: string) {
+  const frame = document.createElement('iframe')
+  frame.setAttribute('aria-hidden', 'true')
+  frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;'
+  document.body.appendChild(frame)
+
+  let done = false
+  const cleanup = () => {
+    if (done) return
+    done = true
+    frame.remove()
+  }
+
+  frame.onload = () => {
+    const win = frame.contentWindow
+    if (!win) return cleanup()
+
+    // Barcodes are data-URL <img>: the document can fire load while they are
+    // still decoding, and an undecoded image prints as a blank rectangle.
+    const images = Array.from(win.document.images).map((img) =>
+      img.decode().catch(() => undefined)
+    )
+    Promise.all(images).then(() => {
+      win.onafterprint = cleanup
+      win.focus()
+      win.print()
+      // Safety net: onafterprint never fires in kiosk-printing mode, and the
+      // frame must outlive print() or the job is cancelled mid-spool.
+      setTimeout(cleanup, 60000)
+    })
+  }
+
+  const doc = frame.contentDocument
+  if (!doc) {
+    frame.remove()
+    printError.value =
+      "Impression impossible : le navigateur a refusé le cadre d'impression. Rechargez la page et réessayez."
     return
   }
   printError.value = ''
-  printWindow.document.write(html)
-  printWindow.document.close()
-  printWindow.onload = () => {
-    printWindow.print()
-  }
+  doc.open()
+  doc.write(html)
+  doc.close()
 }
 </script>

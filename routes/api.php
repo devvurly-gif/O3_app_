@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\DocumentHeaderController;
 use App\Http\Controllers\Api\DocumentImportController;
 use App\Http\Controllers\Api\DocumentIncrementorController;
 use App\Http\Controllers\Api\DocumentLigneController;
+use App\Http\Controllers\Api\LabelPrintController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PriceListController;
 use App\Http\Controllers\Api\ProductController;
@@ -138,6 +139,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('payments/{payment}',                 [PaymentController::class, 'show']);
     Route::get('settings',                           [SettingController::class, 'index']);
     Route::get('storage/products',                   [StorageGalleryController::class, 'products']);
+
+    // ── Label printing (TSPL) ────────────────────────────────────────────
+    // Not admin-gated: printing price labels is shop-floor work. Only the
+    // printer *configuration* (in the labels settings domain) is admin-only.
+    Route::post('labels/tspl',  [LabelPrintController::class, 'payload']);
+    Route::post('labels/print', [LabelPrintController::class, 'print']);
 
     // ── Exports (all authenticated users) ────────────────────────────────
     Route::prefix('export')->group(function () {

@@ -41,7 +41,14 @@ class SettingController extends Controller
         // Product-label designer template (label size + per-field placement),
         // stored as a JSON blob so the layout is shared by every user and
         // device of the tenant rather than living in one browser.
-        'labels'   => ['template'],
+        // plus the thermal-printer wiring used by the TSPL transport
+        // (LabelPrintController): where to send the job and how the head
+        // should burn it.
+        'labels'   => [
+            'template',
+            'printer_transport', 'printer_name', 'printer_caps', 'printer_host', 'printer_port', 'agent_url',
+            'printer_dpi', 'printer_darkness', 'printer_speed', 'printer_gap', 'printer_direction',
+        ],
     ];
 
     public function __construct(private SettingRepositoryInterface $settings)
