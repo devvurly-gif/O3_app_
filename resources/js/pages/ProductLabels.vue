@@ -93,20 +93,34 @@
           <p class="text-xs text-gray-400">Glissez les champs pour les positionner</p>
         </div>
 
+        <div
+          v-if="overflowing.length"
+          class="rounded-lg border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-3 py-2 text-xs text-red-700 dark:text-red-300"
+        >
+          <span class="font-semibold">Hors de l'étiquette :</span> {{ overflowNames }} —
+          ce qui dépasse le cadre sera coupé à l'impression. Repositionnez le champ, réduisez sa taille,
+          ou agrandissez l'étiquette.
+        </div>
+
         <!-- Canvas -->
         <div class="bg-gray-100 dark:bg-gray-900 rounded-lg p-6 flex justify-center overflow-auto">
           <div
             ref="canvasEl"
-            class="relative bg-white shadow-sm shrink-0"
+            class="relative bg-white shadow-sm shrink-0 overflow-hidden"
             :class="label.border ? 'border border-gray-400' : 'border border-dashed border-gray-300'"
             :style="{ width: label.width * PX_PER_MM + 'px', height: label.height * PX_PER_MM + 'px' }"
           >
             <div
               v-for="f in enabledFields"
               :key="f.key"
+              :ref="(el) => setFieldEl(f.key, el)"
               class="absolute cursor-move select-none"
               :class="[
-                activeField === f.key ? 'outline outline-2 outline-orange-500' : 'hover:outline hover:outline-1 hover:outline-orange-300',
+                overflowing.includes(f.key)
+                  ? 'outline outline-2 outline-red-500'
+                  : activeField === f.key
+                    ? 'outline outline-2 outline-orange-500'
+                    : 'hover:outline hover:outline-1 hover:outline-orange-300',
                 layout[f.key].boxed ? 'border-2 border-black px-1' : '',
               ]"
               :style="fieldStyle(f.key)"
@@ -281,7 +295,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch, onMounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted, nextTick } from 'vue'
 import { useProductStore } from '@/stores/product'
 import { useAuthStore } from '@/stores/authStore'
 import BasePagination from '@/components/BasePagination.vue'
@@ -563,6 +577,41 @@ function fieldStyle(key: FieldKey) {
 
 // ── Drag to position ─────────────────────────────────────────────
 const canvasEl = ref<HTMLElement | null>(null)
+
+// ── Overflow detection ───────────────────────────────────────────
+// The printed label sets overflow:hidden, so anything past the edges is
+// silently cut. The canvas clips identically — and we flag the offending
+// fields, otherwise a clipped field just disappears with no explanation.
+const fieldEls: Record<string, HTMLElement | null> = {}
+const overflowing = ref<FieldKey[]>([])
+
+function setFieldEl(key: FieldKey, el: unknown) {
+  fieldEls[key] = (el as HTMLElement) ?? null
+}
+
+async function checkOverflow() {
+  await nextTick()
+  const canvas = canvasEl.value
+  if (!canvas) return
+  const c = canvas.getBoundingClientRect()
+  const tol = 1 // px, absorbs the canvas border and sub-pixel rounding
+
+  overflowing.value = enabledFields.value
+    .filter((f) => {
+      const el = fieldEls[f.key]
+      if (!el) return false
+      const r = el.getBoundingClientRect()
+      return r.right > c.right + tol || r.bottom > c.bottom + tol || r.left < c.left - tol || r.top < c.top - tol
+    })
+    .map((f) => f.key)
+}
+
+const overflowNames = computed(() =>
+  overflowing.value.map((k) => ALL_FIELDS.find((f) => f.key === k)?.label ?? k).join(', ')
+)
+
+watch([layout, label, enabledFields, sampleProduct], checkOverflow, { deep: true })
+onMounted(checkOverflow)
 const activeField = ref<FieldKey | null>(null)
 
 function clamp(v: number, min: number, max: number) {
