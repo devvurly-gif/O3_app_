@@ -135,6 +135,24 @@ class PromotionService
     }
 
     /**
+     * Un libellé fourre-tout de l'ERP, à masquer sur la boutique ?
+     *
+     * Comparaison insensible à la casse et aux espaces de bord : ces libellés
+     * sont saisis à la création du tenant, pas garantis normalisés.
+     */
+    public static function isPlaceholder(?string $label, string $type): bool
+    {
+        if ($label === null) {
+            return false;
+        }
+
+        $placeholder = config("ecom.placeholder_labels.{$type}");
+
+        return $placeholder !== null
+            && mb_strtolower(trim($label)) === mb_strtolower($placeholder);
+    }
+
+    /**
      * Transform a product for eCom API response.
      */
     public function transformForEcom(Product $product): array
@@ -155,14 +173,19 @@ class PromotionService
             'tax_rate'          => (float) $product->p_taxRate,
             'in_stock'          => $product->total_stock > 0,
             'stock_level'       => $product->total_stock,
-            'category'          => $product->category ? [
-                'id'   => $product->category->id,
-                'name' => $product->category->ctg_title,
-            ] : null,
-            'brand'             => $product->brand ? [
-                'id'   => $product->brand->id,
-                'name' => $product->brand->br_title,
-            ] : null,
+            // Les fourre-tout « Non catégorisé » / « Marque inconnue » sont des
+            // béquilles internes de l'ERP : sur la boutique, on les renvoie comme
+            // une absence de rattachement plutôt qu'en badge au-dessus du produit.
+            'category'          => $this->isPlaceholder($product->category?->ctg_title, 'category') ? null
+                : ($product->category ? [
+                    'id'   => $product->category->id,
+                    'name' => $product->category->ctg_title,
+                ] : null),
+            'brand'             => $this->isPlaceholder($product->brand?->br_title, 'brand') ? null
+                : ($product->brand ? [
+                    'id'   => $product->brand->id,
+                    'name' => $product->brand->br_title,
+                ] : null),
             'image'             => $product->primaryImage?->url,
             'images'            => $product->images->map(fn ($img) => [
                 'url'       => $img->url,

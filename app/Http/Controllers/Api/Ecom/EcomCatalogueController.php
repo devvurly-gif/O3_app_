@@ -162,7 +162,10 @@ class EcomCatalogueController extends Controller
     {
         // Storefront category list = categories themselves marked
         // is_ecom = true AND containing at least one published product.
+        // Le fourre-tout « Non catégorisé » est exclu : proposer un filtre pour
+        // des produits non rattachés n'a pas de sens côté client (cf. config/ecom.php).
         $categories = Category::where('is_ecom', true)
+            ->where('ctg_title', '!=', config('ecom.placeholder_labels.category'))
             ->whereHas('products', function ($q) {
                 $q->where('is_ecom', true)->where('p_status', true);
             })
@@ -187,7 +190,9 @@ class EcomCatalogueController extends Controller
     {
         // Storefront brand list = brands themselves marked
         // is_ecom = true AND containing at least one published product.
+        // Même traitement que les catégories pour « Marque inconnue ».
         $brands = Brand::where('is_ecom', true)
+            ->where('br_title', '!=', config('ecom.placeholder_labels.brand'))
             ->whereHas('products', function ($q) {
                 $q->where('is_ecom', true)->where('p_status', true);
             })
