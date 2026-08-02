@@ -61,6 +61,10 @@ server {
 
     root /var/www/O3_ecom/dist;
     index index.html;
+    # Sans cette ligne, index.html part en `text/html` tout court : les accents
+    # ne tiennent plus qu'au <meta charset> du document, et les assets JS/CSS
+    # n'ont aucune déclaration d'encodage.
+    charset utf-8;
 
     location /storage/ {
         proxy_pass https://$tenant.o3app.ma;
