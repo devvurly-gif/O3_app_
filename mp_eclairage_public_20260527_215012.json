@@ -1,0 +1,98 @@
+{
+  "keyword": "ECLAIRAGE PUBLIC",
+  "timestamp": "2026-05-27T21:50:12.224050",
+  "total_estimated": 10,
+  "page_count": 10,
+  "annonces": [
+    {
+      "numero": 1,
+      "reference": "16/AOO/RRM/2026",
+      "objet": "Projet des lignes B1, B2, B3 ET B4 de Bus à Haut Niveau de Service (BHNS) d’Agglomération de Rabat-Salé-Témara : Travaux préparatoires d’éclairage public et de signalisation tricolore des quatre ligne",
+      "procedure": "Appel d'offres ouvert",
+      "categorie": "Travaux",
+      "date_fin": "25/06/2026 11:00",
+      "lieu": "RABAT SALE"
+    },
+    {
+      "numero": 2,
+      "reference": "07/2026",
+      "objet": "1- : TRAVAUX D’AMÉNAGEMENT DE LA VOIE RELIANT COLLÈGE SIDI MOKHTAR, SOUK HEBDOMADAIRE ET MAISON D’ÉTUDIANTE PAR ECLAIRAGE PUBLIC ET REVETEMENT DES TROTTOIRS PAR PAVE SUR UNE LONGUEUR DE 1620ML. 2- : T",
+      "procedure": "Appel d'offres ouvert",
+      "categorie": "Travaux",
+      "date_fin": "18/06/2026 11:00",
+      "lieu": "CHICHAOUA"
+    },
+    {
+      "numero": 3,
+      "reference": "09/COS/2026",
+      "objet": "ACHAT DE FOURNITURE ELECTRIQUE POUR L'ENTRETIEN DE RESEAU D’ECLAIRAGE PUBLIC SIS A LA COMMUNE OULED SALAH PROVINCE DE NOUACEUR",
+      "procedure": "Appel d'offres ouvert",
+      "categorie": "Fournitures",
+      "date_fin": "17/06/2026 12:00",
+      "lieu": "NOUACEUR"
+    },
+    {
+      "numero": 4,
+      "reference": "06/2026/TRA",
+      "objet": "Travaux d’éclairage public de voiries de la ville de Tanger - tranche 1.",
+      "procedure": "Appel d'offres ouvert",
+      "categorie": "Travaux",
+      "date_fin": "17/06/2026 11:00",
+      "lieu": "TANGER-ASSILAH"
+    },
+    {
+      "numero": 5,
+      "reference": "8/2026/SDR",
+      "objet": "travaux d’exécution du programme de l’éclairage publics durable selon les principes de l’efficacité d’énergétique au niveau des communes relevant de la préfecture Oujda-Angad (complément)",
+      "procedure": "Appel d'offres ouvert",
+      "categorie": "Travaux",
+      "date_fin": "17/06/2026 10:00",
+      "lieu": "OUJDA-ANGAD"
+    },
+    {
+      "numero": 6,
+      "reference": "221/2026/SRMCS",
+      "objet": "Fourniture d’accessoires électriques pour réseaux aériens, et souterrains",
+      "procedure": "Appel d'offres ouvert",
+      "categorie": "Fournitures",
+      "date_fin": "17/06/2026 09:30",
+      "lieu": "CASABLANCA MOHAMMADIA"
+    },
+    {
+      "numero": 7,
+      "reference": "05/2026/T",
+      "objet": "TRAVAUX DE MAINTENANCE DU RESEAU D’ECLAIRAGE PUBLIC A LA COMMUNE",
+      "procedure": "Appel d'offres ouvert",
+      "categorie": "Travaux",
+      "date_fin": "16/06/2026 11:00",
+      "lieu": "Wilaya de Rabat MAROC"
+    },
+    {
+      "numero": 8,
+      "reference": "02/SABA/2026",
+      "objet": "Suivi Travaux D’éclairage Public Solaire De L’axe Routier Reliant La RP 3222 Et Douar Ngar , De L’axe Routier Non Classe Reliant La RN 25 Et La RP 3226 Au Centre Douar Ngar Et L’axe Routier RP3222 Au ",
+      "procedure": "Appel d'offres ouvert simplifié",
+      "categorie": "Services",
+      "date_fin": "16/06/2026 11:00",
+      "lieu": "FQUIH BEN SALAH"
+    },
+    {
+      "numero": 9,
+      "reference": "AO/95/2026",
+      "objet": "TRAVAUX D’ELECTRIFICATION MT/BT, ECLAIRAGE PUBLIC ET RESEAU TELEPHONIQUE DU LOTISSEMENT DE LA ZONE D’ACTIVITE ARTISANALE A SBAA AYOUNE PROVINCE D’EL HAJEB",
+      "procedure": "Appel d'offres ouvert",
+      "categorie": "Travaux",
+      "date_fin": "16/06/2026 11:00",
+      "lieu": "EL-HAJEB"
+    },
+    {
+      "numero": 10,
+      "reference": "01/SABA/2026",
+      "objet": "Travaux d’éclairage public solaire de l’axe routier reliant la RP3222 et douar Ngar,de l’axe routier non classe reliant la RN25 et la RP3226 au centre douar Ngar et l’axe routier RP3222 au niveau doua",
+      "procedure": "Appel d'offres ouvert",
+      "categorie": "Travaux",
+      "date_fin": "16/06/2026 10:00",
+      "lieu": "FQUIH BEN SALAH"
+    }
+  ]
+}

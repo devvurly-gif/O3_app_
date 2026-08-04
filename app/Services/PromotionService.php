@@ -11,6 +11,11 @@ class PromotionService
 {
     private const CACHE_TTL = 120; // 2 minutes
 
+    public function __construct(
+        private readonly PriceResolver $priceResolver,
+    ) {
+    }
+
     /**
      * Base query for products visible on the storefront.
      *
@@ -50,7 +55,13 @@ class PromotionService
      * Enrich a product with its promo data.
      * Returns: [promo_price, discount_percent, promotion_name, has_promo]
      */
-    public function getProductPromoData(Product $product): array
+    /**
+     * @param float|null $baseHt Prix HT servant de référence à la remise. La
+     *   boutique passe le tarif de grille résolu : sans cela, le pourcentage
+     *   affiché serait calculé sur p_salePrice et ne correspondrait plus au
+     *   prix montré au client.
+     */
+    public function getProductPromoData(Product $product, ?float $baseHt = null): array
     {
         $promo = $this->getBestPromotionForProduct($product);
 
@@ -68,13 +79,14 @@ class PromotionService
         $pivot = $promo->pivot ?? null;
         $forcedPrice = $pivot?->promo_price;
 
+        $originalPrice = $baseHt ?? (float) $product->p_salePrice;
+
         if ($forcedPrice && $forcedPrice > 0) {
             $promoPrice = (float) $forcedPrice;
         } else {
-            $promoPrice = $promo->calculateDiscount((float) $product->p_salePrice);
+            $promoPrice = $promo->calculateDiscount($originalPrice);
         }
 
-        $originalPrice = (float) $product->p_salePrice;
         $discountPercent = $originalPrice > 0
             ? round((($originalPrice - $promoPrice) / $originalPrice) * 100)
             : 0;
@@ -157,7 +169,11 @@ class PromotionService
      */
     public function transformForEcom(Product $product): array
     {
-        $promoData = $this->getProductPromoData($product);
+        // Le prix affiché en boutique vient de la grille ECommerce quand elle
+        // couvre le produit, sinon de la grille par défaut, sinon du prix de
+        // vente. La remise se calcule sur ce même prix.
+        $tarif     = $this->priceResolver->resolveForStorefront($product);
+        $promoData = $this->getProductPromoData($product, $tarif['price_ht']);
 
         return [
             'id'                => $product->id,
@@ -168,8 +184,9 @@ class PromotionService
             'ean13'             => $product->p_ean13,
             'description'       => $product->p_description,
             'long_description'  => $product->p_long_description,
-            'price'             => (float) $product->p_salePrice,
-            'price_ttc'         => $product->salePriceTtc(),
+            'price'             => $tarif['price_ht'],
+            'price_ttc'         => $tarif['price_ttc'],
+            'price_source'      => $tarif['source'],
             'tax_rate'          => (float) $product->p_taxRate,
             'in_stock'          => $product->total_stock > 0,
             'stock_level'       => $product->total_stock,

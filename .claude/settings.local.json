@@ -59,7 +59,12 @@
       "WebSearch",
       "WebFetch(domain:wdlinkma.com)",
       "Bash(ssh root@46.101.179.185 'grep -n '\\\\''if \\($host'\\\\'' /etc/nginx/sites-enabled/o3app.ma')",
-      "Bash(gh auth *)"
+      "Bash(gh auth *)",
+      "Bash(rm -f \"C:/Users/hp/Desktop/import_jadever_jadema.xlsx\")",
+      "Bash(mv \"C:/Users/hp/Desktop/import_jadever_jadema_v2.xlsx\" \"C:/Users/hp/Desktop/import_jadever_jadema.xlsx\")",
+      "Read(//c/Users/hp/Desktop/**)",
+      "Bash(node C:/Users/hp/AppData/Local/Temp/claude/C--laragon-www-O3-app/73750eeb-094d-4029-9d13-9032b34fedd9/scratchpad/traduire_desc.mjs)",
+      "Bash(node C:/Users/hp/AppData/Local/Temp/claude/C--laragon-www-O3-app/73750eeb-094d-4029-9d13-9032b34fedd9/scratchpad/gen_rapport_prix.mjs)"
     ]
   }
 }

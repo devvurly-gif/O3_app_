@@ -29,6 +29,18 @@
       "port": 5175
     },
     {
+      "name": "o3app-2027-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "C:/laragon/www/o3app-2027", "run", "dev", "--", "--port", "5176"],
+      "port": 5176
+    },
+    {
+      "name": "o3-ecom-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "C:/laragon/www/O3_ecom", "run", "dev", "--", "--port", "5177"],
+      "port": 5177
+    },
+    {
       "name": "teliphoni-shop",
       "runtimeExecutable": "node",
       "runtimeArgs": [
