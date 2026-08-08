@@ -36,6 +36,7 @@ use App\Http\Controllers\Api\ImportController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\ActivityLogController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\PushSubscriptionController;
 use App\Http\Controllers\Api\Pos\PosProductController;
 use App\Http\Controllers\Api\Pos\PosSessionController;
 use App\Http\Controllers\Api\Pos\PosTerminalController;
@@ -98,6 +99,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('notifications/unread',         [NotificationController::class, 'unread']);
     Route::patch('notifications/{id}/read',    [NotificationController::class, 'markAsRead']);
     Route::post('notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
+
+    // ── Notifications push (navigateur / téléphone) ────────────────────
+    Route::get('push-subscriptions/vapid-key', [PushSubscriptionController::class, 'vapidKey']);
+    Route::post('push-subscriptions',          [PushSubscriptionController::class, 'store']);
+    Route::delete('push-subscriptions',        [PushSubscriptionController::class, 'destroy']);
 
     // ── Read-only routes (all authenticated users) ────────────────────────
     Route::get('brands',                             [BrandController::class, 'index']);

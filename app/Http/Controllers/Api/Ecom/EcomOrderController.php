@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Ecom;
 
 use App\Http\Controllers\Controller;
 use App\Mail\EcomOrderConfirmationMail;
+use App\Models\DocumentHeader;
 use App\Models\DocumentIncrementor;
 use App\Models\Product;
 use App\Models\ThirdPartner;
@@ -13,6 +14,7 @@ use App\Notifications\NewEcomOrderNotification;
 use App\Services\DocumentHeaderService;
 use App\Services\DynamicMailService;
 use App\Services\PriceResolver;
+use App\Services\SaleNotificationService;
 use App\Services\StockMouvementService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -187,6 +189,7 @@ class EcomOrderController extends Controller
         $this->stockService->processDocument($document, pending: true);
 
         $this->sendOrderEmails($document, $customer);
+        $this->sendOrderWhatsApp($document);
 
         return response()->json([
             'success'     => true,
@@ -224,5 +227,37 @@ class EcomOrderController extends Controller
         } catch (\Throwable $e) {
             Log::warning("EcomOrder: staff new-order notification failed for {$document->reference}: {$e->getMessage()}");
         }
+    }
+
+    /**
+     * WhatsApp the buyer that their order landed.
+     *
+     * Deliberately outside sendOrderEmails() and its DynamicMailService gate:
+     * "Envoyer les emails" is an email setting, and a tenant who turned email
+     * off has not asked to go silent on WhatsApp. WhatsApp has its own toggle,
+     * which SaleNotificationService checks.
+     *
+     * The order is a DeliveryNote created as pending, so DocumentNotificationObserver
+     * stays quiet on it — this is the buyer's only message until staff confirm.
+     */
+    private function sendOrderWhatsApp($document): void
+    {
+        $documentId = $document->id;
+
+        // afterResponse: Twilio must not sit between the buyer and their
+        // "commande confirmée" screen at checkout.
+        dispatch(function () use ($documentId) {
+            try {
+                $doc = DocumentHeader::with(['thirdPartner', 'footer', 'lignes'])->find($documentId);
+
+                if (!$doc) {
+                    return;
+                }
+
+                app(SaleNotificationService::class)->send($doc, 'received');
+            } catch (\Throwable $e) {
+                Log::warning("EcomOrder: customer WhatsApp failed for document {$documentId}: {$e->getMessage()}");
+            }
+        })->afterResponse();
     }
 }

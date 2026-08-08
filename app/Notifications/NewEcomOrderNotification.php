@@ -3,14 +3,16 @@
 namespace App\Notifications;
 
 use App\Models\DocumentHeader;
+use App\Notifications\Concerns\SendsWebPush;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use NotificationChannels\WebPush\WebPushMessage;
 
 class NewEcomOrderNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, SendsWebPush;
 
     public int $tries = 3;
     public int $backoff = 60;
@@ -21,7 +23,22 @@ class NewEcomOrderNotification extends Notification implements ShouldQueue
 
     public function via(object $notifiable): array
     {
-        return ['mail', 'database'];
+        return array_merge(['mail', 'database'], $this->webPushChannel());
+    }
+
+    public function toWebPush(object $notifiable, $notification): WebPushMessage
+    {
+        $partner = $this->document->thirdPartner?->tp_title ?? '—';
+        $total   = number_format((float) ($this->document->footer?->total_ttc ?? 0), 2, ',', ' ');
+
+        return (new WebPushMessage)
+            ->title("Nouvelle commande — {$total} DH")
+            ->body("{$partner} · {$this->document->reference}")
+            ->icon('/favicon.ico')
+            // No shared tag here: every order deserves its own line, since
+            // missing one means an unshipped parcel.
+            ->requireInteraction()
+            ->data(['url' => $this->webPushUrl('/ventes/documents/' . $this->document->id)]);
     }
 
     public function toMail(object $notifiable): MailMessage

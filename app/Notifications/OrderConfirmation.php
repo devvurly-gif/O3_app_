@@ -3,14 +3,16 @@
 namespace App\Notifications;
 
 use App\Models\DocumentHeader;
+use App\Notifications\Concerns\SendsWebPush;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use NotificationChannels\WebPush\WebPushMessage;
 
 class OrderConfirmation extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, SendsWebPush;
 
     public int $tries = 3;
     public int $backoff = 60; // retry after 60 seconds
@@ -35,7 +37,21 @@ class OrderConfirmation extends Notification implements ShouldQueue
 
     public function via(object $notifiable): array
     {
-        return ['mail', 'database'];
+        return array_merge(['mail', 'database'], $this->webPushChannel());
+    }
+
+    public function toWebPush(object $notifiable, $notification): WebPushMessage
+    {
+        $typeLabel = self::$typeLabels[$this->document->document_type] ?? $this->document->document_type;
+        $partner   = $this->document->thirdPartner?->tp_title ?? '—';
+        $total     = number_format((float) ($this->document->footer?->total_ttc ?? 0), 2, ',', ' ');
+
+        return (new WebPushMessage)
+            ->title("{$typeLabel} confirmé — {$total} DH")
+            ->body("{$partner} · {$this->document->reference}")
+            ->icon('/favicon.ico')
+            ->tag('document-' . $this->document->id)
+            ->data(['url' => $this->webPushUrl($this->documentUrl())]);
     }
 
     public function toMail(object $notifiable): MailMessage

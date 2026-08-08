@@ -152,6 +152,42 @@
                 <span v-if="!n.read_at" class="mt-1.5 w-2 h-2 rounded-full bg-orange-500 shrink-0"></span>
               </div>
             </div>
+
+            <!-- Push : arrive sur le telephone meme application fermee -->
+            <div
+              v-if="pushSupported"
+              class="px-4 py-3 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60"
+            >
+              <button
+                :disabled="pushBusy || pushBlocked"
+                class="w-full flex items-center justify-between gap-3 text-left disabled:opacity-60 disabled:cursor-not-allowed"
+                @click="togglePush"
+              >
+                <span class="min-w-0">
+                  <span class="block text-xs font-medium text-gray-700 dark:text-gray-200">
+                    Alertes sur ce téléphone
+                  </span>
+                  <span class="block text-[11px] text-gray-400 dark:text-gray-500 leading-snug">
+                    {{
+                      pushBlocked
+                        ? 'Bloquées dans le navigateur'
+                        : pushEnabled
+                          ? 'Actives, même application fermée'
+                          : 'Inactives sur cet appareil'
+                    }}
+                  </span>
+                </span>
+                <span
+                  class="relative shrink-0 inline-flex h-5 w-9 items-center rounded-full transition-colors"
+                  :class="pushEnabled ? 'bg-orange-500' : 'bg-gray-300 dark:bg-gray-600'"
+                >
+                  <span
+                    class="inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform"
+                    :class="pushEnabled ? 'translate-x-4.5' : 'translate-x-1'"
+                  ></span>
+                </span>
+              </button>
+            </div>
           </div>
         </Transition>
       </div>
@@ -249,6 +285,7 @@ import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { setLocale } from '@/i18n/index'
 import { useNotifications } from '@/composables/useNotifications'
+import { usePushNotifications } from '@/composables/usePushNotifications'
 import { useDarkMode } from '@/composables/useDarkMode'
 
 const props = defineProps({
@@ -266,6 +303,14 @@ const notifOpen = ref(false)
 const userOpen = ref(false)
 
 const { unreadCount, notifications, markAsRead, markAllAsRead } = useNotifications()
+
+const {
+  supported: pushSupported,
+  enabled: pushEnabled,
+  blocked: pushBlocked,
+  busy: pushBusy,
+  toggle: togglePush,
+} = usePushNotifications()
 const { isDark, toggle: toggleDark } = useDarkMode()
 
 function doMarkRead(n) {
