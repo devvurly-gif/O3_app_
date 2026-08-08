@@ -28,7 +28,7 @@ class StorageGalleryController extends Controller
     {
         $request->validate([
             'images'   => ['required', 'array', 'min:1'],
-            'images.*' => ['image', 'max:4096'],
+            'images.*' => ['image', 'max:10240'],
         ]);
 
         $uploaded = [];

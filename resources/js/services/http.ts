@@ -54,6 +54,13 @@ http.interceptors.response.use(
         // Silent for API calls — pages handle their own 404
         break
 
+      // ── 413 Payload Too Large ───────────────────────────────
+      // PHP rejects the body before Laravel fills it, so `message`
+      // comes back empty — always use our own wording here.
+      case 413:
+        toast?.error('Fichier trop volumineux. Réduisez la taille ou envoyez moins d\'images à la fois.')
+        break
+
       // ── 422 Validation Error ────────────────────────────────
       case 422: {
         if (data?.errors) {
