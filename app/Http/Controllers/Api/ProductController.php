@@ -32,7 +32,10 @@ class ProductController extends Controller
                 direction: $request->input('order', 'asc'),
                 filters: array_filter([
                     'search' => $request->search ? [
-                        'columns' => ['p_title', 'p_sku', 'p_ean13', 'p_description'],
+                        // p_code included so a code typed in the document form
+                        // resolves server-side too, not just against the page
+                        // of products already loaded in the browser.
+                        'columns' => ['p_title', 'p_code', 'p_sku', 'p_ean13', 'p_description'],
                         'value'   => $request->search,
                     ] : null,
                     'category_id' => $request->category_id,

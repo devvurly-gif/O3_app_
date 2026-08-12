@@ -1,5 +1,5 @@
 ﻿<script setup lang="ts">
-import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import http from '@/services/http'
 import { useSettingStore } from '@/stores/setting'
 import BaseModal from '@/components/BaseModal.vue'
@@ -92,6 +92,55 @@ function createEmptyLine(): LineItem {
 const pendingLine = reactive(createEmptyLine())
 const pendingSearch = ref('')
 const showPendingDropdown = ref(false)
+
+// ── Product lookup ─────────────────────────────────────────────────────────
+// `products` only holds the first page of the catalog, so filtering it locally
+// hides everything past that cap (jadema: 203 products, the "Vibreur" rows sat
+// at 201-203 and were unreachable). The local list stays as the instant,
+// zero-latency match; anything the server knows about is merged in on top.
+const remoteProducts = ref<Product[]>([])
+const searchingProducts = ref(false)
+let productSearchTimer: ReturnType<typeof setTimeout> | undefined
+let productSearchSeq = 0
+
+function queueProductSearch(term: string) {
+  clearTimeout(productSearchTimer)
+  const q = term.trim()
+  if (q.length < 2) {
+    productSearchSeq++ // discard any in-flight response
+    remoteProducts.value = []
+    searchingProducts.value = false
+    return
+  }
+  searchingProducts.value = true
+  productSearchTimer = setTimeout(() => runProductSearch(q), 300)
+}
+
+async function runProductSearch(q: string) {
+  const seq = ++productSearchSeq
+  try {
+    const { data } = await http.get('/products', { params: { search: q, per_page: 25 } })
+    if (seq !== productSearchSeq) return // a newer keystroke already won
+    remoteProducts.value = Array.isArray(data) ? data : ((data as any).data ?? [])
+  } catch {
+    if (seq === productSearchSeq) remoteProducts.value = []
+  } finally {
+    if (seq === productSearchSeq) searchingProducts.value = false
+  }
+}
+
+/** Local hits first (instant), then server hits not already listed. */
+function matchProducts(term: string): Product[] {
+  const q = term.toLowerCase().trim()
+  if (!q) return products.value.slice(0, 15)
+
+  const local = products.value.filter(
+    (p) => (p.p_title ?? '').toLowerCase().includes(q) || (p.p_code ?? '').toLowerCase().includes(q),
+  )
+  const seen = new Set(local.map((p) => p.id))
+
+  return [...local, ...remoteProducts.value.filter((p) => !seen.has(p.id))].slice(0, 25)
+}
 
 // Resolved display prices keyed by product_id. Populated once products are
 // loaded (as the comptoir tariff) and refreshed whenever the partner changes
@@ -197,19 +246,12 @@ const selectedWarehouseName = computed(() => {
   return warehouses.value.find((w: any) => Number(w.id) === Number(form.warehouse_id))?.wh_title ?? ''
 })
 
-const filteredPendingProducts = computed(() => {
-  const q = pendingSearch.value.toLowerCase().trim()
-  const filtered = !q
-    ? products.value.slice(0, 15)
-    : products.value
-        .filter((p) => p.p_title.toLowerCase().includes(q) || p.p_code.toLowerCase().includes(q))
-        .slice(0, 15)
-
-  return filtered.map((p: any) => ({
+const filteredPendingProducts = computed(() =>
+  matchProducts(pendingSearch.value).map((p: any) => ({
     ...p,
     warehouse_stock: stockForWarehouse(p, form.warehouse_id),
-  }))
-})
+  })),
+)
 
 function canAddArticle(): boolean {
   return !!pendingLine.product_id && pendingLine.quantity > 0
@@ -317,11 +359,7 @@ const filteredPartners = computed(() => {
 })
 
 function filteredProducts(lineKey: number): Product[] {
-  const q = (productSearches[lineKey] ?? '').toLowerCase().trim()
-  if (!q) return products.value.slice(0, 15)
-  return products.value
-    .filter((p) => p.p_title.toLowerCase().includes(q) || p.p_code.toLowerCase().includes(q))
-    .slice(0, 15)
+  return matchProducts(productSearches[lineKey] ?? '')
 }
 
 const matchedIncrementor = computed(() => {
@@ -351,6 +389,60 @@ const selectedPartnerName = computed(() => {
 
 const showPartnerDropdown = ref(false)
 const showProductDropdown = ref<number | null>(null)
+
+// ── Dropdown positioning ───────────────────────────────────────────────────
+// The result panels sit inside a card with `overflow-hidden` and, for the line
+// rows, a table wrapper with `overflow-x-auto`. Both clip an absolutely
+// positioned child whatever its z-index is, so the list came out cut off or
+// buried. Teleporting to <body> with fixed coordinates read off the field is
+// what actually floats it above the input and every containing div.
+const anchorEl = ref<HTMLElement | null>(null)
+const anchorRect = ref<{ top: number; bottom: number; left: number; width: number } | null>(null)
+
+function measureAnchor() {
+  if (!anchorEl.value?.isConnected) {
+    anchorRect.value = null
+    return
+  }
+  const { top, bottom, left, width } = anchorEl.value.getBoundingClientRect()
+  anchorRect.value = { top, bottom, left, width }
+}
+
+function anchorFrom(event: Event) {
+  anchorEl.value = (event.currentTarget as HTMLElement | null)?.closest<HTMLElement>('[data-anchor]') ?? null
+  measureAnchor()
+}
+
+const dropdownStyle = computed<Record<string, string>>(() => {
+  const r = anchorRect.value
+  if (!r) return { display: 'none' }
+
+  const below = window.innerHeight - r.bottom - 12
+  const flip = below < 180 && r.top > below
+
+  return {
+    position: 'fixed',
+    left: `${r.left}px`,
+    width: `${r.width}px`,
+    maxHeight: `${Math.max(160, Math.min(288, flip ? r.top - 12 : below))}px`,
+    ...(flip ? { bottom: `${window.innerHeight - r.top + 4}px` } : { top: `${r.bottom + 4}px` }),
+  }
+})
+
+// Only one panel may be open, otherwise they would share the single anchor.
+function openPartnerDropdown(event: Event) {
+  anchorFrom(event)
+  showPendingDropdown.value = false
+  showProductDropdown.value = null
+  showPartnerDropdown.value = true
+}
+
+function openPendingDropdown(event: Event, toggle = false) {
+  anchorFrom(event)
+  showPartnerDropdown.value = false
+  showProductDropdown.value = null
+  showPendingDropdown.value = toggle ? !showPendingDropdown.value : true
+}
 const showCustomerDetailModal = ref(false)
 const customerDetail = ref<any>(null)
 const customerDetailLoading = ref(false)
@@ -382,7 +474,10 @@ function delayedClosePartner() {
   }, 200)
 }
 
-function openProductDropdown(lineKey: number) {
+function openProductDropdown(event: Event, lineKey: number) {
+  anchorFrom(event)
+  showPartnerDropdown.value = false
+  showPendingDropdown.value = false
   showProductDropdown.value = lineKey
 }
 
@@ -448,6 +543,19 @@ function setValidationErrors(errors: Record<string, string[]>) {
 }
 
 defineExpose({ setValidationErrors })
+
+// `true` for the capture phase: the line dropdowns are anchored to a field
+// inside the horizontally scrollable table, which does not bubble scroll.
+onMounted(() => {
+  window.addEventListener('scroll', measureAnchor, true)
+  window.addEventListener('resize', measureAnchor)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('scroll', measureAnchor, true)
+  window.removeEventListener('resize', measureAnchor)
+  clearTimeout(productSearchTimer)
+})
 
 onMounted(async () => {
   if (!settingStore.settings?.invoice) await settingStore.fetchAll()
@@ -553,9 +661,10 @@ function getStockClass(stock: number): string {
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{{ partnerLabel }}</label>
           <input
             v-model="partnerSearch"
+            data-anchor
             :placeholder="`Rechercher ${partnerLabel.toLowerCase()}...`"
             class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition"
-            @focus="showPartnerDropdown = true"
+            @focus="openPartnerDropdown"
             @blur="delayedClosePartner"
           />
           <input type="hidden" :value="form.thirdPartner_id" />
@@ -572,9 +681,11 @@ function getStockClass(stock: number): string {
               {{ selectedPartnerName }}
             </button>
           </div>
+          <Teleport to="body">
           <div
             v-if="showPartnerDropdown && filteredPartners.length"
-            class="absolute z-20 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto"
+            :style="dropdownStyle"
+            class="z-[100] bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl overflow-y-auto"
           >
             <button
               v-for="p in filteredPartners"
@@ -588,6 +699,7 @@ function getStockClass(stock: number): string {
               <span class="text-gray-400 dark:text-gray-500 ml-2 text-xs">{{ p.tp_code }}</span>
             </button>
           </div>
+          </Teleport>
         </div>
 
         <!-- Warehouse -->
@@ -664,19 +776,20 @@ function getStockClass(stock: number): string {
           <!-- Product search -->
           <div class="relative flex-1">
             <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Produit</label>
-            <div class="flex gap-2">
+            <div class="flex gap-2" data-anchor>
               <input
                 v-model="pendingSearch"
                 placeholder="Chercher un produit..."
                 class="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition"
-                @input="showPendingDropdown = true"
+                @input="openPendingDropdown($event); queueProductSearch(pendingSearch)"
+                @focus="openPendingDropdown($event)"
                 @blur="delayedClosePending"
               />
               <button
                 type="button"
                 class="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600 hover:text-orange-500 dark:hover:text-blue-400 transition"
                 title="Rechercher"
-                @click="showPendingDropdown = !showPendingDropdown"
+                @click="openPendingDropdown($event, true)"
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <circle cx="11" cy="11" r="8" />
@@ -684,10 +797,18 @@ function getStockClass(stock: number): string {
                 </svg>
               </button>
             </div>
+            <Teleport to="body">
             <div
-              v-if="showPendingDropdown && filteredPendingProducts.length"
-              class="absolute z-30 mt-1 left-0 right-0 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto"
+              v-if="showPendingDropdown && (filteredPendingProducts.length || searchingProducts)"
+              :style="dropdownStyle"
+              class="z-[100] bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl overflow-y-auto"
             >
+              <div
+                v-if="searchingProducts && !filteredPendingProducts.length"
+                class="px-4 py-2.5 text-sm text-gray-400 dark:text-gray-500"
+              >
+                Recherche...
+              </div>
               <button
                 v-for="p in filteredPendingProducts"
                 :key="p.id"
@@ -712,6 +833,7 @@ function getStockClass(stock: number): string {
                 >
               </button>
             </div>
+            </Teleport>
           </div>
 
           <!-- Quantity -->
@@ -768,19 +890,20 @@ function getStockClass(stock: number): string {
               <td class="px-3 py-2 text-gray-400 dark:text-gray-500 text-xs">{{ idx + 1 }}</td>
 
               <td class="px-3 py-2 relative">
-                <div class="flex gap-1">
+                <div class="flex gap-1" data-anchor>
                   <input
                     v-model="productSearches[line.key]"
                     :placeholder="line.designation || 'Chercher un produit...'"
                     class="flex-1 px-2.5 py-1.5 text-sm rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
-                    @input="openProductDropdown(line.key)"
+                    @input="openProductDropdown($event, line.key); queueProductSearch(productSearches[line.key] ?? '')"
+                    @focus="openProductDropdown($event, line.key)"
                     @blur="delayedCloseProduct(line.key)"
                   />
                   <button
                     type="button"
                     class="px-2 py-1.5 rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-400 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-600 hover:text-orange-500 dark:hover:text-blue-400 transition"
                     title="Rechercher"
-                    @click="openProductDropdown(line.key)"
+                    @click="openProductDropdown($event, line.key)"
                   >
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                       <circle cx="11" cy="11" r="8" />
@@ -794,10 +917,18 @@ function getStockClass(stock: number): string {
                 >
                   {{ line.designation }}
                 </div>
+                <Teleport to="body">
                 <div
-                  v-if="showProductDropdown === line.key && filteredProducts(line.key).length"
-                  class="absolute z-30 mt-1 left-3 right-3 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg max-h-40 overflow-y-auto"
+                  v-if="showProductDropdown === line.key && (filteredProducts(line.key).length || searchingProducts)"
+                  :style="dropdownStyle"
+                  class="z-[100] bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl overflow-y-auto"
                 >
+                  <div
+                    v-if="searchingProducts && !filteredProducts(line.key).length"
+                    class="px-3 py-2 text-sm text-gray-400 dark:text-gray-500"
+                  >
+                    Recherche...
+                  </div>
                   <button
                     v-for="p in filteredProducts(line.key)"
                     :key="p.id"
@@ -823,6 +954,7 @@ function getStockClass(stock: number): string {
                     >
                   </button>
                 </div>
+                </Teleport>
               </td>
 
               <td class="px-3 py-2">
