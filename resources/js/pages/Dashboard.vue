@@ -312,6 +312,12 @@ const paymentColors: Record<string, string> = {
             <p v-if="card.trend != null" class="text-[10px]" :class="trendClass(card.trend)">
               {{ trendLabel(card.trend) }}
             </p>
+            <p v-if="card.meta?.rate != null" class="text-[10px] text-gray-400 dark:text-gray-500 truncate">
+              {{ card.meta.rate }} % du CA HT
+              <span v-if="card.meta.uncosted_lines" class="text-amber-500" :title="`${card.meta.uncosted_lines} ligne(s) sans coût de revient`">
+                · {{ card.meta.uncosted_lines }} sans coût
+              </span>
+            </p>
           </div>
         </div>
       </div>

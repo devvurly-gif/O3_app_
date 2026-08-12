@@ -15,6 +15,12 @@ use Illuminate\Support\Facades\DB;
 
 class DashboardService
 {
+    /** Documents that represent a real sale to a customer. */
+    private const SALE_TYPES = ['TicketSale', 'InvoiceSale', 'DeliveryNote'];
+
+    /** Neither a firm sale (draft) nor one that still counts (cancelled/re-invoiced). */
+    private const NON_SELLING_STATUSES = ['cancelled', 'draft', 'converted'];
+
     public function getKpis(): array
     {
         return CacheService::remember(
@@ -91,8 +97,9 @@ class DashboardService
               ->where('issued_at', '>=', $startToday)
         )->sum('total_ttc');
 
-        // Margin estimate (sales - purchases this month)
-        $marginCurrent = $caCurrent - $purchasesCurrent;
+        // Gross margin on the goods actually sold this month.
+        $marginCurrent = $this->marginBreakdown($startMonth);
+        $marginPrev    = $this->marginBreakdown($startPrev, $endPrev);
 
         // Counters
         $productCount   = Product::where('p_status', true)->count();
@@ -143,8 +150,20 @@ class DashboardService
             [
                 'key'      => 'margin_month',
                 'label'    => 'Marge brute du mois',
-                'value'    => round($marginCurrent, 2),
+                'value'    => round($marginCurrent['margin'], 2),
+                'prev'     => round($marginPrev['margin'], 2),
+                'trend'    => $this->trend($marginCurrent['margin'], $marginPrev['margin']),
                 'currency' => true,
+                'meta'     => [
+                    'revenue_ht'     => round($marginCurrent['revenue'], 2),
+                    'cogs'           => round($marginCurrent['cogs'], 2),
+                    'rate'           => $marginCurrent['revenue'] > 0
+                        ? round($marginCurrent['margin'] / $marginCurrent['revenue'] * 100, 1)
+                        : null,
+                    // Lines whose product carries neither cost nor purchase
+                    // price: they inflate the margin, so the UI can warn.
+                    'uncosted_lines' => $marginCurrent['uncosted_lines'],
+                ],
             ],
             [
                 'key'      => 'invoices_month',
@@ -450,6 +469,60 @@ class DashboardService
             });
 
         return (float) $q->sum('total_ttc');
+    }
+
+    /**
+     * Gross margin on what was actually sold: the HT total of every sale line
+     * (discounts applied, VAT excluded) minus the cost of those very goods.
+     *
+     * This used to be `sales TTC - purchases TTC`, which measured something
+     * else entirely — restocking done in a month has no relation to what that
+     * month sold, and VAT belongs to neither side of a margin.
+     *
+     * Cost basis is p_cost (coût de revient), falling back to p_purchasePrice
+     * when it is not filled in; lines with neither are counted separately so
+     * the figure can be qualified rather than silently overstated.
+     *
+     * @return array{revenue: float, cogs: float, margin: float, uncosted_lines: int}
+     */
+    private function marginBreakdown(Carbon $from, ?Carbon $to = null): array
+    {
+        $cost = 'COALESCE(NULLIF(p.p_cost, 0), NULLIF(p.p_purchasePrice, 0), 0)';
+
+        $row = DocumentLigne::query()
+            ->join('document_headers as h', 'h.id', '=', 'document_lignes.document_header_id')
+            ->leftJoin('products as p', 'p.id', '=', 'document_lignes.product_id')
+            ->where('document_lignes.line_type', 'product')
+            ->where('document_lignes.status', 'active')
+            ->whereIn('h.document_type', self::SALE_TYPES)
+            ->whereNotIn('h.status', self::NON_SELLING_STATUSES)
+            // A delivery note already turned into an invoice is counted through
+            // that invoice — same rule as DocumentHeader::isBilled().
+            ->whereNotExists(fn ($q) => $q->select(DB::raw(1))
+                ->from('document_headers as inv')
+                ->whereColumn('inv.parent_id', 'h.id')
+                ->where('inv.document_type', 'InvoiceSale'))
+            ->when(
+                $to,
+                fn ($q) => $q->whereBetween('h.issued_at', [$from, $to]),
+                fn ($q) => $q->where('h.issued_at', '>=', $from),
+            )
+            ->selectRaw("
+                COALESCE(SUM(document_lignes.total_ligne_ht), 0)        AS revenue,
+                COALESCE(SUM(document_lignes.quantity * {$cost}), 0)    AS cogs,
+                COALESCE(SUM(CASE WHEN {$cost} = 0 THEN 1 ELSE 0 END), 0) AS uncosted
+            ")
+            ->first();
+
+        $revenue = (float) ($row->revenue ?? 0);
+        $cogs    = (float) ($row->cogs ?? 0);
+
+        return [
+            'revenue'        => $revenue,
+            'cogs'           => $cogs,
+            'margin'         => $revenue - $cogs,
+            'uncosted_lines' => (int) ($row->uncosted ?? 0),
+        ];
     }
 
     private function trend(float $current, float $previous): ?float
