@@ -101,6 +101,13 @@ class DashboardService
         $marginCurrent = $this->marginBreakdown($startMonth);
         $marginPrev    = $this->marginBreakdown($startPrev, $endPrev);
 
+        // Same figure for today, compared against yesterday.
+        $marginToday     = $this->marginBreakdown($startToday);
+        $marginYesterday = $this->marginBreakdown(
+            $startToday->copy()->subDay(),
+            $startToday->copy()->subSecond(),
+        );
+
         // Counters
         $productCount   = Product::where('p_status', true)->count();
         $clientCount    = ThirdPartner::whereIn('tp_Role', ['customer', 'both'])->where('tp_status', true)->count();
@@ -146,6 +153,22 @@ class DashboardService
                 'label'    => "Ventes aujourd'hui",
                 'value'    => round($todaySales, 2),
                 'currency' => true,
+            ],
+            [
+                'key'      => 'margin_today',
+                'label'    => "Bénéfice aujourd'hui",
+                'value'    => round($marginToday['margin'], 2),
+                'prev'     => round($marginYesterday['margin'], 2),
+                'trend'    => $this->trend($marginToday['margin'], $marginYesterday['margin']),
+                'currency' => true,
+                'meta'     => [
+                    'revenue_ht'     => round($marginToday['revenue'], 2),
+                    'cogs'           => round($marginToday['cogs'], 2),
+                    'rate'           => $marginToday['revenue'] > 0
+                        ? round($marginToday['margin'] / $marginToday['revenue'] * 100, 1)
+                        : null,
+                    'uncosted_lines' => $marginToday['uncosted_lines'],
+                ],
             ],
             [
                 'key'      => 'margin_month',
