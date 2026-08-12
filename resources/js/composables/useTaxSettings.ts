@@ -16,7 +16,9 @@ export function useTaxSettings() {
       if (response.ok) {
         const data = await response.json()
         tvaActive.value = data.tva_active === 'true' || data.tva_active === true
-        defaultTaxRate.value = parseFloat(data.default_tax_rate) || 20
+        // `|| 20` would turn a legitimate 0% default back into 20%.
+        const rate = parseFloat(data.default_tax_rate)
+        defaultTaxRate.value = Number.isFinite(rate) ? rate : 20
       }
     } catch (error) {
       console.error('Failed to load tax settings:', error)

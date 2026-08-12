@@ -2,6 +2,7 @@
 import { ref, reactive, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import http from '@/services/http'
 import { useSettingStore } from '@/stores/setting'
+import { useTaxSettings } from '@/composables/useTaxSettings'
 import BaseModal from '@/components/BaseModal.vue'
 import type { ThirdPartner, Warehouse, Product, DocumentIncrementor } from '@/types'
 
@@ -33,6 +34,8 @@ const emit = defineEmits<{
   submit: [payload: Record<string, unknown>]
   cancel: []
 }>()
+
+const { getTaxRate, initTaxSettings } = useTaxSettings()
 
 let lineKeyCounter = 0
 
@@ -85,7 +88,8 @@ function createEmptyLine(): LineItem {
     unit: 'pcs',
     unit_price: 0,
     discount_percent: 0,
-    tax_percent: 20,
+    // Tenant-configured rate (invoice settings), not a hardcoded 20.
+    tax_percent: getTaxRate.value,
   }
 }
 
@@ -558,6 +562,7 @@ onBeforeUnmount(() => {
 })
 
 onMounted(async () => {
+  initTaxSettings()
   if (!settingStore.settings?.invoice) await settingStore.fetchAll()
   const [incRes, partRes, whRes, prodRes] = await Promise.all([
     http.get<DocumentIncrementor[]>('/document-incrementors'),

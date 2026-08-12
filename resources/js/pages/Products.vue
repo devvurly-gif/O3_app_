@@ -1331,6 +1331,7 @@ import { useAuthStore } from '@/stores/authStore'
 import http from '@/services/http'
 import { useVariantOptionsStore } from '@/stores/useVariantOptionsStore'
 import { useExcelExport } from '@/composables/useExcelExport'
+import { useTaxSettings } from '@/composables/useTaxSettings'
 import BaseTable from '@/components/BaseTable.vue'
 import BasePagination from '@/components/BasePagination.vue'
 import BaseModal from '@/components/BaseModal.vue'
@@ -1366,6 +1367,7 @@ const { items: brands } = storeToRefs(brandStore)
 const { items: priceListsOptions } = storeToRefs(priceListStore)
 
 const { exporting, exportExcel } = useExcelExport()
+const { getTaxRate, initTaxSettings } = useTaxSettings()
 
 const exportMenuOpen = ref(false)
 
@@ -1513,7 +1515,8 @@ const emptyForm = () => ({
   p_purchasePrice: 0,
   p_salePrice: 0,
   p_cost: 0,
-  p_taxRate: 20,
+  // Tenant-configured rate (invoice settings), not a hardcoded 20.
+  p_taxRate: getTaxRate.value,
   p_unit: 'pièce',
   p_description: '',
   p_long_description: '',
@@ -1937,6 +1940,7 @@ onMounted(() => {
   categoryStore.fetchAll()
   brandStore.fetchAll()
   priceListStore.fetchAll()
+  initTaxSettings()
   loadPage()
 })
 </script>
