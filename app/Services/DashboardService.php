@@ -18,8 +18,12 @@ class DashboardService
     /** Documents that represent a real sale to a customer. */
     private const SALE_TYPES = ['TicketSale', 'InvoiceSale', 'DeliveryNote'];
 
-    /** Neither a firm sale (draft) nor one that still counts (cancelled/re-invoiced). */
-    private const NON_SELLING_STATUSES = ['cancelled', 'draft', 'converted'];
+    /**
+     * Statuses that must never land in a total: not yet committed (draft),
+     * void (cancelled), or already superseded by the document it became
+     * (converted — the successor carries the amount).
+     */
+    private const NON_COUNTING_STATUSES = ['cancelled', 'draft', 'converted'];
 
     public function getKpis(): array
     {
@@ -264,11 +268,10 @@ class DashboardService
                   ->whereBetween('issued_at', [$from, $to])
             )->sum('total_ttc');
 
-            $purchases = DocumentFooter::whereHas('header', fn ($q) =>
-                $q->whereIn('document_type', ['InvoicePurchase', 'PurchaseOrder'])
-                  ->whereNotIn('status', ['cancelled'])
-                  ->whereBetween('issued_at', [$from, $to])
-            )->sum('total_ttc');
+            $purchases = DocumentFooter::whereHas('header', function ($q) use ($from, $to) {
+                $this->scopePurchases($q);
+                $q->whereBetween('issued_at', [$from, $to]);
+            })->sum('total_ttc');
 
             $result[] = [
                 'label'     => $label,
@@ -480,18 +483,36 @@ class DashboardService
 
     private function purchasesTotal(Carbon $from, ?Carbon $to = null): float
     {
-        $q = DocumentFooter::query()
+        return (float) DocumentFooter::query()
             ->whereHas('header', function ($q) use ($from, $to) {
-                $q->whereIn('document_type', ['InvoicePurchase', 'PurchaseOrder'])
-                  ->whereNotIn('status', ['cancelled']);
+                $this->scopePurchases($q);
                 if ($to) {
                     $q->whereBetween('issued_at', [$from, $to]);
                 } else {
                     $q->where('issued_at', '>=', $from);
                 }
-            });
+            })
+            ->sum('total_ttc');
+    }
 
-        return (float) $q->sum('total_ttc');
+    /**
+     * What counts as buying this month: purchase invoices, plus receipt notes
+     * that are confirmed but not yet invoiced. A purchase *order* is only an
+     * intent to buy, so it no longer counts — it used to, which inflated the
+     * figure with goods that may never have arrived.
+     *
+     * A receipt note already turned into an invoice is skipped: its amount
+     * comes back through that invoice (same guard as the sales side).
+     */
+    private function scopePurchases($q): void
+    {
+        $q->whereNotIn('status', self::NON_COUNTING_STATUSES)
+          ->where(function ($q2) {
+              $q2->where('document_type', 'InvoicePurchase')
+                 ->orWhere(fn ($q3) => $q3
+                     ->where('document_type', 'ReceiptNotePurchase')
+                     ->whereDoesntHave('children', fn ($c) => $c->where('document_type', 'InvoicePurchase')));
+          });
     }
 
     /**
@@ -518,7 +539,7 @@ class DashboardService
             ->where('document_lignes.line_type', 'product')
             ->where('document_lignes.status', 'active')
             ->whereIn('h.document_type', self::SALE_TYPES)
-            ->whereNotIn('h.status', self::NON_SELLING_STATUSES)
+            ->whereNotIn('h.status', self::NON_COUNTING_STATUSES)
             // A delivery note already turned into an invoice is counted through
             // that invoice — same rule as DocumentHeader::isBilled().
             ->whereNotExists(fn ($q) => $q->select(DB::raw(1))
