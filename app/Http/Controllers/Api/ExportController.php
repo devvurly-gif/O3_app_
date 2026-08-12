@@ -16,8 +16,18 @@ class ExportController extends Controller
 {
     public function products(Request $request): BinaryFileResponse
     {
+        $withImages = $request->boolean('with_images');
+
+        if ($withImages) {
+            // Generating the thumbnails is heavier than a plain sheet.
+            @set_time_limit(300);
+        }
+
         return Excel::download(
-            new ProductsExport($request->only('search', 'category_id', 'p_status')),
+            new ProductsExport(
+                $request->only('search', 'category_id', 'p_status', 'status'),
+                $withImages,
+            ),
             'produits_' . now()->format('Ymd_His') . '.xlsx'
         );
     }

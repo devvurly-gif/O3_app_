@@ -26,20 +26,44 @@
             </svg>
             <span class="hidden sm:inline">{{ $t('products.trashedTitle') }}</span>
           </router-link>
-          <button
-            class="flex items-center gap-2 px-3.5 sm:px-[18px] py-2.5 border border-[#E1E3E9] dark:border-gray-600 text-gray-900 dark:text-gray-300 text-sm font-semibold rounded-[11px] bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-            :disabled="exporting"
-            @click="onExport"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              />
-            </svg>
-            <span class="hidden sm:inline">{{ exporting ? 'Export...' : 'Export' }}</span>
-          </button>
+          <div class="relative">
+            <button
+              class="flex items-center gap-2 px-3.5 sm:px-[18px] py-2.5 border border-[#E1E3E9] dark:border-gray-600 text-gray-900 dark:text-gray-300 text-sm font-semibold rounded-[11px] bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+              :disabled="exporting"
+              @click="exportMenuOpen = !exportMenuOpen"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+              <span class="hidden sm:inline">{{ exporting ? 'Export...' : 'Export' }}</span>
+              <svg class="w-3.5 h-3.5 opacity-60" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            <div v-if="exportMenuOpen" class="fixed inset-0 z-20" @click="exportMenuOpen = false" />
+            <div
+              v-if="exportMenuOpen"
+              class="absolute right-0 mt-2 w-60 z-30 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden text-sm"
+            >
+              <button
+                class="w-full text-left px-4 py-2.5 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
+                @click="onExport(false)"
+              >
+                Excel (sans images)
+              </button>
+              <button
+                class="w-full text-left px-4 py-2.5 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 border-t border-gray-100 dark:border-gray-700"
+                @click="onExport(true)"
+              >
+                Excel avec images
+                <span class="block text-[11px] text-gray-400 dark:text-gray-500">Photo principale intégrée — plus long</span>
+              </button>
+            </div>
+          </div>
           <button
             class="flex items-center gap-2 px-4 sm:px-5 py-2.5 bg-[#7C5CFC] hover:bg-[#6D4CE0] text-white text-sm font-bold rounded-[11px] shadow-[0_8px_20px_-8px_rgba(124,92,252,0.6)] transition"
             @click="openCreate"
@@ -1343,8 +1367,13 @@ const { items: priceListsOptions } = storeToRefs(priceListStore)
 
 const { exporting, exportExcel } = useExcelExport()
 
-function onExport() {
-  exportExcel('/export/products', buildParams())
+const exportMenuOpen = ref(false)
+
+function onExport(withImages = false) {
+  exportMenuOpen.value = false
+  const params: Record<string, string> = buildParams()
+  if (withImages) params.with_images = '1'
+  exportExcel('/export/products', params)
 }
 
 // ── UI state ───────────────────────────────────────────────────────────────
