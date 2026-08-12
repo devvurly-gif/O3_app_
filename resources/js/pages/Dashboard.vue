@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import http from '@/services/http'
 import BaseSkeleton from '@/components/BaseSkeleton.vue'
+import BaseModal from '@/components/BaseModal.vue'
 import { useFormat } from '@/composables/useFormat'
 import { Line } from 'vue-chartjs'
 import {
@@ -45,6 +46,7 @@ async function fetchDashboard(silent = false) {
 
 onMounted(() => {
   fetchDashboard()
+  loadWidgetPrefs()
   refreshInterval = setInterval(() => fetchDashboard(true), REFRESH_INTERVAL)
 })
 
@@ -52,10 +54,89 @@ onUnmounted(() => {
   if (refreshInterval) clearInterval(refreshInterval)
 })
 
+// ── Widget manager ──────────────────────────────────────
+// Hidden keys are stored server-side per user; anything not listed is shown,
+// so widgets added in a later release appear by default.
+const PANEL_WIDGETS: Array<{ key: string; label: string }> = [
+  { key: 'pos_today', label: "POS aujourd'hui" },
+  { key: 'revenue_chart', label: "Chiffre d'affaires — 6 derniers mois" },
+  { key: 'payment_methods', label: 'Paiements du mois' },
+  { key: 'sales_purchases_chart', label: 'Ventes vs Achats — 6 derniers mois' },
+  { key: 'top_products', label: 'Top produits du mois' },
+  { key: 'low_stock', label: 'Stock bas' },
+  { key: 'credit_clients', label: 'Clients En Compte' },
+  { key: 'top_clients', label: 'Top clients du mois' },
+  { key: 'bl_to_invoice', label: 'BL à facturer' },
+  { key: 'overdue_invoices', label: 'Factures en retard' },
+  { key: 'pending_orders', label: 'Factures en attente' },
+  { key: 'recent_documents', label: 'Derniers documents' },
+]
+
+const hiddenWidgets = ref<string[]>([])
+const showWidgetManager = ref(false)
+const savingWidgets = ref(false)
+
+function isVisible(key: string): boolean {
+  return !hiddenWidgets.value.includes(key)
+}
+
+/** Keeps a row from leaving an empty gap once all its panels are hidden. */
+function anyVisible(...keys: string[]): boolean {
+  return keys.some(isVisible)
+}
+
+function toggleWidget(key: string) {
+  hiddenWidgets.value = isVisible(key)
+    ? [...hiddenWidgets.value, key]
+    : hiddenWidgets.value.filter((k) => k !== key)
+}
+
+// Card labels come from the payload itself, so the manager never drifts from
+// what the dashboard actually renders.
+const cardWidgets = computed(() =>
+  (data.value?.cards ?? []).map((c: any) => ({ key: c.key, label: c.label })),
+)
+
+const hiddenCount = computed(() => hiddenWidgets.value.length)
+
+const widgetSections = computed(() => [
+  { title: 'Indicateurs', items: cardWidgets.value },
+  { title: 'Graphiques et listes', items: PANEL_WIDGETS },
+])
+
+async function loadWidgetPrefs() {
+  try {
+    const { data: prefs } = await http.get('/dashboard/widgets')
+    hiddenWidgets.value = Array.isArray(prefs?.hidden) ? prefs.hidden : []
+  } catch {
+    /* a failed preference load must not blank the dashboard — show everything */
+  }
+}
+
+async function saveWidgetPrefs() {
+  savingWidgets.value = true
+  try {
+    await http.put('/dashboard/widgets', { hidden: hiddenWidgets.value })
+    showWidgetManager.value = false
+  } catch {
+    error.value = "Impossible d'enregistrer la disposition des widgets."
+  } finally {
+    savingWidgets.value = false
+  }
+}
+
+function showAllWidgets() {
+  hiddenWidgets.value = []
+}
+
 // ── Computed ────────────────────────────────────────────
-const mainCards = computed(() => data.value?.cards?.slice(0, 4) ?? [])
-const secondaryCards = computed(() => data.value?.cards?.slice(4, 8) ?? [])
-const pillCards = computed(() => data.value?.cards?.slice(8) ?? [])
+function cardsInGroup(group: string) {
+  return (data.value?.cards ?? []).filter((c: any) => (c.group ?? 'pill') === group && isVisible(c.key))
+}
+
+const mainCards = computed(() => cardsInGroup('main'))
+const secondaryCards = computed(() => cardsInGroup('secondary'))
+const pillCards = computed(() => cardsInGroup('pill'))
 
 // ── Chart.js revenue line config ───────────────────────
 const revenueChartKey = ref(0)
@@ -264,8 +345,85 @@ const paymentColors: Record<string, string> = {
             <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182" />
           </svg>
         </button>
+        <button
+          class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+          title="Choisir les widgets affichés"
+          @click="showWidgetManager = true"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+            <rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" />
+            <rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" />
+          </svg>
+          <span class="hidden sm:inline">Widgets</span>
+          <span
+            v-if="hiddenCount"
+            class="px-1.5 rounded-full bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-300 text-[10px] font-bold"
+          >
+            {{ hiddenCount }} masqué{{ hiddenCount > 1 ? 's' : '' }}
+          </span>
+        </button>
       </div>
     </div>
+
+    <!-- Widget manager -->
+    <BaseModal v-model="showWidgetManager" title="Gérer les widgets" size="xl">
+      <div class="space-y-5 max-h-[60vh] overflow-y-auto pr-1">
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          Décochez ce que vous ne voulez pas voir. Le choix est enregistré sur votre compte et vous suit
+          d'un appareil à l'autre.
+        </p>
+
+        <div v-for="section in widgetSections" :key="section.title">
+          <h4 class="text-xs font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-2">
+            {{ section.title }}
+          </h4>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+            <label
+              v-for="w in section.items"
+              :key="w.key"
+              class="flex items-center gap-2.5 px-3 py-2 rounded-lg border cursor-pointer transition text-sm"
+              :class="isVisible(w.key)
+                ? 'border-orange-200 dark:border-orange-800 bg-orange-50/60 dark:bg-orange-900/20 text-gray-800 dark:text-gray-200'
+                : 'border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500'"
+            >
+              <input
+                type="checkbox"
+                class="w-4 h-4 rounded border-gray-300 text-orange-500 focus:ring-orange-500"
+                :checked="isVisible(w.key)"
+                @change="toggleWidget(w.key)"
+              />
+              <span class="truncate">{{ w.label }}</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="flex items-center justify-between gap-3 w-full">
+          <button
+            class="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition"
+            @click="showAllWidgets"
+          >
+            Tout afficher
+          </button>
+          <div class="flex items-center gap-2">
+            <button
+              class="px-4 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+              @click="showWidgetManager = false"
+            >
+              Annuler
+            </button>
+            <button
+              class="px-4 py-2 text-sm font-semibold rounded-lg bg-orange-500 hover:bg-orange-600 text-white transition disabled:opacity-50"
+              :disabled="savingWidgets"
+              @click="saveWidgetPrefs"
+            >
+              {{ savingWidgets ? 'Enregistrement...' : 'Enregistrer' }}
+            </button>
+          </div>
+        </div>
+      </template>
+    </BaseModal>
 
     <BaseSkeleton v-if="loading" type="dashboard" />
 
@@ -275,7 +433,7 @@ const paymentColors: Record<string, string> = {
 
     <template v-else-if="data">
       <!-- ══ ROW 1: Main KPI cards (4) ══ -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
+      <div v-if="mainCards.length" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
         <div
           v-for="card in mainCards"
           :key="card.key"
@@ -297,7 +455,7 @@ const paymentColors: Record<string, string> = {
       </div>
 
       <!-- ══ ROW 2: Secondary KPI cards (4) ══ -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
+      <div v-if="secondaryCards.length" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
         <div
           v-for="card in secondaryCards"
           :key="card.key"
@@ -325,13 +483,13 @@ const paymentColors: Record<string, string> = {
       </div>
 
       <!-- Pill counters -->
-      <div v-if="pillCards.length" class="flex flex-wrap gap-3">
+      <div v-if="pillCards.length || (isVisible('pos_today') && data?.pos_today)" class="flex flex-wrap gap-3">
         <div v-for="card in pillCards" :key="card.key" class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-2.5 flex items-center gap-2 shadow-sm">
           <span class="text-xl font-bold text-gray-900 dark:text-white">{{ fmtNumber(card.value) }}</span>
           <span class="text-sm text-gray-500 dark:text-gray-400">{{ card.label }}</span>
         </div>
         <!-- POS today inline -->
-        <div v-if="data?.pos_today" class="bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 rounded-lg px-4 py-2.5 flex items-center gap-3 shadow-sm">
+        <div v-if="data?.pos_today && isVisible('pos_today')" class="bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 rounded-lg px-4 py-2.5 flex items-center gap-3 shadow-sm">
           <svg class="w-5 h-5 text-cyan-600 dark:text-cyan-400 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.016a3.001 3.001 0 003.75.614m-16.5 0a3.004 3.004 0 01-.621-4.72L4.318 3.44A1.5 1.5 0 015.378 3h13.243a1.5 1.5 0 011.06.44l1.19 1.189a3 3 0 01-.621 4.72m-13.5 8.65h3.75a.75.75 0 00.75-.75V13.5a.75.75 0 00-.75-.75H6.75a.75.75 0 00-.75.75v3.15c0 .415.336.75.75.75z"/>
           </svg>
@@ -348,9 +506,9 @@ const paymentColors: Record<string, string> = {
       </div>
 
       <!-- ══ ROW 3: Revenue chart + Sales vs Purchases ══ -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
+      <div v-if="anyVisible('revenue_chart', 'payment_methods')" class="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
         <!-- Revenue chart (12 months) -->
-        <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div v-if="isVisible('revenue_chart')" class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
           <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
             <h3 class="font-semibold text-gray-800 dark:text-gray-200">Chiffre d'affaires — 6 derniers mois</h3>
           </div>
@@ -362,7 +520,7 @@ const paymentColors: Record<string, string> = {
         </div>
 
         <!-- Payment methods donut -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div v-if="isVisible('payment_methods')" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
           <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
             <h3 class="font-semibold text-gray-800 dark:text-gray-200">Paiements du mois</h3>
           </div>
@@ -400,9 +558,9 @@ const paymentColors: Record<string, string> = {
       </div>
 
       <!-- ══ ROW 4: Sales vs Purchases + Top products ══ -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
+      <div v-if="anyVisible('sales_purchases_chart', 'top_products')" class="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
         <!-- Sales vs Purchases (6 months) -->
-        <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div v-if="isVisible('sales_purchases_chart')" class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
           <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center gap-4">
             <h3 class="font-semibold text-gray-800 dark:text-gray-200">Ventes vs Achats — 6 derniers mois</h3>
             <div class="flex items-center gap-3 ml-auto text-xs">
@@ -442,7 +600,7 @@ const paymentColors: Record<string, string> = {
         </div>
 
         <!-- Top products -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div v-if="isVisible('top_products')" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
           <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
             <h3 class="font-semibold text-gray-800 dark:text-gray-200">Top produits du mois</h3>
           </div>
@@ -463,9 +621,9 @@ const paymentColors: Record<string, string> = {
       </div>
 
       <!-- ══ ROW 5: Low stock + Credit clients + Top clients ══ -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
+      <div v-if="anyVisible('low_stock', 'credit_clients', 'top_clients')" class="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
         <!-- Low stock alerts -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div v-if="isVisible('low_stock')" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
           <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center gap-2">
             <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
@@ -493,7 +651,7 @@ const paymentColors: Record<string, string> = {
         </div>
 
         <!-- Credit clients (en compte) -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div v-if="isVisible('credit_clients')" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
           <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center gap-2">
             <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"/>
@@ -522,7 +680,7 @@ const paymentColors: Record<string, string> = {
         </div>
 
         <!-- Top clients -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div v-if="isVisible('top_clients')" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
           <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
             <h3 class="font-semibold text-gray-800 dark:text-gray-200">Top clients du mois</h3>
           </div>
@@ -543,9 +701,9 @@ const paymentColors: Record<string, string> = {
       </div>
 
       <!-- ══ ROW 6: BL to invoice + Overdue + Pending invoices ══ -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
+      <div v-if="anyVisible('bl_to_invoice', 'overdue_invoices', 'pending_orders')" class="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
         <!-- BL à facturer -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div v-if="isVisible('bl_to_invoice')" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
           <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center gap-2">
             <svg class="w-5 h-5 text-violet-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 7.5V6.108c0-1.135.845-2.098 1.976-2.192.373-.03.748-.057 1.123-.08M15.75 18H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08M15.75 18.75v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5A3.375 3.375 0 006.375 7.5H5.25m11.9-3.664A2.251 2.251 0 0015 2.25h-1.5a2.251 2.251 0 00-2.15 1.586m5.8 0c.065.21.1.433.1.664v.75h-6V4.5c0-.231.035-.454.1-.664M6.75 7.5H4.875c-.621 0-1.125.504-1.125 1.125v12c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V16.5a9 9 0 00-9-9z"/>
@@ -568,7 +726,7 @@ const paymentColors: Record<string, string> = {
         </div>
 
         <!-- Overdue invoices -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div v-if="isVisible('overdue_invoices')" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
           <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center gap-2">
             <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -594,7 +752,7 @@ const paymentColors: Record<string, string> = {
         </div>
 
         <!-- Pending invoices -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div v-if="isVisible('pending_orders')" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
           <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
             <h3 class="font-semibold text-gray-800 dark:text-gray-200">Factures en attente</h3>
           </div>
@@ -617,7 +775,7 @@ const paymentColors: Record<string, string> = {
       </div>
 
       <!-- ══ ROW 7: Recent documents ══ -->
-      <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+      <div v-if="isVisible('recent_documents')" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
         <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
           <h3 class="font-semibold text-gray-800 dark:text-gray-200">Derniers documents</h3>
         </div>

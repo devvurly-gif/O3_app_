@@ -59,6 +59,25 @@ class DashboardService
         ];
     }
 
+    /**
+     * How each card is rendered. Sent explicitly rather than inferred from the
+     * card's position, so hiding one from the widget manager cannot push the
+     * next card into a row that renders it differently.
+     */
+    private const CARD_GROUPS = [
+        'ca_month'        => 'main',
+        'purchases_month' => 'main',
+        'payments_month'  => 'main',
+        'outstanding'     => 'main',
+        'today_sales'     => 'secondary',
+        'margin_today'    => 'secondary',
+        'margin_month'    => 'secondary',
+        'invoices_month'  => 'secondary',
+        'products'        => 'pill',
+        'clients'         => 'pill',
+        'suppliers'       => 'pill',
+    ];
+
     // ── KPI cards with month-over-month trend ────────────────────────
     private function cards(Carbon $startMonth, Carbon $startPrev, Carbon $endPrev, Carbon $startToday): array
     {
@@ -117,7 +136,7 @@ class DashboardService
         $clientCount    = ThirdPartner::whereIn('tp_Role', ['customer', 'both'])->where('tp_status', true)->count();
         $supplierCount  = ThirdPartner::whereIn('tp_Role', ['supplier', 'both'])->where('tp_status', true)->count();
 
-        return [
+        $cards = [
             // Main 4 cards (row 1)
             [
                 'key'      => 'ca_month',
@@ -218,6 +237,11 @@ class DashboardService
                 'value' => $supplierCount,
             ],
         ];
+
+        return array_map(
+            fn (array $card) => $card + ['group' => self::CARD_GROUPS[$card['key']] ?? 'pill'],
+            $cards,
+        );
     }
 
     // ── Revenue chart (last 12 months — sales) ──────────────────────

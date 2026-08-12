@@ -43,9 +43,10 @@ class User extends Authenticatable
     protected $hidden = ['password', 'remember_token'];
 
     protected $casts = [
-        'email_verified_at' => 'datetime',
-        'password'          => 'hashed',
-        'is_active'         => 'boolean',
+        'email_verified_at'        => 'datetime',
+        'password'                 => 'hashed',
+        'is_active'                => 'boolean',
+        'dashboard_hidden_widgets' => 'array',
     ];
 
     // ── Role helpers ────────────────────────────────────────────────

@@ -30,6 +30,7 @@ use App\Http\Controllers\Api\Achats\DocumentAchatController;
 use App\Http\Controllers\Api\Ventes\DocumentVenteController;
 use App\Http\Controllers\Api\Stock\DocumentStockController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\DashboardWidgetController;
 use App\Http\Controllers\Api\DocumentPdfController;
 use App\Http\Controllers\Api\ExportController;
 use App\Http\Controllers\Api\ImportController;
@@ -92,6 +93,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ── Dashboard ────────────────────────────────────────────────────────
     Route::get('dashboard', [DashboardController::class, 'index']);
+    Route::get('dashboard/widgets', [DashboardWidgetController::class, 'index']);
+    Route::put('dashboard/widgets', [DashboardWidgetController::class, 'update']);
     Route::get("tax-settings", [TaxSettingsController::class, "index"]);
 
     // ── Notifications ──────────────────────────────────────────────────
