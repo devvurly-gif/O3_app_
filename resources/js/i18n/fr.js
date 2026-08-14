@@ -208,6 +208,10 @@ export default {
     outOfStock: 'Rupture',
     viewList: 'Vue liste',
     viewGrid: 'Vue grille',
+    image: 'Image',
+    columns: 'Colonnes',
+    columnsTitle: 'Afficher / masquer des colonnes',
+    columnsReset: 'Tout afficher',
   },
 
   // ── Categories ────────────────────────────────────────────────────────

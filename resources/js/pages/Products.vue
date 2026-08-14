@@ -167,6 +167,49 @@
             <option value="1">En promo</option>
             <option value="0">Sans promo</option>
           </select>
+          <!-- Colonnes affichees (vue liste uniquement) -->
+          <div v-if="viewMode === 'list'" class="relative hidden sm:block shrink-0">
+            <button
+              type="button"
+              class="flex items-center gap-2 px-3.5 py-2.5 text-[13px] font-semibold rounded-[10px] border border-[#E1E3E9] dark:border-gray-600 bg-[#FAFBFC] dark:bg-gray-700 text-[#4A4F5B] dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 transition"
+              :title="$t('products.columnsTitle') ?? 'Afficher / masquer des colonnes'"
+              @click="columnsMenuOpen = !columnsMenuOpen"
+            >
+              <svg class="w-[15px] h-[15px] opacity-70" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 20 20">
+                <rect x="3" y="3" width="14" height="14" rx="2" /><line x1="8" y1="3" x2="8" y2="17" /><line x1="13" y1="3" x2="13" y2="17" />
+              </svg>
+              <span>{{ $t('products.columns') ?? 'Colonnes' }}</span>
+              <span class="text-[11px] font-bold text-[#7C5CFC]">{{ columns.length }}/{{ allColumns.length }}</span>
+            </button>
+            <div v-if="columnsMenuOpen" class="fixed inset-0 z-20" @click="columnsMenuOpen = false" />
+            <div
+              v-if="columnsMenuOpen"
+              class="absolute right-0 mt-2 w-56 z-30 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden text-sm"
+            >
+              <label
+                v-for="col in allColumns"
+                :key="col.key"
+                class="flex items-center gap-2.5 px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  class="rounded border-gray-300 text-[#7C5CFC] focus:ring-[#7C5CFC]"
+                  :checked="isColumnVisible(col.key)"
+                  :disabled="isColumnVisible(col.key) && columns.length <= 1"
+                  @change="toggleColumn(col.key)"
+                />
+                <span class="truncate">{{ col.menuLabel ?? col.label }}</span>
+              </label>
+              <button
+                type="button"
+                class="w-full text-left px-4 py-2.5 text-[13px] font-semibold text-[#7C5CFC] hover:bg-gray-50 dark:hover:bg-gray-700 border-t border-gray-100 dark:border-gray-700 disabled:opacity-40"
+                :disabled="!hiddenColumns.length"
+                @click="resetColumns"
+              >
+                {{ $t('products.columnsReset') ?? 'Tout afficher' }}
+              </button>
+            </div>
+          </div>
           <div class="hidden sm:flex items-center bg-[#F0F1F4] dark:bg-gray-700 rounded-[10px] p-[3px] gap-0.5 shrink-0">
             <button
               type="button"
@@ -1530,8 +1573,10 @@ const emptyForm = () => ({
 
 const form = reactive(emptyForm())
 
-const columns = computed(() => [
-  { key: 'primary_image', label: '#' },
+// Toutes les colonnes disponibles de la vue liste. `menuLabel` sert au menu
+// « Colonnes » quand l'en-tête est trop court pour être parlant.
+const allColumns = computed(() => [
+  { key: 'primary_image', label: '#', menuLabel: t('products.image') ?? 'Image' },
   { key: 'p_code', label: t('common.code') },
   { key: 'p_title', label: t('common.name') },
   { key: 'category', label: t('products.category') },
@@ -1540,6 +1585,55 @@ const columns = computed(() => [
   { key: 'p_status', label: t('common.status') },
   { key: 'total_stock', label: 'Stock' },
 ])
+
+// ── Colonnes affichees / masquees ────────────────────────────────────────
+// Le choix est conserve d'une session a l'autre (par navigateur).
+const COLUMNS_STORAGE_KEY = 'products.hiddenColumns'
+const columnsMenuOpen = ref(false)
+
+function loadHiddenColumns(): string[] {
+  try {
+    const raw = localStorage.getItem(COLUMNS_STORAGE_KEY)
+    const parsed = raw ? JSON.parse(raw) : []
+    return Array.isArray(parsed) ? parsed.filter((k: unknown) => typeof k === 'string') : []
+  } catch {
+    return []
+  }
+}
+
+const hiddenColumns = ref<string[]>(loadHiddenColumns())
+
+watch(
+  hiddenColumns,
+  val => {
+    try {
+      localStorage.setItem(COLUMNS_STORAGE_KEY, JSON.stringify(val))
+    } catch {
+      /* stockage indisponible (mode prive / quota) — on ignore */
+    }
+  },
+  { deep: true },
+)
+
+const columns = computed(() => allColumns.value.filter(c => !hiddenColumns.value.includes(c.key)))
+
+function isColumnVisible(key: string) {
+  return !hiddenColumns.value.includes(key)
+}
+
+function toggleColumn(key: string) {
+  if (isColumnVisible(key)) {
+    // On garde toujours au moins une colonne visible.
+    if (columns.value.length <= 1) return
+    hiddenColumns.value = [...hiddenColumns.value, key]
+  } else {
+    hiddenColumns.value = hiddenColumns.value.filter(k => k !== key)
+  }
+}
+
+function resetColumns() {
+  hiddenColumns.value = []
+}
 
 const marginPercent = computed(() => {
   if (!form.p_salePrice || !form.p_purchasePrice) return 0

@@ -208,6 +208,10 @@ export default {
     outOfStock: 'Out of stock',
     viewList: 'List view',
     viewGrid: 'Grid view',
+    image: 'Image',
+    columns: 'Columns',
+    columnsTitle: 'Show / hide columns',
+    columnsReset: 'Show all',
   },
 
   // ── Categories ────────────────────────────────────────────────────────
