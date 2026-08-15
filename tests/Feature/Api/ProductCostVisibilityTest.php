@@ -6,7 +6,7 @@ use App\Models\Product;
 use App\Models\Role;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\RefreshTenantDatabase;
 use Tests\TestCase;
 
 /**
@@ -16,22 +16,7 @@ use Tests\TestCase;
  */
 class ProductCostVisibilityTest extends TestCase
 {
-    use RefreshDatabase;
-
-    /**
-     * database/migrations/ has drifted: the last 11 migrations (variants
-     * among them) only landed in database/migrations/tenant/, and
-     * Product::$total_stock queries product_variants on every serialisation.
-     * Point the test DB at the tenant path — the schema tenants actually run.
-     */
-    protected function migrateFreshUsing(): array
-    {
-        return [
-            '--path'     => 'database/migrations/tenant',
-            '--realpath' => false,
-            '--drop-views' => false,
-        ];
-    }
+    use RefreshTenantDatabase;
 
     protected function setUp(): void
     {
@@ -85,6 +70,32 @@ class ProductCostVisibilityTest extends TestCase
 
         $this->assertArrayNotHasKey('p_purchasePrice', $payload);
         $this->assertArrayNotHasKey('p_cost', $payload);
+    }
+
+    public function test_statistics_withholds_the_purchase_block_without_the_permission(): void
+    {
+        $product = Product::factory()->create();
+
+        $payload = $this->actingAs($this->userWithRole('cashier'), 'sanctum')
+            ->getJson('/api/products/' . $product->id . '/statistics')
+            ->assertOk()
+            ->json();
+
+        // Purchase totals are cost data by another name.
+        $this->assertArrayNotHasKey('purchases', $payload);
+        $this->assertArrayHasKey('sales', $payload);
+    }
+
+    public function test_statistics_includes_the_purchase_block_with_the_permission(): void
+    {
+        $product = Product::factory()->create();
+
+        $payload = $this->actingAs($this->userWithRole('manager'), 'sanctum')
+            ->getJson('/api/products/' . $product->id . '/statistics')
+            ->assertOk()
+            ->json();
+
+        $this->assertArrayHasKey('purchases', $payload);
     }
 
     public function test_admin_sees_cost_fields_even_before_the_permission_row_is_synced(): void

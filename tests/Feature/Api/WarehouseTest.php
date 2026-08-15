@@ -4,12 +4,12 @@ namespace Tests\Feature\Api;
 
 use App\Models\User;
 use App\Models\Warehouse;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\RefreshTenantDatabase;
 use Tests\TestCase;
 
 class WarehouseTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshTenantDatabase;
 
     private User $admin;
 

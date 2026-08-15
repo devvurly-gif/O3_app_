@@ -5,12 +5,12 @@ namespace Tests\Feature\Api;
 use App\Models\User;
 use App\Notifications\OrderConfirmation;
 use App\Models\DocumentHeader;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\RefreshTenantDatabase;
 use Tests\TestCase;
 
 class NotificationTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshTenantDatabase;
 
     private User $admin;
 

@@ -53,7 +53,7 @@ class NewEcomOrderNotification extends Notification implements ShouldQueue
             ->line("Référence : **{$this->document->reference}**")
             ->line("Client : **{$partner}**")
             ->line("Montant TTC : **" . number_format($total, 2, ',', ' ') . " MAD**")
-            ->action('Voir la commande', tenant()->appUrl('/ventes/documents/' . $this->document->id))
+            ->action('Voir la commande', $this->appUrl('/ventes/documents/' . $this->document->id))
             ->line("Elle attend d'être confirmée puis préparée.");
     }
 
@@ -65,5 +65,15 @@ class NewEcomOrderNotification extends Notification implements ShouldQueue
             'reference'   => $this->document->reference,
             'total_ttc'   => $this->document->footer?->total_ttc,
         ];
+    }
+
+    /**
+     * Absolute link to the tenant app. Falls back to url() when there is no
+     * tenant in context — a queued notification handled outside tenancy (or a
+     * test) would otherwise fatal on null instead of just losing the host.
+     */
+    private function appUrl(string $path): string
+    {
+        return tenant()?->appUrl($path) ?? url($path);
     }
 }

@@ -4,12 +4,12 @@ namespace Tests\Feature\Api;
 
 use App\Models\ThirdPartner;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\RefreshTenantDatabase;
 use Tests\TestCase;
 
 class ThirdPartnerTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshTenantDatabase;
 
     private User $admin;
 

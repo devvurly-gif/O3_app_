@@ -6,13 +6,13 @@ use App\Models\DocumentFooter;
 use App\Models\DocumentHeader;
 use App\Models\User;
 use App\Notifications\InvoiceDueReminder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\RefreshTenantDatabase;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class SendInvoiceDueRemindersTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshTenantDatabase;
 
     public function test_command_sends_reminders_for_overdue_invoices(): void
     {

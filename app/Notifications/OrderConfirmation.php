@@ -66,7 +66,7 @@ class OrderConfirmation extends Notification implements ShouldQueue
             ->line("Le document **{$this->document->reference}** ({$typeLabel}) a été confirmé.")
             ->line("Client / Fournisseur : **{$partner}**")
             ->line("Montant TTC : **" . number_format($total, 2, ',', ' ') . " MAD**")
-            ->action('Voir le document', tenant()->appUrl($this->documentUrl()))
+            ->action('Voir le document', $this->appUrl($this->documentUrl()))
             ->line('Ce document est maintenant actif.');
     }
 
@@ -88,5 +88,15 @@ class OrderConfirmation extends Notification implements ShouldQueue
             'document_type'=> $this->document->document_type,
             'total_ttc'    => $this->document->footer?->total_ttc,
         ];
+    }
+
+    /**
+     * Absolute link to the tenant app. Falls back to url() when there is no
+     * tenant in context — a queued notification handled outside tenancy (or a
+     * test) would otherwise fatal on null instead of just losing the host.
+     */
+    private function appUrl(string $path): string
+    {
+        return tenant()?->appUrl($path) ?? url($path);
     }
 }

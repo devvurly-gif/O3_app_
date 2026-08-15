@@ -5,13 +5,13 @@ namespace Tests\Feature\Commands;
 use App\Models\User;
 use App\Models\WarehouseHasStock;
 use App\Notifications\LowStockAlert;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\RefreshTenantDatabase;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class SendLowStockAlertsTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshTenantDatabase;
 
     public function test_command_sends_alerts_when_low_stock_exists(): void
     {

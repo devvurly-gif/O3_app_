@@ -7,13 +7,13 @@ use App\Models\Category;
 use App\Models\User;
 use App\Models\Warehouse;
 use App\Services\CacheService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\RefreshTenantDatabase;
 use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
 class CacheIntegrationTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshTenantDatabase;
 
     private User $admin;
 

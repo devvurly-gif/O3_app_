@@ -1102,8 +1102,8 @@
               </div>
             </div>
 
-            <!-- Purchase Metrics -->
-            <div class="space-y-1.5 pt-3 border-t border-gray-200 dark:border-gray-700">
+            <!-- Purchase Metrics — absentes du payload sans products.view_cost -->
+            <div v-if="statistics?.purchases" class="space-y-1.5 pt-3 border-t border-gray-200 dark:border-gray-700">
               <h4 class="font-semibold text-gray-900 dark:text-white text-sm">Purchase Metrics</h4>
               <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
                 <div class="bg-emerald-50 dark:bg-emerald-900/20 px-3 py-2 rounded border border-emerald-200 dark:border-emerald-800">
@@ -2004,7 +2004,7 @@ async function submit() {
       toast.value?.notify(t('products.updated'), 'success')
     } else {
       const res = await store.create(form)
-      savedId = res?.id ?? res?.data?.id
+      savedId = res?.id
       toast.value?.notify(t('products.created'), 'success')
     }
     if (savedId) await saveVariants(savedId)

@@ -7,7 +7,7 @@ use App\Models\DocumentHeader;
 use App\Models\Payment;
 use App\Models\ThirdPartner;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\RefreshTenantDatabase;
 use Tests\TestCase;
 
 /**
@@ -27,7 +27,7 @@ use Tests\TestCase;
  */
 class CreditIouPaymentTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshTenantDatabase;
 
     private User $admin;
     private ThirdPartner $customer;

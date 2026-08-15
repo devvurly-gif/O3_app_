@@ -7,12 +7,12 @@ use App\Models\User;
 use App\Models\Warehouse;
 use App\Models\WarehouseHasStock;
 use App\Models\WarehouseTransfer;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\RefreshTenantDatabase;
 use Tests\TestCase;
 
 class WarehouseTransferTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshTenantDatabase;
 
     private User $admin;
     private Warehouse $fromWh;

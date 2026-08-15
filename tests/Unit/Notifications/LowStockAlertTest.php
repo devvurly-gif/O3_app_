@@ -7,13 +7,13 @@ use App\Models\User;
 use App\Models\Warehouse;
 use App\Models\WarehouseHasStock;
 use App\Notifications\LowStockAlert;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\RefreshTenantDatabase;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class LowStockAlertTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshTenantDatabase;
 
     public function test_low_stock_alert_is_sent_to_mail_and_database(): void
     {

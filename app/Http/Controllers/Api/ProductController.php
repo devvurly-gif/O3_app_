@@ -149,7 +149,7 @@ class ProductController extends Controller
         );
     }
 
-    public function statistics(Product $product): JsonResponse
+    public function statistics(Request $request, Product $product): JsonResponse
     {
         // ── Sales side ───────────────────────────────────────────────
         // Counted lines:
@@ -201,7 +201,7 @@ class ProductController extends Controller
         // For purchases use HT (cost basis, before tax which is reclaimable).
         $totalCost           = (float) $purchases->sum('total_ligne_ht');
 
-        return response()->json([
+        $payload = [
             'sales' => [
                 'total_units'    => $totalUnitsSold,
                 'total_revenue'  => round($totalRevenue, 2),
@@ -209,14 +209,22 @@ class ProductController extends Controller
                 'count'          => $sales->groupBy('document_header_id')->count(),
                 'last_sale_date' => $sales->max(fn ($item) => $item->document?->issued_at),
             ],
-            'purchases' => [
+        ];
+
+        // The purchase block is cost data by another name (total spent, avg
+        // buying price) — same gate as p_purchasePrice / p_cost. Absent key
+        // rather than zeroes, so the UI can drop the section entirely.
+        if (Product::costsVisibleTo($request->user())) {
+            $payload['purchases'] = [
                 'total_units'        => $totalUnitsPurchased,
                 'total_cost'         => round($totalCost, 2),
                 'avg_price'          => $totalUnitsPurchased > 0 ? round($totalCost / $totalUnitsPurchased, 2) : 0,
                 'count'              => $purchases->groupBy('document_header_id')->count(),
                 'last_purchase_date' => $purchases->max(fn ($item) => $item->document?->issued_at),
-            ],
-        ]);
+            ];
+        }
+
+        return response()->json($payload);
     }
 
     public function stockHistory(Request $request, Product $product): JsonResponse

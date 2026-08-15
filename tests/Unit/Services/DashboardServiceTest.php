@@ -12,12 +12,12 @@ use App\Models\User;
 use App\Models\Warehouse;
 use App\Models\WarehouseHasStock;
 use App\Services\DashboardService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\RefreshTenantDatabase;
 use Tests\TestCase;
 
 class DashboardServiceTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshTenantDatabase;
 
     private DashboardService $service;
 
