@@ -8,13 +8,23 @@ use Illuminate\Database\Seeder;
 
 class RolePermissionSeeder extends Seeder
 {
-    public function run(): void
+    /**
+     * Catalogue of every permission the app knows about, as module => actions.
+     *
+     * Exposed statically so `tenants:sync-permissions` can create missing rows
+     * on existing tenants without re-running run(), whose role sync() calls
+     * would wipe any custom grant an admin made in the Roles screen.
+     *
+     * @return array<string, string[]>
+     */
+    public static function modules(): array
     {
-        // ── Seed all permissions ─────────────────────────────────────
-        $modules = [
+        return [
             'users'          => ['view', 'create', 'update', 'delete'],
             'roles'          => ['view', 'create', 'update', 'delete'],
-            'products'       => ['view', 'create', 'update', 'delete'],
+            // view_cost gates the cost-bearing fields (prix d'achat, coût) in
+            // the API payload and the product list columns — not the page itself.
+            'products'       => ['view', 'create', 'update', 'delete', 'view_cost'],
             'categories'     => ['view', 'create', 'update', 'delete'],
             'brands'         => ['view', 'create', 'update', 'delete'],
             'third_partners' => ['view', 'create', 'update', 'delete'],
@@ -25,22 +35,46 @@ class RolePermissionSeeder extends Seeder
             'settings'       => ['view', 'manage'],
             'pos'            => ['access', 'manage_terminals', 'open_session', 'close_session', 'void_ticket'],
         ];
+    }
 
-        $displayNames = [
+    /** @return array<string, string> action => label */
+    public static function actionLabels(): array
+    {
+        return [
             'view' => 'Voir', 'create' => 'Créer', 'update' => 'Modifier',
             'delete' => 'Supprimer', 'confirm' => 'Confirmer', 'cancel' => 'Annuler',
             'manage' => 'Gérer', 'transfer' => 'Transférer', 'adjust' => 'Ajuster',
             'access' => 'Accéder', 'manage_terminals' => 'Gérer terminaux',
             'open_session' => 'Ouvrir session', 'close_session' => 'Fermer session',
             'void_ticket' => 'Annuler ticket',
+            'view_cost' => "Voir prix d'achat / coût",
         ];
+    }
 
-        $moduleLabels = [
+    /** @return array<string, string> module => label */
+    public static function moduleLabels(): array
+    {
+        return [
             'users' => 'Utilisateurs', 'roles' => 'Rôles', 'products' => 'Produits',
             'categories' => 'Catégories', 'brands' => 'Marques', 'third_partners' => 'Tiers',
             'documents' => 'Documents', 'payments' => 'Paiements', 'stock' => 'Stock',
             'warehouses' => 'Entrepôts', 'settings' => 'Paramètres', 'pos' => 'Point de Vente',
         ];
+    }
+
+    /**
+     * Human label for a permission name, e.g. "Produits — Voir prix d'achat / cout".
+     */
+    public static function displayNameFor(string $module, string $action): string
+    {
+        return (static::moduleLabels()[$module] ?? ucfirst($module))
+            . ' — ' . (static::actionLabels()[$action] ?? ucfirst($action));
+    }
+
+    public function run(): void
+    {
+        // ── Seed all permissions ─────────────────────────────────────
+        $modules = static::modules();
 
         foreach ($modules as $module => $actions) {
             foreach ($actions as $action) {
@@ -49,7 +83,7 @@ class RolePermissionSeeder extends Seeder
                     [
                         'module'       => $module,
                         'action'       => $action,
-                        'display_name' => ($moduleLabels[$module] ?? ucfirst($module)) . ' — ' . ($displayNames[$action] ?? ucfirst($action)),
+                        'display_name' => static::displayNameFor($module, $action),
                     ]
                 );
             }
@@ -101,6 +135,9 @@ class RolePermissionSeeder extends Seeder
             if (str_ends_with($name, '.view')) return true;
             if (str_starts_with($name, 'stock.')) return true;
             if (str_starts_with($name, 'warehouses.')) return true;
+            // Stock/purchase document forms prefill unit_price from
+            // p_purchasePrice, so this role needs the cost fields.
+            if ($name === 'products.view_cost') return true;
             return false;
         });
         $warehouse->permissions()->sync($warehousePerms->values()->toArray());

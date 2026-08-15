@@ -42,6 +42,13 @@ echo "[3/7] Running migrations..."
 php artisan migrate --force
 php artisan tenants:migrate --force
 
+# Permissions are rows, not schema: a permission added to
+# RolePermissionSeeder's catalogue has to be created in each tenant DB.
+# This only inserts what is missing and grants it to the admin role —
+# it never sync()s, so custom role grants survive. Any other role gets
+# the new permission from the Roles screen (or a one-off --grant=...).
+php artisan tenants:sync-permissions
+
 # Flush application cache so stale Eloquent rows (categories, brands,
 # settings, etc.) don't survive a schema change from this very deploy.
 # Config/route/view caches are rebuilt right after.

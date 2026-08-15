@@ -184,30 +184,41 @@
             <div v-if="columnsMenuOpen" class="fixed inset-0 z-20" @click="columnsMenuOpen = false" />
             <div
               v-if="columnsMenuOpen"
-              class="absolute right-0 mt-2 w-56 z-30 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden text-sm"
+              class="absolute right-0 mt-2 w-64 z-30 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden text-sm"
             >
-              <label
-                v-for="col in allColumns"
-                :key="col.key"
-                class="flex items-center gap-2.5 px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
-              >
-                <input
-                  type="checkbox"
-                  class="rounded border-gray-300 text-[#7C5CFC] focus:ring-[#7C5CFC]"
-                  :checked="isColumnVisible(col.key)"
-                  :disabled="isColumnVisible(col.key) && columns.length <= 1"
-                  @change="toggleColumn(col.key)"
-                />
-                <span class="truncate">{{ col.menuLabel ?? col.label }}</span>
-              </label>
-              <button
-                type="button"
-                class="w-full text-left px-4 py-2.5 text-[13px] font-semibold text-[#7C5CFC] hover:bg-gray-50 dark:hover:bg-gray-700 border-t border-gray-100 dark:border-gray-700 disabled:opacity-40"
-                :disabled="!hiddenColumns.length"
-                @click="resetColumns"
-              >
-                {{ $t('products.columnsReset') ?? 'Tout afficher' }}
-              </button>
+              <div class="max-h-[320px] overflow-y-auto py-1">
+                <label
+                  v-for="col in allColumns"
+                  :key="col.key"
+                  class="flex items-center gap-2.5 px-4 py-1.5 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    class="rounded border-gray-300 text-[#7C5CFC] focus:ring-[#7C5CFC]"
+                    :checked="isColumnVisible(col.key)"
+                    :disabled="isColumnVisible(col.key) && columns.length <= 1"
+                    @change="toggleColumn(col.key)"
+                  />
+                  <span class="truncate">{{ col.menuLabel ?? col.label }}</span>
+                </label>
+              </div>
+              <div class="flex border-t border-gray-100 dark:border-gray-700">
+                <button
+                  type="button"
+                  class="flex-1 px-4 py-2.5 text-[13px] font-semibold text-[#7C5CFC] hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40"
+                  :disabled="columns.length === allColumns.length"
+                  @click="showAllColumns"
+                >
+                  {{ $t('products.columnsShowAll') }}
+                </button>
+                <button
+                  type="button"
+                  class="flex-1 px-4 py-2.5 text-[13px] font-semibold text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 border-l border-gray-100 dark:border-gray-700"
+                  @click="resetColumns"
+                >
+                  {{ $t('products.columnsReset') }}
+                </button>
+              </div>
             </div>
           </div>
           <div class="hidden sm:flex items-center bg-[#F0F1F4] dark:bg-gray-700 rounded-[10px] p-[3px] gap-0.5 shrink-0">
@@ -362,6 +373,61 @@
           </span>
           <span class="text-xs text-gray-400 dark:text-gray-500 ml-0.5">{{ row.p_unit ?? '' }}</span>
         </div>
+      </template>
+      <template #cell-id="{ value }">
+        <span class="font-mono text-xs text-gray-400 dark:text-gray-500">{{ value }}</span>
+      </template>
+      <template #cell-p_sku="{ value }">
+        <span class="font-mono text-xs text-gray-500 dark:text-gray-400">{{ value || '—' }}</span>
+      </template>
+      <template #cell-p_ean13="{ value }">
+        <span class="font-mono text-xs text-gray-500 dark:text-gray-400">{{ value || '—' }}</span>
+      </template>
+      <template #cell-p_imei="{ value }">
+        <span class="font-mono text-xs text-gray-500 dark:text-gray-400">{{ value || '—' }}</span>
+      </template>
+      <!-- Prix d'achat / cout : le serveur retire ces champs du payload
+           pour les utilisateurs sans products.view_cost, d'ou le garde-fou
+           sur `undefined` meme si la colonne leur est deja masquee. -->
+      <template #cell-p_purchasePrice="{ value }">
+        <span v-if="value != null" class="font-mono text-sm text-gray-700 dark:text-gray-300">{{ Number(value).toFixed(2) }}</span>
+        <span v-else class="text-gray-300 text-xs">—</span>
+      </template>
+      <template #cell-p_cost="{ value }">
+        <span v-if="value != null" class="font-mono text-sm text-gray-700 dark:text-gray-300">{{ Number(value).toFixed(2) }}</span>
+        <span v-else class="text-gray-300 text-xs">—</span>
+      </template>
+      <template #cell-p_taxRate="{ value }">
+        <span class="font-mono text-sm text-gray-600 dark:text-gray-400">{{ Number(value ?? 0).toFixed(2) }} %</span>
+      </template>
+      <template #cell-p_unit="{ value }">
+        <span class="text-sm text-gray-600 dark:text-gray-400">{{ value || '—' }}</span>
+      </template>
+      <template #cell-is_ecom="{ row }">
+        <span
+          class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold"
+          :class="row.is_ecom ? 'bg-[#EAF7F0] text-[#2FA86B]' : 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-400'"
+        >
+          {{ row.is_ecom ? $t('products.ecomYes') : $t('products.ecomNo') }}
+        </span>
+      </template>
+      <template #cell-p_slug="{ value }">
+        <span class="font-mono text-xs text-gray-500 dark:text-gray-400">{{ value || '—' }}</span>
+      </template>
+      <template #cell-p_description="{ value }">
+        <span class="text-xs text-gray-500 dark:text-gray-400" :title="value">{{ truncateText(value) || '—' }}</span>
+      </template>
+      <template #cell-p_long_description="{ value }">
+        <span class="text-xs text-gray-500 dark:text-gray-400" :title="value">{{ truncateText(value) || '—' }}</span>
+      </template>
+      <template #cell-p_notes="{ value }">
+        <span class="text-xs text-gray-500 dark:text-gray-400 italic" :title="value">{{ truncateText(value) || '—' }}</span>
+      </template>
+      <template #cell-created_at="{ value }">
+        <span class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ value ? fmtDate(value) : '—' }}</span>
+      </template>
+      <template #cell-updated_at="{ value }">
+        <span class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ value ? fmtDate(value) : '—' }}</span>
       </template>
       <template #actions="{ row }">
         <div class="flex items-center justify-end gap-2">
@@ -1573,41 +1639,97 @@ const emptyForm = () => ({
 
 const form = reactive(emptyForm())
 
-// Toutes les colonnes disponibles de la vue liste. `menuLabel` sert au menu
-// « Colonnes » quand l'en-tête est trop court pour être parlant.
-const allColumns = computed(() => [
-  { key: 'primary_image', label: '#', menuLabel: t('products.image') ?? 'Image' },
+// ── Colonnes de la liste ─────────────────────────────────────────────────
+// Un attribut du modele Product = une colonne. `permission` reserve les
+// champs sensibles (prix d'achat, cout) aux roles autorises ; `module`
+// masque les colonnes des fonctionnalites non activees chez le tenant.
+// `menuLabel` sert au menu « Colonnes » quand l'en-tete est trop court.
+// Alias de type (et non interface) : BaseTable attend une signature
+// d'index, que seuls les alias satisfont implicitement.
+type ColumnDef = {
+  key: string
+  label: string
+  menuLabel?: string
+  permission?: string
+  module?: string
+  hideOnMobile?: boolean
+}
+
+// Colonnes affichees tant que l'utilisateur n'a rien choisi.
+const DEFAULT_VISIBLE_COLUMNS = [
+  'primary_image',
+  'p_code',
+  'p_title',
+  'category',
+  'brand',
+  'p_salePrice',
+  'p_status',
+  'total_stock',
+]
+
+const catalogColumns = computed<ColumnDef[]>(() => [
+  { key: 'id', label: 'ID', hideOnMobile: true },
+  { key: 'primary_image', label: '#', menuLabel: t('products.image') },
   { key: 'p_code', label: t('common.code') },
   { key: 'p_title', label: t('common.name') },
+  { key: 'p_sku', label: 'SKU' },
+  { key: 'p_ean13', label: t('products.ean'), hideOnMobile: true },
+  { key: 'p_imei', label: 'IMEI', module: 'imei', hideOnMobile: true },
   { key: 'category', label: t('products.category') },
   { key: 'brand', label: t('products.brand') },
+  { key: 'p_purchasePrice', label: t('products.purchasePrice'), permission: 'products.view_cost' },
   { key: 'p_salePrice', label: t('products.salePrice') },
-  { key: 'p_status', label: t('common.status') },
+  { key: 'p_cost', label: t('products.cost'), permission: 'products.view_cost' },
+  { key: 'p_taxRate', label: t('products.taxRate') },
+  { key: 'p_unit', label: t('products.unit') },
   { key: 'total_stock', label: 'Stock' },
+  { key: 'p_status', label: t('common.status') },
+  { key: 'is_ecom', label: t('products.columnEcom'), module: 'ecom' },
+  { key: 'p_slug', label: t('products.slug'), module: 'ecom', hideOnMobile: true },
+  { key: 'p_description', label: t('products.description'), hideOnMobile: true },
+  { key: 'p_long_description', label: t('products.longDescription'), hideOnMobile: true },
+  { key: 'p_notes', label: t('products.notes'), hideOnMobile: true },
+  { key: 'created_at', label: t('common.createdAt'), hideOnMobile: true },
+  { key: 'updated_at', label: t('common.updatedAt'), hideOnMobile: true },
 ])
 
-// ── Colonnes affichees / masquees ────────────────────────────────────────
-// Le choix est conserve d'une session a l'autre (par navigateur).
-const COLUMNS_STORAGE_KEY = 'products.hiddenColumns'
-const columnsMenuOpen = ref(false)
+// Colonnes que cet utilisateur a le droit de voir. Le serveur retire de
+// toute facon p_purchasePrice / p_cost du payload sans products.view_cost —
+// ce filtre evite d'afficher (et de proposer) des colonnes vides.
+const allColumns = computed(() =>
+  catalogColumns.value.filter(col => {
+    if (col.permission && !auth.hasPermission(col.permission)) return false
+    if (col.module && !auth.hasModule(col.module)) return false
+    return true
+  }),
+)
 
-function loadHiddenColumns(): string[] {
+// ── Colonnes affichees / masquees ────────────────────────────────────────
+// Le choix est propre a chaque utilisateur (cle prefixee par son id) et
+// conserve d'une session a l'autre sur ce navigateur.
+const columnsMenuOpen = ref(false)
+const columnsStorageKey = computed(() => `products.visibleColumns.v1:${auth.user?.id ?? 'anon'}`)
+const visibleColumns = ref<string[]>([...DEFAULT_VISIBLE_COLUMNS])
+
+function loadVisibleColumns() {
   try {
-    const raw = localStorage.getItem(COLUMNS_STORAGE_KEY)
-    const parsed = raw ? JSON.parse(raw) : []
-    return Array.isArray(parsed) ? parsed.filter((k: unknown) => typeof k === 'string') : []
+    const raw = localStorage.getItem(columnsStorageKey.value)
+    const parsed = raw ? JSON.parse(raw) : null
+    const keys = Array.isArray(parsed) ? parsed.filter((k: unknown) => typeof k === 'string') : []
+    visibleColumns.value = keys.length ? keys : [...DEFAULT_VISIBLE_COLUMNS]
   } catch {
-    return []
+    visibleColumns.value = [...DEFAULT_VISIBLE_COLUMNS]
   }
 }
 
-const hiddenColumns = ref<string[]>(loadHiddenColumns())
+// Recharge a la connexion / au changement d'utilisateur.
+watch(() => auth.user?.id, loadVisibleColumns, { immediate: true })
 
 watch(
-  hiddenColumns,
+  visibleColumns,
   val => {
     try {
-      localStorage.setItem(COLUMNS_STORAGE_KEY, JSON.stringify(val))
+      localStorage.setItem(columnsStorageKey.value, JSON.stringify(val))
     } catch {
       /* stockage indisponible (mode prive / quota) — on ignore */
     }
@@ -1615,24 +1737,36 @@ watch(
   { deep: true },
 )
 
-const columns = computed(() => allColumns.value.filter(c => !hiddenColumns.value.includes(c.key)))
+// L'ordre d'affichage suit le catalogue, pas l'ordre des clics.
+const columns = computed(() => allColumns.value.filter(c => visibleColumns.value.includes(c.key)))
 
 function isColumnVisible(key: string) {
-  return !hiddenColumns.value.includes(key)
+  return visibleColumns.value.includes(key)
 }
 
 function toggleColumn(key: string) {
   if (isColumnVisible(key)) {
     // On garde toujours au moins une colonne visible.
     if (columns.value.length <= 1) return
-    hiddenColumns.value = [...hiddenColumns.value, key]
+    visibleColumns.value = visibleColumns.value.filter(k => k !== key)
   } else {
-    hiddenColumns.value = hiddenColumns.value.filter(k => k !== key)
+    visibleColumns.value = [...visibleColumns.value, key]
   }
 }
 
+function showAllColumns() {
+  visibleColumns.value = allColumns.value.map(c => c.key)
+}
+
 function resetColumns() {
-  hiddenColumns.value = []
+  visibleColumns.value = [...DEFAULT_VISIBLE_COLUMNS]
+}
+
+// Coupe les champs texte libres pour garder les lignes lisibles.
+function truncateText(value: unknown, max = 60): string {
+  const text = String(value ?? '').trim()
+  if (!text) return ''
+  return text.length > max ? `${text.slice(0, max)}…` : text
 }
 
 const marginPercent = computed(() => {

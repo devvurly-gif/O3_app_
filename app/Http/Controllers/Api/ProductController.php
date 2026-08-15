@@ -22,10 +22,40 @@ class ProductController extends Controller
     ) {
     }
 
+    /**
+     * Strip p_purchasePrice / p_cost unless the caller holds
+     * `products.view_cost`. Applied to every product-shaped response so the
+     * values never reach a browser that isn't allowed to show them.
+     *
+     * @template T
+     * @param  T  $payload  a Product, a Collection of them, or a paginator
+     * @return T
+     */
+    private function guardCosts(Request $request, mixed $payload): mixed
+    {
+        if (Product::costsVisibleTo($request->user())) {
+            return $payload;
+        }
+
+        $models = match (true) {
+            $payload instanceof Product              => collect([$payload]),
+            method_exists($payload, 'getCollection') => $payload->getCollection(),
+            default                                  => collect($payload),
+        };
+
+        $models->each(function ($model) {
+            if ($model instanceof Product) {
+                $model->makeHidden(Product::COST_FIELDS);
+            }
+        });
+
+        return $payload;
+    }
+
     public function index(Request $request): JsonResponse
     {
         return response()->json(
-            $this->products->paginate(
+            $this->guardCosts($request, $this->products->paginate(
                 perPage: (int) $request->input('per_page', 15),
                 with: ['category', 'brand', 'images', 'primaryImage', 'videos', 'documents', 'warehouseStocks'],
                 orderBy: $request->input('sort', 'p_title'),
@@ -45,7 +75,7 @@ class ProductController extends Controller
                     'is_ecom'     => $request->has('is_ecom') ? $request->boolean('is_ecom') : null,
                     'on_promo'    => $request->has('on_promo') ? $request->boolean('on_promo') : null,
                 ], fn ($v) => $v !== null)
-            )
+            ))
         );
     }
 
@@ -71,7 +101,7 @@ class ProductController extends Controller
         }
 
         return response()->json(
-            $query->paginate((int) $request->input('per_page', 15))
+            $this->guardCosts($request, $query->paginate((int) $request->input('per_page', 15)))
         );
     }
 
@@ -106,16 +136,16 @@ class ProductController extends Controller
         $product = $this->products->create($data);
         CacheService::flushProducts();
 
-        return response()->json($product->load(['category', 'brand', 'images', 'primaryImage', 'videos', 'documents', 'warehouseStocks']), 201);
+        return response()->json($this->guardCosts($request, $product->load(['category', 'brand', 'images', 'primaryImage', 'videos', 'documents', 'warehouseStocks'])), 201);
     }
 
-    public function show(Product $product): JsonResponse
+    public function show(Request $request, Product $product): JsonResponse
     {
         return response()->json(
-            $product->load([
+            $this->guardCosts($request, $product->load([
                 'category', 'brand', 'images', 'primaryImage', 'videos', 'documents',
                 'warehouseStocks.warehouse', 'priceListItems.priceList'
-            ])
+            ]))
         );
     }
 
@@ -301,7 +331,7 @@ class ProductController extends Controller
         $this->products->update($product, $data);
         CacheService::flushProducts();
 
-        return response()->json($product->load(['category', 'brand', 'images', 'primaryImage', 'videos', 'documents', 'warehouseStocks']));
+        return response()->json($this->guardCosts($request, $product->load(['category', 'brand', 'images', 'primaryImage', 'videos', 'documents', 'warehouseStocks'])));
     }
 
     /**
@@ -330,7 +360,7 @@ class ProductController extends Controller
      * (not {product}) since implicit route-model binding excludes
      * trashed rows.
      */
-    public function restore(int $id): JsonResponse
+    public function restore(Request $request, int $id): JsonResponse
     {
         $product = Product::withTrashed()->findOrFail($id);
 
@@ -341,7 +371,7 @@ class ProductController extends Controller
         $product->restore();
         CacheService::flushProducts();
 
-        return response()->json($product->load(['category', 'brand', 'images', 'primaryImage']));
+        return response()->json($this->guardCosts($request, $product->load(['category', 'brand', 'images', 'primaryImage'])));
     }
 
     /**
@@ -349,7 +379,7 @@ class ProductController extends Controller
      * codes must stay unique), variants and price-list tariffs copied,
      * warehouse stock left at zero (physical inventory isn't cloned).
      */
-    public function duplicate(Product $product): JsonResponse
+    public function duplicate(Request $request, Product $product): JsonResponse
     {
         $product->load(['images', 'videos', 'documents', 'variants', 'priceListItems']);
 
@@ -423,7 +453,7 @@ class ProductController extends Controller
         CacheService::flushProducts();
 
         return response()->json(
-            $copy->load(['category', 'brand', 'images', 'primaryImage', 'videos', 'documents', 'variants']),
+            $this->guardCosts($request, $copy->load(['category', 'brand', 'images', 'primaryImage', 'videos', 'documents', 'variants'])),
             201
         );
     }

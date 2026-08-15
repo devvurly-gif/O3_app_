@@ -27,6 +27,9 @@ class ExportController extends Controller
             new ProductsExport(
                 $request->only('search', 'category_id', 'p_status', 'status'),
                 $withImages,
+                // Same gate as the API payload: no products.view_cost, no
+                // "Prix Achat"/"Coût" columns in the sheet.
+                \App\Models\Product::costsVisibleTo($request->user()),
             ),
             'produits_' . now()->format('Ymd_His') . '.xlsx'
         );

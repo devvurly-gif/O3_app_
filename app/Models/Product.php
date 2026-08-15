@@ -29,6 +29,29 @@ class Product extends Model
 
     public string $codeField = 'p_code';
 
+    /**
+     * Cost-bearing fields, stripped from API payloads for users who lack the
+     * `products.view_cost` permission. Hiding them front-end only would be
+     * cosmetic — the values still ship in the JSON.
+     */
+    public const COST_FIELDS = ['p_purchasePrice', 'p_cost'];
+
+    /**
+     * True when $user may see COST_FIELDS. Admins always may (their role holds
+     * every permission), guests never do.
+     */
+    public static function costsVisibleTo(?User $user): bool
+    {
+        if (! $user) {
+            return false;
+        }
+
+        // The isAdmin() short-circuit mirrors the front-end authStore and keeps
+        // admins whole on tenants where `tenants:sync-permissions` has not run
+        // yet — without it, a deploy would blind them until the command lands.
+        return $user->isAdmin() || $user->hasPermission('products.view_cost');
+    }
+
     protected $appends = ['total_stock'];
 
     protected $fillable = [

@@ -46,6 +46,9 @@ class ProductsExport implements FromQuery, WithHeadings, WithMapping, ShouldAuto
 
     private bool $withImages;
 
+    /** False drops the cost columns for exporters without products.view_cost. */
+    private bool $withCosts;
+
     /** Temp directory of this export run, created lazily. */
     private ?string $tmpPath = null;
 
@@ -55,10 +58,11 @@ class ProductsExport implements FromQuery, WithHeadings, WithMapping, ShouldAuto
     /** host => consecutive download failures, used to stop hammering a dead host. */
     private array $hostFailures = [];
 
-    public function __construct(array $filters = [], bool $withImages = false)
+    public function __construct(array $filters = [], bool $withImages = false, bool $withCosts = true)
     {
         $this->filters    = $filters;
         $this->withImages = $withImages;
+        $this->withCosts  = $withCosts;
     }
 
     public function query()
@@ -93,12 +97,13 @@ class ProductsExport implements FromQuery, WithHeadings, WithMapping, ShouldAuto
 
     public function headings(): array
     {
-        $headings = [
-            'ID', 'Code', 'Titre', 'SKU', 'EAN13',
-            'Catégorie', 'Marque',
-            'Prix Achat', 'Prix Vente', 'Coût', 'TVA %',
-            'Unité', 'Statut',
-        ];
+        $headings = array_merge(
+            ['ID', 'Code', 'Titre', 'SKU', 'EAN13', 'Catégorie', 'Marque'],
+            $this->withCosts ? ['Prix Achat'] : [],
+            ['Prix Vente'],
+            $this->withCosts ? ['Coût'] : [],
+            ['TVA %', 'Unité', 'Statut'],
+        );
 
         if ($this->withImages) {
             array_unshift($headings, 'Image');
@@ -110,21 +115,25 @@ class ProductsExport implements FromQuery, WithHeadings, WithMapping, ShouldAuto
 
     public function map($product): array
     {
-        $row = [
-            $product->id,
-            $product->p_code,
-            $product->p_title,
-            $product->p_sku,
-            $product->p_ean13,
-            $product->category?->ctg_title,
-            $product->brand?->br_title,
-            $product->p_purchasePrice,
-            $product->p_salePrice,
-            $product->p_cost,
-            $product->p_taxRate,
-            $product->p_unit,
-            $product->p_status ? 'Actif' : 'Inactif',
-        ];
+        $row = array_merge(
+            [
+                $product->id,
+                $product->p_code,
+                $product->p_title,
+                $product->p_sku,
+                $product->p_ean13,
+                $product->category?->ctg_title,
+                $product->brand?->br_title,
+            ],
+            $this->withCosts ? [$product->p_purchasePrice] : [],
+            [$product->p_salePrice],
+            $this->withCosts ? [$product->p_cost] : [],
+            [
+                $product->p_taxRate,
+                $product->p_unit,
+                $product->p_status ? 'Actif' : 'Inactif',
+            ],
+        );
 
         if ($this->withImages) {
             // Column A is left empty: the picture is anchored onto it afterwards.
