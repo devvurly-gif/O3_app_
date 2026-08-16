@@ -104,6 +104,8 @@ class DocumentHeaderController extends Controller
 
     public function update(UpdateDocumentHeaderRequest $request, DocumentHeader $documentHeader): JsonResponse
     {
+        $statusBefore = $documentHeader->status;
+
         $this->documents->update($documentHeader, $request->headerData());
 
         $linesData = $request->linesData();
@@ -122,6 +124,17 @@ class DocumentHeaderController extends Controller
             } else {
                 $documentHeader->footer()->create($footerData);
             }
+        }
+
+        // Cancelling has to give the stock back. Every "Annuler" button in the
+        // app comes through here (PATCH /documents/{id} with a status), and
+        // this used to flip the flag only: a cancelled BR kept crediting its
+        // received quantity to the warehouse, a cancelled BL kept its exit.
+        // cancelDocumentMovements() cancels pending movements and writes
+        // compensating entries for applied ones; it is a no-op for a document
+        // that never moved stock, and idempotent on re-cancellation.
+        if ($statusBefore !== 'cancelled' && $documentHeader->fresh()->status === 'cancelled') {
+            $this->stockService->cancelDocumentMovements($documentHeader);
         }
 
         CacheService::flushDocuments();
