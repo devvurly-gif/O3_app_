@@ -129,6 +129,33 @@ export const useDocumentVenteStore = defineStore('documentVente', () => {
   }
 
   /**
+   * Create a customer return (Bon de Retour) from a committed BL or sales
+   * invoice — the way to undo a confirmed document, since cancelling one is
+   * refused. Without `lines` the whole document is returned.
+   */
+  async function retourClient(
+    documentId: number,
+    payload: { lines?: Array<{ product_id: number; quantity: number }>; notes?: string } = {},
+  ): Promise<{ success: boolean; retour?: DocumentHeader }> {
+    loading.value = true
+    error.value = null
+
+    try {
+      const { data } = await http.post<{ data: DocumentHeader }>(
+        `/ventes/documents/${documentId}/retour-client`,
+        payload,
+      )
+      return { success: true, retour: data.data }
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { message?: string } } }
+      error.value = err.response?.data?.message ?? 'Erreur lors du retour client.'
+      return { success: false }
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /**
    * Confirm delivery reception — creates the Invoice.
    */
   async function confirmerReception(
@@ -242,6 +269,7 @@ export const useDocumentVenteStore = defineStore('documentVente', () => {
     genererBC,
     genererBL,
     confirmerBL,
+    retourClient,
     confirmerReception,
   }
 })

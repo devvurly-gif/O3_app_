@@ -106,6 +106,33 @@ export const useDocumentAchatStore = defineStore('documentAchat', () => {
   }
 
   /**
+   * Create a supplier return (Bon de Retour) from a committed BR or purchase
+   * invoice — the way to undo a confirmed document, since cancelling one is
+   * refused. Without `lines` the whole document is returned.
+   */
+  async function retourFournisseur(
+    documentId: number,
+    payload: { lines?: Array<{ product_id: number; quantity: number }>; notes?: string } = {},
+  ): Promise<{ success: boolean; retour?: DocumentHeader }> {
+    loading.value = true
+    error.value = null
+
+    try {
+      const { data } = await http.post<{ data: DocumentHeader }>(
+        `/achats/documents/${documentId}/retour-fournisseur`,
+        payload,
+      )
+      return { success: true, retour: data.data }
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { message?: string } } }
+      error.value = err.response?.data?.message ?? 'Erreur lors du retour fournisseur.'
+      return { success: false }
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /**
    * Confirm receipt and create the Purchase Invoice (Facture Achat).
    */
   async function confirmerFacture(
@@ -219,5 +246,6 @@ export const useDocumentAchatStore = defineStore('documentAchat', () => {
     genererReception,
     confirmerBR,
     confirmerFacture,
+    retourFournisseur,
   }
 })

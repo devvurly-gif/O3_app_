@@ -102,9 +102,24 @@ class DocumentHeaderController extends Controller
         );
     }
 
+    /**
+     * Statuses past which a document has left the draft stage: its stock has
+     * been applied and its numbering is committed. Mirrors destroy().
+     */
+    private const COMMITTED_STATUSES = ['confirmed', 'delivered', 'received', 'pending', 'paid', 'partial'];
+
     public function update(UpdateDocumentHeaderRequest $request, DocumentHeader $documentHeader): JsonResponse
     {
         $statusBefore = $documentHeader->status;
+
+        // A committed document is not cancelled, it is returned: the goods
+        // physically moved and the reversal belongs on its own document, with
+        // its own reference and trail. Same rule destroy() already applies.
+        if ($request->input('status') === 'cancelled' && in_array($statusBefore, self::COMMITTED_STATUSES, true)) {
+            return response()->json([
+                'message' => 'Un document confirmé ne peut pas être annulé. ' . $this->reversalHint($documentHeader),
+            ], 422);
+        }
 
         $this->documents->update($documentHeader, $request->headerData());
 
@@ -144,22 +159,26 @@ class DocumentHeaderController extends Controller
         );
     }
 
+    /**
+     * How to undo this document now that it is committed.
+     */
+    private function reversalHint(DocumentHeader $documentHeader): string
+    {
+        return match (true) {
+            in_array($documentHeader->document_type, ['DeliveryNote', 'InvoiceSale'])
+                => 'Créez un Retour Client à la place.',
+            in_array($documentHeader->document_type, ['ReceiptNotePurchase', 'InvoicePurchase'])
+                => 'Créez un Retour Fournisseur à la place.',
+            default => '',
+        };
+    }
+
     public function destroy(DocumentHeader $documentHeader): JsonResponse
     {
         // Confirmed documents cannot be deleted — must use return documents
-        $protectedStatuses = ['confirmed', 'delivered', 'received', 'pending', 'paid', 'partial'];
-
-        if (in_array($documentHeader->status, $protectedStatuses)) {
-            $hint = match (true) {
-                in_array($documentHeader->document_type, ['DeliveryNote', 'InvoiceSale'])
-                    => 'Créez un Retour Client à la place.',
-                in_array($documentHeader->document_type, ['ReceiptNotePurchase', 'InvoicePurchase'])
-                    => 'Créez un Retour Fournisseur à la place.',
-                default => '',
-            };
-
+        if (in_array($documentHeader->status, self::COMMITTED_STATUSES)) {
             return response()->json([
-                'message' => 'Un document confirmé ne peut pas être supprimé. ' . $hint,
+                'message' => 'Un document confirmé ne peut pas être supprimé. ' . $this->reversalHint($documentHeader),
             ], 422);
         }
 

@@ -11,13 +11,18 @@ use App\Models\ThirdPartner;
 use App\Models\User;
 use App\Models\Warehouse;
 use App\Models\WarehouseHasStock;
+use App\Services\StockMouvementService;
 use Tests\Concerns\RefreshTenantDatabase;
 use Tests\TestCase;
 
 /**
- * Cancelling a document has to give the stock back. Every "Annuler" button
- * goes through PATCH /documents/{id}, which used to write the status and
- * nothing else — a cancelled BR kept crediting its received quantity.
+ * Undoing a document: a draft is cancelled, a committed one is returned.
+ *
+ * PATCH /documents/{id} used to accept 'cancelled' for anything and write the
+ * status alone — a confirmed BR kept crediting its received quantity to the
+ * warehouse. It now refuses committed documents (they go through a return
+ * document, which carries its own reference and stock movements) and still
+ * reverses whatever movements a cancellable document was holding.
  */
 class DocumentCancellationStockTest extends TestCase
 {
@@ -69,7 +74,9 @@ class DocumentCancellationStockTest extends TestCase
             ->value('stockLevel');
     }
 
-    public function test_cancelling_a_confirmed_receipt_note_gives_the_received_quantity_back(): void
+    // ── Committed documents are returned, not cancelled ──────────────
+
+    public function test_a_confirmed_receipt_note_cannot_be_cancelled(): void
     {
         $br = $this->draftDocument('ReceiptNotePurchase', 'supplier');
 
@@ -77,20 +84,16 @@ class DocumentCancellationStockTest extends TestCase
             ->putJson("/api/achats/documents/{$br->id}/confirmer-br")
             ->assertOk();
 
-        $this->assertSame(14.0, $this->stockLevel(), 'reception should add to stock');
-
         $this->actingAs($this->admin, 'sanctum')
             ->patchJson("/api/documents/{$br->id}", ['status' => 'cancelled'])
-            ->assertOk();
+            ->assertStatus(422)
+            ->assertJsonPath('message', fn (string $m) => str_contains($m, 'Retour Fournisseur'));
 
-        $this->assertSame(10.0, $this->stockLevel(), 'cancellation should hand the quantity back');
-        $this->assertSame(0, StockMouvement::where('document_header_id', $br->id)
-            ->whereIn('status', ['pending', 'applied'])
-            ->where('reason', '!=', 'cancellation')
-            ->count());
+        $this->assertSame('confirmed', $br->fresh()->status, 'the status must not have moved');
+        $this->assertSame(14.0, $this->stockLevel(), 'a refused cancellation must not touch stock');
     }
 
-    public function test_cancelling_a_confirmed_delivery_note_restores_the_exit(): void
+    public function test_a_confirmed_delivery_note_cannot_be_cancelled(): void
     {
         $bl = $this->draftDocument('DeliveryNote', 'customer');
 
@@ -98,16 +101,15 @@ class DocumentCancellationStockTest extends TestCase
             ->putJson("/api/ventes/documents/{$bl->id}/confirmer-bl")
             ->assertOk();
 
-        $this->assertSame(6.0, $this->stockLevel(), 'delivery should deduct from stock');
-
         $this->actingAs($this->admin, 'sanctum')
             ->patchJson("/api/documents/{$bl->id}", ['status' => 'cancelled'])
-            ->assertOk();
+            ->assertStatus(422)
+            ->assertJsonPath('message', fn (string $m) => str_contains($m, 'Retour Client'));
 
-        $this->assertSame(10.0, $this->stockLevel(), 'cancellation should put the quantity back');
+        $this->assertSame(6.0, $this->stockLevel());
     }
 
-    public function test_cancelling_twice_does_not_double_reverse(): void
+    public function test_a_supplier_return_takes_the_received_quantity_back_out(): void
     {
         $br = $this->draftDocument('ReceiptNotePurchase', 'supplier');
 
@@ -115,34 +117,63 @@ class DocumentCancellationStockTest extends TestCase
             ->putJson("/api/achats/documents/{$br->id}/confirmer-br")
             ->assertOk();
 
-        foreach (range(1, 2) as $_) {
-            $this->actingAs($this->admin, 'sanctum')
-                ->patchJson("/api/documents/{$br->id}", ['status' => 'cancelled'])
-                ->assertOk();
-        }
+        $this->assertSame(14.0, $this->stockLevel());
 
-        $this->assertSame(10.0, $this->stockLevel());
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson("/api/achats/documents/{$br->id}/retour-fournisseur")
+            ->assertCreated()
+            ->assertJsonPath('data.document_type', 'ReturnPurchase');
+
+        $this->assertSame(10.0, $this->stockLevel(), 'the goods went back to the supplier');
     }
 
-    public function test_reversing_an_already_reversed_document_is_a_no_op(): void
+    public function test_a_customer_return_puts_the_delivered_quantity_back(): void
     {
-        // What documents:repair-cancelled-stock does: call the service straight
-        // on a document that may already carry its compensating entries. Those
-        // are 'applied' too, so a naive second pass would bounce the stock back.
+        $bl = $this->draftDocument('DeliveryNote', 'customer');
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->putJson("/api/ventes/documents/{$bl->id}/confirmer-bl")
+            ->assertOk();
+
+        $this->assertSame(6.0, $this->stockLevel());
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson("/api/ventes/documents/{$bl->id}/retour-client")
+            ->assertCreated()
+            ->assertJsonPath('data.document_type', 'ReturnSale');
+
+        $this->assertSame(10.0, $this->stockLevel(), 'the goods came back from the customer');
+    }
+
+    // ── Drafts stay cancellable, and give back what they held ────────
+
+    public function test_a_draft_can_still_be_cancelled(): void
+    {
         $br = $this->draftDocument('ReceiptNotePurchase', 'supplier');
 
         $this->actingAs($this->admin, 'sanctum')
-            ->putJson("/api/achats/documents/{$br->id}/confirmer-br")
+            ->patchJson("/api/documents/{$br->id}", ['status' => 'cancelled'])
             ->assertOk();
 
-        $service = app(\App\Services\StockMouvementService::class);
+        $this->assertSame('cancelled', $br->fresh()->status);
+        $this->assertSame(10.0, $this->stockLevel(), 'a draft never moved stock');
+    }
 
-        $this->actingAs($this->admin);
-        $service->cancelDocumentMovements($br);
+    public function test_cancelling_a_draft_clears_the_movements_it_was_holding(): void
+    {
+        $br = $this->draftDocument('ReceiptNotePurchase', 'supplier');
+
+        // A BR generated from a purchase order carries pending movements
+        // before anyone confirms it.
+        app(StockMouvementService::class)->processDocument($br->load('lignes'), pending: true);
+        $this->assertSame(1, StockMouvement::where('document_header_id', $br->id)->where('status', 'pending')->count());
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->patchJson("/api/documents/{$br->id}", ['status' => 'cancelled'])
+            ->assertOk();
+
+        $this->assertSame(0, StockMouvement::where('document_header_id', $br->id)->where('status', 'pending')->count());
         $this->assertSame(10.0, $this->stockLevel());
-
-        $service->cancelDocumentMovements($br->fresh());
-        $this->assertSame(10.0, $this->stockLevel(), 'a second reversal must change nothing');
     }
 
     public function test_a_status_change_that_is_not_a_cancellation_leaves_stock_alone(): void
@@ -158,5 +189,28 @@ class DocumentCancellationStockTest extends TestCase
             ->assertOk();
 
         $this->assertSame(14.0, $this->stockLevel());
+    }
+
+    // ── The repair command's own guarantee ───────────────────────────
+
+    public function test_reversing_an_already_reversed_document_is_a_no_op(): void
+    {
+        // documents:repair-cancelled-stock calls the service straight on
+        // documents that may already carry compensating entries. Those are
+        // 'applied' too, so a naive second pass would bounce the stock back.
+        $br = $this->draftDocument('ReceiptNotePurchase', 'supplier');
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->putJson("/api/achats/documents/{$br->id}/confirmer-br")
+            ->assertOk();
+
+        $service = app(StockMouvementService::class);
+
+        $this->actingAs($this->admin);
+        $service->cancelDocumentMovements($br);
+        $this->assertSame(10.0, $this->stockLevel());
+
+        $service->cancelDocumentMovements($br->fresh());
+        $this->assertSame(10.0, $this->stockLevel(), 'a second reversal must change nothing');
     }
 }

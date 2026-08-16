@@ -26,6 +26,7 @@ const { pdfLoading, downloadPdf: doPdfDownload, previewPdf: doPdfPreview } = use
 const doc = ref<DocumentHeader | null>(null)
 const showPaymentModal = ref(false)
 const showDeleteConfirm = ref(false)
+const showReturnConfirm = ref(false)
 const showInvoiceModal = ref(false)
 const invoicePaymentMethod = ref('credit')
 const actionLoading = ref(false)
@@ -63,9 +64,17 @@ const canPay = computed(() => {
     Number(doc.value.footer?.amount_due ?? 0) > 0
   )
 })
-const canCancel = computed(
-  () => doc.value && ['draft', 'confirmed'].includes(doc.value.status) && doc.value.status !== 'cancelled',
-)
+// Cancelling is a draft-only affair. Once a document is committed its stock
+// has moved and its reference is spent — undoing it means a return document.
+const canCancel = computed(() => doc.value?.status === 'draft')
+
+const canReturn = computed(() => {
+  if (!doc.value) return false
+  return (
+    ['ReceiptNotePurchase', 'InvoicePurchase'].includes(doc.value.document_type) &&
+    ['confirmed', 'received', 'pending', 'paid', 'partial'].includes(doc.value.status)
+  )
+})
 const canDelete = computed(() => doc.value?.status === 'draft')
 
 const convertLabel = computed(() => {
@@ -124,6 +133,21 @@ async function confirmGenerateInvoice() {
     if (result.success && result.facture) {
       toast.success('Facture Achat ' + result.facture.reference + ' créée avec succès.')
       router.push(`/achats/documents/${result.facture.id}`)
+      return
+    }
+  } catch { /* Axios interceptor shows toast */ }
+  actionLoading.value = false
+}
+
+async function createReturn() {
+  if (!doc.value) return
+  showReturnConfirm.value = false
+  actionLoading.value = true
+  try {
+    const result = await store.retourFournisseur(doc.value.id)
+    if (result.success && result.retour) {
+      toast.success(`Retour Fournisseur ${result.retour.reference} créé. Stock mis à jour.`)
+      router.push(`/achats/documents/${result.retour.id}`)
       return
     }
   } catch { /* Axios interceptor shows toast */ }
@@ -394,6 +418,19 @@ const paymentProgress = computed(() => {
             </svg>
             Annuler
           </button>
+          <!-- Un document confirme ne s'annule pas : il se retourne, sur son
+               propre document, avec sa propre reference. -->
+          <button
+            v-if="canReturn"
+            :disabled="actionLoading"
+            class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 disabled:opacity-50"
+            @click="showReturnConfirm = true"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a5 5 0 015 5v2m-15-7l4-4m-4 4l4 4" />
+            </svg>
+            Retour Fournisseur
+          </button>
           <button
             v-if="canDelete"
             class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
@@ -639,6 +676,18 @@ const paymentProgress = computed(() => {
         </button>
       </template>
     </BaseModal>
+
+    <ConfirmModal
+      v-model="showReturnConfirm"
+      title="Créer un Retour Fournisseur"
+      confirm-label="Créer le retour"
+      loading-label="Création..."
+      :loading="actionLoading"
+      @confirm="createReturn"
+    >
+      Un document confirmé ne s'annule pas : un Bon de Retour reprend ses lignes,
+      les marchandises sortent du stock et repartent au fournisseur. Continuer ?
+    </ConfirmModal>
 
     <ConfirmModal
       v-model="showDeleteConfirm"
