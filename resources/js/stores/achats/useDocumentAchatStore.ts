@@ -90,9 +90,12 @@ export const useDocumentAchatStore = defineStore('documentAchat', () => {
     loading.value = true
     error.value = null
     try {
-      const { data } = await http.put<DocumentHeader>(`/achats/documents/${brId}/confirmer-br`)
-      current.value = data
-      return data
+      // L'endpoint repond { message, data: <document> }, comme ses voisins
+      // generer-* / confirmer-facture : sans deballer l'enveloppe, la page
+      // de detail se lie a un objet sans aucun champ et s'affiche vide.
+      const { data } = await http.put<{ message: string; data: DocumentHeader }>(`/achats/documents/${brId}/confirmer-br`)
+      current.value = data.data
+      return data.data
     } catch (e: unknown) {
       const err = e as { response?: { data?: { message?: string } } }
       error.value = err.response?.data?.message ?? 'Erreur de confirmation.'
