@@ -124,6 +124,27 @@ class DocumentCancellationStockTest extends TestCase
         $this->assertSame(10.0, $this->stockLevel());
     }
 
+    public function test_reversing_an_already_reversed_document_is_a_no_op(): void
+    {
+        // What documents:repair-cancelled-stock does: call the service straight
+        // on a document that may already carry its compensating entries. Those
+        // are 'applied' too, so a naive second pass would bounce the stock back.
+        $br = $this->draftDocument('ReceiptNotePurchase', 'supplier');
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->putJson("/api/achats/documents/{$br->id}/confirmer-br")
+            ->assertOk();
+
+        $service = app(\App\Services\StockMouvementService::class);
+
+        $this->actingAs($this->admin);
+        $service->cancelDocumentMovements($br);
+        $this->assertSame(10.0, $this->stockLevel());
+
+        $service->cancelDocumentMovements($br->fresh());
+        $this->assertSame(10.0, $this->stockLevel(), 'a second reversal must change nothing');
+    }
+
     public function test_a_status_change_that_is_not_a_cancellation_leaves_stock_alone(): void
     {
         $br = $this->draftDocument('ReceiptNotePurchase', 'supplier');

@@ -171,8 +171,12 @@ class RepairCancelledDocumentStock extends Command
     {
         $net = [];
 
+        // 'cancellation' entries are the compensating writes a previous repair
+        // (or an annuler_br) already made — counting them would report a
+        // repaired document as still holding stock, in the other direction.
         $movements = StockMouvement::where('document_header_id', $document->id)
             ->whereIn('status', ['pending', 'applied'])
+            ->where('reason', '!=', 'cancellation')
             ->get();
 
         foreach ($movements as $movement) {
