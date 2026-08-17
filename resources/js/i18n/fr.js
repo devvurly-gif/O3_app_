@@ -121,6 +121,12 @@ export default {
     pinShort: 'Épingler',
     addFavorite: 'Ajouter aux favoris',
     removeFavorite: 'Retirer des favoris',
+    // ── Section Ventes du menu ──
+    salesList: 'Liste',
+    newCustomerOrder: 'Nouveau BC',
+    newDeliveryNote: 'Nouveau BL',
+    newSalesInvoice: 'Nouvelle facture de vente',
+    newCreditNote: 'Nouvelle facture de retour',
   },
 
   // ── Dashboard ─────────────────────────────────────────────────────────

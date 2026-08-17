@@ -121,6 +121,12 @@ export default {
     pinShort: 'Pin',
     addFavorite: 'Add to favorites',
     removeFavorite: 'Remove from favorites',
+    // ── Section Ventes du menu ──
+    salesList: 'List',
+    newCustomerOrder: 'New sales order',
+    newDeliveryNote: 'New delivery note',
+    newSalesInvoice: 'New sales invoice',
+    newCreditNote: 'New credit note',
   },
 
   // ── Dashboard ─────────────────────────────────────────────────────────

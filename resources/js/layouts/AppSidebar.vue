@@ -672,6 +672,7 @@ const icons = {
   sales: `<svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>`,
   stock: `<svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/></svg>`,
   listdoc: `<svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h10"/></svg>`,
+  newdoc: `<svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 13h6m-3-3v6m-7 5h14a2 2 0 002-2V7.5L14.5 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>`,
   users: `<svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>`,
   code: `<svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>`,
   docs: `<svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>`,
@@ -762,7 +763,32 @@ const tenantGroups: SidebarGroup[] = [
     labelKey: 'nav.sales',
     icon: groupIcons.sales,
     links: [
-      { to: '/ventes/documents', labelKey: 'nav.documentsVente', icon: icons.listdoc, permission: 'documents.view' },
+      { to: '/ventes/documents', labelKey: 'nav.salesList', icon: icons.listdoc, permission: 'documents.view' },
+      // ?type=… preselects the kind of document on the shared create form.
+      {
+        to: '/ventes/documents/create?type=CustomerOrder',
+        labelKey: 'nav.newCustomerOrder',
+        icon: icons.newdoc,
+        permission: 'documents.create',
+      },
+      {
+        to: '/ventes/documents/create?type=DeliveryNote',
+        labelKey: 'nav.newDeliveryNote',
+        icon: icons.newdoc,
+        permission: 'documents.create',
+      },
+      {
+        to: '/ventes/documents/create?type=InvoiceSale',
+        labelKey: 'nav.newSalesInvoice',
+        icon: icons.newdoc,
+        permission: 'documents.create',
+      },
+      {
+        to: '/ventes/documents/create?type=CreditNoteSale',
+        labelKey: 'nav.newCreditNote',
+        icon: icons.newdoc,
+        permission: 'documents.create',
+      },
     ],
   },
   {
