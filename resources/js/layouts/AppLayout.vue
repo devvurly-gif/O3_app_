@@ -1,7 +1,13 @@
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-gray-950">
     <!-- Sidebar -->
-    <AppSidebar :mobile-open="mobileOpen" :pinned="sidebarPinned" @hover="sidebarHovered = $event" @close-mobile="mobileOpen = false" />
+    <AppSidebar
+      :mobile-open="mobileOpen"
+      :pinned="sidebarPinned"
+      @hover="sidebarHovered = $event"
+      @close-mobile="mobileOpen = false"
+      @request-pin="sidebarPinned = $event"
+    />
 
     <!-- Topbar -->
     <AppTopbar
@@ -39,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import AppSidebar from './AppSidebar.vue'
@@ -54,13 +60,14 @@ const userEmail = computed(() => auth.userEmail || '')
 const router = useRouter()
 const sidebarPinned = ref(false)
 const sidebarHovered = ref(false)
-const sidebarExpanded = computed(() => sidebarPinned.value || sidebarHovered.value)
 const mobileOpen = ref(false)
 const year = computed(() => new Date().getFullYear())
 
-const mainContentClass = computed(() => {
-  return sidebarExpanded.value ? 'lg:pl-64 pl-0' : 'lg:pl-16 pl-0'
-})
+// The sidebar no longer widens on hover — only pinning changes its width,
+// so the content offset follows `sidebarPinned` alone (w-72 / w-16).
+const sidebarExpanded = computed(() => sidebarPinned.value)
+
+const mainContentClass = computed(() => (sidebarExpanded.value ? 'lg:pl-72 pl-0' : 'lg:pl-16 pl-0'))
 
 async function handleLogout() {
   await auth.logout()
