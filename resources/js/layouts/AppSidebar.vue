@@ -796,7 +796,32 @@ const tenantGroups: SidebarGroup[] = [
     labelKey: 'nav.purchases',
     icon: groupIcons.purchases,
     links: [
-      { to: '/achats/documents', labelKey: 'nav.documentsAchat', icon: icons.listdoc, permission: 'documents.view' },
+      { to: '/achats/documents', labelKey: 'nav.purchasesList', icon: icons.listdoc, permission: 'documents.view' },
+      // ?type=… preselects the kind of document on the shared create form.
+      {
+        to: '/achats/documents/create?type=PurchaseOrder',
+        labelKey: 'nav.newPurchaseOrder',
+        icon: icons.newdoc,
+        permission: 'documents.create',
+      },
+      {
+        to: '/achats/documents/create?type=ReceiptNotePurchase',
+        labelKey: 'nav.newReceiptNote',
+        icon: icons.newdoc,
+        permission: 'documents.create',
+      },
+      {
+        to: '/achats/documents/create?type=InvoicePurchase',
+        labelKey: 'nav.newPurchaseInvoice',
+        icon: icons.newdoc,
+        permission: 'documents.create',
+      },
+      {
+        to: '/achats/documents/create?type=CreditNotePurchase',
+        labelKey: 'nav.newPurchaseCreditNote',
+        icon: icons.newdoc,
+        permission: 'documents.create',
+      },
       {
         to: '/achats/ocr-import',
         labelKey: 'nav.ocrImport',

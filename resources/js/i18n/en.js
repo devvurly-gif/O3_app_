@@ -127,6 +127,12 @@ export default {
     newDeliveryNote: 'New delivery note',
     newSalesInvoice: 'New sales invoice',
     newCreditNote: 'New credit note',
+    // ── Section Achats du menu ──
+    purchasesList: 'List',
+    newPurchaseOrder: 'New purchase order',
+    newReceiptNote: 'New receipt note',
+    newPurchaseInvoice: 'New purchase invoice',
+    newPurchaseCreditNote: 'New supplier credit note',
   },
 
   // ── Dashboard ─────────────────────────────────────────────────────────

@@ -127,6 +127,12 @@ export default {
     newDeliveryNote: 'Nouveau BL',
     newSalesInvoice: 'Nouvelle facture de vente',
     newCreditNote: 'Nouvelle facture de retour',
+    // ── Section Achats du menu ──
+    purchasesList: 'Liste',
+    newPurchaseOrder: 'Nouveau BC',
+    newReceiptNote: 'Nouveau BR',
+    newPurchaseInvoice: "Nouvelle facture d'achat",
+    newPurchaseCreditNote: 'Nouvelle facture de retour',
   },
 
   // ── Dashboard ─────────────────────────────────────────────────────────
