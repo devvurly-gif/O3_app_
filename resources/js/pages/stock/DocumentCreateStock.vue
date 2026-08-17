@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useDocumentStockStore } from '@/stores/stock/useDocumentStockStore'
 import { useWarehouseStore } from '@/stores/warehouse'
@@ -9,6 +9,7 @@ import http from '@/services/http'
 import type { Product } from '@/types'
 
 const { t } = useI18n()
+const route = useRoute()
 const router = useRouter()
 const store = useDocumentStockStore()
 const whStore = useWarehouseStore()
@@ -37,8 +38,17 @@ async function fetchNextReference(incrementorId: string | number) {
 }
 
 // ── Header ────────────────────────────────────────────────────────────────
+// The sidebar links here with ?type=… so a menu entry lands on the right
+// operation. Anything unknown falls back to a stock entry.
+const STOCK_TYPES = ['StockEntry', 'StockExit', 'StockAdjustmentNote', 'StockTransfer']
+
+function typeFromQuery(fallback = 'StockEntry'): string {
+  const wanted = String(route.query.type ?? '')
+  return STOCK_TYPES.includes(wanted) ? wanted : fallback
+}
+
 const header = reactive({
-  document_type: 'StockEntry' as string,
+  document_type: typeFromQuery() as string,
   document_incrementor_id: '' as string | number,
   warehouse_id: '' as string | number,
   warehouse_dest_id: '' as string | number,
@@ -199,6 +209,16 @@ watch(
     const first = filteredIncrementors.value[0]
     header.document_incrementor_id = first?.id ?? ''
     fetchNextReference(header.document_incrementor_id)
+  },
+)
+
+// vue-router reuses this page when only the query changes — going from one
+// menu entry to another has to move the type with it. The watcher above then
+// refreshes the incrementor and the reference.
+watch(
+  () => route.query.type,
+  () => {
+    header.document_type = typeFromQuery(header.document_type)
   },
 )
 

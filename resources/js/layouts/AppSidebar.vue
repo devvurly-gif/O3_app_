@@ -836,7 +836,33 @@ const tenantGroups: SidebarGroup[] = [
     labelKey: 'nav.stock',
     icon: groupIcons.stock,
     links: [
-      { to: '/stock/documents', labelKey: 'nav.documentsStock', icon: icons.docs, permission: 'stock.view' },
+      { to: '/stock/documents', labelKey: 'nav.stockList', icon: icons.docs, permission: 'stock.view' },
+      // ?type=… preselects the operation on the shared create form. The
+      // permissions follow the real catalogue: manage / transfer / adjust.
+      {
+        to: '/stock/documents/create?type=StockEntry',
+        labelKey: 'nav.newStockEntry',
+        icon: icons.newdoc,
+        permission: 'stock.manage',
+      },
+      {
+        to: '/stock/documents/create?type=StockExit',
+        labelKey: 'nav.newStockExit',
+        icon: icons.newdoc,
+        permission: 'stock.manage',
+      },
+      {
+        to: '/stock/documents/create?type=StockTransfer',
+        labelKey: 'nav.newStockTransfer',
+        icon: icons.newdoc,
+        permission: 'stock.transfer',
+      },
+      {
+        to: '/stock/documents/create?type=StockAdjustmentNote',
+        labelKey: 'nav.newStockAdjustment',
+        icon: icons.newdoc,
+        permission: 'stock.adjust',
+      },
       { to: '/stock/mouvements', labelKey: 'nav.mouvements', icon: icons.listdoc, permission: 'stock.view' },
     ],
   },

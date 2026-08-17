@@ -133,6 +133,12 @@ export default {
     newReceiptNote: 'New receipt note',
     newPurchaseInvoice: 'New purchase invoice',
     newPurchaseCreditNote: 'New supplier credit note',
+    // ── Section Stock du menu ──
+    stockList: 'List',
+    newStockEntry: 'New stock entry',
+    newStockExit: 'New stock exit',
+    newStockTransfer: 'New transfer',
+    newStockAdjustment: 'New adjustment',
   },
 
   // ── Dashboard ─────────────────────────────────────────────────────────

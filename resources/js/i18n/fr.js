@@ -133,6 +133,12 @@ export default {
     newReceiptNote: 'Nouveau BR',
     newPurchaseInvoice: "Nouvelle facture d'achat",
     newPurchaseCreditNote: 'Nouvelle facture de retour',
+    // ── Section Stock du menu ──
+    stockList: 'Liste',
+    newStockEntry: 'Nouvelle entrée',
+    newStockExit: 'Nouvelle sortie',
+    newStockTransfer: 'Nouveau transfert',
+    newStockAdjustment: 'Nouvel ajustement',
   },
 
   // ── Dashboard ─────────────────────────────────────────────────────────
