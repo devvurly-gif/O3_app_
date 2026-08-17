@@ -1,7 +1,7 @@
 <template>
   <header
     class="fixed top-0 right-0 z-20 flex items-center justify-between h-16 px-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm transition-all duration-300 left-0"
-    :class="sidebarCollapsed ? 'lg:left-16' : 'lg:left-64'"
+    :class="sidebarCollapsed ? 'lg:left-16' : 'lg:left-72'"
   >
     <!-- Left: mobile menu toggle -->
     <button

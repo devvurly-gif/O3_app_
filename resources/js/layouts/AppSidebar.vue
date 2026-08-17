@@ -456,18 +456,31 @@ onMounted(() => {
 onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 
 // ── Width / expansion ────────────────────────────────────────────────
-// Hovering the rail no longer widens the sidebar: it opens a flyout.
-// The sidebar is only wide when pinned (topbar toggle) or on mobile.
+// Hovering the rail widens the sidebar. Unlike the pinned state it does
+// NOT push the page: the aside is fixed, so it floats over the content
+// (hence the shadow) and nothing reflows under the pointer. Pinning is
+// what actually reserves the 288px in AppLayout.
 const hovered = ref(false)
-const showLabels = computed(() => !!props.mobileOpen || !!props.pinned)
+const showLabels = computed(() => !!props.mobileOpen || !!props.pinned || hovered.value)
+
+// True only while the width comes from the pointer — used for the shadow
+// that tells the overlay apart from the pinned, in-flow sidebar.
+const floating = computed(() => !props.mobileOpen && !props.pinned && hovered.value)
 
 const sidebarClasses = computed(() => {
   if (props.mobileOpen) return 'w-72 translate-x-0'
-  return [props.pinned ? 'w-72' : 'w-16', 'max-lg:-translate-x-full max-lg:w-72']
+  return [
+    props.pinned || hovered.value ? 'w-72' : 'w-16',
+    floating.value ? 'shadow-2xl shadow-slate-900/15 dark:shadow-black/50' : '',
+    'max-lg:-translate-x-full max-lg:w-72',
+  ]
 })
 
 function onMouseEnter() {
   hovered.value = true
+  // The rail is about to be replaced by the full nav: a flyout opened by
+  // the same pointer movement would linger over nothing.
+  flyout.value = null
   emit('hover', true)
 }
 function onMouseLeave() {
