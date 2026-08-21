@@ -76,7 +76,7 @@ export interface PosProduct {
   category?: { id: number; ctg_title: string }
   primary_image?: { url: string } | null
   stock: number
-  variants?: { id: number; label: string; sku: string | null; price: number | null }[]
+  variants?: { id: number; label: string; sku: string | null; price: number | null; stock: number }[]
 }
 
 export const usePosStore = defineStore('pos', () => {

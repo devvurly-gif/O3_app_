@@ -199,6 +199,8 @@ interface PosDocument {
   footer?: any
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   third_partner?: any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  lignes?: any[]
 }
 
 const posStore = usePosStore()

@@ -281,6 +281,10 @@ export interface DocumentHeader extends BaseModel {
   issued_at: string | null
   due_at: string | null
   notes: string | null
+  ship_name: string | null
+  ship_phone: string | null
+  ship_address: string | null
+  ship_city: string | null
   third_partner?: ThirdPartner
   thirdPartner?: ThirdPartner
   user?: User

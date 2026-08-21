@@ -12,6 +12,8 @@ export interface Tenant {
   pos_enabled: boolean
   paiement_bl_enabled: boolean
   ecom_enabled: boolean
+  variants_enabled: boolean
+  imei_enabled: boolean
   ecom_api_key?: string
   trial_ends_at: string | null
   created_at: string

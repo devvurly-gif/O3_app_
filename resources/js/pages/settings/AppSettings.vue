@@ -404,15 +404,15 @@
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ $t('appSettings.priceDecimalPlaces') || 'Décimales pour les prix' }}</label>
             <div class="flex gap-4">
               <label class="flex items-center gap-2 cursor-pointer">
-                <input v-model.number="display.price_decimals" type="radio" :value="2" class="w-4 h-4 text-orange-500" />
+                <input v-model="display.price_decimals" type="radio" value="2" class="w-4 h-4 text-orange-500" />
                 <span class="text-sm text-gray-700 dark:text-gray-300">2 décimales (120.00 MAD)</span>
               </label>
               <label class="flex items-center gap-2 cursor-pointer">
-                <input v-model.number="display.price_decimals" type="radio" :value="3" class="w-4 h-4 text-orange-500" />
+                <input v-model="display.price_decimals" type="radio" value="3" class="w-4 h-4 text-orange-500" />
                 <span class="text-sm text-gray-700 dark:text-gray-300">3 décimales (120.000 MAD)</span>
               </label>
               <label class="flex items-center gap-2 cursor-pointer">
-                <input v-model.number="display.price_decimals" type="radio" :value="4" class="w-4 h-4 text-orange-500" />
+                <input v-model="display.price_decimals" type="radio" value="4" class="w-4 h-4 text-orange-500" />
                 <span class="text-sm text-gray-700 dark:text-gray-300">4 décimales (120.0000 MAD)</span>
               </label>
             </div>
@@ -877,7 +877,7 @@ const logoPreview = ref<string | null>(null)
 const uploadingLogo = ref(false)
 const deletingLogo = ref(false)
 const locale = reactive({ currency: '', currency_symbol: '', timezone: '', date_format: '', language: 'en' })
-const display = reactive({ price_decimals: 2 })
+const display = reactive({ price_decimals: '2' })
 const invoice = reactive({ default_tax_rate: '', payment_terms_days: '', footer_note: '', tax_enabled: 'true' })
 const stock = reactive({ autoriser_stock_negatif: 'false' })
 const ventes = reactive({ paiement_sur_bl: 'false' })

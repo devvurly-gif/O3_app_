@@ -1389,7 +1389,7 @@ function setupPartnerListener() {
 
   currentPartnerChannel = window.Echo.private(`partner.${editTarget.value.id}`)
   currentPartnerChannel.listen('.encours-updated', (data: any) => {
-    if (form.id === data.partner_id) {
+    if (editTarget.value?.id === data.partner_id) {
       form.encours_actuel = data.encours_actuel
       form.seuil_credit = data.seuil_credit
     }

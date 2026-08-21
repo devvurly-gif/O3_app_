@@ -4,9 +4,16 @@ import { useSettingStore } from '@/stores/setting'
 export function useNumberFormat() {
   const settingStore = useSettingStore()
 
-  // Get price decimal places from settings (default to 2)
+  // Get price decimal places from settings (default to 2).
+  //
+  // Domain is `display`, not `general`: that is where AppSettings writes it,
+  // what SettingController whitelists, and what useFormat/DocumentForm and
+  // DocumentPdfService all read. This composable was alone in reading
+  // `general`, and additionally dereferenced `.value` on a store ref Pinia
+  // already unwraps — so the lookup resolved to undefined twice over and the
+  // setting silently fell back to 2 no matter what the user picked.
   const priceDecimalPlaces = computed(() => {
-    const decimals = settingStore.settings.value?.general?.price_decimals
+    const decimals = settingStore.settings?.display?.price_decimals
     const value = parseInt(String(decimals), 10)
     // Only allow 2, 3, or 4 decimals
     if ([2, 3, 4].includes(value)) {
