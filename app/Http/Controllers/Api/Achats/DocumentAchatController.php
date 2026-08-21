@@ -13,6 +13,7 @@ use App\Services\StockMouvementService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class DocumentAchatController extends Controller
 {
@@ -470,13 +471,6 @@ class DocumentAchatController extends Controller
             return sprintf('%s-%d-%04d', $prefix, now()->year, rand(1, 9999));
         }
 
-        $reference = $this->incrementorService->formatReference(
-            $incrementor->template,
-            $incrementor->nextTrick
-        );
-
-        $incrementor->increment('nextTrick');
-
-        return $reference;
+        return $this->incrementorService->consumeNext($incrementor);
     }
 }

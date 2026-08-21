@@ -125,11 +125,7 @@ class PosService
                 abort(422, "Aucun numéroteur configuré pour les documents POS ({$label}).");
             }
 
-            $reference = $this->incrementorService->formatReference(
-                $incrementor->template,
-                $incrementor->nextTrick
-            );
-            $incrementor->increment('nextTrick');
+            $reference = $this->incrementorService->consumeNext($incrementor);
 
             // Create document header
             /** @var DocumentHeader $document */
@@ -184,6 +180,28 @@ class PosService
                 } else {
                     $paidAmount += $payment['amount'];
                 }
+            }
+
+            // The règlement must cover the ticket. Without this the status
+            // computed below reads only $creditAmount, so a 5 000 MAD ticket
+            // settled with 1 MAD in cash was stored as 'paid' while the footer
+            // still carried the 4 999 MAD due — the sale looked collected on
+            // every screen filtering on status, and the shortfall only ever
+            // surfaced in the credit-clients report.
+            //
+            // Rounded to the centime on both sides: line totals are computed
+            // in floats, so an exact payment can land a fraction under the
+            // total and must not be treated as a shortfall.
+            $tendered = round($paidAmount + $creditAmount, 2);
+            $ticketDue = round($totalTtc, 2);
+
+            if ($tendered < $ticketDue) {
+                abort(422, sprintf(
+                    'Le règlement (%.2f MAD) ne couvre pas le total du ticket (%.2f MAD). Manque %.2f MAD.',
+                    $tendered,
+                    $ticketDue,
+                    $ticketDue - $tendered,
+                ));
             }
 
             // Validate credit payment requirements
@@ -305,7 +323,7 @@ class PosService
             foreach ($ticket->stockMouvements as $mouvement) {
                 // Create reverse movement
                 $variantId = $mouvement->variant_id ?? null;
-                $currentStock = $this->stocks->getStockLevel(
+                $currentStock = $this->stocks->lockStockLevel(
                     $mouvement->product_id,
                     $mouvement->warehouse_id,
                     $variantId
@@ -415,11 +433,7 @@ class PosService
         return DB::transaction(function () use ($bl, $brIncrementor) {
             $now = now();
 
-            $reference = $this->incrementorService->formatReference(
-                $brIncrementor->template,
-                $brIncrementor->nextTrick
-            );
-            $brIncrementor->increment('nextTrick');
+            $reference = $this->incrementorService->consumeNext($brIncrementor);
 
             /** @var DocumentHeader $br */
             $br = $this->documents->create([
@@ -551,11 +565,7 @@ class PosService
             return $ticket;
         }
 
-        $blReference = $this->incrementorService->formatReference(
-            $blIncrementor->template,
-            $blIncrementor->nextTrick
-        );
-        $blIncrementor->increment('nextTrick');
+        $blReference = $this->incrementorService->consumeNext($blIncrementor);
 
         /** @var DocumentHeader $bl */
         $bl = $this->documents->create([

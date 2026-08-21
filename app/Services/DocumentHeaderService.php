@@ -31,11 +31,7 @@ class DocumentHeaderService
         return DB::transaction(function () use ($headerData, $lines, $footerData) {
             if (empty($headerData['reference'])) {
                 $incrementor = $this->incrementors->find($headerData['document_incrementor_id']);
-                $headerData['reference'] = $this->incrementorService->formatReference(
-                    $incrementor->template,
-                    $incrementor->nextTrick
-                );
-                $incrementor->increment('nextTrick');
+                $headerData['reference'] = $this->incrementorService->consumeNext($incrementor);
             }
 
             $headerData['status'] = 'draft';

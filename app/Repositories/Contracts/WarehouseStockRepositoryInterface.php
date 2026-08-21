@@ -11,5 +11,7 @@ interface WarehouseStockRepositoryInterface extends BaseRepositoryInterface
 
     public function getStockLevel(int $productId, int $warehouseId, ?int $variantId = null): float;
 
+    public function lockStockLevel(int $productId, int $warehouseId, ?int $variantId = null): float;
+
     public function upsertStock(int $productId, int $warehouseId, array $data, ?int $variantId = null): void;
 }

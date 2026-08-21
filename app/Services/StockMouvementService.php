@@ -100,7 +100,7 @@ class StockMouvementService
             }
 
             $variantId    = $ligne->variant_id ?? null;
-            $currentStock = $this->stocks->getStockLevel($ligne->product_id, $document->warehouse_id, $variantId);
+            $currentStock = $this->stocks->lockStockLevel($ligne->product_id, $document->warehouse_id, $variantId);
             $stockAfter   = $direction === 'in'
                 ? $currentStock + $ligne->quantity
                 : $currentStock - $ligne->quantity;
@@ -187,7 +187,7 @@ class StockMouvementService
         ]);
 
         foreach ($movements as $mouvement) {
-            $currentStock = $this->stocks->getStockLevel($mouvement->product_id, $mouvement->warehouse_id);
+            $currentStock = $this->stocks->lockStockLevel($mouvement->product_id, $mouvement->warehouse_id);
             $stockAfter   = $mouvement->direction === 'in'
                 ? $currentStock + $mouvement->quantity
                 : $currentStock - $mouvement->quantity;
@@ -240,7 +240,7 @@ class StockMouvementService
 
         foreach ($appliedMovements as $mouvement) {
             $reverseDirection = $mouvement->direction === 'out' ? 'in' : 'out';
-            $currentStock     = $this->stocks->getStockLevel($mouvement->product_id, $mouvement->warehouse_id);
+            $currentStock     = $this->stocks->lockStockLevel($mouvement->product_id, $mouvement->warehouse_id);
             $stockAfter       = $reverseDirection === 'in'
                 ? $currentStock + $mouvement->quantity
                 : $currentStock - $mouvement->quantity;
@@ -292,7 +292,7 @@ class StockMouvementService
             'purchase', 'return_in', 'transfer_in', 'adjustment_in', 'initial'
         ]) ? 'in' : 'out';
 
-        $currentStock = $this->stocks->getStockLevel($ligne->product_id, $document->warehouse_id);
+        $currentStock = $this->stocks->lockStockLevel($ligne->product_id, $document->warehouse_id);
 
         $stockAfter = $direction === 'in'
             ? $currentStock + $ligne->quantity
@@ -339,7 +339,7 @@ class StockMouvementService
             if (!$ligne->product_id || $ligne->line_type !== 'product') continue;
 
             $variantId    = $ligne->variant_id ?? null;
-            $currentStock = $this->stocks->getStockLevel($ligne->product_id, $document->warehouse_id, $variantId);
+            $currentStock = $this->stocks->lockStockLevel($ligne->product_id, $document->warehouse_id, $variantId);
             $targetStock  = (float) $ligne->quantity;
             $delta        = $targetStock - $currentStock;
 
@@ -387,8 +387,8 @@ class StockMouvementService
         foreach ($document->lignes as $ligne) {
             if (!$ligne->product_id || $ligne->line_type !== 'product') continue;
 
-            $stockOut = $this->stocks->getStockLevel($ligne->product_id, $document->warehouse_id);
-            $stockIn  = $this->stocks->getStockLevel($ligne->product_id, $document->warehouse_dest_id);
+            $stockOut = $this->stocks->lockStockLevel($ligne->product_id, $document->warehouse_id);
+            $stockIn  = $this->stocks->lockStockLevel($ligne->product_id, $document->warehouse_dest_id);
 
             if ($stockOut - $ligne->quantity < 0) {
                 $this->guardNegativeStock($ligne, $stockOut);
@@ -449,7 +449,7 @@ class StockMouvementService
         float  $quantity,
         int    $userId
     ): void {
-        $stockOut = $this->stocks->getStockLevel($productId, $fromWarehouseId);
+        $stockOut = $this->stocks->lockStockLevel($productId, $fromWarehouseId);
 
         if ($stockOut - $quantity < 0) {
             $this->guardNegativeStockRaw($productId, $quantity, $stockOut);
@@ -473,7 +473,7 @@ class StockMouvementService
             'user_id'     => $userId,
         ]);
 
-        $stockIn = $this->stocks->getStockLevel($productId, $toWarehouseId);
+        $stockIn = $this->stocks->lockStockLevel($productId, $toWarehouseId);
 
         $this->mouvements->create([
             'product_id'   => $productId,

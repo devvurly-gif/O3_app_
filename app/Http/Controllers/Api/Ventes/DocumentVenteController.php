@@ -13,6 +13,7 @@ use App\Services\StockMouvementService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class DocumentVenteController extends Controller
 {
@@ -251,6 +252,18 @@ class DocumentVenteController extends Controller
     {
         if (!$bl->isDeliveryNote()) {
             return response()->json(['message' => 'Ce document n\'est pas un Bon de Livraison.'], 422);
+        }
+
+        // Invoicing sets the BL to 'delivered', which the status guard below
+        // accepts — so calling this twice issued a second full invoice for the
+        // same goods and counted the amount twice in the customer's encours.
+        // The purchases side is already safe: confirmer_facture only accepts
+        // 'confirmed', and invoicing moves the BR to 'received'.
+        //
+        // isBilled() also covers notes invoiced by the periodic batch, which
+        // sets 'delivered' the same way.
+        if ($bl->isBilled()) {
+            return response()->json(['message' => 'Ce BL a déjà été facturé.'], 422);
         }
 
         // If BL is still in draft, confirm it first (auto-apply stock movements)
@@ -599,13 +612,6 @@ class DocumentVenteController extends Controller
             return sprintf('%s-%d-%04d', $prefix, now()->year, rand(1, 9999));
         }
 
-        $reference = $this->incrementorService->formatReference(
-            $incrementor->template,
-            $incrementor->nextTrick
-        );
-
-        $incrementor->increment('nextTrick');
-
-        return $reference;
+        return $this->incrementorService->consumeNext($incrementor);
     }
 }

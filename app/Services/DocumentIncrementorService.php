@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\DocumentIncrementor;
 use App\Repositories\Contracts\DocumentIncrementorRepositoryInterface;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
@@ -60,6 +61,36 @@ class DocumentIncrementorService
             'reference' => $this->formatReference($incrementor->template, $reserved['num']),
             'nextTrick' => $incrementor->nextTrick,
         ];
+    }
+
+    /**
+     * Consume the next number of a counter and return the formatted reference.
+     *
+     * Every caller used to read `nextTrick`, format it, then increment — with
+     * nothing in between holding the row. Two tills numbering at the same
+     * instant therefore produced the same reference, and since
+     * `document_headers.reference` is UNIQUE the loser got a QueryException:
+     * a 500 at the till and a lost sale, precisely at peak hours.
+     *
+     * Locking the row first serialises the two, so the second caller reads the
+     * already-incremented value.
+     *
+     * MUST be called inside a transaction — outside one MySQL commits and
+     * releases the lock immediately and the guarantee is gone.
+     *
+     * Accepts a plain Model because the repositories are still typed against
+     * the base class; only the key is read here, and findAndLock() returns the
+     * concrete DocumentIncrementor.
+     */
+    public function consumeNext(DocumentIncrementor|Model $incrementor): string
+    {
+        $locked = $this->incrementors->findAndLock((int) $incrementor->getKey());
+
+        $reference = $this->formatReference($locked->template, $locked->nextTrick);
+
+        $locked->increment('nextTrick');
+
+        return $reference;
     }
 
     /**

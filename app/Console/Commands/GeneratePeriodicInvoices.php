@@ -203,13 +203,6 @@ class GeneratePeriodicInvoices extends Command
             return sprintf('FAC-%d-%04d', now()->year, rand(1, 9999));
         }
 
-        $reference = $incrementorService->formatReference(
-            $incrementor->template,
-            $incrementor->nextTrick
-        );
-
-        $incrementor->increment('nextTrick');
-
-        return $reference;
+        return $incrementorService->consumeNext($incrementor);
     }
 }

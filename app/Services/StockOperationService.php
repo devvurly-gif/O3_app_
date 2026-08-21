@@ -181,10 +181,19 @@ class StockOperationService
 
     // ── Helpers ──────────────────────────────────────────────────────────
 
+    /**
+     * Every caller of this reads the level then writes a new one back, and all
+     * four run inside DB::transaction — so the row is held for the whole
+     * read-compute-write instead of letting a concurrent operation read the
+     * same starting value and overwrite the result. Without the lock the
+     * "stock insuffisant" guard in manualExit() was escapable too: both
+     * transactions saw enough stock, both went through.
+     */
     private function getStockLevel(int $productId, int $warehouseId): float
     {
         return (float) (WarehouseHasStock::where('product_id', $productId)
             ->where('warehouse_id', $warehouseId)
+            ->lockForUpdate()
             ->value('stockLevel') ?? 0);
     }
 

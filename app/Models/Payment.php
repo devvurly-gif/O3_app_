@@ -65,12 +65,17 @@ class Payment extends Model
     protected static function booted(): void
     {
         static::created(function (Payment $payment) {
-            $payment->document->footer->recalculateAmountDue();
-            $payment->document->footer->syncHeaderStatus();
+            // The footer is a separate row created by its own endpoint, so a
+            // document can legitimately be paid before it exists (create a
+            // document, register a payment, fill the totals afterwards).
+            // Dereferencing it blind turned that ordering into a 500.
+            $footer = $payment->document?->footer;
+            $footer?->recalculateAmountDue();
+            $footer?->syncHeaderStatus();
 
             // Recalculate partner encours_actuel from source data
             // (formula respects `ventes.paiement_sur_bl` setting)
-            $partner = $payment->document->thirdPartner;
+            $partner = $payment->document?->thirdPartner;
             if ($partner) {
                 $partner->recalculateEncours();
             }
@@ -118,11 +123,15 @@ class Payment extends Model
         });
 
         static::deleted(function (Payment $payment) {
-            $payment->document->footer->recalculateAmountDue();
-            $payment->document->footer->syncHeaderStatus();
+            // Same guards as on create, plus one of its own: DocumentHeader
+            // soft-deletes, so `document` is already null whenever a payment
+            // is removed as part of deleting its document.
+            $footer = $payment->document?->footer;
+            $footer?->recalculateAmountDue();
+            $footer?->syncHeaderStatus();
 
             // Recalculate partner encours_actuel from source data
-            $partner = $payment->document->thirdPartner;
+            $partner = $payment->document?->thirdPartner;
             if ($partner) {
                 $partner->recalculateEncours();
             }
