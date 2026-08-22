@@ -42,10 +42,10 @@ class OcrInvoiceController extends Controller
                 'data'    => $result,
             ]);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de l\'analyse du PDF: ' . $e->getMessage(),
-            ], 422);
+            // Le message de l'analyseur PDF cite le chemin du fichier temporaire
+            // et des fragments de sa configuration : il reste au journal.
+            return $this->failed($e, 'Le PDF n\'a pas pu être analysé. '
+                . 'Vérifiez qu\'il s\'agit bien d\'une facture lisible et non protégée.');
         } finally {
             if (file_exists($fullPath)) {
                 unlink($fullPath);

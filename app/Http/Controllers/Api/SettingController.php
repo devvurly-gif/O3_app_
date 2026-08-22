@@ -134,10 +134,13 @@ class SettingController extends Controller
                 'message' => "Test email sent to {$toEmail}",
             ]);
         } catch (\Throwable $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Email failed: ' . $e->getMessage(),
-            ], 422);
+            // Une exception SMTP cite l'hote, le port et parfois l'identifiant.
+            return $this->failed(
+                $e,
+                "L'envoi a échoué. Vérifiez les paramètres SMTP puis réessayez.",
+                422,
+                ['to' => $toEmail],
+            );
         }
     }
 

@@ -94,7 +94,13 @@ class LabelPrintController extends Controller
         try {
             $this->tspl->sendRaw($payload, $printer['host'], $printer['port']);
         } catch (Throwable $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
+            // Une erreur de socket nomme l'hote et le port de l'imprimante.
+            return $this->failed(
+                $e,
+                "L'imprimante n'a pas répondu. Vérifiez qu'elle est allumée et joignable sur le réseau.",
+                422,
+                ['printer' => $printer['name'] ?? null],
+            );
         }
 
         return response()->json([

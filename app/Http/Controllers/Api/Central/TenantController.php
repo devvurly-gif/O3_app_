@@ -406,10 +406,17 @@ class TenantController extends Controller
 
             return response()->json($result);
         } catch (\Exception $e) {
+            // Le client HTTP cite l'URL complète et ses en-têtes en cas d'échec.
+            // La trace part au journal, l'appelant reçoit un message stable.
+            \Log::error('Scraping produits échoué', [
+                'url'       => $validated['url'] ?? null,
+                'exception' => $e,
+            ]);
+
             return response()->json([
-                'message' => "Erreur de scraping: {$e->getMessage()}",
+                'message'  => "Le site cible n'a pas pu être analysé.",
                 'products' => [],
-                'count' => 0,
+                'count'    => 0,
             ], 422);
         }
     }
@@ -501,7 +508,17 @@ class TenantController extends Controller
 
                     $created++;
                 } catch (\Exception $e) {
-                    $errors[] = "{$item['name']}: {$e->getMessage()}";
+                    // Une violation de contrainte cite le nom de l'index et la
+                    // valeur en cause. L'administrateur a besoin de savoir quel
+                    // article a échoué, pas de lire du SQLSTATE : la trace part
+                    // au journal, la liste ne garde que le repère utile.
+                    \Log::error('Import produit échoué', [
+                        'tenant_id' => $tenant->id,
+                        'produit'   => $item['name'] ?? null,
+                        'exception' => $e,
+                    ]);
+
+                    $errors[] = "{$item['name']} : non importé";
                 }
             }
         });
@@ -764,7 +781,9 @@ class TenantController extends Controller
                 'to'        => $to,
             ]);
             return response()->json([
-                'message' => 'Échec de l\'envoi du contrat par email : ' . $e->getMessage(),
+                // La ligne Log::error juste au-dessus garde la trace complète ;
+                // une exception SMTP cite l'hôte, le port et parfois l'identifiant.
+                'message' => 'Le contrat n\'a pas pu être envoyé par email.',
             ], 500);
         }
 

@@ -142,9 +142,14 @@ class ImportController extends Controller
             // up as a raw 500 and leave the user with no explanation.
             report($e);
 
-            return response()->json([
-                'message' => "Erreur pendant l'import : ".$e->getMessage(),
-            ], 500);
+            // report() alimente le traqueur d'erreurs, failed() ajoute la
+            // ligne de journal portant la reference rendue au client. Le
+            // message du lecteur Excel, lui, ne sort pas.
+            return $this->failed(
+                $e,
+                "L'import a échoué. Vérifiez que le fichier respecte le modèle fourni.",
+                500,
+            );
         }
 
         // Row-level failures caught internally by the import class (when
