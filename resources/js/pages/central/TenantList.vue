@@ -147,7 +147,7 @@ function formatDate(d: string) {
       </div>
       <button
         @click="router.push('/central/tenants/create')"
-        class="inline-flex items-center gap-2 px-4 py-2.5 bg-orange-500 text-white text-sm font-medium rounded-lg hover:bg-orange-600 transition"
+        class="inline-flex items-center gap-2 px-4 py-2.5 bg-orange-700 text-white text-sm font-medium rounded-lg hover:bg-orange-800 transition"
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />

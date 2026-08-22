@@ -156,7 +156,7 @@
             </button>
             <router-link
               to="/dashboard"
-              class="flex-1 py-3 text-center rounded-xl text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 transition"
+              class="flex-1 py-3 text-center rounded-xl text-sm font-semibold text-white bg-orange-700 hover:bg-orange-800 transition"
             >
               Tableau de bord
             </router-link>

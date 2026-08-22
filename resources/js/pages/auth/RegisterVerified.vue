@@ -85,7 +85,7 @@ onMounted(async () => {
         <a
           v-if="result.login_url"
           :href="result.login_url"
-          class="inline-flex items-center justify-center gap-2 w-full py-3.5 rounded-xl text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 transition shadow-lg shadow-blue-600/25"
+          class="inline-flex items-center justify-center gap-2 w-full py-3.5 rounded-xl text-sm font-semibold text-white bg-orange-700 hover:bg-orange-800 transition shadow-lg shadow-blue-600/25"
         >
           Accéder à mon espace
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -105,7 +105,7 @@ onMounted(async () => {
         <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">{{ errorMessage }}</p>
         <a
           href="/register"
-          class="inline-block w-full py-3 rounded-xl text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 transition"
+          class="inline-block w-full py-3 rounded-xl text-sm font-semibold text-white bg-orange-700 hover:bg-orange-800 transition"
         >
           Recommencer l'inscription
         </a>

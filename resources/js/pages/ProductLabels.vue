@@ -17,7 +17,7 @@
         <button
           type="button"
           :disabled="!selectedList.length || printing"
-          class="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-2"
+          class="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-orange-700 hover:bg-orange-800 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-2"
           @click="printLabels"
         >
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -54,7 +54,7 @@
             type="button"
             class="px-2.5 h-9 rounded-lg text-xs font-medium border transition"
             :class="label.width === p.w && label.height === p.h
-              ? 'bg-orange-500 border-orange-500 text-white'
+              ? 'bg-orange-700 border-orange-700 text-white'
               : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'"
             @click="label.width = p.w; label.height = p.h"
           >
@@ -71,7 +71,7 @@
             type="button"
             class="px-3 h-9 rounded-lg text-xs font-medium border transition"
             :class="printMode === m.value
-              ? 'bg-orange-500 border-orange-500 text-white'
+              ? 'bg-orange-700 border-orange-700 text-white'
               : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'"
             @click="printMode = m.value"
           >
@@ -88,7 +88,7 @@
             type="button"
             class="px-3 h-9 rounded-lg text-xs font-medium border transition"
             :class="printer.transport === t.value
-              ? 'bg-orange-500 border-orange-500 text-white'
+              ? 'bg-orange-700 border-orange-700 text-white'
               : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'"
             :title="t.hint"
             @click="printer.transport = t.value"

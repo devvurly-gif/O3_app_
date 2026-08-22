@@ -469,7 +469,7 @@ function getPlanColor(plan: string) {
               <button
                 @click="saveInfo"
                 :disabled="savingInfo"
-                class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-orange-500 hover:bg-orange-600 rounded-lg transition disabled:opacity-50"
+                class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-orange-700 hover:bg-orange-800 rounded-lg transition disabled:opacity-50"
               >
                 <svg v-if="savingInfo" class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
@@ -861,7 +861,7 @@ function getPlanColor(plan: string) {
             <button
               @click="scrapeProducts"
               :disabled="scraping || !scrapeUrl"
-              class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+              class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-orange-700 hover:bg-orange-800 rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
             >
               <svg v-if="scraping" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
@@ -1007,7 +1007,7 @@ function getPlanColor(plan: string) {
 
           <button
             type="button"
-            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 rounded-lg transition ml-auto"
+            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-orange-700 hover:bg-orange-800 rounded-lg transition ml-auto"
             @click="openSendContractModal"
           >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -1137,7 +1137,7 @@ function getPlanColor(plan: string) {
           <button
             type="button"
             :disabled="sendingContract || !sendContractForm.to"
-            class="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            class="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-orange-700 hover:bg-orange-800 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             @click="sendContract"
           >
             <svg v-if="sendingContract" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">

@@ -414,7 +414,7 @@ const paymentColors: Record<string, string> = {
               Annuler
             </button>
             <button
-              class="px-4 py-2 text-sm font-semibold rounded-lg bg-orange-500 hover:bg-orange-600 text-white transition disabled:opacity-50"
+              class="px-4 py-2 text-sm font-semibold rounded-lg bg-orange-700 hover:bg-orange-800 text-white transition disabled:opacity-50"
               :disabled="savingWidgets"
               @click="saveWidgetPrefs"
             >

@@ -689,7 +689,7 @@ function handleClose() {
       </button>
       <button
         v-if="allowEdit"
-        class="px-4 py-2 text-sm font-semibold bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition"
+        class="px-4 py-2 text-sm font-semibold bg-orange-700 hover:bg-orange-800 text-white rounded-lg transition"
         @click="handleClose(); emit('edit', customerDetail)"
       >
         <svg class="w-4 h-4 inline -mt-0.5 mr-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">

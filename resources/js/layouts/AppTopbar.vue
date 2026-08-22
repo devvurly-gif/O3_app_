@@ -73,7 +73,7 @@
           class="px-2 py-1 rounded text-xs font-semibold transition-colors"
           :class="
             currentLocale === lang.code
-              ? 'bg-orange-500 text-white'
+              ? 'bg-orange-700 text-white'
               : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
           "
           @click="switchLang(lang.code)"
@@ -210,7 +210,7 @@
           @click="userOpen = !userOpen"
         >
           <span
-            class="w-8 h-8 rounded-full bg-orange-500 text-white text-sm font-bold flex items-center justify-center select-none"
+            class="w-8 h-8 rounded-full bg-orange-700 text-white text-sm font-bold flex items-center justify-center select-none"
           >
             {{ initials }}
           </span>

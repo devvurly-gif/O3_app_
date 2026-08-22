@@ -7,7 +7,7 @@
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Gérez vos promotions et bannières du site eCom</p>
       </div>
       <button
-        class="flex items-center gap-2 px-3 sm:px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition"
+        class="flex items-center gap-2 px-3 sm:px-4 py-2 bg-orange-700 hover:bg-orange-800 text-white text-sm font-semibold rounded-lg transition"
         @click="activeTab === 'promos' ? openCreatePromo() : openCreateSlide()"
       >
         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
@@ -191,7 +191,7 @@
           <button v-for="p in pagination.last_page" :key="p"
             @click="page = p"
             class="px-3 py-1.5 text-sm rounded-lg transition"
-            :class="p === page ? 'bg-orange-500 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'">
+            :class="p === page ? 'bg-orange-700 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'">
             {{ p }}
           </button>
         </div>
@@ -207,7 +207,7 @@
         <button v-for="pos in positions" :key="pos.value"
           @click="positionFilter = pos.value"
           class="px-4 py-2 text-sm font-medium rounded-lg transition"
-          :class="positionFilter === pos.value ? 'bg-orange-500 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'"
+          :class="positionFilter === pos.value ? 'bg-orange-700 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'"
         >
           {{ pos.label }}
         </button>
@@ -244,7 +244,7 @@
               :class="slide.is_active ? 'bg-green-500 text-white' : 'bg-gray-500 text-white'">
               {{ slide.is_active ? 'Actif' : 'Inactif' }}
             </span>
-            <span v-if="slide.link_type !== 'none'" class="absolute bottom-2 left-2 px-2 py-0.5 text-xs font-medium rounded bg-orange-500 text-white">
+            <span v-if="slide.link_type !== 'none'" class="absolute bottom-2 left-2 px-2 py-0.5 text-xs font-medium rounded bg-orange-700 text-white">
               {{ linkTypeLabels[slide.link_type] || slide.link_type }}
             </span>
           </div>
@@ -434,7 +434,7 @@
           <!-- ── Footer actions ── -->
           <div class="flex items-center justify-end gap-3 pt-5 mt-5 border-t border-gray-200 dark:border-gray-700">
             <button type="button" @click="showPromoModal = false" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition">Annuler</button>
-            <button type="submit" :disabled="saving" class="px-4 py-2 text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 rounded-lg transition disabled:opacity-50">
+            <button type="submit" :disabled="saving" class="px-4 py-2 text-sm font-semibold text-white bg-orange-700 hover:bg-orange-800 rounded-lg transition disabled:opacity-50">
               {{ saving ? 'Enregistrement...' : (editingPromo ? 'Mettre à jour' : 'Créer') }}
             </button>
           </div>
@@ -537,7 +537,7 @@
 
           <div class="flex items-center justify-end gap-3 pt-3 border-t border-gray-200 dark:border-gray-700">
             <button type="button" @click="showSlideModal = false" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition">Annuler</button>
-            <button type="submit" :disabled="saving" class="px-4 py-2 text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 rounded-lg transition disabled:opacity-50">
+            <button type="submit" :disabled="saving" class="px-4 py-2 text-sm font-semibold text-white bg-orange-700 hover:bg-orange-800 rounded-lg transition disabled:opacity-50">
               {{ saving ? 'Enregistrement...' : (editingSlide ? 'Mettre à jour' : 'Créer') }}
             </button>
           </div>

@@ -433,7 +433,7 @@
         <section class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 space-y-5">
           <div class="flex items-center justify-between">
             <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 uppercase tracking-wide">Rubriques de variantes</h3>
-            <button @click="startAddType" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition">
+            <button @click="startAddType" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-orange-700 text-white rounded-lg hover:bg-orange-800 transition">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
               Nouvelle rubrique
             </button>
@@ -452,7 +452,7 @@
               @keyup.enter="confirmAddType"
               @keyup.escape="addingType = false"
             />
-            <button @click="confirmAddType" :disabled="!newTypeName.trim()" class="px-3 py-1.5 text-xs font-medium bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-40 transition">Créer</button>
+            <button @click="confirmAddType" :disabled="!newTypeName.trim()" class="px-3 py-1.5 text-xs font-medium bg-orange-700 text-white rounded-lg hover:bg-orange-800 disabled:opacity-40 transition">Créer</button>
             <button @click="addingType = false" class="px-3 py-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition">Annuler</button>
           </div>
 
@@ -915,7 +915,7 @@ const email = reactive({
 })
 
 const inputClass = 'w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent'
-const btnClass = 'px-4 py-2 text-sm font-semibold bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition disabled:opacity-60'
+const btnClass = 'px-4 py-2 text-sm font-semibold bg-orange-700 hover:bg-orange-800 text-white rounded-lg transition disabled:opacity-60'
 const toggleClass = 'w-11 h-6 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-orange-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[\'\'] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 dark:after:border-gray-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500'
 
 /**

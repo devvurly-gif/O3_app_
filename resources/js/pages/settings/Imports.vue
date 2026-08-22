@@ -141,7 +141,7 @@
       <!-- Import actions -->
       <div v-if="previewData" class="flex items-center gap-3">
         <button
-          class="px-5 py-2.5 text-sm font-semibold bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition disabled:opacity-60"
+          class="px-5 py-2.5 text-sm font-semibold bg-orange-700 hover:bg-orange-800 text-white rounded-lg transition disabled:opacity-60"
           :disabled="importing || previewData.valid_count === 0"
           @click="runImport"
         >

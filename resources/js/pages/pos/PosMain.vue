@@ -2,7 +2,7 @@
   <div class="flex h-full relative">
     <!-- Mobile cart toggle FAB -->
     <button
-      class="lg:hidden fixed bottom-4 right-4 z-30 w-14 h-14 rounded-full bg-orange-500 text-white shadow-lg flex items-center justify-center hover:bg-orange-600 transition"
+      class="lg:hidden fixed bottom-4 right-4 z-30 w-14 h-14 rounded-full bg-orange-700 text-white shadow-lg flex items-center justify-center hover:bg-orange-800 transition"
       @click="mobileView = mobileView === 'cart' ? 'products' : 'cart'"
     >
       <svg v-if="mobileView === 'products'" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -28,7 +28,7 @@
       <div class="flex items-center gap-2 px-4 py-3 border-b border-gray-100 dark:border-gray-700 overflow-x-auto shrink-0">
         <button
           class="shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition"
-          :class="!posStore.selectedCategoryId ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+          :class="!posStore.selectedCategoryId ? 'bg-orange-700 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
           @click="selectCategory(null)"
         >
           Tout
@@ -37,7 +37,7 @@
           v-for="cat in categories"
           :key="cat.id"
           class="shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition"
-          :class="posStore.selectedCategoryId === cat.id ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+          :class="posStore.selectedCategoryId === cat.id ? 'bg-orange-700 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
           @click="selectCategory(cat.id)"
         >
           {{ cat.ctg_title }}
@@ -217,7 +217,7 @@
             <span>Ventes</span>
             <span
               v-if="(sessionStats?.total_tickets ?? 0) > 0"
-              class="ml-0.5 text-[10px] bg-orange-500 text-white px-1.5 py-0.5 rounded-full"
+              class="ml-0.5 text-[10px] bg-orange-700 text-white px-1.5 py-0.5 rounded-full"
             >
               {{ sessionStats?.total_tickets }}
             </span>
@@ -393,7 +393,7 @@
               </button>
               <span class="w-8 text-center text-sm font-bold text-gray-800 dark:text-white select-none">{{ item.quantity }}</span>
               <button
-                class="w-7 h-7 rounded-lg bg-orange-500 hover:bg-orange-600 shadow-sm flex items-center justify-center text-white transition active:scale-95"
+                class="w-7 h-7 rounded-lg bg-orange-700 hover:bg-orange-800 shadow-sm flex items-center justify-center text-white transition active:scale-95"
                 @click="posStore.updateCartItemQty(item.product_id, item.quantity + 1, item.variant_id ?? null)"
               >
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
@@ -430,7 +430,7 @@
           </button>
           <button
             :disabled="!posStore.cart.length"
-            class="py-3 rounded-xl font-semibold text-sm transition disabled:opacity-40 disabled:cursor-not-allowed bg-orange-500 hover:bg-orange-600 text-white"
+            class="py-3 rounded-xl font-semibold text-sm transition disabled:opacity-40 disabled:cursor-not-allowed bg-orange-700 hover:bg-orange-800 text-white"
             @click="payWith('card')"
           >
             Carte
@@ -501,7 +501,7 @@
             <div class="flex gap-2">
               <button
                 class="flex-1 py-2 rounded-lg text-sm font-medium transition"
-                :class="newCustomer.type_compte === 'normal' ? 'bg-orange-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'"
+                :class="newCustomer.type_compte === 'normal' ? 'bg-orange-700 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'"
                 @click="newCustomer.type_compte = 'normal'"
               >
                 Normal
@@ -537,7 +537,7 @@
           </button>
           <button
             :disabled="!newCustomer.tp_title.trim() || creatingCustomer"
-            class="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 transition disabled:opacity-40 disabled:cursor-not-allowed"
+            class="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-orange-700 hover:bg-orange-800 transition disabled:opacity-40 disabled:cursor-not-allowed"
             @click="createCustomer"
           >
             {{ creatingCustomer ? 'Création...' : 'Créer' }}
@@ -658,7 +658,7 @@
           </button>
           <button
             type="button"
-            class="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 transition"
+            class="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-orange-700 hover:bg-orange-800 transition"
             @click="showSessionStats = false"
           >
             Fermer
@@ -827,7 +827,7 @@
               <button
                 @click="saveTerminalSettings"
                 :disabled="savingTerminalSettings"
-                class="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 rounded-xl transition disabled:opacity-60"
+                class="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-orange-700 hover:bg-orange-800 rounded-xl transition disabled:opacity-60"
               >
                 {{ savingTerminalSettings ? 'Enregistrement...' : 'Enregistrer' }}
               </button>

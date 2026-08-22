@@ -338,7 +338,7 @@ const paymentProgress = computed(() => {
           <button
             v-if="canConfirm"
             :disabled="actionLoading"
-            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-50"
+            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition bg-orange-700 text-white hover:bg-orange-800 disabled:opacity-50"
             @click="confirmDocument"
           >
             <svg v-if="actionLoading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">

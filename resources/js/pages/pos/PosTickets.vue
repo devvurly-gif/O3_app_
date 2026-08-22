@@ -7,7 +7,7 @@
       </div>
       <router-link
         to="/pos/main"
-        class="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg transition"
+        class="px-4 py-2 bg-orange-700 hover:bg-orange-800 text-white text-sm font-medium rounded-lg transition"
       >
         Retour au POS
       </router-link>

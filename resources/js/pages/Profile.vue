@@ -44,7 +44,7 @@
           <button
             type="submit"
             :disabled="savingProfile"
-            class="px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition disabled:opacity-50"
+            class="px-5 py-2.5 bg-orange-700 hover:bg-orange-800 text-white text-sm font-semibold rounded-lg transition disabled:opacity-50"
           >
             {{ savingProfile ? 'Enregistrement...' : 'Enregistrer' }}
           </button>
@@ -96,7 +96,7 @@
           <button
             type="submit"
             :disabled="savingPassword"
-            class="px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition disabled:opacity-50"
+            class="px-5 py-2.5 bg-orange-700 hover:bg-orange-800 text-white text-sm font-semibold rounded-lg transition disabled:opacity-50"
           >
             {{ savingPassword ? 'Modification...' : 'Modifier le mot de passe' }}
           </button>

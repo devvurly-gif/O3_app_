@@ -120,7 +120,7 @@ const canSubmit = computed(() =>
       <!-- Header -->
       <div class="text-center mb-8">
         <a href="/" class="inline-flex items-center gap-2 mb-6">
-          <div class="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center text-white font-bold">O3</div>
+          <div class="w-10 h-10 rounded-xl bg-orange-700 flex items-center justify-center text-white font-bold">O3</div>
           <span class="text-xl font-bold text-gray-900 dark:text-white">O3 App</span>
         </a>
         <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">Créez votre espace</h1>
@@ -288,7 +288,7 @@ const canSubmit = computed(() =>
         <button
           type="submit"
           :disabled="!canSubmit"
-          class="w-full py-3 rounded-xl text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          class="w-full py-3 rounded-xl text-sm font-semibold text-white bg-orange-700 hover:bg-orange-800 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           <svg v-if="submitting" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />

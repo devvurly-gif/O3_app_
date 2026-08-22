@@ -209,7 +209,7 @@ const plans = [
               <span class="text-base font-bold text-gray-900 dark:text-white">{{ plan.label }}</span>
               <span
                 v-if="form.plan === plan.value"
-                class="w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center"
+                class="w-5 h-5 bg-orange-700 rounded-full flex items-center justify-center"
               >
                 <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
@@ -312,7 +312,7 @@ const plans = [
         <button
           type="submit"
           :disabled="loading"
-          class="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-orange-500 rounded-lg hover:bg-orange-600 disabled:opacity-50 transition"
+          class="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-orange-700 rounded-lg hover:bg-orange-800 disabled:opacity-50 transition"
         >
           <svg v-if="loading" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />

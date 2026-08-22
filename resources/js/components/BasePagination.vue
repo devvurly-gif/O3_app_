@@ -28,7 +28,7 @@
           class="px-3 py-1.5 rounded-md border font-medium transition"
           :class="
             page === currentPage
-              ? 'bg-orange-500 text-white border-orange-500'
+              ? 'bg-orange-700 text-white border-orange-700'
               : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
           "
           @click="emit('change', page)"

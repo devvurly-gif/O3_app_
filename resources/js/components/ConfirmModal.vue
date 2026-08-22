@@ -52,7 +52,7 @@ const emit = defineEmits<{
       <button
         :disabled="loading"
         class="px-5 py-2 text-sm font-medium text-white rounded-lg disabled:opacity-50"
-        :class="variant === 'danger' ? 'bg-red-600 hover:bg-red-700' : 'bg-orange-500 hover:bg-orange-600'"
+        :class="variant === 'danger' ? 'bg-red-600 hover:bg-red-700' : 'bg-orange-700 hover:bg-orange-800'"
         @click="emit('confirm')"
       >
         {{ loading ? loadingLabel || confirmLabel + '...' : confirmLabel }}

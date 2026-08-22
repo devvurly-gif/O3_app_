@@ -66,7 +66,7 @@
         <button
           type="submit"
           :disabled="loading || !terminalId"
-          class="w-full py-3 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed"
+          class="w-full py-3 bg-orange-700 hover:bg-orange-800 text-white font-semibold rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {{ loading ? 'Ouverture...' : 'Ouvrir la session' }}
         </button>

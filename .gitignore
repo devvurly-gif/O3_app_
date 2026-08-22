@@ -25,3 +25,9 @@ cookies.txt
 .ee
 *.bak
 *.bak-*
+
+# Variantes de travail laissees a cote des fichiers actifs :
+# elles invitent a editer la mauvaise copie.
+*.vue.fresh
+*.vue.bad
+*.vue.current

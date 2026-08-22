@@ -11,7 +11,7 @@
         </div>
         <div class="flex items-center gap-2 shrink-0">
           <label
-            class="flex items-center gap-2 px-3 sm:px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg cursor-pointer transition"
+            class="flex items-center gap-2 px-3 sm:px-4 py-2 bg-orange-700 hover:bg-orange-800 text-white text-sm font-semibold rounded-lg cursor-pointer transition"
             :class="{ 'opacity-60 cursor-not-allowed': uploading }"
           >
             <svg v-if="!uploading" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -76,7 +76,7 @@
         <button
           :disabled="!selectedProductId || assigning"
           @click="assignToProduct"
-          class="flex items-center gap-2 px-4 py-1.5 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg transition"
+          class="flex items-center gap-2 px-4 py-1.5 bg-orange-700 hover:bg-orange-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg transition"
         >
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m9.686-5.749a4.5 4.5 0 00-6.364-6.364L4.5 8.25" />

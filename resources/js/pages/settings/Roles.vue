@@ -7,7 +7,7 @@
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Gérer les rôles et leurs permissions d'accès</p>
       </div>
       <button
-        class="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition"
+        class="flex items-center gap-2 px-4 py-2 bg-orange-700 hover:bg-orange-800 text-white text-sm font-semibold rounded-lg transition"
         @click="openCreate"
       >
         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -212,7 +212,7 @@
           Annuler
         </button>
         <button
-          class="px-4 py-2 text-sm font-semibold bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition disabled:opacity-60"
+          class="px-4 py-2 text-sm font-semibold bg-orange-700 hover:bg-orange-800 text-white rounded-lg transition disabled:opacity-60"
           :disabled="saving"
           @click="submit"
         >
