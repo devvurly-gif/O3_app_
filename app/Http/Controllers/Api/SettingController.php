@@ -173,7 +173,7 @@ class SettingController extends Controller
     public function uploadLogo(Request $request): JsonResponse
     {
         $request->validate([
-            'logo' => ['required', 'image', 'mimes:jpeg,jpg,png,webp,svg', 'max:2048'],
+            'logo' => ['required', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
         ]);
 
         // Delete old logo if exists

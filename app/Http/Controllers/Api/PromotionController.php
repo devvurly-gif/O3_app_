@@ -77,7 +77,7 @@ class PromotionController extends Controller
 
         // Handle banner_image file upload
         if ($request->hasFile('banner_image_file')) {
-            $request->validate(['banner_image_file' => 'image|max:2048']);
+            $request->validate(['banner_image_file' => 'image|mimes:jpeg,jpg,png,webp|max:2048']);
             $path = $request->file('banner_image_file')->store('promotions', 'public');
             $validated['banner_image'] = '/storage/' . $path;
         }
@@ -133,7 +133,7 @@ class PromotionController extends Controller
 
         // Handle banner_image file upload
         if ($request->hasFile('banner_image_file')) {
-            $request->validate(['banner_image_file' => 'image|max:2048']);
+            $request->validate(['banner_image_file' => 'image|mimes:jpeg,jpg,png,webp|max:2048']);
             // Delete old banner if stored locally
             if ($promotion->banner_image && str_starts_with($promotion->banner_image, '/storage/')) {
                 Storage::disk('public')->delete(str_replace('/storage/', '', $promotion->banner_image));

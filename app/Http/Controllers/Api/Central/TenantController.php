@@ -639,16 +639,21 @@ class TenantController extends Controller
             $ext = preg_replace('/\?.*/', '', $ext);
             $ext = strtolower($ext);
 
-            // Validate extension, fallback to content-type
-            $validExts = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg', 'avif'];
+            // Validate extension, fallback to content-type.
+            //
+            // Pas de SVG : le fichier vient d'un site tiers, son contenu est
+            // donc entièrement contrôlé par l'extérieur, et un SVG est du XML
+            // qui peut porter un <script> exécuté dans l'origine du tenant.
+            // La liste est alignée sur ce que la route de service accepte
+            // (routes/tenant.php) : télécharger un format non servable ne
+            // ferait qu'accumuler des fichiers morts.
+            $validExts = ['jpg', 'jpeg', 'png', 'webp'];
             if (! in_array($ext, $validExts)) {
                 $contentType = $response->header('Content-Type') ?? '';
                 $ext = match (true) {
                     str_contains($contentType, 'jpeg'), str_contains($contentType, 'jpg') => 'jpg',
                     str_contains($contentType, 'png')  => 'png',
                     str_contains($contentType, 'webp') => 'webp',
-                    str_contains($contentType, 'gif')  => 'gif',
-                    str_contains($contentType, 'svg')  => 'svg',
                     default                            => 'png',
                 };
             }

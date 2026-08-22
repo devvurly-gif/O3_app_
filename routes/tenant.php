@@ -34,9 +34,16 @@ Route::middleware([
     // SECURITY: whitelist both folder prefix and extension. Only
     // subfolders that the app actually writes to are reachable
     // (`products/`, `slides/`, `logos/`, `promotions/`), and only
-    // image MIME types. This closes the open `.*` pattern which
+    // raster image formats. This closes the open `.*` pattern which
     // previously let any anon visitor download anything ever
     // written to the public disk.
+    //
+    // SVG is deliberately absent. It is XML, not a raster format: it can
+    // carry a <script> that runs in the tenant's own origin, and since the
+    // Sanctum token lives in localStorage a booby-trapped logo would hand
+    // over the session. Every upload path was narrowed to match — note that
+    // Laravel's bare `image` rule does include svg, so `mimes:` is spelled
+    // out at each site rather than relied upon.
     //
     // Defense-in-depth: also reject `..` and leading `/` inside
     // the closure in case the whitelist regex is ever relaxed.
@@ -50,7 +57,7 @@ Route::middleware([
         }
         return response()->file($disk->path($path));
     })
-        ->where('path', '(products|slides|logos|promotions)/[A-Za-z0-9._\-]+\.(jpe?g|png|webp|svg|gif|avif)')
+        ->where('path', '(products|slides|logos|promotions)/[A-Za-z0-9._\-]+\.(jpe?g|png|webp)')
         ->name('tenant.storage');
 
     // SPA catch-all (exclude api and storage paths)

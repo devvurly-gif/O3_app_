@@ -27,8 +27,8 @@ class ProductImageController extends Controller
     {
         $request->validate([
             'images'     => ['required_without:image', 'array', 'min:1'],
-            'images.*'   => ['image', 'max:10240'],
-            'image'      => ['required_without:images', 'image', 'max:10240'],
+            'images.*'   => ['image', 'mimes:jpeg,jpg,png,webp', 'max:10240'],
+            'image'      => ['required_without:images', 'image', 'mimes:jpeg,jpg,png,webp', 'max:10240'],
             'title'      => ['nullable', 'string', 'max:255'],
             'altContent' => ['nullable', 'string', 'max:255'],
             'isPrimary'  => ['boolean'],
