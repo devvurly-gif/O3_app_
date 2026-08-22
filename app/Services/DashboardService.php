@@ -11,6 +11,7 @@ use App\Models\Product;
 use App\Models\ThirdPartner;
 use App\Models\WarehouseHasStock;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 
 class DashboardService
@@ -89,13 +90,16 @@ class DashboardService
         $purchasesCurrent = $this->purchasesTotal($startMonth);
         $purchasesPrev    = $this->purchasesTotal($startPrev, $endPrev);
 
-        // Payments received
-        $paymentsCurrent = Payment::where('paid_at', '>=', $startMonth)
-            ->whereHas('document', fn ($q) => $q->whereIn('document_type', ['InvoiceSale', 'TicketSale', 'DeliveryNote']))
-            ->sum('amount');
-        $paymentsPrev = Payment::whereBetween('paid_at', [$startPrev, $endPrev])
-            ->whereHas('document', fn ($q) => $q->whereIn('document_type', ['InvoiceSale', 'TicketSale', 'DeliveryNote']))
-            ->sum('amount');
+        // Payments received.
+        //
+        // `credit` is excluded: a POS "en compte" line is written as a Payment
+        // row so the ticket balances, but no money changes hands — it is a
+        // receivable. Counting it here inflated the takings by the exact
+        // amount that also sits in amount_due, so the same dirham was reported
+        // as both collected and owed. It is surfaced separately in `meta`.
+        $paymentsCurrent = $this->collected($startMonth);
+        $paymentsPrev    = $this->collected($startPrev, $endPrev);
+        $creditCurrent   = $this->creditGranted($startMonth);
 
         // Invoice count
         $invoicesCurrent = DocumentHeader::whereIn('document_type', ['InvoiceSale', 'TicketSale'])
@@ -107,10 +111,23 @@ class DashboardService
             ->whereNotIn('status', ['cancelled'])
             ->count();
 
-        // Outstanding
+        // Outstanding.
+        //
+        // DeliveryNote must be in the list: a POS credit sale is stored as one
+        // (PosService::createTicket), so the amount_due of every "en compte"
+        // sale used to sit on a type this card excluded — the figure read 0
+        // while real receivables were outstanding.
+        //
+        // A delivery note already turned into an invoice is skipped: the
+        // invoice carries the same amount_due, and counting both would double
+        // it. Same guard as marginBreakdown() and DocumentHeader::isBilled().
         $outstandingDue = DocumentFooter::whereHas('header', fn ($q) =>
-            $q->whereIn('document_type', ['InvoiceSale', 'TicketSale'])
+            $q->whereIn('document_type', self::SALE_TYPES)
               ->whereNotIn('status', ['paid', 'cancelled'])
+              ->whereNotExists(fn ($sub) => $sub->select(DB::raw(1))
+                  ->from('document_headers as inv')
+                  ->whereColumn('inv.parent_id', 'document_headers.id')
+                  ->where('inv.document_type', 'InvoiceSale'))
         )->sum('amount_due');
 
         // Today's sales (all types)
@@ -161,6 +178,10 @@ class DashboardService
                 'prev'     => round($paymentsPrev, 2),
                 'trend'    => $this->trend($paymentsCurrent, $paymentsPrev),
                 'currency' => true,
+                'meta'     => [
+                    // Ventes en compte du mois : accordées, pas encaissées.
+                    'credit_granted' => round($creditCurrent, 2),
+                ],
             ],
             [
                 'key'      => 'outstanding',
@@ -489,6 +510,38 @@ class DashboardService
     }
 
     // ── Helpers ─────────────────────────────────────────────────────
+    /**
+     * Money actually received over a window: every payment method except
+     * `credit`, which records a sale on account, not a collection.
+     */
+    private function collected(Carbon $from, ?Carbon $to = null): float
+    {
+        return (float) $this->paymentsOnSales($from, $to)
+            ->where('method', '!=', 'credit')
+            ->sum('amount');
+    }
+
+    /**
+     * The counterpart of collected(): credit granted over the same window.
+     */
+    private function creditGranted(Carbon $from, ?Carbon $to = null): float
+    {
+        return (float) $this->paymentsOnSales($from, $to)
+            ->where('method', 'credit')
+            ->sum('amount');
+    }
+
+    private function paymentsOnSales(Carbon $from, ?Carbon $to = null): Builder
+    {
+        return Payment::query()
+            ->when(
+                $to,
+                fn ($q) => $q->whereBetween('paid_at', [$from, $to]),
+                fn ($q) => $q->where('paid_at', '>=', $from),
+            )
+            ->whereHas('document', fn ($q) => $q->whereIn('document_type', self::SALE_TYPES));
+    }
+
     private function salesTotal(Carbon $from, ?Carbon $to = null): float
     {
         $q = DocumentFooter::query()

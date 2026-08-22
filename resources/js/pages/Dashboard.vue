@@ -478,6 +478,18 @@ const paymentColors: Record<string, string> = {
                 · {{ card.meta.uncosted_lines }} sans coût
               </span>
             </p>
+            <!--
+              Ventes en compte : accordées sur la période, pas encaissées.
+              Affichées sous le montant encaissé pour que le total vendu reste
+              lisible sans confondre les deux.
+            -->
+            <p
+              v-if="card.meta?.credit_granted"
+              class="text-[10px] text-amber-600 dark:text-amber-500 truncate"
+              title="Ventes en compte accordées sur la période — non encaissées"
+            >
+              + {{ fmtCurrency(card.meta.credit_granted) }} en compte
+            </p>
           </div>
         </div>
       </div>
