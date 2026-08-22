@@ -32,7 +32,9 @@ class SlideController extends Controller
         $validated = $request->validate([
             'title'       => 'required|string|max:255',
             'subtitle'    => 'nullable|string|max:255',
-            'image'       => 'required',
+            // Sans contrainte de type, n'importe quel fichier atterrissait sur le
+            // disque public sous une extension fournie par le client.
+            'image'       => ['required', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
             'button_text' => 'nullable|string|max:100',
             'link_type'   => ['required', Rule::in(['promotion', 'category', 'product', 'url', 'none'])],
             'link_id'     => 'nullable|integer',
@@ -62,7 +64,7 @@ class SlideController extends Controller
         $validated = $request->validate([
             'title'       => 'sometimes|string|max:255',
             'subtitle'    => 'nullable|string|max:255',
-            'image'       => 'nullable',
+            'image'       => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
             'button_text' => 'nullable|string|max:100',
             'link_type'   => ['sometimes', Rule::in(['promotion', 'category', 'product', 'url', 'none'])],
             'link_id'     => 'nullable|integer',

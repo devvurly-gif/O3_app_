@@ -28,14 +28,16 @@ class EcomApiKey
         $tenant = tenant();
         if ($tenant) {
             $tenantKey = $tenant->ecom_api_key ?? null;
-            if ($tenantKey && $apiKey === $tenantKey) {
+            // hash_equals : comparaison a temps constant, pour ne pas laisser
+            // le temps de reponse trahir le prefixe correct de la cle.
+            if ($tenantKey && hash_equals((string) $tenantKey, $apiKey)) {
                 return $next($request);
             }
         }
 
         // Fallback to global key
         $globalKey = config('services.ecom.api_key');
-        if ($globalKey && $apiKey === $globalKey) {
+        if ($globalKey && hash_equals((string) $globalKey, $apiKey)) {
             return $next($request);
         }
 

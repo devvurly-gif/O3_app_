@@ -55,9 +55,16 @@ class AuthController extends Controller
             'password'         => ['required', 'string', 'min:8', 'confirmed'],
         ]);
 
-        $request->user()->update([
-            'password' => $request->password,
-        ]);
+        $user = $request->user();
+
+        $user->update(['password' => $request->password]);
+
+        // Changer son mot de passe est le geste de quelqu'un qui soupçonne une
+        // compromission. Sans cette révocation, un jeton volé restait valide
+        // jusqu'à son expiration — douze heures pendant lesquelles le
+        // changement ne servait à rien.
+        $current = $user->currentAccessToken();
+        $user->tokens()->when($current, fn ($q) => $q->whereKeyNot($current->getKey()))->delete();
 
         return response()->json(['message' => 'Mot de passe modifié avec succès.']);
     }
