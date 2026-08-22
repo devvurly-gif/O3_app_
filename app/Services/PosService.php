@@ -241,16 +241,31 @@ class PosService
                     abort(422, 'Un client doit être sélectionné pour un paiement en compte.');
                 }
 
-                $customer = ThirdPartner::findOrFail($customerId);
+                // Verrou sur la ligne client pour toute la transaction.
+                //
+                // Sans lui, deux tickets à crédit émis au même instant sur deux
+                // caisses lisent le même encours de départ : les deux passent
+                // le contrôle, et le plafond est dépassé du montant du second.
+                // Même motif de course que celle corrigée sur le stock.
+                $customer = ThirdPartner::whereKey($customerId)->lockForUpdate()->firstOrFail();
 
                 if (!$customer->isEnCompte()) {
                     abort(422, 'Ce client n\'a pas de compte "en compte". Seuls les clients en compte peuvent payer à crédit.');
                 }
 
-                if ($customer->seuil_credit > 0 && ($customer->encours_actuel + $creditAmount) > $customer->seuil_credit) {
+                // L'encours est recalculé depuis les documents plutôt que lu
+                // sur la colonne dénormalisée : celle-ci n'est rafraîchie
+                // qu'après coup et peut avoir dérivé — un plafond contrôlé
+                // contre une valeur périmée ne protège de rien.
+                //
+                // `persist: false` : on ne réécrit pas la colonne ici, la
+                // recalculer sert seulement à décider.
+                $encours = $customer->recalculateEncours(persist: false);
+
+                if ($customer->seuil_credit > 0 && ($encours + $creditAmount) > $customer->seuil_credit) {
                     abort(422, sprintf(
                         'Plafond crédit dépassé. Encours actuel: %.2f MAD, Plafond: %.2f MAD, Montant crédit demandé: %.2f MAD.',
-                        $customer->encours_actuel,
+                        $encours,
                         $customer->seuil_credit,
                         $creditAmount
                     ));
