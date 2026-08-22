@@ -172,6 +172,19 @@
             <span class="value">{{ number_format($ticket->footer->amount_due, 2, ',', ' ') }} MAD</span>
         </div>
         @endif
+
+        {{-- Rendu de monnaie : « reçu » se reconstitue à partir du net
+             encaissé et du rendu, les paiements ne portant que le net. --}}
+        @if($ticket->footer->change_given > 0)
+        <div class="row" style="margin-top:4px;">
+            <span class="label">Reçu</span>
+            <span class="value">{{ number_format($ticket->footer->amount_paid + $ticket->footer->change_given, 2, ',', ' ') }} MAD</span>
+        </div>
+        <div class="row" style="font-weight:bold;">
+            <span class="label">Rendu</span>
+            <span class="value">{{ number_format($ticket->footer->change_given, 2, ',', ' ') }} MAD</span>
+        </div>
+        @endif
     </div>
     @endif
 

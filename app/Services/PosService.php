@@ -204,6 +204,37 @@ class PosService
                 ));
             }
 
+            // ── Rendu de monnaie ─────────────────────────────────────
+            //
+            // Un billet de 200 sur un ticket de 170 laisse 170 dans le tiroir,
+            // pas 200. Enregistrer le montant tendu faussait la clôture de
+            // caisse d'autant, puisqu'elle somme les paiements en espèces.
+            //
+            // Le rendu ne sort donc que du tiroir : on ne rend pas de monnaie
+            // sur une carte, un chèque ni un paiement en compte. Les paiements
+            // écrits plus bas portent le net encaissé, et l'écart est conservé
+            // sur le pied de document pour que le ticket imprimé puisse
+            // afficher « reçu » et « rendu ».
+            $change = round($tendered - $ticketDue, 2);
+
+            if ($change > 0) {
+                $cashTendered = round(
+                    collect($payments)
+                        ->where('method', 'cash')
+                        ->sum(fn ($p) => (float) $p['amount']),
+                    2,
+                );
+
+                if ($cashTendered < $change) {
+                    abort(422, sprintf(
+                        'Impossible de rendre %.2f MAD : seuls %.2f MAD ont été reçus en espèces. '
+                        . 'Un règlement par carte, chèque ou en compte doit être exact.',
+                        $change,
+                        $cashTendered,
+                    ));
+                }
+            }
+
             // Validate credit payment requirements
             if ($creditAmount > 0) {
                 if (!$customerId) {
@@ -227,13 +258,16 @@ class PosService
             }
 
             // Create footer
+            // `amount_paid` porte le net encaissé, montant rendu déduit : c'est
+            // ce qui reste effectivement en caisse.
             $this->footers->upsertForDocument($document, [
                 'total_ht'       => $totalHt,
                 'total_discount' => 0,
                 'total_tax'      => $totalTax,
                 'total_ttc'      => $totalTtc,
-                'amount_paid'    => $paidAmount,
+                'amount_paid'    => round($paidAmount - $change, 2),
                 'amount_due'     => $creditAmount,
+                'change_given'   => $change > 0 ? $change : null,
             ]);
 
             // Process stock movements
@@ -245,11 +279,30 @@ class PosService
             Payment::$skipNotification = true;
 
             try {
+                // Le rendu se déduit des lignes en espèces, dans l'ordre de
+                // saisie. La somme des paiements écrits égale donc exactement
+                // le total du ticket, ce dont dépend la clôture de caisse.
+                $changeLeft = $change;
+
                 foreach ($payments as $payment) {
+                    $amount = round((float) $payment['amount'], 2);
+
+                    if ($changeLeft > 0 && $payment['method'] === 'cash') {
+                        $deducted   = min($changeLeft, $amount);
+                        $amount     = round($amount - $deducted, 2);
+                        $changeLeft = round($changeLeft - $deducted, 2);
+                    }
+
+                    // Une ligne entièrement rendue n'a pas laissé d'argent en
+                    // caisse : elle n'a rien à enregistrer.
+                    if ($amount <= 0) {
+                        continue;
+                    }
+
                     Payment::create([
                         'payment_code'       => 'POS-' . strtoupper(uniqid()),
                         'document_header_id' => $document->id,
-                        'amount'             => $payment['amount'],
+                        'amount'             => $amount,
                         'method'             => $payment['method'],
                         'paid_at'            => now(),
                         'reference'          => $payment['reference'] ?? null,
