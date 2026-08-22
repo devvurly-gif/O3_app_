@@ -1,8 +1,21 @@
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import http from '@/services/http'
+import { useAuthStore } from '@/stores/authStore'
 
 export function useExcelExport() {
   const exporting = ref(false)
+  const auth = useAuthStore()
+
+  /**
+   * Les routes /api/export/* sont réservées à admin et manager : un export
+   * sort la table entière dans un fichier qui quitte l'application.
+   *
+   * Le serveur tranche, mais les pages concernées — produits, clients,
+   * documents, mouvements — restent lisibles par tous les rôles. Sans ce
+   * garde, un caissier verrait un bouton qui échoue en 403 : la règle doit
+   * donc se lire aussi côté interface, à un seul endroit.
+   */
+  const canExport = computed(() => ['admin', 'manager'].includes(auth.userRole))
 
   async function exportExcel(endpoint: string, filters: Record<string, unknown> = {}): Promise<void> {
     exporting.value = true
@@ -37,5 +50,5 @@ export function useExcelExport() {
     exporting.value = false
   }
 
-  return { exporting, exportExcel }
+  return { exporting, exportExcel, canExport }
 }

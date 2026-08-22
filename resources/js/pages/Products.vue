@@ -26,7 +26,7 @@
             </svg>
             <span class="hidden sm:inline">{{ $t('products.trashedTitle') }}</span>
           </router-link>
-          <div class="relative">
+          <div v-if="canExport" class="relative">
             <button
               class="flex items-center gap-2 px-3.5 sm:px-[18px] py-2.5 border border-[#E1E3E9] dark:border-gray-600 text-gray-900 dark:text-gray-300 text-sm font-semibold rounded-[11px] bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
               :disabled="exporting"
@@ -1475,7 +1475,7 @@ const { items: categories } = storeToRefs(categoryStore)
 const { items: brands } = storeToRefs(brandStore)
 const { items: priceListsOptions } = storeToRefs(priceListStore)
 
-const { exporting, exportExcel } = useExcelExport()
+const { exporting, exportExcel, canExport } = useExcelExport()
 const { getTaxRate, initTaxSettings } = useTaxSettings()
 
 const exportMenuOpen = ref(false)

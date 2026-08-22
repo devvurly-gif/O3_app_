@@ -9,6 +9,7 @@
       <div class="flex items-center gap-2.5">
         <button
           class="flex items-center gap-2 px-3.5 sm:px-[18px] py-2.5 border border-[#E1E3E9] dark:border-gray-600 text-gray-900 dark:text-gray-300 text-sm font-semibold rounded-[11px] bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+          v-if="canExport"
           :disabled="exporting"
           @click="onExport"
         >
@@ -1340,7 +1341,7 @@ const { date: fmtDate } = useFormat()
 const store = useThirdPartnerStore()
 const { items } = storeToRefs(store)
 
-const { exporting, exportExcel } = useExcelExport()
+const { exporting, exportExcel, canExport } = useExcelExport()
 
 function onExport() {
   exportExcel('/export/third-partners', { ...buildParams(), tp_Role: 'supplier' })

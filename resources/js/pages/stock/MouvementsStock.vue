@@ -52,7 +52,7 @@ const stockDocTypes = ['StockEntry', 'StockExit', 'StockAdjustmentNote', 'StockT
 
 const reasonOptions = Object.entries(reasonLabels)
 
-const { exporting, exportExcel } = useExcelExport()
+const { exporting, exportExcel, canExport } = useExcelExport()
 
 function formatDate(dateStr: string) {
   if (!dateStr) return '—'
@@ -94,6 +94,7 @@ onMounted(() => loadPage())
       <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Mouvements de Stock</h1>
       <button
         class="flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+        v-if="canExport"
         :disabled="exporting"
         @click="onExport"
       >

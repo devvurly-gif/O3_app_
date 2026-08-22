@@ -155,8 +155,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('labels/tspl',  [LabelPrintController::class, 'payload']);
     Route::post('labels/print', [LabelPrintController::class, 'print']);
 
-    // ── Exports (all authenticated users) ────────────────────────────────
-    Route::prefix('export')->group(function () {
+    // ── Exports (admin, manager) ─────────────────────────────────────────
+    //
+    // Un export sort la table entière dans un fichier qui quitte
+    // l'application : le fichier clients, tous les règlements, tout
+    // l'historique de stock. Ce n'est pas la même chose que consulter une
+    // fiche à l'écran, et ça mérite le même garde-fou que les rapports
+    // équivalents juste en dessous — qui, eux, étaient déjà restreints.
+    Route::middleware('role:admin,manager')->prefix('export')->group(function () {
         Route::get('products',         [ExportController::class, 'products']);
         Route::get('documents',        [ExportController::class, 'documents']);
         Route::get('third-partners',   [ExportController::class, 'thirdPartners']);

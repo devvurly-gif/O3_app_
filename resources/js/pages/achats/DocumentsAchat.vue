@@ -24,7 +24,7 @@ const purchaseTypes = [
   'ReturnPurchase',
 ]
 
-const { exporting, exportExcel } = useExcelExport()
+const { exporting, exportExcel, canExport } = useExcelExport()
 
 function onExport() {
   exportExcel('/export/documents', buildFilters())
@@ -97,6 +97,7 @@ function viewDocument(doc: Record<string, unknown>) {
       <div class="flex items-center gap-3">
         <button
           class="flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+          v-if="canExport"
           :disabled="exporting"
           @click="onExport"
         >
