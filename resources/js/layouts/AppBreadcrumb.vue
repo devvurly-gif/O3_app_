@@ -2,18 +2,6 @@
   <nav v-if="crumbs.length > 1" aria-label="Breadcrumb">
     <ol class="flex items-center gap-1 text-sm">
       <li v-for="(crumb, i) in crumbs" :key="crumb.path" class="flex items-center gap-1">
-        <!-- Separator -->
-        <svg
-          v-if="i > 0"
-          class="w-3.5 h-3.5 text-gray-400 dark:text-gray-600 shrink-0 translate-y-px"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          viewBox="0 0 24 24"
-        >
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-        </svg>
-
         <!-- Last crumb (current page) -->
         <span
           v-if="i === crumbs.length - 1"
@@ -23,14 +11,39 @@
           {{ crumb.label }}
         </span>
 
-        <!-- Ancestor crumb -->
+        <!--
+          Ancestor crumb.
+
+          gray-500 et non gray-400 : sur fond clair, gray-400 ne donne que
+          2,84:1 contre les 4,5:1 exigés en AA. gray-500 monte à 4,83:1.
+        -->
         <router-link
           v-else
           :to="crumb.path"
-          class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors truncate max-w-[120px]"
+          class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors truncate max-w-[120px]"
         >
           {{ crumb.label }}
         </router-link>
+
+        <!--
+          Séparateur, en fin de li plutôt qu'en tête du suivant : il reste
+          ainsi collé au libellé qu'il suit même si celui-ci est tronqué.
+
+          aria-hidden : purement décoratif, il n'a pas à être annoncé — et
+          c'est aussi pourquoi gray-400 reste admis ici, le seuil de contraste
+          ne s'appliquant pas à ce qui est masqué aux lecteurs d'écran.
+        -->
+        <svg
+          v-if="i < crumbs.length - 1"
+          class="w-3.5 h-3.5 text-gray-400 dark:text-gray-600 shrink-0 translate-y-px"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
       </li>
     </ol>
   </nav>
