@@ -1,0 +1,126 @@
+parameters:
+	ignoreErrors:
+		-
+			message: "#^Access to an undefined property Illuminate\\\\Database\\\\Eloquent\\\\Model\\:\\:\\$id\\.$#"
+			count: 1
+			path: app/Console/Commands/RecalculatePartnersEncours.php
+
+		-
+			message: "#^Call to an undefined method Illuminate\\\\Database\\\\Eloquent\\\\Model\\:\\:run\\(\\)\\.$#"
+			count: 1
+			path: app/Console/Commands/RecalculatePartnersEncours.php
+
+		-
+			message: "#^Call to method chunk\\(\\) on an unknown class Laravel\\\\Scout\\\\Builder\\.$#"
+			count: 1
+			path: app/Exports/ProductsExport.php
+
+		-
+			message: "#^Access to an undefined property Stancl\\\\Tenancy\\\\Contracts\\\\Domain\\:\\:\\$domain\\.$#"
+			count: 1
+			path: app/Http/Controllers/Api/Central/PublicRegistrationController.php
+
+		-
+			message: "#^Comparison operation \"\\>\" between int\\<101, max\\> and 100 is always true\\.$#"
+			count: 1
+			path: app/Http/Controllers/Api/Central/TenantController.php
+
+		-
+			message: "#^Expression on left side of \\?\\? is not nullable\\.$#"
+			count: 1
+			path: app/Http/Controllers/Api/Central/TenantController.php
+
+		-
+			message: "#^Right side of && is always true\\.$#"
+			count: 1
+			path: app/Http/Controllers/Api/Central/TenantController.php
+
+		-
+			message: "#^Parameter \\#1 \\$callback of method Illuminate\\\\Support\\\\Collection\\<\\(int\\|string\\),App\\\\Models\\\\Product\\>\\:\\:transform\\(\\) expects callable\\(App\\\\Models\\\\Product, int\\|string\\)\\: App\\\\Models\\\\Product, Closure\\(mixed\\)\\: array given\\.$#"
+			count: 1
+			path: app/Http/Controllers/Api/Ecom/EcomCatalogueController.php
+
+		-
+			message: "#^Offset 'name' on array\\{transport\\: string, name\\: string, host\\: non\\-empty\\-string, port\\: 515\\|6101\\|9100\\|9101\\|9102\\|9103, agent_url\\: string, dpi\\: int, darkness\\: int, speed\\: float, \\.\\.\\.\\} on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 1
+			path: app/Http/Controllers/Api/LabelPrintController.php
+
+		-
+			message: "#^Method App\\\\Http\\\\Controllers\\\\Api\\\\Pos\\\\PosTicketController\\:\\:print\\(\\) should return Illuminate\\\\Http\\\\Response but returns Symfony\\\\Component\\\\HttpFoundation\\\\StreamedResponse\\.$#"
+			count: 1
+			path: app/Http/Controllers/Api/Pos/PosTicketController.php
+
+		-
+			message: "#^Call to an undefined method Laravel\\\\Sanctum\\\\Contracts\\\\HasAbilities\\:\\:getKey\\(\\)\\.$#"
+			count: 1
+			path: app/Http/Controllers/AuthController.php
+
+		-
+			message: "#^Call to function is_string\\(\\) with null will always evaluate to false\\.$#"
+			count: 1
+			path: app/Mail/SessionClosingReportMail.php
+
+		-
+			message: "#^Offset 'ca_month'\\|'clients'\\|'invoices_month'\\|'margin_month'\\|'margin_today'\\|'outstanding'\\|'payments_month'\\|'products'\\|'purchases_month'\\|'suppliers'\\|'today_sales' on array\\{ca_month\\: 'main', purchases_month\\: 'main', payments_month\\: 'main', outstanding\\: 'main', today_sales\\: 'secondary', margin_today\\: 'secondary', margin_month\\: 'secondary', invoices_month\\: 'secondary', \\.\\.\\.\\} on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 1
+			path: app/Services/DashboardService.php
+
+		-
+			message: "#^Parameter \\#1 \\$num of function round expects float\\|int, string given\\.$#"
+			count: 1
+			path: app/Services/DashboardService.php
+
+		-
+			message: "#^Access to an undefined property Illuminate\\\\Database\\\\Eloquent\\\\Model\\:\\:\\$id\\.$#"
+			count: 1
+			path: app/Services/DocumentImportService.php
+
+		-
+			message: "#^Negated boolean expression is always false\\.$#"
+			count: 1
+			path: app/Services/DocumentImportService.php
+
+		-
+			message: "#^Parameter \\#1 \\$document of method App\\\\Repositories\\\\Contracts\\\\DocumentLigneRepositoryInterface\\:\\:createForDocument\\(\\) expects App\\\\Models\\\\DocumentHeader, Illuminate\\\\Database\\\\Eloquent\\\\Model given\\.$#"
+			count: 1
+			path: app/Services/DocumentImportService.php
+
+		-
+			message: "#^Offset 1 on array\\{array\\<int, string\\>, array\\<int, non\\-falsy\\-string\\>\\} on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 1
+			path: app/Services/InvoiceParserService.php
+
+		-
+			message: "#^Offset 1 on array\\{string, non\\-empty\\-string\\} on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 1
+			path: app/Services/InvoiceParserService.php
+
+		-
+			message: "#^Method App\\\\Services\\\\PosService\\:\\:createDeliveryNoteFromTicket\\(\\) is unused\\.$#"
+			count: 1
+			path: app/Services/PosService.php
+
+		-
+			message: "#^Right side of && is always true\\.$#"
+			count: 1
+			path: app/Services/PosService.php
+
+		-
+			message: "#^Offset 'image' on array on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 1
+			path: app/Services/ProductScraperService.php
+
+		-
+			message: "#^Offset 1 on array\\{array\\<int, string\\>, array\\<int, non\\-falsy\\-string\\>\\} on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 1
+			path: app/Services/ProductScraperService.php
+
+		-
+			message: "#^Offset 1 on array\\{array\\<int, string\\>, array\\<int, string\\>\\} on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 1
+			path: app/Services/ProductScraperService.php
+
+		-
+			message: "#^Variable \\$products in empty\\(\\) always exists and is not falsy\\.$#"
+			count: 1
+			path: app/Services/ProductScraperService.php

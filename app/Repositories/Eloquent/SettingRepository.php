@@ -21,7 +21,7 @@ class SettingRepository implements SettingRepositoryInterface
             ->map(fn ($group) => $group->pluck('st_value', 'st_key'));
     }
 
-    public function upsert(string $domain, string $key, string $value): void
+    public function upsert(string $domain, string $key, ?string $value): void
     {
         Setting::set($domain, $key, $value);
     }

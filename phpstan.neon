@@ -1,5 +1,8 @@
 includes:
     - vendor/larastan/larastan/extension.neon
+    # Dette figee : les 25 erreurs qui restaient apres le nettoyage. Elle est
+    # faite pour maigrir, pas pour durer. Toute erreur NOUVELLE echoue la CI.
+    - phpstan-baseline.neon
 
 parameters:
     paths:
@@ -10,24 +13,59 @@ parameters:
 
     reportUnmatchedIgnoredErrors: false
 
-    # Ignore common patterns that are false positives in this project
+    # Deux mécanismes, deux intentions.
+    #
+    # `ignoreErrors` ci-dessous : ce qu'on accepte durablement — limites de
+    # typage des bibliothèques et alias d'agrégats SQL. Chaque motif porte sa
+    # raison, pour qu'on puisse la contester.
+    #
+    # `phpstan-baseline.neon` inclus plus haut : la dette restante, à résorber.
+    # Elle est listée fichier par fichier plutôt que masquée par un motif
+    # large, donc chaque ligne réparée disparaît d'elle-même.
     ignoreErrors:
         # str_pad with int (works in PHP, strict typing mismatch)
         - '#Parameter \#1 \$string of function str_pad expects string, int given#'
-        # Eloquent dynamic properties from raw queries (selectRaw with aliases)
+
+        # Alias d'agrégats. Un `SUM(...) as revenue_ttc` hydrate le modèle avec
+        # une colonne qui n'existe pas au schéma : aucune analyse ne peut la
+        # connaître. La liste est explicite plutôt que générique, pour qu'une
+        # vraie faute de frappe sur un attribut reste signalée.
         - '#Access to an undefined property .+::\$(month|total|total_stock|template|nextTrick|di_model|unreadNotifications)#'
+        - '#Access to an undefined property .+::\$(count|day|invoice_count|revenue_ht|revenue_ttc|spending_ht|spending_ttc)#'
+
         # Scout builder vs Eloquent builder in exports
         - '#Method .+::query\(\) has invalid return type Laravel\\Scout\\Builder#'
+
         # Properties injected via constructor but used via $this in parent
         - '#Property .+ is never read, only written#'
+
         # Sanctum token interface limitations
         - '#Call to an undefined method Laravel\\Sanctum\\Contracts\\HasAbilities::delete#'
+
         # DocumentConversionService works with generic Model but returns DocumentHeader
         - '#should return App\\Models\\DocumentHeader but returns Illuminate\\Database\\Eloquent\\Model#'
         - '#Call to an undefined method Illuminate\\Database\\Eloquent\\Model::(lignes|footer)\(\)#'
+
         # DocumentHeader enum doesn't include 'applied' (stock-specific status)
         - '#Strict comparison using === between .+ and .applied. will always evaluate to false#'
 
+        # DOMXPath::query() est typée DOMNode, mais un sélecteur d'éléments ne
+        # rend que des DOMElement — seuls porteurs de getAttribute(). Le
+        # scraper ne manipule que des éléments.
+        - '#Call to an undefined method DOMNode::getAttribute\(\)#'
+
+        # Stancl lève BadMethodCallException quand le pilote de cache ne gère
+        # pas les tags (driver `file`). PHPStan ne le voit pas puisque
+        # l'exception naît dans le trait, pas dans le bloc try.
+        - '#Dead catch - BadMethodCallException is never thrown in the try block#'
+
+        # Tenant::all() est typée Collection<Model> par Stancl ; les callbacks
+        # sont pourtant bien appelés avec des Tenant.
+        - '#expects callable\(Illuminate\\Database\\Eloquent\\Model, int\|string\): mixed, Closure\(App\\Models\\Tenant\): void given#'
+        - "#Relation 'domains' is not found in App\\\\Models\\\\Tenant model#"
+
+        # Le transport Resend reçoit une RawMessage que Symfony sait convertir.
+        - '#Parameter \#1 \$message of static method Symfony\\Component\\Mime\\MessageConverter::toEmail\(\)#'
+
     excludePaths:
         - app/Console/Kernel.php
-        - app/Exceptions/Handler.php

@@ -44,7 +44,10 @@ class ProductVariantController extends Controller
 
         $product->variants()->whereNotIn('id', $incomingIds)->delete();
 
-        $saved = $incoming->map(function ($v, $i) use ($product, $warehouse) {
+        // `$warehouse` était capturé sans jamais exister ni servir : PHP 8
+        // émettait un avertissement de variable indéfinie à chaque appel, pour
+        // une valeur que le corps de la closure n'utilise pas.
+        $saved = $incoming->map(function ($v, $i) use ($product) {
             $payload = [
                 'product_id' => $product->id,
                 'label'      => $v['label'],

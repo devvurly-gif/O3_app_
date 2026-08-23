@@ -3,6 +3,7 @@
 namespace App\Repositories\Eloquent;
 
 use App\Models\StockMouvement;
+use Illuminate\Database\Eloquent\Collection;
 use App\Repositories\Contracts\StockMouvementRepositoryInterface;
 
 class StockMouvementRepository extends BaseRepository implements StockMouvementRepositoryInterface
@@ -12,14 +13,16 @@ class StockMouvementRepository extends BaseRepository implements StockMouvementR
         parent::__construct($model);
     }
 
-    public function forDocument(int $documentHeaderId): \Illuminate\Database\Eloquent\Collection
+    /** @return Collection<int, StockMouvement> */
+    public function forDocument(int $documentHeaderId): Collection
     {
         return StockMouvement::where('document_header_id', $documentHeaderId)
             ->where('reason', '!=', 'cancellation')
             ->get();
     }
 
-    public function forDocumentByStatus(int $documentHeaderId, string $status): \Illuminate\Database\Eloquent\Collection
+    /** @return Collection<int, StockMouvement> */
+    public function forDocumentByStatus(int $documentHeaderId, string $status): Collection
     {
         return StockMouvement::where('document_header_id', $documentHeaderId)
             ->where('status', $status)

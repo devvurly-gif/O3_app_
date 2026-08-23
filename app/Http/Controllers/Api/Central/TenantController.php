@@ -512,8 +512,11 @@ class TenantController extends Controller
                     // valeur en cause. L'administrateur a besoin de savoir quel
                     // article a échoué, pas de lire du SQLSTATE : la trace part
                     // au journal, la liste ne garde que le repère utile.
+                    // tenant('id') plutôt qu'une capture de $tenant : on est
+                    // à l'intérieur de $tenant->run(), donc la tenancy est
+                    // initialisée et c'est elle qui fait foi.
                     \Log::error('Import produit échoué', [
-                        'tenant_id' => $tenant->id,
+                        'tenant_id' => tenant('id'),
                         'produit'   => $item['name'] ?? null,
                         'exception' => $e,
                     ]);

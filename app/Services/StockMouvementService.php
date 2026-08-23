@@ -194,7 +194,7 @@ class StockMouvementService
 
             // Negative stock check
             if ($mouvement->direction === 'out' && $stockAfter < 0) {
-                $this->guardNegativeStockRaw($mouvement->product_id, $mouvement->quantity, $currentStock);
+                $this->guardNegativeStockRaw($mouvement->product_id, (float) $mouvement->quantity, $currentStock);
             }
 
             // Update the movement record with real stock values
@@ -505,7 +505,7 @@ class StockMouvementService
         throw new InsufficientStockException(
             productName: $ligne->product?->p_title ?? 'Produit #' . $ligne->product_id,
             productId: $ligne->product_id,
-            requested: $ligne->quantity,
+            requested: (float) $ligne->quantity,
             available: $currentStock,
         );
     }

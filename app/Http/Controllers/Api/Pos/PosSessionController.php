@@ -59,7 +59,7 @@ class PosSessionController extends Controller
             return response()->json(['message' => 'Session déjà fermée.'], 422);
         }
 
-        $session = $this->posService->closeSession($session, $session->opening_cash, 'Fermeture forcée par admin');
+        $session = $this->posService->closeSession($session, (float) $session->opening_cash, 'Fermeture forcée par admin');
 
         return response()->json($session->load('terminal'));
     }

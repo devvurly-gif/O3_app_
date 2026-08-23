@@ -7,6 +7,34 @@ use Stancl\Tenancy\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Database\Concerns\HasDatabase;
 use Stancl\Tenancy\Database\Concerns\HasDomains;
 
+/**
+ * Colonnes réelles de la table — voir getCustomColumns().
+ *
+ * @property string      $id
+ * @property string      $name
+ * @property string      $email
+ * @property string      $plan
+ * @property bool        $is_active
+ * @property \Carbon\Carbon|null $trial_ends_at
+ *
+ * Colonnes virtuelles. Stancl range tout attribut absent de
+ * getCustomColumns() dans la colonne JSON `data` et le ressort à la lecture
+ * (trait VirtualColumn). Elles se manipulent exactement comme des colonnes,
+ * mais aucune analyse statique ne peut les deviner : les déclarer ici est la
+ * seule façon de les rendre visibles — à l'outil comme au lecteur.
+ *
+ * @property bool        $pos_enabled           Module caisse
+ * @property bool        $ecom_enabled          Boutique en ligne
+ * @property bool        $variants_enabled      Déclinaisons produit
+ * @property bool        $imei_enabled          Suivi IMEI
+ * @property bool        $paiement_bl_enabled   Règlement sur bon de livraison
+ * @property bool        $url_ready             Domaine résolu et servi
+ * @property string|null $ecom_api_key          Clé de l'API boutique
+ * @property string|null $signup_phone          Téléphone saisi à l'inscription
+ * @property string|null $verification_token     Jeton du lien de vérification
+ * @property string|null $verification_token_expires_at
+ * @property string|null $verified_at
+ */
 class Tenant extends BaseTenant implements TenantWithDatabase
 {
     use HasDatabase, HasDomains;

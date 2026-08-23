@@ -67,6 +67,17 @@ jobs:
         # to regress it while a flaky/broken test is being fixed.
         run: php artisan test
 
+      - name: Analyse statique (PHPStan niveau 5)
+        # Bloquant depuis que le bruit a été résorbé : 113 erreurs ramenées à
+        # 25, ces 25 étant figées dans phpstan-baseline.neon. Le job échoue
+        # donc sur toute erreur NOUVELLE, pas sur la dette existante.
+        #
+        # Ce n'est pas de la cosmétique : c'est PHPStan qui a trouvé C-01, la
+        # facade Log non importée qui renvoyait une 500 sur la confirmation
+        # d'un BL brouillon — et, plus tard, une régression introduite en
+        # corrigeant M-08. Un outil capable de ça mérite de bloquer.
+        run: vendor/bin/phpstan analyse --memory-limit=1G --no-progress
+
   frontend:
     runs-on: ubuntu-latest
     steps:
