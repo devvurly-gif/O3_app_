@@ -31,30 +31,16 @@ export default [
     files: ['resources/js/**/*.{ts,vue}'],
     languageOptions: {
       globals: {
-        // Browser globals
-        window: 'readonly',
-        document: 'readonly',
-        setTimeout: 'readonly',
-        clearTimeout: 'readonly',
-        setInterval: 'readonly',
-        clearInterval: 'readonly',
-        console: 'readonly',
-        alert: 'readonly',
-        FormData: 'readonly',
-        Blob: 'readonly',
-        URL: 'readonly',
-        URLSearchParams: 'readonly',
-        fetch: 'readonly',
-        AbortController: 'readonly',
-        Event: 'readonly',
-        PointerEvent: 'readonly',
-        HTMLElement: 'readonly',
-        HTMLInputElement: 'readonly',
-        localStorage: 'readonly',
-        sessionStorage: 'readonly',
+        // Les globals du navigateur sont fournis par la lib DOM de TypeScript,
+        // pas par cette liste : `no-undef` est désactivé plus bas.
       },
     },
     rules: {
+      // TypeScript résout lui-même les identifiants, et connaît les globals du
+      // DOM que cette règle ignore (KeyboardEvent, navigator, confirm…). La
+      // laisser active ne produisait que des faux positifs ; c'est `vue-tsc`,
+      // bloquant en CI, qui garantit qu'aucun identifiant n'est inconnu.
+      'no-undef': 'off',
       // Allow `any` for now — tighten later
       '@typescript-eslint/no-explicit-any': 'warn',
       // Unused vars prefixed with _ are OK
