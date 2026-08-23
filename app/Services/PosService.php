@@ -147,8 +147,41 @@ class PosService
             $totalHt = 0;
             $totalTax = 0;
 
+            // Le poste peut vendre en dessous du tarif, mais pas en silence.
+            //
+            // `isAdmin() ||` suit la convention du code : hasPermission() reste
+            // littéral et l'appelant ajoute la dérogation administrateur, comme
+            // le fait Product::canViewCost(). C'est aussi ce que fait le
+            // middleware CheckPermission, dont ce contrôle est le miroir.
+            $user = $session->user;
+            $mayOverridePrice = (bool) ($user?->isAdmin() || $user?->hasPermission('pos.override_price'));
+            $customer = $customerId ? ThirdPartner::find($customerId) : null;
+
             foreach ($items as $i => $item) {
-                $lineHt  = $item['quantity'] * $item['unit_price'] * (1 - ($item['discount_percent'] ?? 0) / 100);
+                // Le tarif fait foi : il est résolu ici, pas repris du poste.
+                // Sans cela le prix envoyé par le client était accepté tel
+                // quel, et une caisse pouvait vendre à n'importe quel montant.
+                $reference = $this->referencePriceFor(
+                    (int) $item['product_id'],
+                    $customer,
+                    (int) $item['quantity'],
+                );
+
+                $submitted = round((float) $item['unit_price'], 2);
+                $override  = $reference !== null && $submitted !== $reference;
+
+                if ($override && ! $mayOverridePrice) {
+                    abort(422, sprintf(
+                        '%s : le tarif est de %.2f MAD, %.2f MAD demandé. '
+                        . 'Une remise en caisse demande la permission « %s ».',
+                        $item['designation'] ?? 'Article',
+                        $reference,
+                        $submitted,
+                        'pos.override_price',
+                    ));
+                }
+
+                $lineHt  = $item['quantity'] * $submitted * (1 - ($item['discount_percent'] ?? 0) / 100);
                 $lineTax = $lineHt * ($item['tax_percent'] ?? 0) / 100;
                 $totalHt  += $lineHt;
                 $totalTax += $lineTax;
@@ -162,7 +195,11 @@ class PosService
                     'reference'        => $item['reference'] ?? null,
                     'quantity'         => $item['quantity'],
                     'unit'             => $item['unit'] ?? 'pcs',
-                    'unit_price'       => $item['unit_price'],
+                    'unit_price'       => $submitted,
+                    // Renseigné seulement en cas d'écart : la ligne garde ainsi
+                    // la trace du tarif qui aurait dû s'appliquer, et l'écart
+                    // se relit sans avoir à rejouer la résolution tarifaire.
+                    'reference_price'  => $override ? $reference : null,
                     'discount_percent' => $item['discount_percent'] ?? 0,
                     'tax_percent'      => $item['tax_percent'] ?? 0,
                 ]);
@@ -352,6 +389,28 @@ class PosService
 
             return $document->load(['lignes', 'footer', 'payments']);
         });
+    }
+
+    /**
+     * Tarif applicable à un produit au comptoir, ou null si on ne sait pas le
+     * déterminer — produit introuvable, ou vendu sans fiche.
+     *
+     * Un null ne bloque pas la vente : on ne refuse pas d'encaisser parce que
+     * la tarification est muette. Il désactive seulement le contrôle d'écart
+     * pour cette ligne.
+     */
+    private function referencePriceFor(int $productId, ?ThirdPartner $customer, int $quantity): ?float
+    {
+        $product = Product::find($productId);
+
+        if (! $product) {
+            return null;
+        }
+
+        return round(
+            app(PriceResolver::class)->resolve($product, $customer, max($quantity, 1), 'pos')['price_ht'],
+            2,
+        );
     }
 
     /**

@@ -33,7 +33,7 @@ class RolePermissionSeeder extends Seeder
             'stock'          => ['view', 'manage', 'transfer', 'adjust'],
             'warehouses'     => ['view', 'create', 'update', 'delete'],
             'settings'       => ['view', 'manage'],
-            'pos'            => ['access', 'manage_terminals', 'open_session', 'close_session', 'void_ticket'],
+            'pos'            => ['access', 'manage_terminals', 'open_session', 'close_session', 'void_ticket', 'override_price'],
         ];
     }
 

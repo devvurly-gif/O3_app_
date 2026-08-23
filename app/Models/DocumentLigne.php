@@ -21,6 +21,7 @@ class DocumentLigne extends Model
         'quantity',
         'unit',
         'unit_price',
+        'reference_price',
         'discount_percent',
         'tax_percent',
         'total_ligne_ht',
@@ -32,6 +33,7 @@ class DocumentLigne extends Model
     protected $casts = [
         'quantity'         => 'decimal:2',
         'unit_price'       => 'decimal:2',
+        'reference_price' => 'decimal:2',
         'discount_percent' => 'decimal:2',
         'tax_percent'      => 'decimal:2',
         'total_ligne_ht'   => 'decimal:2',
