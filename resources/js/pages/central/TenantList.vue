@@ -201,7 +201,7 @@ function formatDate(d: string) {
     </div>
 
     <!-- Table -->
-    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-x-auto">
       <div v-if="store.loading" class="flex items-center justify-center py-12">
         <svg class="animate-spin h-8 w-8 text-orange-600 dark:text-orange-400" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />

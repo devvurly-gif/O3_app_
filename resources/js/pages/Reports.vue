@@ -178,7 +178,7 @@
 
       <!-- POS Daily Report -->
       <template v-if="activeTab === 'pos'">
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           <KpiCard label="Sessions" :value="String(reportData.sessions_count)" />
           <KpiCard label="Tickets" :value="String(reportData.total_tickets)" />
           <KpiCard label="CA TTC" :value="fmt(reportData.total_ttc)" currency />
