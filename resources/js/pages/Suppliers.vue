@@ -235,10 +235,11 @@
             <div>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="sm:col-span-2">
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  <label for="suppliers-tp-title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                     >{{ $t('common.name') }} <span class="text-red-500">*</span></label
                   >
                   <input
+                    id="suppliers-tp-title"
                     v-model="form.tp_title"
                     type="text"
                     required
@@ -253,8 +254,9 @@
             <div>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.phone') }}</label>
+                  <label for="suppliers-tp-phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.phone') }}</label>
                   <input
+                    id="suppliers-tp-phone"
                     v-model="form.tp_phone"
                     type="text"
                     placeholder="+212..."
@@ -262,8 +264,9 @@
                   />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.email') }}</label>
+                  <label for="suppliers-tp-email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.email') }}</label>
                   <input
+                    id="suppliers-tp-email"
                     v-model="form.tp_email"
                     type="email"
                     placeholder="contact@example.com"
@@ -271,8 +274,9 @@
                   />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.city') }}</label>
+                  <label for="suppliers-tp-city" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.city') }}</label>
                   <input
+                    id="suppliers-tp-city"
                     v-model="form.tp_city"
                     type="text"
                     placeholder="Casablanca"
@@ -280,8 +284,9 @@
                   />
                 </div>
                 <div class="sm:col-span-2">
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.address') }}</label>
+                  <label for="suppliers-tp-address" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.address') }}</label>
                   <textarea
+                    id="suppliers-tp-address"
                     v-model="form.tp_address"
                     rows="2"
                     :placeholder="$t('common.addressPlaceholder')"
@@ -309,8 +314,9 @@
           <div class="space-y-5">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('suppliers.ice') }}</label>
+                <label for="suppliers-tp-ice-number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('suppliers.ice') }}</label>
                 <input
+                  id="suppliers-tp-ice-number"
                   v-model="form.tp_Ice_Number"
                   type="text"
                   :placeholder="$t('suppliers.icePlaceholder')"
@@ -318,8 +324,9 @@
                 />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('suppliers.rc') }}</label>
+                <label for="suppliers-tp-rc-number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('suppliers.rc') }}</label>
                 <input
+                  id="suppliers-tp-rc-number"
                   v-model="form.tp_Rc_Number"
                   type="text"
                   :placeholder="$t('suppliers.rcPlaceholder')"
@@ -327,8 +334,9 @@
                 />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('suppliers.patente') }}</label>
+                <label for="suppliers-tp-patente-number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('suppliers.patente') }}</label>
                 <input
+                  id="suppliers-tp-patente-number"
                   v-model="form.tp_patente_Number"
                   type="text"
                   :placeholder="$t('suppliers.patentePlaceholder')"
@@ -336,8 +344,9 @@
                 />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('suppliers.if') }}</label>
+                <label for="suppliers-tp-idenfiscal" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('suppliers.if') }}</label>
                 <input
+                  id="suppliers-tp-idenfiscal"
                   v-model="form.tp_IdenFiscal"
                   type="text"
                   :placeholder="$t('suppliers.ifPlaceholder')"
@@ -1215,10 +1224,11 @@
             </p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            <label for="suppliers-bulkpaymentform-method" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
               >Méthode de paiement <span class="text-red-500">*</span></label
             >
             <select
+              id="suppliers-bulkpaymentform-method"
               v-model="bulkPaymentForm.method"
               class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
             >
@@ -1229,8 +1239,9 @@
             </select>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Référence</label>
+            <label for="suppliers-bulkpaymentform-reference" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Référence</label>
             <input
+              id="suppliers-bulkpaymentform-reference"
               v-model="bulkPaymentForm.reference"
               type="text"
               placeholder="N° chèque, virement..."
@@ -1238,8 +1249,9 @@
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
+            <label for="suppliers-bulkpaymentform-notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
             <textarea
+              id="suppliers-bulkpaymentform-notes"
               v-model="bulkPaymentForm.notes"
               rows="2"
               placeholder="Remarques..."

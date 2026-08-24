@@ -38,12 +38,12 @@
     <!-- Label format -->
     <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 flex flex-wrap items-end gap-5">
       <div>
-        <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Largeur (mm)</label>
-        <input v-model.number="label.width" type="number" min="10" max="210" step="1" :class="numClass" />
+        <label for="productlabels-label-width" class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Largeur (mm)</label>
+        <input id="productlabels-label-width" v-model.number="label.width" type="number" min="10" max="210" step="1" :class="numClass" />
       </div>
       <div>
-        <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Hauteur (mm)</label>
-        <input v-model.number="label.height" type="number" min="10" max="297" step="1" :class="numClass" />
+        <label for="productlabels-label-height" class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Hauteur (mm)</label>
+        <input id="productlabels-label-height" v-model.number="label.height" type="number" min="10" max="297" step="1" :class="numClass" />
       </div>
       <div>
         <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Format courant</p>
@@ -145,8 +145,9 @@
           </div>
         </div>
         <div v-if="selectedPrinter?.papers?.length" class="min-w-[13rem]">
-          <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Format papier du pilote</label>
+          <label for="productlabels-format-papier-du-pilote" class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Format papier du pilote</label>
           <select
+            id="productlabels-format-papier-du-pilote"
             :value="printer.paper"
             class="w-full h-9 px-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
             @change="selectPaper(($event.target as HTMLSelectElement).value)"
@@ -159,41 +160,41 @@
         </div>
       </template>
       <div v-if="printer.transport === 'agent'" class="min-w-[16rem]">
-        <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">URL de l'agent local</label>
-        <input v-model="printer.agent_url" type="text" class="w-full h-9 px-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500" />
+        <label for="productlabels-printer-agent-url" class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">URL de l'agent local</label>
+        <input id="productlabels-printer-agent-url" v-model="printer.agent_url" type="text" class="w-full h-9 px-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500" />
       </div>
       <template v-if="printer.transport === 'server'">
         <div>
-          <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">IP imprimante</label>
-          <input v-model="printer.host" type="text" placeholder="192.168.1.50" :class="numClass" class="!w-36" />
+          <label for="productlabels-printer-host" class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">IP imprimante</label>
+          <input id="productlabels-printer-host" v-model="printer.host" type="text" placeholder="192.168.1.50" :class="numClass" class="!w-36" />
         </div>
         <div>
-          <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Port</label>
-          <input v-model.number="printer.port" type="number" min="1" max="65535" :class="numClass" class="!w-20" />
+          <label for="productlabels-printer-port" class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Port</label>
+          <input id="productlabels-printer-port" v-model.number="printer.port" type="number" min="1" max="65535" :class="numClass" class="!w-20" />
         </div>
       </template>
       <div>
-        <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">DPI</label>
-        <select v-model.number="printer.dpi" :class="numClass" class="!w-24">
+        <label for="productlabels-printer-dpi" class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">DPI</label>
+        <select id="productlabels-printer-dpi" v-model.number="printer.dpi" :class="numClass" class="!w-24">
           <option :value="203">203</option>
           <option :value="300">300</option>
         </select>
       </div>
       <div>
-        <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Densité</label>
-        <input v-model.number="printer.darkness" type="number" min="0" max="15" :class="numClass" class="!w-20" />
+        <label for="productlabels-printer-darkness" class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Densité</label>
+        <input id="productlabels-printer-darkness" v-model.number="printer.darkness" type="number" min="0" max="15" :class="numClass" class="!w-20" />
       </div>
       <div>
-        <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Vitesse</label>
-        <input v-model.number="printer.speed" type="number" min="1" max="12" step="0.5" :class="numClass" class="!w-20" />
+        <label for="productlabels-printer-speed" class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Vitesse</label>
+        <input id="productlabels-printer-speed" v-model.number="printer.speed" type="number" min="1" max="12" step="0.5" :class="numClass" class="!w-20" />
       </div>
       <div>
-        <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Gap (mm)</label>
-        <input v-model.number="printer.gap" type="number" min="0" max="10" step="0.5" :class="numClass" class="!w-20" />
+        <label for="productlabels-printer-gap" class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Gap (mm)</label>
+        <input id="productlabels-printer-gap" v-model.number="printer.gap" type="number" min="0" max="10" step="0.5" :class="numClass" class="!w-20" />
       </div>
       <div>
-        <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Sens</label>
-        <select v-model.number="printer.direction" :class="numClass" class="!w-24">
+        <label for="productlabels-printer-direction" class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Sens</label>
+        <select id="productlabels-printer-direction" v-model.number="printer.direction" :class="numClass" class="!w-24">
           <option :value="1">Normal</option>
           <option :value="0">Inversé</option>
         </select>

@@ -36,8 +36,9 @@
       <!-- No session: open new -->
       <form v-else class="space-y-5" @submit.prevent="open">
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Terminal</label>
+          <label for="poslogin-terminalid" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Terminal</label>
           <select
+            id="poslogin-terminalid"
             v-model="terminalId"
             required
             class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
@@ -51,8 +52,9 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Fond de caisse (MAD)</label>
+          <label for="poslogin-openingcash" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Fond de caisse (MAD)</label>
           <input
+            id="poslogin-openingcash"
             v-model.number="openingCash"
             type="number"
             step="0.01"

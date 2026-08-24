@@ -74,8 +74,9 @@
 
       <form class="space-y-5" @submit.prevent="close">
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Fond de caisse de fermeture (MAD)</label>
+          <label for="possessionclose-closingcash" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Fond de caisse de fermeture (MAD)</label>
           <input
+            id="possessionclose-closingcash"
             v-model.number="closingCash"
             type="number"
             step="0.01"
@@ -87,8 +88,9 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Notes (optionnel)</label>
+          <label for="possessionclose-notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Notes (optionnel)</label>
           <textarea
+            id="possessionclose-notes"
             v-model="notes"
             rows="3"
             class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"

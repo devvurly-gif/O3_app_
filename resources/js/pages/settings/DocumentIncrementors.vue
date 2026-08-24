@@ -81,10 +81,11 @@
       <form class="space-y-4" @submit.prevent="submit">
         <div class="grid grid-cols-2 gap-4">
           <div class="col-span-2">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            <label for="documentincrementors-di-title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
               >{{ $t('common.title') }} <span class="text-red-500">*</span></label
             >
             <input
+              id="documentincrementors-di-title"
               v-model="form.di_title"
               type="text"
               :placeholder="$t('documentIncrementors.titlePlaceholder')"
@@ -92,8 +93,9 @@
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.model') }}</label>
+            <label for="documentincrementors-di-model" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.model') }}</label>
             <input
+              id="documentincrementors-di-model"
               v-model="form.di_model"
               type="text"
               :placeholder="$t('documentIncrementors.modelPlaceholder')"
@@ -101,8 +103,9 @@
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.domain') }}</label>
+            <label for="documentincrementors-di-domain" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.domain') }}</label>
             <input
+              id="documentincrementors-di-domain"
               v-model="form.di_domain"
               type="text"
               :placeholder="$t('documentIncrementors.domainPlaceholder')"
@@ -110,8 +113,9 @@
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.template') }}</label>
+            <label for="documentincrementors-template" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.template') }}</label>
             <input
+              id="documentincrementors-template"
               v-model="form.template"
               type="text"
               :placeholder="$t('documentIncrementors.templatePlaceholder')"
@@ -120,10 +124,11 @@
             <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{ $t('documentIncrementors.placeholders') }}</p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{
+            <label for="documentincrementors-operatorsens" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{
               $t('documentIncrementors.operatorSens')
             }}</label>
             <input
+              id="documentincrementors-operatorsens"
               v-model="form.operatorSens"
               type="text"
               :placeholder="$t('documentIncrementors.operatorSensPlaceholder')"
@@ -131,8 +136,9 @@
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.nextNum') }}</label>
+            <label for="documentincrementors-nexttrick" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.nextNum') }}</label>
             <input
+              id="documentincrementors-nexttrick"
               v-model.number="form.nextTrick"
               type="number"
               min="1"

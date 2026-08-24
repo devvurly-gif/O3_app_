@@ -1005,7 +1005,7 @@ function matchLabel(score: number) {
           <div class="space-y-3">
             <!-- Supplier -->
             <div>
-              <label class="flex items-center gap-1 text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label for="ocrinvoiceimport-supplier-id" class="flex items-center gap-1 text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Fournisseur *
                 <button type="button" @click="setActiveField({ type:'header', field:'supplier_name', label:'Fournisseur' })"
                   class="p-0.5 rounded hover:bg-purple-100 dark:hover:bg-purple-900 transition" :class="activeField?.field === 'supplier_name' ? 'bg-purple-100 dark:bg-purple-900 ring-1 ring-purple-400' : ''" title="Remplir depuis le PDF">
@@ -1016,7 +1016,7 @@ function matchLabel(score: number) {
                 <span v-else-if="ocrData?.supplier?.name"
                   class="px-1.5 py-0.5 text-[9px] font-bold rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">A creer</span>
               </label>
-              <select v-model="form.supplier_id"
+              <select id="ocrinvoiceimport-supplier-id" v-model="form.supplier_id"
                 class="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 dark:text-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none">
                 <option :value="null">-- Selectionner --</option>
                 <option v-for="s in suppliers" :key="s.id" :value="s.id">{{ s.tp_title }}</option>
@@ -1030,27 +1030,27 @@ function matchLabel(score: number) {
             <div class="grid grid-cols-2 gap-3">
               <!-- Invoice Number -->
               <div>
-                <label class="flex items-center gap-1 text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label for="ocrinvoiceimport-invoice-number" class="flex items-center gap-1 text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                   <span class="inline-block w-2 h-2 rounded-full bg-blue-500 mr-1"></span>N Facture
                   <button type="button" @click="setActiveField({ type:'header', field:'invoice_number', label:'N° Facture' })"
                     class="p-0.5 rounded hover:bg-blue-100 dark:hover:bg-blue-900 transition" :class="activeField?.field === 'invoice_number' ? 'bg-blue-100 dark:bg-blue-900 ring-1 ring-blue-400' : ''" title="Remplir depuis le PDF">
                     <svg class="w-3 h-3 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5"/></svg>
                   </button>
                 </label>
-                <input v-model="form.invoice_number" type="text"
+                <input id="ocrinvoiceimport-invoice-number" v-model="form.invoice_number" type="text"
                   class="w-full px-2.5 py-1.5 text-sm border rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none"
                   :class="activeField?.field === 'invoice_number' ? 'border-blue-400 ring-2 ring-blue-200 dark:ring-blue-800 bg-blue-50 dark:bg-blue-950' : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 dark:text-gray-200'" />
               </div>
               <!-- Invoice Date -->
               <div>
-                <label class="flex items-center gap-1 text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label for="ocrinvoiceimport-invoice-date" class="flex items-center gap-1 text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                   <span class="inline-block w-2 h-2 rounded-full bg-teal-500 mr-1"></span>Date facture
                   <button type="button" @click="setActiveField({ type:'header', field:'invoice_date', label:'Date facture' })"
                     class="p-0.5 rounded hover:bg-teal-100 dark:hover:bg-teal-900 transition" :class="activeField?.field === 'invoice_date' ? 'bg-teal-100 dark:bg-teal-900 ring-1 ring-teal-400' : ''" title="Remplir depuis le PDF">
                     <svg class="w-3 h-3 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5"/></svg>
                   </button>
                 </label>
-                <input v-model="form.invoice_date" type="date"
+                <input id="ocrinvoiceimport-invoice-date" v-model="form.invoice_date" type="date"
                   class="w-full px-2.5 py-1.5 text-sm border rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none"
                   :class="activeField?.field === 'invoice_date' ? 'border-teal-400 ring-2 ring-teal-200 dark:ring-teal-800 bg-teal-50 dark:bg-teal-950' : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 dark:text-gray-200'" />
               </div>
@@ -1059,21 +1059,21 @@ function matchLabel(score: number) {
             <div class="grid grid-cols-2 gap-3">
               <!-- Due Date -->
               <div>
-                <label class="flex items-center gap-1 text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label for="ocrinvoiceimport-due-date" class="flex items-center gap-1 text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Echeance
                   <button type="button" @click="setActiveField({ type:'header', field:'due_date', label:'Echéance' })"
                     class="p-0.5 rounded hover:bg-teal-100 dark:hover:bg-teal-900 transition" :class="activeField?.field === 'due_date' ? 'bg-teal-100 dark:bg-teal-900 ring-1 ring-teal-400' : ''" title="Remplir depuis le PDF">
                     <svg class="w-3 h-3 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5"/></svg>
                   </button>
                 </label>
-                <input v-model="form.due_date" type="date"
+                <input id="ocrinvoiceimport-due-date" v-model="form.due_date" type="date"
                   class="w-full px-2.5 py-1.5 text-sm border rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none"
                   :class="activeField?.field === 'due_date' ? 'border-teal-400 ring-2 ring-teal-200 dark:ring-teal-800 bg-teal-50 dark:bg-teal-950' : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 dark:text-gray-200'" />
               </div>
               <!-- Warehouse -->
               <div>
-                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Entrepôt <span class="text-red-500">*</span></label>
-                <select v-model="form.warehouse_id" required
+                <label for="ocrinvoiceimport-warehouse-id" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Entrepôt <span class="text-red-500">*</span></label>
+                <select id="ocrinvoiceimport-warehouse-id" v-model="form.warehouse_id" required
                   class="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 dark:text-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none"
                   :class="{ 'border-red-400': !form.warehouse_id }">
                   <option :value="null" disabled>-- Sélectionner --</option>
@@ -1084,8 +1084,8 @@ function matchLabel(score: number) {
 
             <!-- Payment method -->
             <div>
-              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Mode de paiement</label>
-              <select v-model="form.payment_method"
+              <label for="ocrinvoiceimport-payment-method" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Mode de paiement</label>
+              <select id="ocrinvoiceimport-payment-method" v-model="form.payment_method"
                 class="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 dark:text-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none">
                 <option value="cash">Especes</option>
                 <option value="check">Cheque</option>
@@ -1161,7 +1161,7 @@ function matchLabel(score: number) {
               <!-- Numbers row -->
               <div class="grid grid-cols-5 gap-1.5">
                 <div>
-                  <label class="flex items-center gap-0.5 text-[9px] text-gray-400">Qte
+                  <label for="ocrinvoiceimport-line-quantity" class="flex items-center gap-0.5 text-[9px] text-gray-400">Qte
                     <button type="button" @click="setActiveField({ type:'line', field:'quantity', lineIdx: idx, label:`Qté L${idx+1}` })"
                       class="p-0 rounded hover:bg-yellow-100 transition" :class="activeField?.type === 'line' && activeField?.lineIdx === idx && activeField?.field === 'quantity' ? 'bg-yellow-100 ring-1 ring-yellow-400' : ''">
                       <svg class="w-2.5 h-2.5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5"/></svg>
@@ -1176,7 +1176,7 @@ function matchLabel(score: number) {
                       </svg>
                     </button>
                   </label>
-                  <input v-model.number="line.quantity" type="number" min="0"
+                  <input id="ocrinvoiceimport-line-quantity" v-model.number="line.quantity" type="number" min="0"
                     class="w-full px-1.5 py-0.5 text-xs text-right border rounded focus:ring-1 focus:ring-teal-500 focus:outline-none"
                     :class="[
                       activeField?.type === 'line' && activeField?.lineIdx === idx && activeField?.field === 'quantity' ? 'border-yellow-400 ring-1 ring-yellow-200 bg-yellow-50' : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 dark:text-gray-200',
@@ -1184,24 +1184,24 @@ function matchLabel(score: number) {
                     ]" />
                 </div>
                 <div>
-                  <label class="flex items-center gap-0.5 text-[9px] text-gray-400">PU HT
+                  <label for="ocrinvoiceimport-line-unit-price" class="flex items-center gap-0.5 text-[9px] text-gray-400">PU HT
                     <button type="button" @click="setActiveField({ type:'line', field:'unit_price', lineIdx: idx, label:`PU HT L${idx+1}` })"
                       class="p-0 rounded hover:bg-yellow-100 transition" :class="activeField?.type === 'line' && activeField?.lineIdx === idx && activeField?.field === 'unit_price' ? 'bg-yellow-100 ring-1 ring-yellow-400' : ''">
                       <svg class="w-2.5 h-2.5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5"/></svg>
                     </button>
                   </label>
-                  <input v-model.number="line.unit_price" type="number" min="0" step="0.01"
+                  <input id="ocrinvoiceimport-line-unit-price" v-model.number="line.unit_price" type="number" min="0" step="0.01"
                     class="w-full px-1.5 py-0.5 text-xs text-right border rounded focus:ring-1 focus:ring-teal-500 focus:outline-none"
                     :class="activeField?.type === 'line' && activeField?.lineIdx === idx && activeField?.field === 'unit_price' ? 'border-yellow-400 ring-1 ring-yellow-200 bg-yellow-50' : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 dark:text-gray-200'" />
                 </div>
                 <div>
-                  <label class="text-[9px] text-gray-400 block">Rem%</label>
-                  <input v-model.number="line.discount_percent" type="number" min="0" max="100"
+                  <label for="ocrinvoiceimport-line-discount-percent" class="text-[9px] text-gray-400 block">Rem%</label>
+                  <input id="ocrinvoiceimport-line-discount-percent" v-model.number="line.discount_percent" type="number" min="0" max="100"
                     class="w-full px-1.5 py-0.5 text-xs text-right border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 dark:text-gray-200 rounded focus:ring-1 focus:ring-teal-500 focus:outline-none" />
                 </div>
                 <div>
-                  <label class="text-[9px] text-gray-400 block">TVA%</label>
-                  <input v-model.number="line.tax_percent" type="number" min="0" max="100"
+                  <label for="ocrinvoiceimport-line-tax-percent" class="text-[9px] text-gray-400 block">TVA%</label>
+                  <input id="ocrinvoiceimport-line-tax-percent" v-model.number="line.tax_percent" type="number" min="0" max="100"
                     class="w-full px-1.5 py-0.5 text-xs text-right border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 dark:text-gray-200 rounded focus:ring-1 focus:ring-teal-500 focus:outline-none" />
                 </div>
                 <div>
@@ -1244,8 +1244,9 @@ function matchLabel(score: number) {
 
         <!-- Notes -->
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
-          <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
+          <label for="ocrinvoiceimport-notes" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
           <textarea
+            id="ocrinvoiceimport-notes"
             v-model="form.notes"
             rows="2"
             class="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 dark:text-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none resize-none"

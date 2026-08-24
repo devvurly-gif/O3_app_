@@ -99,8 +99,9 @@
         <!-- Role info -->
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nom (slug) <span class="text-red-500">*</span></label>
+            <label for="roles-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nom (slug) <span class="text-red-500">*</span></label>
             <input
+              id="roles-name"
               v-model="form.name"
               type="text"
               required
@@ -113,8 +114,9 @@
             <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Lettres minuscules, chiffres et underscores (commence par une lettre)</p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nom affiché <span class="text-red-500">*</span></label>
+            <label for="roles-display-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nom affiché <span class="text-red-500">*</span></label>
             <input
+              id="roles-display-name"
               v-model="form.display_name"
               type="text"
               required
@@ -123,8 +125,9 @@
             />
           </div>
           <div class="col-span-2">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+            <label for="roles-description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
             <input
+              id="roles-description"
               v-model="form.description"
               type="text"
               placeholder="Description optionnelle du rôle"

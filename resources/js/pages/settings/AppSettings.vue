@@ -75,32 +75,32 @@
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.companyName') }}</label>
-              <input v-model="company.name" type="text" placeholder="Acme Corp" :class="inputClass" />
+              <label for="appsettings-company-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.companyName') }}</label>
+              <input id="appsettings-company-name" v-model="company.name" type="text" placeholder="Acme Corp" :class="inputClass" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.phone') }}</label>
-              <input v-model="company.phone" type="text" placeholder="+212..." :class="inputClass" />
+              <label for="appsettings-company-phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.phone') }}</label>
+              <input id="appsettings-company-phone" v-model="company.phone" type="text" placeholder="+212..." :class="inputClass" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.email') }}</label>
-              <input v-model="company.email" type="email" placeholder="contact@company.com" :class="inputClass" />
+              <label for="appsettings-company-email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.email') }}</label>
+              <input id="appsettings-company-email" v-model="company.email" type="email" placeholder="contact@company.com" :class="inputClass" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.ice') }}</label>
-              <input v-model="company.ice" type="text" :placeholder="$t('appSettings.icePlaceholder')" :class="inputClass + ' font-mono'" />
+              <label for="appsettings-company-ice" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.ice') }}</label>
+              <input id="appsettings-company-ice" v-model="company.ice" type="text" :placeholder="$t('appSettings.icePlaceholder')" :class="inputClass + ' font-mono'" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.rc') }}</label>
-              <input v-model="company.rc" type="text" :placeholder="$t('appSettings.rcPlaceholder')" :class="inputClass + ' font-mono'" />
+              <label for="appsettings-company-rc" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.rc') }}</label>
+              <input id="appsettings-company-rc" v-model="company.rc" type="text" :placeholder="$t('appSettings.rcPlaceholder')" :class="inputClass + ' font-mono'" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.if') }}</label>
-              <input v-model="company.if" type="text" :placeholder="$t('appSettings.ifPlaceholder')" :class="inputClass + ' font-mono'" />
+              <label for="appsettings-company-if" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.if') }}</label>
+              <input id="appsettings-company-if" v-model="company.if" type="text" :placeholder="$t('appSettings.ifPlaceholder')" :class="inputClass + ' font-mono'" />
             </div>
             <div class="col-span-1 sm:col-span-2">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.address') }}</label>
-              <input v-model="company.address" type="text" :placeholder="$t('common.addressPlaceholder')" :class="inputClass" />
+              <label for="appsettings-company-address" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.address') }}</label>
+              <input id="appsettings-company-address" v-model="company.address" type="text" :placeholder="$t('common.addressPlaceholder')" :class="inputClass" />
             </div>
           </div>
           <div class="flex justify-end">
@@ -115,24 +115,24 @@
           <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 uppercase tracking-wide">{{ $t('appSettings.localization') }}</h3>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.currency') }}</label>
-              <input v-model="locale.currency" type="text" placeholder="MAD" :class="inputClass" />
+              <label for="appsettings-locale-currency" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.currency') }}</label>
+              <input id="appsettings-locale-currency" v-model="locale.currency" type="text" placeholder="MAD" :class="inputClass" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.currencySymbol') }}</label>
-              <input v-model="locale.currency_symbol" type="text" placeholder="د.م." :class="inputClass" />
+              <label for="appsettings-locale-currency-symbol" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.currencySymbol') }}</label>
+              <input id="appsettings-locale-currency-symbol" v-model="locale.currency_symbol" type="text" placeholder="د.م." :class="inputClass" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.timezone') }}</label>
-              <input v-model="locale.timezone" type="text" placeholder="Africa/Casablanca" :class="inputClass" />
+              <label for="appsettings-locale-timezone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.timezone') }}</label>
+              <input id="appsettings-locale-timezone" v-model="locale.timezone" type="text" placeholder="Africa/Casablanca" :class="inputClass" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.dateFormat') }}</label>
-              <input v-model="locale.date_format" type="text" placeholder="DD/MM/YYYY" :class="inputClass + ' font-mono'" />
+              <label for="appsettings-locale-date-format" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.dateFormat') }}</label>
+              <input id="appsettings-locale-date-format" v-model="locale.date_format" type="text" placeholder="DD/MM/YYYY" :class="inputClass + ' font-mono'" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.language') }}</label>
-              <select v-model="locale.language" :class="inputClass">
+              <label for="appsettings-locale-language" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.language') }}</label>
+              <select id="appsettings-locale-language" v-model="locale.language" :class="inputClass">
                 <option value="en">{{ $t('appSettings.langEn') }}</option>
                 <option value="fr">{{ $t('appSettings.langFr') }}</option>
                 <option value="ar">{{ $t('appSettings.langAr') }}</option>
@@ -183,12 +183,12 @@
           <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 uppercase tracking-wide">{{ $t('appSettings.invoice') }}</h3>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.paymentTerms') }}</label>
-              <input v-model="invoice.payment_terms_days" type="number" min="0" placeholder="30" :class="inputClass" />
+              <label for="appsettings-invoice-payment-terms-days" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.paymentTerms') }}</label>
+              <input id="appsettings-invoice-payment-terms-days" v-model="invoice.payment_terms_days" type="number" min="0" placeholder="30" :class="inputClass" />
             </div>
             <div class="col-span-1 sm:col-span-2">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.footerNote') }}</label>
-              <textarea v-model="invoice.footer_note" rows="2" :placeholder="$t('appSettings.footerNotePlaceholder')" :class="inputClass + ' resize-none'" />
+              <label for="appsettings-invoice-footer-note" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.footerNote') }}</label>
+              <textarea id="appsettings-invoice-footer-note" v-model="invoice.footer_note" rows="2" :placeholder="$t('appSettings.footerNotePlaceholder')" :class="inputClass + ' resize-none'" />
             </div>
           </div>
           <div class="flex justify-end">
@@ -259,19 +259,19 @@
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Twilio Account SID</label>
-              <input v-model="whatsapp.twilio_sid" type="text" placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" :class="inputClass + ' font-mono text-xs'" />
+              <label for="appsettings-whatsapp-twilio-sid" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Twilio Account SID</label>
+              <input id="appsettings-whatsapp-twilio-sid" v-model="whatsapp.twilio_sid" type="text" placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" :class="inputClass + ' font-mono text-xs'" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Twilio Auth Token</label>
-              <input v-model="whatsapp.twilio_auth_token" :type="showWhatsappToken ? 'text' : 'password'" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" :class="inputClass + ' font-mono text-xs'" />
+              <label for="appsettings-whatsapp-twilio-auth-token" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Twilio Auth Token</label>
+              <input id="appsettings-whatsapp-twilio-auth-token" v-model="whatsapp.twilio_auth_token" :type="showWhatsappToken ? 'text' : 'password'" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" :class="inputClass + ' font-mono text-xs'" />
               <button @click="showWhatsappToken = !showWhatsappToken" class="text-xs text-orange-500 mt-1 hover:underline">
                 {{ showWhatsappToken ? $t('appSettings.hide') : $t('appSettings.show') }}
               </button>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.whatsappFrom') }}</label>
-              <input v-model="whatsapp.twilio_whatsapp_from" type="text" placeholder="+14155238886" :class="inputClass" />
+              <label for="appsettings-whatsapp-twilio-whatsapp-from" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.whatsappFrom') }}</label>
+              <input id="appsettings-whatsapp-twilio-whatsapp-from" v-model="whatsapp.twilio_whatsapp_from" type="text" placeholder="+14155238886" :class="inputClass" />
               <p class="text-xs text-gray-400 mt-1">{{ $t('appSettings.whatsappFromHint') }}</p>
             </div>
             <div class="flex items-end">
@@ -323,12 +323,12 @@
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.mailHost') }}</label>
-              <input v-model="email.mail_host" type="text" placeholder="smtp.gmail.com" :class="inputClass" />
+              <label for="appsettings-email-mail-host" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.mailHost') }}</label>
+              <input id="appsettings-email-mail-host" v-model="email.mail_host" type="text" placeholder="smtp.gmail.com" :class="inputClass" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.mailPort') }}</label>
-              <select v-model="email.mail_port" :class="inputClass">
+              <label for="appsettings-email-mail-port" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.mailPort') }}</label>
+              <select id="appsettings-email-mail-port" v-model="email.mail_port" :class="inputClass">
                 <option value="25">25 (SMTP)</option>
                 <option value="465">465 (SSL)</option>
                 <option value="587">587 (TLS)</option>
@@ -336,31 +336,31 @@
               </select>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.mailUsername') }}</label>
-              <input v-model="email.mail_username" type="text" placeholder="user@gmail.com" :class="inputClass" />
+              <label for="appsettings-email-mail-username" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.mailUsername') }}</label>
+              <input id="appsettings-email-mail-username" v-model="email.mail_username" type="text" placeholder="user@gmail.com" :class="inputClass" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.mailPassword') }}</label>
-              <input v-model="email.mail_password" :type="showEmailPassword ? 'text' : 'password'" placeholder="********" :class="inputClass" />
+              <label for="appsettings-email-mail-password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.mailPassword') }}</label>
+              <input id="appsettings-email-mail-password" v-model="email.mail_password" :type="showEmailPassword ? 'text' : 'password'" placeholder="********" :class="inputClass" />
               <button @click="showEmailPassword = !showEmailPassword" class="text-xs text-orange-500 mt-1 hover:underline">
                 {{ showEmailPassword ? $t('appSettings.hide') : $t('appSettings.show') }}
               </button>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.mailEncryption') }}</label>
-              <select v-model="email.mail_encryption" :class="inputClass">
+              <label for="appsettings-email-mail-encryption" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.mailEncryption') }}</label>
+              <select id="appsettings-email-mail-encryption" v-model="email.mail_encryption" :class="inputClass">
                 <option value="">{{ $t('appSettings.none') }}</option>
                 <option value="tls">TLS</option>
                 <option value="ssl">SSL</option>
               </select>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.mailFromAddress') }}</label>
-              <input v-model="email.mail_from_address" type="email" placeholder="noreply@company.com" :class="inputClass" />
+              <label for="appsettings-email-mail-from-address" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.mailFromAddress') }}</label>
+              <input id="appsettings-email-mail-from-address" v-model="email.mail_from_address" type="email" placeholder="noreply@company.com" :class="inputClass" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.mailFromName') }}</label>
-              <input v-model="email.mail_from_name" type="text" placeholder="Mon Entreprise" :class="inputClass" />
+              <label for="appsettings-email-mail-from-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.mailFromName') }}</label>
+              <input id="appsettings-email-mail-from-name" v-model="email.mail_from_name" type="text" placeholder="Mon Entreprise" :class="inputClass" />
             </div>
             <div class="flex items-end">
               <div class="flex items-center gap-2">
@@ -558,8 +558,8 @@
             <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">{{ $t('appSettings.ecomSectionShop') }}</p>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div class="sm:col-span-2">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.ecomTagline') }}</label>
-                <input v-model="ecommerce.shop_tagline" type="text" :placeholder="$t('appSettings.ecomTaglinePlaceholder')" :class="inputClass" />
+                <label for="appsettings-ecommerce-shop-tagline" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.ecomTagline') }}</label>
+                <input id="appsettings-ecommerce-shop-tagline" v-model="ecommerce.shop_tagline" type="text" :placeholder="$t('appSettings.ecomTaglinePlaceholder')" :class="inputClass" />
               </div>
             </div>
           </div>
@@ -571,8 +571,8 @@
             <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">{{ $t('appSettings.ecomSectionBanner') }}</p>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div class="sm:col-span-2">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.ecomBannerText') }}</label>
-                <input v-model="ecommerce.promo_banner" type="text" placeholder="🔥 Livraison gratuite dès 2 000 MAD" :class="inputClass" />
+                <label for="appsettings-ecommerce-promo-banner" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.ecomBannerText') }}</label>
+                <input id="appsettings-ecommerce-promo-banner" v-model="ecommerce.promo_banner" type="text" placeholder="🔥 Livraison gratuite dès 2 000 MAD" :class="inputClass" />
               </div>
               <div class="flex items-center gap-2">
                 <label class="relative inline-flex items-center cursor-pointer">
@@ -632,20 +632,20 @@
             <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">{{ $t('appSettings.ecomSectionContact') }}</p>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div class="sm:col-span-2">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.address') }}</label>
-                <input v-model="ecommerce.address" type="text" placeholder="Rue Example, Casablanca" :class="inputClass" />
+                <label for="appsettings-ecommerce-address" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.address') }}</label>
+                <input id="appsettings-ecommerce-address" v-model="ecommerce.address" type="text" placeholder="Rue Example, Casablanca" :class="inputClass" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.ecomLocation') }}</label>
-                <input v-model="ecommerce.location" type="text" placeholder="Casablanca" :class="inputClass" />
+                <label for="appsettings-ecommerce-location" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.ecomLocation') }}</label>
+                <input id="appsettings-ecommerce-location" v-model="ecommerce.location" type="text" placeholder="Casablanca" :class="inputClass" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.phone') }}</label>
-                <input v-model="ecommerce.phone" type="text" placeholder="+212 6XX XXX XXX" :class="inputClass" />
+                <label for="appsettings-ecommerce-phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.phone') }}</label>
+                <input id="appsettings-ecommerce-phone" v-model="ecommerce.phone" type="text" placeholder="+212 6XX XXX XXX" :class="inputClass" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.email') }}</label>
-                <input v-model="ecommerce.email" type="email" placeholder="contact@teliphoni.ma" :class="inputClass" />
+                <label for="appsettings-ecommerce-email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.email') }}</label>
+                <input id="appsettings-ecommerce-email" v-model="ecommerce.email" type="email" placeholder="contact@teliphoni.ma" :class="inputClass" />
               </div>
             </div>
           </div>
@@ -657,16 +657,16 @@
             <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">{{ $t('appSettings.ecomSectionSocial') }}</p>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Instagram</label>
-                <input v-model="ecommerce.instagram_url" type="url" placeholder="https://instagram.com/..." :class="inputClass" />
+                <label for="appsettings-ecommerce-instagram-url" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Instagram</label>
+                <input id="appsettings-ecommerce-instagram-url" v-model="ecommerce.instagram_url" type="url" placeholder="https://instagram.com/..." :class="inputClass" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Facebook</label>
-                <input v-model="ecommerce.facebook_url" type="url" placeholder="https://facebook.com/..." :class="inputClass" />
+                <label for="appsettings-ecommerce-facebook-url" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Facebook</label>
+                <input id="appsettings-ecommerce-facebook-url" v-model="ecommerce.facebook_url" type="url" placeholder="https://facebook.com/..." :class="inputClass" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">WhatsApp</label>
-                <input v-model="ecommerce.whatsapp_number" type="text" placeholder="+212 6XX XXX XXX" :class="inputClass" />
+                <label for="appsettings-ecommerce-whatsapp-number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">WhatsApp</label>
+                <input id="appsettings-ecommerce-whatsapp-number" v-model="ecommerce.whatsapp_number" type="text" placeholder="+212 6XX XXX XXX" :class="inputClass" />
               </div>
             </div>
           </div>
@@ -704,10 +704,11 @@
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label for="appsettings-resetconfirmtext" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Tapez <span class="font-mono font-semibold">{{ tenantId || '…' }}</span> pour confirmer
             </label>
             <input
+              id="appsettings-resetconfirmtext"
               v-model="resetConfirmText"
               type="text"
               :placeholder="tenantId || ''"

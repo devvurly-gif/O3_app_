@@ -90,8 +90,9 @@
     <BaseModal v-model="showModal" :title="editTarget ? 'Modifier le terminal' : 'Ajouter un terminal'" size="sm">
       <form class="space-y-4" @submit.prevent="submit">
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nom <span class="text-red-500">*</span></label>
+          <label for="posterminals-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nom <span class="text-red-500">*</span></label>
           <input
+            id="posterminals-name"
             v-model="form.name"
             type="text"
             required
@@ -100,8 +101,9 @@
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Code <span class="text-red-500">*</span></label>
+          <label for="posterminals-code" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Code <span class="text-red-500">*</span></label>
           <input
+            id="posterminals-code"
             v-model="form.code"
             type="text"
             required
@@ -110,8 +112,9 @@
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Entrepôt <span class="text-red-500">*</span></label>
+          <label for="posterminals-warehouse-id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Entrepôt <span class="text-red-500">*</span></label>
           <select
+            id="posterminals-warehouse-id"
             v-model="form.warehouse_id"
             required
             class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
@@ -125,8 +128,9 @@
           <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-3">Impression</p>
           <div class="space-y-3">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nom de l'imprimante</label>
+              <label for="posterminals-printer-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nom de l'imprimante</label>
               <input
+                id="posterminals-printer-name"
                 v-model="form.printer_name"
                 type="text"
                 placeholder="ex: Epson TM-T20 Caisse 1"

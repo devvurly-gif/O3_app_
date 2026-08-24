@@ -235,10 +235,11 @@
             <div>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="sm:col-span-2">
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  <label for="customers-tp-title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                     >{{ $t('common.name') }} <span class="text-red-500">*</span></label
                   >
                   <input
+                    id="customers-tp-title"
                     v-model="form.tp_title"
                     type="text"
                     required
@@ -253,8 +254,9 @@
             <div>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.phone') }}</label>
+                  <label for="customers-tp-phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.phone') }}</label>
                   <input
+                    id="customers-tp-phone"
                     v-model="form.tp_phone"
                     type="text"
                     placeholder="+212..."
@@ -262,8 +264,9 @@
                   />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.email') }}</label>
+                  <label for="customers-tp-email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.email') }}</label>
                   <input
+                    id="customers-tp-email"
                     v-model="form.tp_email"
                     type="email"
                     placeholder="contact@example.com"
@@ -271,8 +274,9 @@
                   />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.city') }}</label>
+                  <label for="customers-tp-city" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.city') }}</label>
                   <input
+                    id="customers-tp-city"
                     v-model="form.tp_city"
                     type="text"
                     placeholder="Casablanca"
@@ -280,8 +284,9 @@
                   />
                 </div>
                 <div class="sm:col-span-2">
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.address') }}</label>
+                  <label for="customers-tp-address" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.address') }}</label>
                   <textarea
+                    id="customers-tp-address"
                     v-model="form.tp_address"
                     rows="2"
                     :placeholder="$t('common.addressPlaceholder')"
@@ -309,8 +314,9 @@
           <div class="space-y-5">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('customers.ice') }}</label>
+                <label for="customers-tp-ice-number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('customers.ice') }}</label>
                 <input
+                  id="customers-tp-ice-number"
                   v-model="form.tp_Ice_Number"
                   type="text"
                   :placeholder="$t('customers.icePlaceholder')"
@@ -318,8 +324,9 @@
                 />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('customers.rc') }}</label>
+                <label for="customers-tp-rc-number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('customers.rc') }}</label>
                 <input
+                  id="customers-tp-rc-number"
                   v-model="form.tp_Rc_Number"
                   type="text"
                   :placeholder="$t('customers.rcPlaceholder')"
@@ -327,8 +334,9 @@
                 />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('customers.patente') }}</label>
+                <label for="customers-tp-patente-number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('customers.patente') }}</label>
                 <input
+                  id="customers-tp-patente-number"
                   v-model="form.tp_patente_Number"
                   type="text"
                   :placeholder="$t('customers.patentePlaceholder')"
@@ -336,8 +344,9 @@
                 />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('customers.if') }}</label>
+                <label for="customers-tp-idenfiscal" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('customers.if') }}</label>
                 <input
+                  id="customers-tp-idenfiscal"
                   v-model="form.tp_IdenFiscal"
                   type="text"
                   :placeholder="$t('customers.ifPlaceholder')"
@@ -440,8 +449,9 @@
               <!-- Type de Compte & Fréquence de facturation -->
               <div class="grid grid-cols-2 gap-4 mt-4">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type de compte</label>
+                  <label for="customers-type-compte" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type de compte</label>
                   <select
+                    id="customers-type-compte"
                     v-model="form.type_compte"
                     class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
                   >
@@ -450,8 +460,9 @@
                   </select>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fréquence de facturation</label>
+                  <label for="customers-frequence-facturation" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fréquence de facturation</label>
                   <select
+                    id="customers-frequence-facturation"
                     v-model="form.frequence_facturation"
                     :disabled="form.type_compte !== 'en_compte'"
                     class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent disabled:bg-gray-100 disabled:text-gray-400"
@@ -466,10 +477,11 @@
 
               <!-- Grille tarifaire (price list) assignée -->
               <div class="mt-4">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label for="customers-price-list-id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   {{ $t('pricelists.title') }}
                 </label>
                 <select
+                  id="customers-price-list-id"
                   v-model="form.price_list_id"
                   class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
                 >
@@ -865,10 +877,11 @@
             Toutes les factures sont soldées. Vous pouvez enregistrer un paiement sur une facture spécifique (ex. correction, avoir).
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label for="customers-paymentselecteddocid" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Facture <span class="text-red-500">*</span>
             </label>
             <select
+              id="customers-paymentselecteddocid"
               v-model="paymentSelectedDocId"
               class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
             >
@@ -895,10 +908,11 @@
             </div>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label for="customers-paymentform-method" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Méthode de paiement <span class="text-red-500">*</span>
             </label>
             <select
+              id="customers-paymentform-method"
               v-model="paymentForm.method"
               class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
             >
@@ -909,8 +923,9 @@
             </select>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Référence</label>
+            <label for="customers-paymentform-reference" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Référence</label>
             <input
+              id="customers-paymentform-reference"
               v-model="paymentForm.reference"
               type="text"
               placeholder="N° chèque, virement..."
@@ -918,8 +933,9 @@
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
+            <label for="customers-paymentform-notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
             <textarea
+              id="customers-paymentform-notes"
               v-model="paymentForm.notes"
               rows="2"
               placeholder="Remarques..."
@@ -957,10 +973,11 @@
             </p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            <label for="customers-paymentform-method-2" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
               >Méthode de paiement <span class="text-red-500">*</span></label
             >
             <select
+              id="customers-paymentform-method-2"
               v-model="paymentForm.method"
               class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
             >
@@ -971,8 +988,9 @@
             </select>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Référence</label>
+            <label for="customers-paymentform-reference-2" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Référence</label>
             <input
+              id="customers-paymentform-reference-2"
               v-model="paymentForm.reference"
               type="text"
               placeholder="N° chèque, virement..."
@@ -980,8 +998,9 @@
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
+            <label for="customers-paymentform-notes-2" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
             <textarea
+              id="customers-paymentform-notes-2"
               v-model="paymentForm.notes"
               rows="2"
               placeholder="Remarques..."

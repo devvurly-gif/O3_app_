@@ -74,10 +74,11 @@
       <form class="space-y-4" @submit.prevent="submit">
         <div class="grid grid-cols-2 gap-4">
           <div class="col-span-2">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            <label for="structureincrementors-si-title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
               >{{ $t('common.title') }} <span class="text-red-500">*</span></label
             >
             <input
+              id="structureincrementors-si-title"
               v-model="form.si_title"
               type="text"
               required
@@ -86,8 +87,9 @@
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.model') }}</label>
+            <label for="structureincrementors-si-model" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.model') }}</label>
             <input
+              id="structureincrementors-si-model"
               v-model="form.si_model"
               type="text"
               :placeholder="$t('structureIncrementors.modelPlaceholder')"
@@ -95,8 +97,9 @@
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.template') }}</label>
+            <label for="structureincrementors-si-template" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.template') }}</label>
             <input
+              id="structureincrementors-si-template"
               v-model="form.si_template"
               type="text"
               :placeholder="$t('structureIncrementors.templatePlaceholder')"
@@ -105,8 +108,9 @@
             <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{ $t('structureIncrementors.templateHint') }}</p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.nextNum') }}</label>
+            <label for="structureincrementors-si-nexttrick" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.nextNum') }}</label>
             <input
+              id="structureincrementors-si-nexttrick"
               v-model.number="form.si_nextTrick"
               type="number"
               min="1"

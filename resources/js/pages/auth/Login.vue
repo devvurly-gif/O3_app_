@@ -84,10 +84,11 @@
           <form class="space-y-5" @submit.prevent="handleLogin">
             <!-- Email -->
             <div>
-              <label class="block text-sm font-medium text-gray-300 mb-1.5">{{
+              <label for="login-email" class="block text-sm font-medium text-gray-300 mb-1.5">{{
                 $t('auth.email')
               }}</label>
               <input
+                id="login-email"
                 v-model="form.email"
                 type="email"
                 autocomplete="email"

@@ -10,8 +10,9 @@
     <BaseCard>
       <div class="flex flex-wrap items-end gap-4">
         <div>
-          <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Type</label>
+          <label for="activitylog-subject-type" class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Type</label>
           <select
+            id="activitylog-subject-type"
             v-model="filters.subject_type"
             class="block w-44 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-primary-500 focus:border-primary-500"
           >
@@ -20,8 +21,9 @@
           </select>
         </div>
         <div>
-          <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Action</label>
+          <label for="activitylog-event" class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Action</label>
           <select
+            id="activitylog-event"
             v-model="filters.event"
             class="block w-36 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-primary-500 focus:border-primary-500"
           >
@@ -32,16 +34,18 @@
           </select>
         </div>
         <div>
-          <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Du</label>
+          <label for="activitylog-from" class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Du</label>
           <input
+            id="activitylog-from"
             v-model="filters.from"
             type="date"
             class="block w-40 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-primary-500 focus:border-primary-500"
           />
         </div>
         <div>
-          <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Au</label>
+          <label for="activitylog-to" class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Au</label>
           <input
+            id="activitylog-to"
             v-model="filters.to"
             type="date"
             class="block w-40 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-primary-500 focus:border-primary-500"

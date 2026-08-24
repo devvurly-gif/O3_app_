@@ -145,10 +145,11 @@
     >
       <form class="space-y-4" @submit.prevent="submit">
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+          <label for="warehouses-wh-title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
             >{{ $t('common.name') }} <span class="text-red-500">*</span></label
           >
           <input
+            id="warehouses-wh-title"
             v-model="form.wh_title"
             type="text"
             required

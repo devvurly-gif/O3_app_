@@ -130,10 +130,11 @@
     <BaseModal v-model="showModal" :title="editTarget ? $t('brands.editTitle') : $t('brands.addTitle')" size="sm">
       <form class="space-y-4" @submit.prevent="submit">
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+          <label for="brands-br-title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
             >{{ $t('common.name') }} <span class="text-red-500">*</span></label
           >
           <input
+            id="brands-br-title"
             v-model="form.br_title"
             type="text"
             required

@@ -13,8 +13,9 @@
       <!-- Cash: numeric keypad -->
       <div v-if="method === 'cash'" class="space-y-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Montant donné</label>
+          <label for="poscheckout-cashgiven" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Montant donné</label>
           <input
+            id="poscheckout-cashgiven"
             v-model="cashGiven"
             type="text"
             inputmode="decimal"

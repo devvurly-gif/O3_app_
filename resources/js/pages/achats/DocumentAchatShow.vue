@@ -626,8 +626,9 @@ const paymentProgress = computed(() => {
       <div class="space-y-4">
         <p class="text-sm text-gray-600 dark:text-gray-300">Choisissez le moyen de paiement pour cette facture :</p>
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Moyen de paiement *</label>
+          <label for="documentachatshow-invoicepaymentmethod" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Moyen de paiement *</label>
           <select
+            id="documentachatshow-invoicepaymentmethod"
             v-model="invoicePaymentMethod"
             class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
           >

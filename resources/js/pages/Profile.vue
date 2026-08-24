@@ -9,8 +9,9 @@
 
       <form class="p-6 space-y-5" @submit.prevent="updateProfile">
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Nom complet</label>
+          <label for="profile-profileform-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Nom complet</label>
           <input
+            id="profile-profileform-name"
             v-model="profileForm.name"
             type="text"
             required
@@ -19,8 +20,9 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Email</label>
+          <label for="profile-profileform-email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Email</label>
           <input
+            id="profile-profileform-email"
             v-model="profileForm.email"
             type="email"
             required
@@ -30,8 +32,9 @@
 
         <div class="flex items-center gap-3">
           <div class="flex-1">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Rôle</label>
+            <label for="profile-r-le" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Rôle</label>
             <input
+              id="profile-r-le"
               :value="auth.userRole"
               type="text"
               disabled
@@ -61,8 +64,9 @@
 
       <form class="p-6 space-y-5" @submit.prevent="updatePassword">
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Mot de passe actuel</label>
+          <label for="profile-passwordform-current-password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Mot de passe actuel</label>
           <input
+            id="profile-passwordform-current-password"
             v-model="passwordForm.current_password"
             type="password"
             required
@@ -71,8 +75,9 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Nouveau mot de passe</label>
+          <label for="profile-passwordform-password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Nouveau mot de passe</label>
           <input
+            id="profile-passwordform-password"
             v-model="passwordForm.password"
             type="password"
             required
@@ -82,8 +87,9 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Confirmer le mot de passe</label>
+          <label for="profile-passwordform-password-confirmation" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Confirmer le mot de passe</label>
           <input
+            id="profile-passwordform-password-confirmation"
             v-model="passwordForm.password_confirmation"
             type="password"
             required

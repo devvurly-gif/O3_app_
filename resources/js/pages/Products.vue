@@ -513,10 +513,11 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <!-- Title (full row) -->
             <div class="sm:col-span-2 lg:col-span-3">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              <label for="products-p-title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                 >{{ $t('common.name') }} <span class="text-red-500">*</span></label
               >
               <input
+                id="products-p-title"
                 v-model="form.p_title"
                 type="text"
                 required
@@ -528,8 +529,9 @@
 
             <!-- Code -->
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.code') }}</label>
+              <label for="products-p-code" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.code') }}</label>
               <input
+                id="products-p-code"
                 v-model="form.p_code"
                 type="text"
                 :placeholder="$t('products.codePlaceholder')"
@@ -539,8 +541,9 @@
 
             <!-- SKU -->
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.sku') }}</label>
+              <label for="products-p-sku" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.sku') }}</label>
               <input
+                id="products-p-sku"
                 v-model="form.p_sku"
                 type="text"
                 :placeholder="$t('products.skuPlaceholder')"
@@ -551,8 +554,9 @@
 
             <!-- EAN13 -->
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.ean') }}</label>
+              <label for="products-p-ean13" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.ean') }}</label>
               <input
+                id="products-p-ean13"
                 v-model="form.p_ean13"
                 type="text"
                 :placeholder="$t('products.eanPlaceholder')"
@@ -562,8 +566,9 @@
 
             <!-- IMEI — only for tenants tracking serial numbers -->
             <div v-if="imeiEnabled" class="sm:col-span-2 lg:col-span-3">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">IMEI</label>
+              <label for="products-p-imei" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">IMEI</label>
               <input
+                id="products-p-imei"
                 v-model="form.p_imei"
                 type="text"
                 placeholder="Device IMEI..."
@@ -575,8 +580,9 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
             <!-- Description -->
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.description') }}</label>
+              <label for="products-p-description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.description') }}</label>
               <textarea
+                id="products-p-description"
                 v-model="form.p_description"
                 rows="3"
                 placeholder="…"
@@ -586,8 +592,9 @@
 
             <!-- Long Description (E-commerce) -->
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.longDescription') ?? 'Long Description' }}</label>
+              <label for="products-p-long-description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.longDescription') ?? 'Long Description' }}</label>
               <textarea
+                id="products-p-long-description"
                 v-model="form.p_long_description"
                 rows="3"
                 placeholder="E-commerce description…"
@@ -598,8 +605,9 @@
 
           <!-- Notes -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
+            <label for="products-p-notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
             <textarea
+              id="products-p-notes"
               v-model="form.p_notes"
               rows="2"
               placeholder="Internal notes…"
@@ -612,8 +620,9 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <!-- Category -->
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.category') }}</label>
+                <label for="products-category-id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.category') }}</label>
                 <select
+                  id="products-category-id"
                   v-model="form.category_id"
                   class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
                 >
@@ -626,8 +635,9 @@
 
               <!-- Brand -->
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.brand') }}</label>
+                <label for="products-brand-id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.brand') }}</label>
                 <select
+                  id="products-brand-id"
                   v-model="form.brand_id"
                   class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
                 >
@@ -640,8 +650,9 @@
 
               <!-- E-commerce Slug — only when ecom module is enabled AND product is flagged for the store -->
               <div v-if="ecomEnabled && form.is_ecom">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.slug') ?? 'Slug' }}</label>
+                <label for="products-p-slug" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.slug') ?? 'Slug' }}</label>
                 <input
+                  id="products-p-slug"
                   v-model="form.p_slug"
                   type="text"
                   :placeholder="$t('products.slugPlaceholder') ?? 'Auto-généré depuis le titre'"
@@ -694,10 +705,11 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <!-- Purchase Price -->
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                <label for="products-p-purchaseprice" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                   >{{ $t('products.purchasePrice') }} <span class="text-red-500">*</span></label
                 >
                 <input
+                  id="products-p-purchaseprice"
                   v-model.number="form.p_purchasePrice"
                   type="number"
                   min="0"
@@ -710,10 +722,11 @@
 
               <!-- Sale Price -->
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                <label for="products-p-saleprice" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                   >{{ $t('products.salePrice') }} <span class="text-red-500">*</span></label
                 >
                 <input
+                  id="products-p-saleprice"
                   v-model.number="form.p_salePrice"
                   type="number"
                   min="0"
@@ -726,8 +739,9 @@
 
               <!-- Cost Price -->
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.costPrice') ?? 'Cost Price' }}</label>
+                <label for="products-p-cost" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.costPrice') ?? 'Cost Price' }}</label>
                 <input
+                  id="products-p-cost"
                   v-model.number="form.p_cost"
                   type="number"
                   min="0"
@@ -739,8 +753,9 @@
 
               <!-- Tax Rate -->
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.taxRate') }}</label>
+                <label for="products-p-taxrate" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.taxRate') }}</label>
                 <input
+                  id="products-p-taxrate"
                   v-model.number="form.p_taxRate"
                   type="number"
                   min="0"
@@ -753,8 +768,9 @@
 
               <!-- Unit -->
               <div class="sm:col-span-2 lg:col-span-1">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.unit') }}</label>
+                <label for="products-p-unit" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.unit') }}</label>
                 <input
+                  id="products-p-unit"
                   v-model="form.p_unit"
                   type="text"
                   :placeholder="$t('products.unitPlaceholder')"
@@ -796,8 +812,9 @@
               class="p-2.5 bg-[#F1ECFC] dark:bg-[#7C5CFC]/20 border border-[#E4D9FE] dark:border-[#4C3999] rounded-lg grid grid-cols-1 sm:grid-cols-4 gap-2"
             >
               <div class="sm:col-span-2">
-                <label class="block text-[11px] font-medium text-gray-600 dark:text-gray-400 mb-1">Grille</label>
+                <label for="products-newtier-price-list-id" class="block text-[11px] font-medium text-gray-600 dark:text-gray-400 mb-1">Grille</label>
                 <select
+                  id="products-newtier-price-list-id"
                   v-model.number="newTier.price_list_id"
                   class="w-full px-2 py-1 rounded-md border border-gray-300 dark:border-gray-600 text-sm bg-white dark:bg-gray-800"
                 >
@@ -813,8 +830,9 @@
                 </select>
               </div>
               <div>
-                <label class="block text-[11px] font-medium text-gray-600 dark:text-gray-400 mb-1">Qté min</label>
+                <label for="products-newtier-min-qty" class="block text-[11px] font-medium text-gray-600 dark:text-gray-400 mb-1">Qté min</label>
                 <input
+                  id="products-newtier-min-qty"
                   v-model.number="newTier.min_qty"
                   type="number"
                   min="1"
@@ -822,8 +840,9 @@
                 />
               </div>
               <div>
-                <label class="block text-[11px] font-medium text-gray-600 dark:text-gray-400 mb-1">Prix HT</label>
+                <label for="products-newtier-price-ht" class="block text-[11px] font-medium text-gray-600 dark:text-gray-400 mb-1">Prix HT</label>
                 <input
+                  id="products-newtier-price-ht"
                   v-model.number="newTier.price_ht"
                   type="number"
                   min="0"

@@ -340,8 +340,9 @@ async function submit() {
         <div class="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
           <!-- Type -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Type d'opération *</label>
+            <label for="documentcreatestock-header-document-type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Type d'opération *</label>
             <select
+              id="documentcreatestock-header-document-type"
               v-model="header.document_type"
               required
               class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
@@ -352,10 +353,11 @@ async function submit() {
 
           <!-- Dépôt source -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            <label for="documentcreatestock-header-warehouse-id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
               {{ isTransfer ? 'Dépôt Source' : 'Dépôt' }} *
             </label>
             <select
+              id="documentcreatestock-header-warehouse-id"
               v-model="header.warehouse_id"
               required
               class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
@@ -367,8 +369,9 @@ async function submit() {
 
           <!-- Dépôt destination (transfert) -->
           <div v-if="isTransfer">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Dépôt Destination *</label>
+            <label for="documentcreatestock-header-warehouse-dest-id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Dépôt Destination *</label>
             <select
+              id="documentcreatestock-header-warehouse-dest-id"
               v-model="header.warehouse_dest_id"
               required
               class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
@@ -380,8 +383,9 @@ async function submit() {
 
           <!-- Date -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Date d'émission *</label>
+            <label for="documentcreatestock-header-issued-at" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Date d'émission *</label>
             <input
+              id="documentcreatestock-header-issued-at"
               v-model="header.issued_at"
               type="date"
               required
@@ -391,8 +395,9 @@ async function submit() {
 
           <!-- Notes -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Notes</label>
+            <label for="documentcreatestock-header-notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Notes</label>
             <input
+              id="documentcreatestock-header-notes"
               v-model="header.notes"
               type="text"
               placeholder="Motif, observations..."
@@ -463,8 +468,9 @@ async function submit() {
               v-if="pendingLine.product_id && variantsMap[pendingLine.product_id]?.length"
               class="w-44"
             >
-              <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Variante</label>
+              <label for="documentcreatestock-pendingline-variant-id" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Variante</label>
               <select
+                id="documentcreatestock-pendingline-variant-id"
                 v-model.number="pendingLine.variant_id"
                 class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-500 transition"
               >
@@ -477,8 +483,9 @@ async function submit() {
 
             <!-- Quantity -->
             <div class="w-28">
-              <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{{ qtyLabel }}</label>
+              <label for="documentcreatestock-pendingline-quantity" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{{ qtyLabel }}</label>
               <input
+                id="documentcreatestock-pendingline-quantity"
                 v-model.number="pendingLine.quantity"
                 type="number"
                 min="0.01"

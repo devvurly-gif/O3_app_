@@ -34,16 +34,18 @@
         <!-- Date range: sales, purchases -->
         <template v-if="activeTab === 'sales' || activeTab === 'purchases'">
           <div>
-            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Du</label>
+            <label for="reports-from" class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Du</label>
             <input
+              id="reports-from"
               v-model="filters.from"
               type="date"
               class="block w-44 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
           <div>
-            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Au</label>
+            <label for="reports-to" class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Au</label>
             <input
+              id="reports-to"
               v-model="filters.to"
               type="date"
               class="block w-44 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-primary-500 focus:border-primary-500"
@@ -54,8 +56,9 @@
         <!-- Warehouse: stock -->
         <template v-if="activeTab === 'stock'">
           <div>
-            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Entrepôt</label>
+            <label for="reports-warehouse-id" class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Entrepôt</label>
             <select
+              id="reports-warehouse-id"
               v-model="filters.warehouse_id"
               class="block w-52 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-primary-500 focus:border-primary-500"
             >
@@ -68,8 +71,9 @@
         <!-- Single date: POS -->
         <template v-if="activeTab === 'pos'">
           <div>
-            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Date</label>
+            <label for="reports-pos-date" class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Date</label>
             <input
+              id="reports-pos-date"
               v-model="filters.pos_date"
               type="date"
               class="block w-44 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-primary-500 focus:border-primary-500"

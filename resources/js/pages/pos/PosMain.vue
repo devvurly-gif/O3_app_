@@ -470,8 +470,9 @@
 
         <div class="space-y-3">
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nom *</label>
+            <label for="posmain-newcustomer-tp-title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nom *</label>
             <input
+              id="posmain-newcustomer-tp-title"
               v-model="newCustomer.tp_title"
               type="text"
               class="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
@@ -479,8 +480,9 @@
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Téléphone</label>
+            <label for="posmain-newcustomer-tp-phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Téléphone</label>
             <input
+              id="posmain-newcustomer-tp-phone"
               v-model="newCustomer.tp_phone"
               type="text"
               class="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
@@ -488,8 +490,9 @@
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+            <label for="posmain-newcustomer-tp-email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
             <input
+              id="posmain-newcustomer-tp-email"
               v-model="newCustomer.tp_email"
               type="email"
               class="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
@@ -516,8 +519,9 @@
             </div>
           </div>
           <div v-if="newCustomer.type_compte === 'en_compte'">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Plafond crédit (MAD)</label>
+            <label for="posmain-newcustomer-seuil-credit" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Plafond crédit (MAD)</label>
             <input
+              id="posmain-newcustomer-seuil-credit"
               v-model.number="newCustomer.seuil_credit"
               type="number"
               min="0"
@@ -762,10 +766,11 @@
 
               <!-- Printer name -->
               <div>
-                <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wide">
+                <label for="posmain-terminalsettingsform-printer-name" class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wide">
                   Imprimante
                 </label>
                 <input
+                  id="posmain-terminalsettingsform-printer-name"
                   v-model="terminalSettingsForm.printer_name"
                   type="text"
                   placeholder="ex: Epson TM-T20 Caisse 1"

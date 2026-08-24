@@ -115,10 +115,11 @@
       <form class="space-y-4" @submit.prevent="submit">
         <div class="grid grid-cols-2 gap-4">
           <div class="col-span-2">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            <label for="users-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
               >{{ $t('common.name') }} <span class="text-red-500">*</span></label
             >
             <input
+              id="users-name"
               v-model="form.name"
               type="text"
               required
@@ -127,10 +128,11 @@
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            <label for="users-email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
               >{{ $t('common.email') }} <span class="text-red-500">*</span></label
             >
             <input
+              id="users-email"
               v-model="form.email"
               type="email"
               required
@@ -139,11 +141,12 @@
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label for="users-password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               {{ $t('auth.password') }} <span v-if="!editTarget" class="text-red-500">*</span>
               <span v-else class="text-gray-400 dark:text-gray-500 font-normal">{{ $t('users.keepPassword') }}</span>
             </label>
             <input
+              id="users-password"
               v-model="form.password"
               type="password"
               :required="!editTarget"
@@ -152,10 +155,11 @@
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            <label for="users-role-id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
               >{{ $t('users.role') }} <span class="text-red-500">*</span></label
             >
             <select
+              id="users-role-id"
               v-model="form.role_id"
               required
               class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"

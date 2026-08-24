@@ -157,10 +157,11 @@
     <BaseModal v-model="showModal" :title="editTarget ? $t('pricelists.editTitle') : $t('pricelists.addTitle')" size="md">
       <form class="space-y-4" @submit.prevent="submit">
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label for="pricelists-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             {{ $t('pricelists.name') }} <span class="text-red-500">*</span>
           </label>
           <input
+            id="pricelists-name"
             v-model="form.name"
             type="text"
             required
@@ -169,10 +170,11 @@
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label for="pricelists-description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             {{ $t('pricelists.description') }}
           </label>
           <textarea
+            id="pricelists-description"
             v-model="form.description"
             rows="2"
             class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
@@ -180,10 +182,11 @@
         </div>
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label for="pricelists-channel" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               {{ $t('pricelists.channel') }}
             </label>
             <select
+              id="pricelists-channel"
               v-model="form.channel"
               class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
             >
@@ -193,10 +196,11 @@
             </select>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label for="pricelists-priority" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               {{ $t('pricelists.priority') }}
             </label>
             <input
+              id="pricelists-priority"
               v-model.number="form.priority"
               type="number"
               min="0"
@@ -248,10 +252,11 @@
         <!-- Add item row -->
         <div class="flex flex-wrap items-end gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
           <div class="flex-1 min-w-[240px] relative">
-            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+            <label for="pricelists-productsearch" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
               {{ $t('pricelists.product') }}
             </label>
             <input
+              id="pricelists-productsearch"
               v-model="productSearch"
               type="text"
               :placeholder="$t('pricelists.search')"
@@ -275,10 +280,11 @@
             </div>
           </div>
           <div class="w-28">
-            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+            <label for="pricelists-newitem-price-ht" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
               {{ $t('pricelists.priceHt') }}
             </label>
             <input
+              id="pricelists-newitem-price-ht"
               v-model.number="newItem.price_ht"
               type="number"
               step="0.01"
@@ -287,10 +293,11 @@
             />
           </div>
           <div class="w-24">
-            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+            <label for="pricelists-newitem-min-qty" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
               {{ $t('pricelists.minQty') }}
             </label>
             <input
+              id="pricelists-newitem-min-qty"
               v-model.number="newItem.min_qty"
               type="number"
               min="1"
@@ -298,20 +305,22 @@
             />
           </div>
           <div class="w-36">
-            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+            <label for="pricelists-newitem-valid-from" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
               {{ $t('pricelists.validFrom') }}
             </label>
             <input
+              id="pricelists-newitem-valid-from"
               v-model="newItem.valid_from"
               type="date"
               class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]"
             />
           </div>
           <div class="w-36">
-            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+            <label for="pricelists-newitem-valid-to" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
               {{ $t('pricelists.validTo') }}
             </label>
             <input
+              id="pricelists-newitem-valid-to"
               v-model="newItem.valid_to"
               type="date"
               class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]"
