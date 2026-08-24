@@ -122,6 +122,7 @@ onMounted(() => loadPage())
           <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
         <input
+          aria-label="Rechercher un produit"
           v-model="productSearch"
           type="text"
           placeholder="Produit : nom, SKU, EAN…"
@@ -130,6 +131,7 @@ onMounted(() => loadPage())
       </div>
       <div class="flex gap-2">
         <select
+          aria-label="Filtrer par sens du mouvement"
           v-model="dirFilter"
           class="flex-1 sm:flex-none px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
         >
@@ -138,6 +140,7 @@ onMounted(() => loadPage())
           <option value="out">Sortie</option>
         </select>
         <select
+          aria-label="Filtrer par motif"
           v-model="reasonFilter"
           class="flex-1 sm:flex-none px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
         >

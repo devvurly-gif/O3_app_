@@ -651,8 +651,9 @@ function getStockClass(stock: number): string {
       <div class="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
         <!-- Document Type -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Type de document *</label>
+          <label for="documentform-document-type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Type de document *</label>
           <select
+            id="documentform-document-type"
             v-model="form.document_type"
             :disabled="editMode"
             class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition disabled:opacity-60 disabled:cursor-not-allowed"
@@ -663,8 +664,9 @@ function getStockClass(stock: number): string {
 
         <!-- Partner -->
         <div class="relative">
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{{ partnerLabel }}</label>
+          <label for="documentform-partnersearch" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{{ partnerLabel }}</label>
           <input
+            id="documentform-partnersearch"
             v-model="partnerSearch"
             data-anchor
             :placeholder="`Rechercher ${partnerLabel.toLowerCase()}...`"
@@ -709,8 +711,9 @@ function getStockClass(stock: number): string {
 
         <!-- Warehouse -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Entrepôt</label>
+          <label for="documentform-warehouse-id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Entrepôt</label>
           <select
+            id="documentform-warehouse-id"
             v-model="form.warehouse_id"
             class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition"
           >
@@ -721,8 +724,9 @@ function getStockClass(stock: number): string {
 
         <!-- Issued date -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Date d'émission</label>
+          <label for="documentform-issued-at" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Date d'émission</label>
           <input
+            id="documentform-issued-at"
             v-model="form.issued_at"
             type="date"
             class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition"
@@ -731,8 +735,9 @@ function getStockClass(stock: number): string {
 
         <!-- Due date -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Date d'échéance</label>
+          <label for="documentform-due-at" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Date d'échéance</label>
           <input
+            id="documentform-due-at"
             v-model="form.due_at"
             type="date"
             class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition"
@@ -741,8 +746,9 @@ function getStockClass(stock: number): string {
 
         <!-- Notes -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Notes</label>
+          <label for="documentform-notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Notes</label>
           <input
+            id="documentform-notes"
             v-model="form.notes"
             type="text"
             placeholder="Notes internes..."
@@ -752,8 +758,9 @@ function getStockClass(stock: number): string {
 
         <!-- Payment Method -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Moyen de paiement</label>
+          <label for="documentform-payment-method" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Moyen de paiement</label>
           <select
+            id="documentform-payment-method"
             v-model="form.payment_method"
             class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition"
           >
@@ -780,9 +787,10 @@ function getStockClass(stock: number): string {
         <div class="flex flex-col sm:flex-row items-stretch sm:items-end gap-3">
           <!-- Product search -->
           <div class="relative flex-1">
-            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Produit</label>
+            <label for="documentform-pendingsearch" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Produit</label>
             <div class="flex gap-2" data-anchor>
               <input
+                id="documentform-pendingsearch"
                 v-model="pendingSearch"
                 placeholder="Chercher un produit..."
                 class="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition"
@@ -843,8 +851,9 @@ function getStockClass(stock: number): string {
 
           <!-- Quantity -->
           <div class="w-28">
-            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Quantité</label>
+            <label for="documentform-pendingline-quantity" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Quantité</label>
             <input
+              id="documentform-pendingline-quantity"
               v-model.number="pendingLine.quantity"
               type="number"
               min="0.01"
@@ -897,6 +906,7 @@ function getStockClass(stock: number): string {
               <td class="px-3 py-2 relative">
                 <div class="flex gap-1" data-anchor>
                   <input
+                    :aria-label="`Chercher un produit pour cette ligne`"
                     v-model="productSearches[line.key]"
                     :placeholder="line.designation || 'Chercher un produit...'"
                     class="flex-1 px-2.5 py-1.5 text-sm rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
@@ -964,6 +974,7 @@ function getStockClass(stock: number): string {
 
               <td class="px-3 py-2">
                 <input
+                  :aria-label="`Quantité de ${line.designation || 'la ligne'}`"
                   v-model.number="line.quantity"
                   type="number"
                   min="0.01"
@@ -974,6 +985,7 @@ function getStockClass(stock: number): string {
 
               <td class="px-3 py-2">
                 <input
+                  :aria-label="`Unité de ${line.designation || 'la ligne'}`"
                   v-model="line.unit"
                   type="text"
                   class="w-full px-2 py-1.5 text-sm rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-400"
@@ -982,6 +994,7 @@ function getStockClass(stock: number): string {
 
               <td class="px-3 py-2">
                 <input
+                  :aria-label="`Prix unitaire de ${line.designation || 'la ligne'}`"
                   v-model.number="line.unit_price"
                   type="number"
                   min="0"
@@ -992,6 +1005,7 @@ function getStockClass(stock: number): string {
 
               <td class="px-3 py-2">
                 <input
+                  :aria-label="`Remise en % sur ${line.designation || 'la ligne'}`"
                   v-model.number="line.discount_percent"
                   type="number"
                   min="0"
@@ -1003,6 +1017,7 @@ function getStockClass(stock: number): string {
 
               <td v-if="isTaxEnabled" class="px-3 py-2">
                 <input
+                  :aria-label="`TVA en % sur ${line.designation || 'la ligne'}`"
                   v-model.number="line.tax_percent"
                   type="number"
                   min="0"

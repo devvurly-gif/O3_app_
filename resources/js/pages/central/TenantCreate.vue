@@ -114,8 +114,9 @@ const plans = [
     <form @submit.prevent="onSubmit" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-6">
       <!-- ID -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Identifiant unique</label>
+        <label for="tenantcreate-id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Identifiant unique</label>
         <input
+          id="tenantcreate-id"
           v-model="form.id"
           @input="onIdInput"
           type="text"
@@ -129,8 +130,9 @@ const plans = [
 
       <!-- Name -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nom de l'entreprise</label>
+        <label for="tenantcreate-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nom de l'entreprise</label>
         <input
+          id="tenantcreate-name"
           v-model="form.name"
           type="text"
           required
@@ -142,8 +144,9 @@ const plans = [
 
       <!-- Email -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email administrateur</label>
+        <label for="tenantcreate-email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email administrateur</label>
         <input
+          id="tenantcreate-email"
           v-model="form.email"
           type="email"
           required
@@ -155,8 +158,9 @@ const plans = [
 
       <!-- Domain (auto-generated) -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Domaine d'accès</label>
+        <label for="tenantcreate-domain" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Domaine d'accès</label>
         <input
+          id="tenantcreate-domain"
           v-model="form.domain"
           type="text"
           required
@@ -169,8 +173,9 @@ const plans = [
 
       <!-- Password -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mot de passe admin</label>
+        <label for="tenantcreate-admin-password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mot de passe admin</label>
         <input
+          id="tenantcreate-admin-password"
           v-model="form.admin_password"
           type="password"
           required

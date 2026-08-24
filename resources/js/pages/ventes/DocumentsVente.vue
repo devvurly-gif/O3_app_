@@ -191,12 +191,14 @@ async function submitPayment() {
     <!-- Filters -->
     <div class="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 mb-6">
       <input
+        aria-label="Rechercher une vente"
         v-model="search"
         type="text"
         placeholder="Rechercher référence..."
         class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-200 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 w-full sm:w-64"
       />
       <select
+        aria-label="Filtrer par type de document"
         v-model="typeFilter"
         class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500"
       >
@@ -296,8 +298,9 @@ async function submitPayment() {
       </div>
       <form class="space-y-4" @submit.prevent="submitPayment">
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Montant *</label>
+          <label for="documentsvente-paymentform-amount" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Montant *</label>
           <input
+            id="documentsvente-paymentform-amount"
             v-model.number="paymentForm.amount"
             type="number"
             step="0.01"
@@ -307,8 +310,9 @@ async function submitPayment() {
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Méthode *</label>
+          <label for="documentsvente-paymentform-method" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Méthode *</label>
           <select
+            id="documentsvente-paymentform-method"
             v-model="paymentForm.method"
             required
             class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
@@ -321,16 +325,18 @@ async function submitPayment() {
           </select>
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
+          <label for="documentsvente-paymentform-paid-at" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
           <input
+            id="documentsvente-paymentform-paid-at"
             v-model="paymentForm.paid_at"
             type="date"
             class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Référence</label>
+          <label for="documentsvente-paymentform-reference" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Référence</label>
           <input
+            id="documentsvente-paymentform-reference"
             v-model="paymentForm.reference"
             type="text"
             placeholder="N° chèque, virement..."
@@ -338,8 +344,9 @@ async function submitPayment() {
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
+          <label for="documentsvente-paymentform-notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
           <textarea
+            id="documentsvente-paymentform-notes"
             v-model="paymentForm.notes"
             rows="2"
             placeholder="Notes..."

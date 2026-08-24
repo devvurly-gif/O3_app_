@@ -141,10 +141,11 @@ const canSubmit = computed(() =>
           <h2 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Votre entreprise</h2>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label for="register-company-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Raison sociale <span class="text-red-500">*</span>
             </label>
             <input
+              id="register-company-name"
               v-model="form.company_name"
               type="text"
               required
@@ -156,11 +157,12 @@ const canSubmit = computed(() =>
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label for="register-tenant-id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Sous-domaine <span class="text-red-500">*</span>
             </label>
             <div class="flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden focus-within:ring-2 focus-within:ring-orange-500 focus-within:border-transparent">
               <input
+                id="register-tenant-id"
                 v-model="form.tenant_id"
                 type="text"
                 required
@@ -193,10 +195,11 @@ const canSubmit = computed(() =>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label for="register-admin-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Nom et prénom <span class="text-red-500">*</span>
               </label>
               <input
+                id="register-admin-name"
                 v-model="form.admin_name"
                 type="text"
                 required
@@ -207,10 +210,11 @@ const canSubmit = computed(() =>
               <p v-if="errors.admin_name" class="mt-1 text-xs text-red-500">{{ errors.admin_name[0] }}</p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label for="register-phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Téléphone
               </label>
               <input
+                id="register-phone"
                 v-model="form.phone"
                 type="tel"
                 maxlength="30"
@@ -221,10 +225,11 @@ const canSubmit = computed(() =>
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label for="register-email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Email professionnel <span class="text-red-500">*</span>
             </label>
             <input
+              id="register-email"
               v-model="form.email"
               type="email"
               required
@@ -238,10 +243,11 @@ const canSubmit = computed(() =>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label for="register-password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Mot de passe <span class="text-red-500">*</span>
               </label>
               <input
+                id="register-password"
                 v-model="form.password"
                 type="password"
                 required
@@ -252,10 +258,11 @@ const canSubmit = computed(() =>
               <p v-if="errors.password" class="mt-1 text-xs text-red-500">{{ errors.password[0] }}</p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label for="register-password-confirmation" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Confirmation <span class="text-red-500">*</span>
               </label>
               <input
+                id="register-password-confirmation"
                 v-model="form.password_confirmation"
                 type="password"
                 required

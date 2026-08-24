@@ -546,6 +546,7 @@ async function submit() {
                 <td class="px-4 py-3 relative">
                   <div class="flex gap-1.5">
                     <input
+                      :aria-label="`Chercher un produit pour cette ligne`"
                       v-model="productSearches[line.key]"
                       :placeholder="line.designation || 'Chercher un produit...'"
                       class="flex-1 min-w-0 px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-violet-400 transition"
@@ -598,6 +599,7 @@ async function submit() {
                 <td class="px-4 py-3 align-top pt-4">
                   <!-- Variant selector inside qty cell when product has variants -->
                   <select
+                    :aria-label="`Variante de ${line.designation || 'la ligne'}`"
                     v-if="line.product_id && variantsMap[line.product_id]?.length"
                     v-model.number="line.variant_id"
                     class="w-full mb-1.5 px-2 py-1 text-xs rounded border border-violet-300 dark:border-violet-700 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-violet-400"
@@ -608,6 +610,7 @@ async function submit() {
                     </option>
                   </select>
                   <input
+                    :aria-label="`Quantité de ${line.designation || 'la ligne'}`"
                     v-model.number="line.quantity"
                     type="number"
                     min="0.01"
@@ -619,6 +622,7 @@ async function submit() {
                 <!-- Unit -->
                 <td class="px-4 py-3 align-top pt-4">
                   <input
+                    :aria-label="`Unité de ${line.designation || 'la ligne'}`"
                     v-model="line.unit"
                     type="text"
                     class="w-full px-3 py-2 text-sm text-center rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-400 transition"
@@ -628,6 +632,7 @@ async function submit() {
                 <!-- Unit price -->
                 <td class="px-4 py-3 align-top pt-4">
                   <input
+                    :aria-label="`Prix unitaire de ${line.designation || 'la ligne'}`"
                     v-model.number="line.unit_price"
                     type="number"
                     min="0"

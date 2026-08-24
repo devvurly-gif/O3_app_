@@ -93,8 +93,9 @@ function onSubmit() {
 
     <form class="space-y-4" @submit.prevent="onSubmit">
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Montant *</label>
+        <label for="paymentmodal-amount" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Montant *</label>
         <input
+          id="paymentmodal-amount"
           v-model.number="form.amount"
           type="number"
           step="0.01"
@@ -104,8 +105,9 @@ function onSubmit() {
         />
       </div>
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Méthode *</label>
+        <label for="paymentmodal-method" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Méthode *</label>
         <select
+          id="paymentmodal-method"
           v-model="form.method"
           required
           class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
@@ -118,16 +120,18 @@ function onSubmit() {
         </select>
       </div>
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
+        <label for="paymentmodal-paid-at" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
         <input
+          id="paymentmodal-paid-at"
           v-model="form.paid_at"
           type="date"
           class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
         />
       </div>
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Référence</label>
+        <label for="paymentmodal-reference" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Référence</label>
         <input
+          id="paymentmodal-reference"
           v-model="form.reference"
           type="text"
           placeholder="N° chèque, virement..."
@@ -135,8 +139,9 @@ function onSubmit() {
         />
       </div>
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
+        <label for="paymentmodal-notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
         <textarea
+          id="paymentmodal-notes"
           v-model="form.notes"
           rows="2"
           placeholder="Notes..."

@@ -134,12 +134,14 @@ function viewDocument(doc: Record<string, unknown>) {
     <!-- Filters -->
     <div class="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 mb-6">
       <input
+        aria-label="Rechercher un achat"
         v-model="search"
         type="text"
         placeholder="Rechercher référence..."
         class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-200 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 w-full sm:w-64"
       />
       <select
+        aria-label="Filtrer par type de document"
         v-model="typeFilter"
         class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500"
       >

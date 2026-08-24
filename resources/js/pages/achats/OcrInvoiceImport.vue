@@ -844,7 +844,14 @@ function matchLabel(score: number) {
           <p class="text-sm text-gray-400">ou cliquez pour parcourir (max 20 Mo)</p>
         </div>
       </div>
-      <input ref="fileInput" type="file" accept=".pdf" class="hidden" @change="onFileSelect" />
+      <input
+        ref="fileInput"
+        type="file"
+        accept=".pdf"
+        aria-label="Choisir une facture PDF a analyser"
+        class="sr-only"
+        @change="onFileSelect"
+      />
     </div>
 
     <!-- ═════════════════════════════════════════════════════════════
@@ -1137,7 +1144,7 @@ function matchLabel(score: number) {
               </div>
 
               <!-- Product select -->
-              <select v-model="line.product_id"
+              <select :aria-label="`Produit de la ligne`" v-model="line.product_id"
                 class="w-full px-2 py-1 text-xs border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 dark:text-gray-200 rounded focus:ring-1 focus:ring-teal-500 focus:outline-none">
                 <option :value="null">-- Produit --</option>
                 <option v-for="p in products" :key="p.id" :value="p.id">
@@ -1147,7 +1154,7 @@ function matchLabel(score: number) {
 
               <!-- Designation with pick button -->
               <div class="flex items-center gap-1">
-                <input v-model="line.designation" placeholder="Designation"
+                <input :aria-label="`Désignation de la ligne`" v-model="line.designation" placeholder="Designation"
                   class="flex-1 px-2 py-1 text-xs border rounded focus:ring-1 focus:ring-teal-500 focus:outline-none"
                   :class="activeField?.type === 'line' && activeField?.lineIdx === idx && activeField?.field === 'designation' ? 'border-[#A78BFA] ring-1 ring-[#E4D9FE] bg-[#F1ECFC] dark:bg-[#2A2151]' : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 dark:text-gray-200'" />
                 <button type="button" @click="setActiveField({ type:'line', field:'designation', lineIdx: idx, label:`Désignation L${idx+1}` })"

@@ -437,24 +437,27 @@ function getPlanColor(plan: string) {
           <!-- Edit Mode -->
           <div v-else class="space-y-4">
             <div>
-              <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Nom</label>
+              <label for="tenantshow-editform-name" class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Nom</label>
               <input
+                id="tenantshow-editform-name"
                 v-model="editForm.name"
                 type="text"
                 class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
               />
             </div>
             <div>
-              <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Email</label>
+              <label for="tenantshow-editform-email" class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Email</label>
               <input
+                id="tenantshow-editform-email"
                 v-model="editForm.email"
                 type="email"
                 class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
               />
             </div>
             <div>
-              <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Domaine</label>
+              <label for="tenantshow-editform-domain" class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Domaine</label>
               <input
+                id="tenantshow-editform-domain"
                 v-model="editForm.domain"
                 type="text"
                 placeholder="tenant.o3app.ma"
@@ -671,9 +674,10 @@ function getPlanColor(plan: string) {
         <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-4">Réinitialiser le mot de passe admin</h3>
         <div class="flex items-end gap-3">
           <div class="flex-1">
-            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Nouveau mot de passe</label>
+            <label for="tenantshow-newpassword" class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Nouveau mot de passe</label>
             <div class="relative">
               <input
+                id="tenantshow-newpassword"
                 v-model="newPassword"
                 :type="showPassword ? 'text' : 'password'"
                 placeholder="Min. 6 caractères"
@@ -737,11 +741,12 @@ function getPlanColor(plan: string) {
               Supprime toutes les données et recrée l'admin avec les infos du tenant (<strong>{{ tenant?.email }}</strong>).
             </p>
             <div class="space-y-2">
-              <label class="block text-xs font-medium text-gray-500 dark:text-gray-400">
+              <label for="tenantshow-resetadminpassword" class="block text-xs font-medium text-gray-500 dark:text-gray-400">
                 Mot de passe admin après réinitialisation
               </label>
               <div class="relative">
                 <input
+                  id="tenantshow-resetadminpassword"
                   v-model="resetAdminPassword"
                   :type="showResetPassword ? 'text' : 'password'"
                   placeholder="Min. 6 caractères"
@@ -756,10 +761,11 @@ function getPlanColor(plan: string) {
                   <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" /></svg>
                 </button>
               </div>
-              <label class="block text-xs font-medium text-gray-500 dark:text-gray-400">
+              <label for="tenantshow-resetconfirmtext" class="block text-xs font-medium text-gray-500 dark:text-gray-400">
                 Tapez <span class="font-mono font-bold text-red-500">RESET</span> pour confirmer
               </label>
               <input
+                id="tenantshow-resetconfirmtext"
                 v-model="resetConfirmText"
                 type="text"
                 placeholder="RESET"
@@ -852,6 +858,7 @@ function getPlanColor(plan: string) {
         <div class="space-y-3">
           <div class="flex gap-2">
             <input
+              aria-label="URL de la collection à importer"
               v-model="scrapeUrl"
               type="url"
               placeholder="https://example.com/collections/smartphones"
@@ -898,8 +905,9 @@ function getPlanColor(plan: string) {
 
           <!-- Category input -->
           <div class="flex items-center gap-2">
-            <label class="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Catégorie :</label>
+            <label for="tenantshow-scrapecategory" class="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Catégorie :</label>
             <input
+              id="tenantshow-scrapecategory"
               v-model="scrapeCategory"
               type="text"
               placeholder="Smartphones"
@@ -909,10 +917,9 @@ function getPlanColor(plan: string) {
 
           <!-- Product list -->
           <div class="max-h-80 overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700">
-            <div
+            <label
               v-for="(p, i) in scrapedProducts"
               :key="i"
-              @click="toggleProduct(i)"
               :class="[
                 'flex items-center gap-3 p-2.5 cursor-pointer transition',
                 selectedProducts.has(i)
@@ -920,7 +927,13 @@ function getPlanColor(plan: string) {
                   : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
               ]"
             >
-              <input type="checkbox" :checked="selectedProducts.has(i)" class="w-4 h-4 text-orange-600 dark:text-orange-400 rounded pointer-events-none" />
+              <input
+                type="checkbox"
+                :checked="selectedProducts.has(i)"
+                :aria-label="`Selectionner ${p.name || 'ce produit'}`"
+                class="w-4 h-4 text-orange-600 dark:text-orange-400 rounded"
+                @change="toggleProduct(i)"
+              />
               <img
                 v-if="p.image"
                 :src="p.image"
@@ -943,7 +956,7 @@ function getPlanColor(plan: string) {
                 <p class="text-sm font-bold text-gray-900 dark:text-white">{{ p.price.toLocaleString() }} MAD</p>
                 <p v-if="p.old_price" class="text-xs text-gray-400 line-through">{{ p.old_price.toLocaleString() }} MAD</p>
               </div>
-            </div>
+            </label>
           </div>
 
           <!-- Import button -->
@@ -1083,8 +1096,9 @@ function getPlanColor(plan: string) {
 
         <div class="space-y-4">
           <div>
-            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Destinataire *</label>
+            <label for="tenantshow-sendcontractform-to" class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Destinataire *</label>
             <input
+              id="tenantshow-sendcontractform-to"
               v-model="sendContractForm.to"
               type="email"
               required
@@ -1094,8 +1108,9 @@ function getPlanColor(plan: string) {
           </div>
 
           <div>
-            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Copie (Cc)</label>
+            <label for="tenantshow-sendcontractform-cc" class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Copie (Cc)</label>
             <input
+              id="tenantshow-sendcontractform-cc"
               v-model="sendContractForm.cc"
               type="text"
               placeholder="email1@exemple.ma, email2@exemple.ma"
@@ -1105,8 +1120,9 @@ function getPlanColor(plan: string) {
           </div>
 
           <div>
-            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Message personnalisé (optionnel)</label>
+            <label for="tenantshow-sendcontractform-message" class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Message personnalisé (optionnel)</label>
             <textarea
+              id="tenantshow-sendcontractform-message"
               v-model="sendContractForm.message"
               rows="4"
               placeholder="Ajoutez un mot personnel à l'attention du client..."

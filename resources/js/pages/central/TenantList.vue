@@ -188,10 +188,10 @@ function formatDate(d: string) {
         <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
         </svg>
-        <input v-model="search" type="text" placeholder="Rechercher par nom, email ou ID..."
+        <input aria-label="Rechercher un locataire" v-model="search" type="text" placeholder="Rechercher par nom, email ou ID..."
           class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500" />
       </div>
-      <select v-model="planFilter"
+      <select aria-label="Filtrer par formule" v-model="planFilter"
         class="px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm">
         <option value="">Tous les plans</option>
         <option value="starter">Starter</option>
