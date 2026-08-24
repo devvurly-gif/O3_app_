@@ -20,12 +20,14 @@
     <!-- Filters -->
     <div class="flex flex-wrap items-center gap-3">
       <input
+        :aria-label="$t('users.search')"
         v-model="search"
         type="text"
         :placeholder="$t('users.search')"
         class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent w-64"
       />
       <select
+        :aria-label="$t('a11y.filterRole')"
         v-model="roleFilter"
         class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
       >
@@ -33,6 +35,7 @@
         <option v-for="r in availableRoles" :key="r.id" :value="r.name">{{ r.display_name }}</option>
       </select>
       <select
+        :aria-label="$t('a11y.filterStatus')"
         v-model="statusFilter"
         class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
       >

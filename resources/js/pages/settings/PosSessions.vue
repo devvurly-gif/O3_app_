@@ -11,6 +11,7 @@
     <!-- Filters -->
     <div class="flex flex-wrap items-center gap-3">
       <select
+        :aria-label="$t('a11y.filterStatus')"
         v-model="filterStatus"
         class="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
         @change="fetchSessions()"
@@ -21,6 +22,7 @@
       </select>
 
       <select
+        :aria-label="$t('a11y.filterTerminal')"
         v-model="filterTerminal"
         class="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
         @change="fetchSessions()"

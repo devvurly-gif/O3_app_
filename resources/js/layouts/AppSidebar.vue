@@ -63,6 +63,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
           </svg>
           <input
+            :aria-label="$t('nav.searchPlaceholder')"
             v-model="query"
             type="search"
             :placeholder="$t('nav.searchPlaceholder')"
@@ -354,6 +355,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
           </svg>
           <input
+            :aria-label="$t('nav.searchPlaceholder')"
             ref="paletteInput"
             v-model="paletteQuery"
             type="text"

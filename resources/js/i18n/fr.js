@@ -1,4 +1,20 @@
 export default {
+  // -- Noms accessibles ------------------------------------------------
+  // Libelles lus par les lecteurs d'ecran pour les champs qui n'ont pas
+  // d'etiquette visible : barres de recherche et filtres de listes.
+  a11y: {
+    search: 'Rechercher',
+    searchProduct: 'Rechercher un produit',
+    searchCustomer: 'Rechercher un client',
+    filterStatus: 'Filtrer par statut',
+    filterRole: 'Filtrer par role',
+    filterChannel: 'Filtrer par canal',
+    filterTerminal: 'Filtrer par caisse',
+    filterStock: 'Filtrer par disponibilite du stock',
+    filterEcom: 'Filtrer par publication sur la boutique',
+    filterPromo: 'Filtrer par promotion active',
+  },
+
   // ── Common ────────────────────────────────────────────────────────────
   common: {
     appName: 'O3 App',

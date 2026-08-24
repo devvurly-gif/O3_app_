@@ -48,6 +48,7 @@
       </div>
       <!-- Search — full width on mobile -->
       <input
+        :aria-label="$t('a11y.search')"
         v-model="search"
         type="text"
         placeholder="Rechercher..."

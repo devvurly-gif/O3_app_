@@ -42,12 +42,14 @@
       <!-- Filters -->
       <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
         <input
+          :aria-label="$t('a11y.search')"
           v-model="search"
           type="text"
           placeholder="Rechercher une promotion..."
           class="w-full sm:w-64 px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
         />
         <select
+          :aria-label="$t('a11y.filterStatus')"
           v-model="statusFilter"
           class="w-full sm:w-auto px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
         >

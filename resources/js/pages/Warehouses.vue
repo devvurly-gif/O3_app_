@@ -51,12 +51,14 @@
     <!-- Filters -->
     <div class="flex flex-wrap items-center gap-2.5 sm:gap-3 bg-white dark:bg-gray-800 border border-[#ECEEF2] dark:border-gray-700 rounded-[14px] p-3">
       <input
+        :aria-label="$t('warehouses.search')"
         v-model="search"
         type="text"
         :placeholder="$t('warehouses.search')"
         class="px-3.5 py-2.5 text-sm rounded-[10px] border border-[#E1E3E9] dark:border-gray-600 bg-[#FAFBFC] dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent w-64"
       />
       <select
+        :aria-label="$t('a11y.filterStatus')"
         v-model="statusFilter"
         class="px-3.5 py-2.5 text-[13px] font-semibold rounded-[10px] border border-[#E1E3E9] dark:border-gray-600 bg-[#FAFBFC] dark:bg-gray-700 text-[#4A4F5B] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
       >
@@ -223,6 +225,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35" />
           </svg>
           <input
+            :aria-label="$t('a11y.searchProduct')"
             v-model="stockSearch"
             type="text"
             placeholder="Rechercher un produit..."

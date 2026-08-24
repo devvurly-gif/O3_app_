@@ -28,6 +28,7 @@
           <circle cx="9" cy="9" r="6" /><line x1="14" y1="14" x2="18" y2="18" />
         </svg>
         <input
+          :aria-label="$t('products.search')"
           v-model="search"
           type="text"
           :placeholder="$t('products.search')"

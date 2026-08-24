@@ -124,6 +124,7 @@
             <circle cx="9" cy="9" r="6" /><line x1="14" y1="14" x2="18" y2="18" />
           </svg>
           <input
+            :aria-label="$t('products.search')"
             v-model="search"
             type="text"
             :placeholder="$t('products.search')"
@@ -132,6 +133,7 @@
         </div>
         <div class="flex flex-wrap gap-2">
           <select
+            :aria-label="$t('a11y.filterStatus')"
             v-model="statusFilter"
             class="flex-1 sm:flex-none px-3.5 py-2.5 text-[13px] font-semibold rounded-[10px] border border-[#E1E3E9] dark:border-gray-600 bg-[#FAFBFC] dark:bg-gray-700 text-[#4A4F5B] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
           >
@@ -140,6 +142,7 @@
             <option value="0">{{ $t('common.inactive') }}</option>
           </select>
           <select
+            :aria-label="$t('a11y.filterStock')"
             v-model="stockFilter"
             class="flex-1 sm:flex-none px-3.5 py-2.5 text-[13px] font-semibold rounded-[10px] border border-[#E1E3E9] dark:border-gray-600 bg-[#FAFBFC] dark:bg-gray-700 text-[#4A4F5B] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
             title="Filtrer par disponibilité du stock"
@@ -149,6 +152,7 @@
             <option value="0">Rupture</option>
           </select>
           <select
+            :aria-label="$t('a11y.filterEcom')"
             v-if="ecomEnabled"
             v-model="ecomFilter"
             class="flex-1 sm:flex-none px-3.5 py-2.5 text-[13px] font-semibold rounded-[10px] border border-[#E1E3E9] dark:border-gray-600 bg-[#FAFBFC] dark:bg-gray-700 text-[#4A4F5B] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
@@ -159,6 +163,7 @@
             <option value="0">Non publié</option>
           </select>
           <select
+            :aria-label="$t('a11y.filterPromo')"
             v-model="promoFilter"
             class="flex-1 sm:flex-none px-3.5 py-2.5 text-[13px] font-semibold rounded-[10px] border border-[#E1E3E9] dark:border-gray-600 bg-[#FAFBFC] dark:bg-gray-700 text-[#4A4F5B] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
             title="Filtrer par promotion active"

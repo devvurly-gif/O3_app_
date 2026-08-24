@@ -1,4 +1,20 @@
 export default {
+  // -- Accessible names ------------------------------------------------
+  // Labels read by screen readers for controls with no visible label:
+  // list search boxes and filter dropdowns.
+  a11y: {
+    search: 'Search',
+    searchProduct: 'Search a product',
+    searchCustomer: 'Search a customer',
+    filterStatus: 'Filter by status',
+    filterRole: 'Filter by role',
+    filterChannel: 'Filter by channel',
+    filterTerminal: 'Filter by register',
+    filterStock: 'Filter by stock availability',
+    filterEcom: 'Filter by shop publication',
+    filterPromo: 'Filter by active promotion',
+  },
+
   // ── Common ────────────────────────────────────────────────────────────
   common: {
     appName: 'O3 App',
