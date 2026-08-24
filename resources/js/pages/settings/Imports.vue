@@ -15,7 +15,7 @@
           class="whitespace-nowrap border-b-2 py-2.5 px-1 text-sm font-medium transition-colors"
           :class="
             activeTab === tab.key
-              ? 'border-orange-500 text-orange-500 dark:text-orange-400 dark:border-blue-400'
+              ? 'border-orange-500 text-orange-700 dark:text-orange-400 dark:border-blue-400'
               : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
           "
           @click="switchTab(tab.key)"

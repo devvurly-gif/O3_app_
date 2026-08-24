@@ -260,7 +260,7 @@ const paymentProgress = computed(() => {
     <!-- Loading -->
     <div v-if="store.loading && !doc" class="flex items-center justify-center py-24">
       <div class="flex flex-col items-center gap-3">
-        <svg class="w-8 h-8 animate-spin text-orange-500" fill="none" viewBox="0 0 24 24">
+        <svg class="w-8 h-8 animate-spin text-orange-600 dark:text-orange-400" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
         </svg>
@@ -275,7 +275,7 @@ const paymentProgress = computed(() => {
         <div>
           <router-link
             to="/ventes/documents"
-            class="text-sm text-orange-500 dark:text-orange-400 hover:text-blue-800 dark:hover:text-blue-300 transition"
+            class="text-sm text-orange-700 dark:text-orange-400 hover:text-blue-800 dark:hover:text-blue-300 transition"
           >
             &larr; Documents de Vente
           </router-link>
@@ -295,7 +295,7 @@ const paymentProgress = computed(() => {
               <span class="text-gray-400 dark:text-gray-500">Issu de :</span>
               <router-link
                 :to="`/ventes/documents/${doc.parent.id}`"
-                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-50 dark:bg-orange-900/30 text-orange-500 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-blue-900/50 transition"
+                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-blue-900/50 transition"
               >
                 {{ typeLabels[doc.parent.document_type] ?? doc.parent.document_type }} #{{ doc.parent.reference }}
               </router-link>
@@ -483,7 +483,7 @@ const paymentProgress = computed(() => {
           <p class="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">Client</p>
           <button
             type="button"
-            class="text-orange-500 hover:text-orange-700 hover:underline transition font-semibold text-sm"
+            class="text-orange-700 dark:text-orange-400 hover:text-orange-800 hover:underline transition font-semibold text-sm"
             @click="openCustomerDetail(doc.third_partner ?? doc.thirdPartner)"
           >
             {{ doc.third_partner?.tp_title ?? doc.thirdPartner?.tp_title ?? '—' }}
@@ -628,7 +628,7 @@ const paymentProgress = computed(() => {
           <router-link
             v-if="doc.parent"
             :to="`/ventes/documents/${doc.parent.id}`"
-            class="inline-flex items-center gap-1.5 text-sm text-orange-500 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 hover:bg-orange-100 dark:hover:bg-blue-900/50 px-3 py-1.5 rounded-lg transition"
+            class="inline-flex items-center gap-1.5 text-sm text-orange-700 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 hover:bg-orange-100 dark:hover:bg-blue-900/50 px-3 py-1.5 rounded-lg transition"
           >
             &larr; {{ typeLabels[doc.parent.document_type] ?? doc.parent.document_type }} #{{ doc.parent.reference }}
           </router-link>
@@ -654,7 +654,7 @@ const paymentProgress = computed(() => {
         />
       </svg>
       <p class="text-lg font-medium">Document introuvable</p>
-      <router-link to="/ventes/documents" class="text-sm text-orange-500 dark:text-orange-400 hover:underline mt-2">
+      <router-link to="/ventes/documents" class="text-sm text-orange-700 dark:text-orange-400 hover:underline mt-2">
         Retour à la liste
       </router-link>
     </div>

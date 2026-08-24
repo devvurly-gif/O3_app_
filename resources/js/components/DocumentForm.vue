@@ -680,7 +680,7 @@ function getStockClass(stock: number): string {
             Sélectionné :
             <button
               type="button"
-              class="text-orange-500 hover:text-orange-700 hover:underline transition font-medium"
+              class="text-orange-700 dark:text-orange-400 hover:text-orange-800 hover:underline transition font-medium"
               @click="openCustomerDetail(partners.find(p => p.id === form.thirdPartner_id)!)"
             >
               {{ selectedPartnerName }}
@@ -792,7 +792,7 @@ function getStockClass(stock: number): string {
               />
               <button
                 type="button"
-                class="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600 hover:text-orange-500 dark:hover:text-blue-400 transition"
+                class="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600 hover:text-orange-700 dark:hover:text-blue-400 transition"
                 title="Rechercher"
                 @click="openPendingDropdown($event, true)"
               >
@@ -906,7 +906,7 @@ function getStockClass(stock: number): string {
                   />
                   <button
                     type="button"
-                    class="px-2 py-1.5 rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-400 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-600 hover:text-orange-500 dark:hover:text-blue-400 transition"
+                    class="px-2 py-1.5 rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-400 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-600 hover:text-orange-700 dark:hover:text-blue-400 transition"
                     title="Rechercher"
                     @click="openProductDropdown($event, line.key)"
                   >
@@ -1107,7 +1107,7 @@ function getStockClass(stock: number): string {
   <!-- Customer Detail Modal -->
   <BaseModal v-model="showCustomerDetailModal" :title="customerDetail?.tp_title ?? 'Client'" size="lg">
     <div v-if="customerDetailLoading" class="flex items-center justify-center py-12">
-      <svg class="w-6 h-6 animate-spin text-orange-500" fill="none" viewBox="0 0 24 24">
+      <svg class="w-6 h-6 animate-spin text-orange-600 dark:text-orange-400" fill="none" viewBox="0 0 24 24">
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
       </svg>

@@ -48,7 +48,7 @@ onMounted(async () => {
       <!-- Loading -->
       <template v-if="status === 'loading'">
         <div class="w-16 h-16 mx-auto mb-5 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
-          <svg class="w-8 h-8 text-orange-500 dark:text-orange-400 animate-spin" fill="none" viewBox="0 0 24 24">
+          <svg class="w-8 h-8 text-orange-600 dark:text-orange-400 animate-spin" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
           </svg>

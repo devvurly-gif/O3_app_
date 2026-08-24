@@ -203,7 +203,7 @@ function formatDate(d: string) {
     <!-- Table -->
     <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
       <div v-if="store.loading" class="flex items-center justify-center py-12">
-        <svg class="animate-spin h-8 w-8 text-orange-500" fill="none" viewBox="0 0 24 24">
+        <svg class="animate-spin h-8 w-8 text-orange-600 dark:text-orange-400" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
         </svg>
@@ -234,7 +234,7 @@ function formatDate(d: string) {
             <td class="px-6 py-4">
               <router-link
                 :to="`/central/tenants/${tenant.id}`"
-                class="text-sm font-medium text-gray-900 dark:text-white hover:text-orange-500 hover:underline transition"
+                class="text-sm font-medium text-gray-900 dark:text-white hover:text-orange-700 hover:underline transition"
               >
                 {{ tenant.name }}
               </router-link>
@@ -244,7 +244,7 @@ function formatDate(d: string) {
             <!-- Domaine -->
             <td class="px-6 py-4">
               <a v-if="tenant.domains?.length" :href="tenantUrl(tenant.domains[0].domain)" target="_blank"
-                class="text-sm text-orange-500 hover:underline">
+                class="text-sm text-orange-700 dark:text-orange-400 hover:underline">
                 {{ tenant.domains[0].domain }}
               </a>
               <span v-else class="text-sm text-gray-400">-</span>
@@ -329,7 +329,7 @@ function formatDate(d: string) {
               <!-- Boutons normaux: URL active -->
               <div v-else class="flex items-center justify-end gap-2">
                 <button @click="router.push(`/central/tenants/${tenant.id}`)"
-                  class="p-1.5 text-gray-400 hover:text-orange-500 transition" title="Voir">
+                  class="p-1.5 text-gray-400 hover:text-orange-700 transition" title="Voir">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />

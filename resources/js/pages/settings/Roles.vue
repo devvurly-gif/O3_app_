@@ -19,7 +19,7 @@
 
     <!-- Loading -->
     <div v-if="roleStore.loading" class="flex items-center justify-center py-12">
-      <svg class="w-8 h-8 animate-spin text-orange-500" fill="none" viewBox="0 0 24 24">
+      <svg class="w-8 h-8 animate-spin text-orange-600 dark:text-orange-400" fill="none" viewBox="0 0 24 24">
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
       </svg>
@@ -48,7 +48,7 @@
           </div>
           <div class="flex items-center gap-1">
             <button
-              class="p-1.5 rounded-lg text-orange-500 hover:bg-orange-50 transition"
+              class="p-1.5 rounded-lg text-orange-700 dark:text-orange-400 hover:bg-orange-50 transition"
               title="Modifier"
               @click="openEdit(role)"
             >
@@ -141,7 +141,7 @@
           <div class="flex items-center justify-between mb-3">
             <label class="text-sm font-semibold text-gray-700 dark:text-gray-300">Permissions</label>
             <div class="flex gap-2">
-              <button type="button" class="text-xs text-orange-500 hover:underline" @click="selectAll">Tout sélectionner</button>
+              <button type="button" class="text-xs text-orange-700 dark:text-orange-400 hover:underline" @click="selectAll">Tout sélectionner</button>
               <span class="text-gray-300">|</span>
               <button type="button" class="text-xs text-gray-500 dark:text-gray-400 hover:underline" @click="deselectAll">Tout désélectionner</button>
             </div>
@@ -182,7 +182,7 @@
                   />
                   <svg
                     v-if="form.permissions.includes(perm.id)"
-                    class="w-3.5 h-3.5 text-orange-500"
+                    class="w-3.5 h-3.5 text-orange-600 dark:text-orange-400"
                     fill="none"
                     stroke="currentColor"
                     stroke-width="2.5"

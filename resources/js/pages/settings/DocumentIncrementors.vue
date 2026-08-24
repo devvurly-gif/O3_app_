@@ -43,7 +43,7 @@
       <template #actions="{ row }">
         <div class="flex items-center justify-end gap-2">
           <button
-            class="p-1.5 rounded-lg text-orange-500 hover:bg-orange-50 transition"
+            class="p-1.5 rounded-lg text-orange-700 dark:text-orange-400 hover:bg-orange-50 transition"
             :title="$t('common.update')"
             @click="openEdit(row)"
           >
@@ -151,7 +151,7 @@
               id="di-status"
               v-model="form.status"
               type="checkbox"
-              class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-orange-500 focus:ring-orange-500"
+              class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-orange-600 dark:text-orange-400 focus:ring-orange-500"
             />
             <label for="di-status" class="text-sm text-gray-700 dark:text-gray-300">{{ $t('common.active') }}</label>
           </div>

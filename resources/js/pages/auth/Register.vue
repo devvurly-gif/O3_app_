@@ -272,13 +272,13 @@ const canSubmit = computed(() =>
           <input
             v-model="form.accept_terms"
             type="checkbox"
-            class="mt-0.5 w-4 h-4 rounded border-gray-300 text-orange-500 focus:ring-orange-500"
+            class="mt-0.5 w-4 h-4 rounded border-gray-300 text-orange-600 dark:text-orange-400 focus:ring-orange-500"
           />
           <span class="text-sm text-gray-700 dark:text-gray-300">
             J'accepte les
-            <a href="/legal/cgs" target="_blank" class="text-orange-500 hover:underline">Conditions Générales de Service</a>
+            <a href="/legal/cgs" target="_blank" class="text-orange-700 dark:text-orange-400 hover:underline">Conditions Générales de Service</a>
             et la
-            <a href="/legal/privacy" target="_blank" class="text-orange-500 hover:underline">Politique de confidentialité</a>
+            <a href="/legal/privacy" target="_blank" class="text-orange-700 dark:text-orange-400 hover:underline">Politique de confidentialité</a>
             (loi marocaine 09-08).
           </span>
         </label>
@@ -299,7 +299,7 @@ const canSubmit = computed(() =>
 
         <p class="text-center text-xs text-gray-500 dark:text-gray-400">
           Déjà un compte ?
-          <a href="/login" class="text-orange-500 hover:underline font-medium">Se connecter</a>
+          <a href="/login" class="text-orange-700 dark:text-orange-400 hover:underline font-medium">Se connecter</a>
         </p>
       </form>
 

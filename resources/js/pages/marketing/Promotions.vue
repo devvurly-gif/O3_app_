@@ -121,7 +121,7 @@
                 </td>
                 <td class="px-4 py-3 text-right">
                   <div class="flex items-center justify-end gap-1">
-                    <button @click="openEditPromo(promo)" class="p-1.5 rounded-lg text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition" title="Modifier">
+                    <button @click="openEditPromo(promo)" class="p-1.5 rounded-lg text-orange-700 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition" title="Modifier">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                     </button>
                     <button @click="toggleActive(promo)" class="p-1.5 rounded-lg transition" :class="promo.is_active ? 'text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900/20' : 'text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20'" :title="promo.is_active ? 'Désactiver' : 'Activer'">
@@ -170,7 +170,7 @@
               <span v-else>Permanente</span>
             </div>
             <div class="flex items-center justify-end gap-1 pt-2 border-t border-gray-100 dark:border-gray-700">
-              <button @click="openEditPromo(promo)" class="p-1.5 rounded-lg text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition" title="Modifier">
+              <button @click="openEditPromo(promo)" class="p-1.5 rounded-lg text-orange-700 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition" title="Modifier">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
               </button>
               <button @click="toggleActive(promo)" class="p-1.5 rounded-lg transition" :class="promo.is_active ? 'text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900/20' : 'text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20'" :title="promo.is_active ? 'Désactiver' : 'Activer'">
@@ -253,7 +253,7 @@
           <div class="p-4">
             <h4 class="font-semibold text-gray-900 dark:text-white text-sm truncate">{{ slide.title }}</h4>
             <p v-if="slide.subtitle" class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">{{ slide.subtitle }}</p>
-            <p v-if="slide.button_text" class="text-xs text-orange-500 dark:text-orange-400 mt-1">{{ slide.button_text }}</p>
+            <p v-if="slide.button_text" class="text-xs text-orange-700 dark:text-orange-400 mt-1">{{ slide.button_text }}</p>
             <div v-if="slide.starts_at || slide.ends_at" class="text-xs text-gray-400 mt-2">
               <span v-if="slide.starts_at">Du {{ formatDate(slide.starts_at) }}</span>
               <span v-if="slide.ends_at"> au {{ formatDate(slide.ends_at) }}</span>
@@ -265,7 +265,7 @@
               <button @click="moveDown(slide)" class="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
               </button>
-              <button @click="openEditSlide(slide)" class="p-1.5 rounded-lg text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition">
+              <button @click="openEditSlide(slide)" class="p-1.5 rounded-lg text-orange-700 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
               </button>
               <button @click="confirmDeleteSlide(slide)" class="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition">

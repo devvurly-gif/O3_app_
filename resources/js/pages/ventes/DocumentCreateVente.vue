@@ -46,7 +46,7 @@ function onCancel() {
 <template>
   <div class="max-w-9xl mx-auto py-6 px-4">
     <div class="mb-6">
-      <router-link to="/ventes/documents" class="text-sm text-orange-500 dark:text-orange-400 hover:underline">
+      <router-link to="/ventes/documents" class="text-sm text-orange-700 dark:text-orange-400 hover:underline">
         &larr; Retour aux documents de vente
       </router-link>
       <h1 class="text-2xl font-bold text-gray-900 dark:text-white mt-2">Nouveau Document de Vente</h1>

@@ -100,7 +100,7 @@
       <div>
         <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Bordure</label>
         <label class="flex items-center gap-1.5 h-9 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
-          <input v-model="label.border" type="checkbox" class="rounded border-gray-300 text-orange-500 focus:ring-orange-500" />
+          <input v-model="label.border" type="checkbox" class="rounded border-gray-300 text-orange-600 dark:text-orange-400 focus:ring-orange-500" />
           Afficher
         </label>
       </div>
@@ -334,7 +334,7 @@
                     <input
                       v-model="layout[f.key].enabled"
                       type="checkbox"
-                      class="rounded border-gray-300 text-orange-500 focus:ring-orange-500"
+                      class="rounded border-gray-300 text-orange-600 dark:text-orange-400 focus:ring-orange-500"
                     />
                     {{ f.label }}
                   </label>
@@ -360,7 +360,7 @@
                     v-model="layout[f.key].bold" :aria-label="`${f.label} en gras`"
                     :disabled="!layout[f.key].enabled"
                     type="checkbox"
-                    class="rounded border-gray-300 text-orange-500 focus:ring-orange-500"
+                    class="rounded border-gray-300 text-orange-600 dark:text-orange-400 focus:ring-orange-500"
                   />
                 </td>
                 <td class="px-1 text-center">
@@ -369,7 +369,7 @@
                     v-model="layout[f.key].boxed" :aria-label="`${f.label} encadré`"
                     :disabled="!layout[f.key].enabled"
                     type="checkbox"
-                    class="rounded border-gray-300 text-orange-500 focus:ring-orange-500"
+                    class="rounded border-gray-300 text-orange-600 dark:text-orange-400 focus:ring-orange-500"
                   />
                 </td>
               </tr>
@@ -409,7 +409,7 @@
                 type="checkbox"
                 :checked="selected.has(p.id)"
                 :aria-label="`Sélectionner ${p.p_title}`"
-                class="rounded border-gray-300 text-orange-500 focus:ring-orange-500 shrink-0"
+                class="rounded border-gray-300 text-orange-600 dark:text-orange-400 focus:ring-orange-500 shrink-0"
                 @change="toggleProduct(p)"
               />
               <div class="min-w-0 flex-1">

@@ -35,7 +35,7 @@
           <button
             v-for="amt in quickAmounts"
             :key="amt"
-            class="py-2 rounded-lg text-sm font-medium bg-orange-50 text-orange-500 hover:bg-orange-100 transition"
+            class="py-2 rounded-lg text-sm font-medium bg-orange-50 text-orange-700 dark:text-orange-400 hover:bg-orange-100 transition"
             @click="cashGiven = String(amt)"
           >
             {{ amt }}
@@ -50,7 +50,7 @@
 
       <!-- Card: simple confirm -->
       <div v-else-if="method === 'card'" class="text-center py-8">
-        <svg class="w-16 h-16 mx-auto text-orange-500 mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <svg class="w-16 h-16 mx-auto text-orange-600 dark:text-orange-400 mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
         </svg>
         <p class="text-gray-500 dark:text-gray-400">Confirmer le paiement par carte</p>

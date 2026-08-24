@@ -87,7 +87,7 @@
       </div>
       <button
         @click="selected.clear()"
-        class="text-sm text-orange-500 dark:text-orange-400 hover:underline"
+        class="text-sm text-orange-700 dark:text-orange-400 hover:underline"
       >
         Désélectionner tout
       </button>
@@ -162,7 +162,7 @@
                 :checked="allFilteredSelected" aria-label="Tout sélectionner"
                 :indeterminate="someFilteredSelected && !allFilteredSelected"
                 @change="toggleSelectAll"
-                class="rounded border-gray-300 text-orange-500 focus:ring-orange-500"
+                class="rounded border-gray-300 text-orange-600 dark:text-orange-400 focus:ring-orange-500"
               />
             </th>
             <th class="px-4 py-3 text-left">Image</th>
@@ -184,7 +184,7 @@
                 type="checkbox"
                 :checked="selected.has(img.name)" :aria-label="`Sélectionner ${img.name}`"
                 @change="toggleSelect(img)"
-                class="rounded border-gray-300 text-orange-500 focus:ring-orange-500"
+                class="rounded border-gray-300 text-orange-600 dark:text-orange-400 focus:ring-orange-500"
               />
             </td>
             <td class="px-4 py-2">
@@ -204,7 +204,7 @@
               </button>
               <button
                 @click.stop="copyUrl(img.url)"
-                class="text-orange-500 hover:text-blue-800 dark:text-orange-400 text-xs"
+                class="text-orange-700 hover:text-blue-800 dark:text-orange-400 text-xs"
               >
                 Copier URL
               </button>

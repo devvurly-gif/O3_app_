@@ -211,7 +211,7 @@ const liveStats = ref<SessionStats | null>(null)
 
 const PAYMENT_METHOD_META: Record<string, { title: string; bg: string; dot: string; label: string; muted: string }> = {
   cash:   { title: 'Espèces',   bg: 'bg-green-50 dark:bg-green-900/20',   dot: 'bg-green-500',   label: 'text-green-700 dark:text-green-400',   muted: 'text-green-600/70 dark:text-green-400/60' },
-  card:   { title: 'Carte',     bg: 'bg-orange-50 dark:bg-orange-900/20',     dot: 'bg-orange-500',    label: 'text-orange-600 dark:text-orange-400',     muted: 'text-orange-500/70 dark:text-orange-400/60' },
+  card:   { title: 'Carte',     bg: 'bg-orange-50 dark:bg-orange-900/20',     dot: 'bg-orange-500',    label: 'text-orange-600 dark:text-orange-400',     muted: 'text-orange-700/70 dark:text-orange-400/60' },
   credit: { title: 'En compte', bg: 'bg-amber-50 dark:bg-amber-900/20',   dot: 'bg-amber-500',   label: 'text-amber-700 dark:text-amber-400',   muted: 'text-amber-600/70 dark:text-amber-400/60' },
   cheque: { title: 'Chèque',    bg: 'bg-purple-50 dark:bg-purple-900/20', dot: 'bg-purple-500',  label: 'text-purple-700 dark:text-purple-400', muted: 'text-purple-600/70 dark:text-purple-400/60' },
   virement: { title: 'Virement', bg: 'bg-indigo-50 dark:bg-indigo-900/20', dot: 'bg-indigo-500', label: 'text-indigo-700 dark:text-indigo-400', muted: 'text-indigo-600/70 dark:text-indigo-400/60' },

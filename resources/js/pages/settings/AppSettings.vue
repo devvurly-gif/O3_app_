@@ -17,7 +17,7 @@
           :class="tab.id === 'danger'
             ? (activeTab === tab.id ? 'border-red-500 text-red-600 dark:text-red-400' : 'border-transparent text-red-400 dark:text-red-500/70 hover:text-red-600 hover:border-red-300')
             : activeTab === tab.id
-              ? 'border-orange-500 text-orange-500 dark:text-orange-400 dark:border-blue-400'
+              ? 'border-orange-500 text-orange-700 dark:text-orange-400 dark:border-blue-400'
               : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'"
         >
           {{ tab.label }}
@@ -51,7 +51,7 @@
               <p class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $t('appSettings.companyLogo') || 'Logo de l\'entreprise' }}</p>
               <p class="text-xs text-gray-400 dark:text-gray-500">{{ $t('appSettings.logoHint') || 'JPG, PNG, WebP ou SVG. Max 2 Mo. Apparaît sur les factures et documents imprimés.' }}</p>
               <div class="flex items-center gap-2">
-                <label class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-orange-50 dark:bg-orange-900/20 text-orange-500 dark:text-orange-400 rounded-lg hover:bg-orange-100 dark:hover:bg-blue-900/30 transition">
+                <label class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 rounded-lg hover:bg-orange-100 dark:hover:bg-blue-900/30 transition">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
                   </svg>
@@ -265,7 +265,7 @@
             <div>
               <label for="appsettings-whatsapp-twilio-auth-token" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Twilio Auth Token</label>
               <input id="appsettings-whatsapp-twilio-auth-token" v-model="whatsapp.twilio_auth_token" :type="showWhatsappToken ? 'text' : 'password'" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" :class="inputClass + ' font-mono text-xs'" />
-              <button @click="showWhatsappToken = !showWhatsappToken" class="text-xs text-orange-500 mt-1 hover:underline">
+              <button @click="showWhatsappToken = !showWhatsappToken" class="text-xs text-orange-700 dark:text-orange-400 mt-1 hover:underline">
                 {{ showWhatsappToken ? $t('appSettings.hide') : $t('appSettings.show') }}
               </button>
             </div>
@@ -311,7 +311,7 @@
         <section class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 space-y-4">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
-              <svg class="w-5 h-5 text-orange-500 dark:text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
               </svg>
             </div>
@@ -342,7 +342,7 @@
             <div>
               <label for="appsettings-email-mail-password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.mailPassword') }}</label>
               <input id="appsettings-email-mail-password" v-model="email.mail_password" :type="showEmailPassword ? 'text' : 'password'" placeholder="********" :class="inputClass" />
-              <button @click="showEmailPassword = !showEmailPassword" class="text-xs text-orange-500 mt-1 hover:underline">
+              <button @click="showEmailPassword = !showEmailPassword" class="text-xs text-orange-700 dark:text-orange-400 mt-1 hover:underline">
                 {{ showEmailPassword ? $t('appSettings.hide') : $t('appSettings.show') }}
               </button>
             </div>
@@ -383,7 +383,7 @@
             <button
               @click="testEmail"
               :disabled="testingEmail"
-              class="px-4 py-2 text-sm font-medium border border-orange-500 text-orange-500 dark:text-orange-400 rounded-lg hover:bg-orange-50 dark:hover:bg-blue-900/20 transition disabled:opacity-60"
+              class="px-4 py-2 text-sm font-medium border border-orange-500 text-orange-700 dark:text-orange-400 rounded-lg hover:bg-orange-50 dark:hover:bg-blue-900/20 transition disabled:opacity-60"
             >
               {{ testingEmail ? $t('appSettings.testing') : $t('appSettings.testEmail') }}
             </button>
@@ -404,15 +404,15 @@
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ $t('appSettings.priceDecimalPlaces') || 'Décimales pour les prix' }}</label>
             <div class="flex gap-4">
               <label class="flex items-center gap-2 cursor-pointer">
-                <input v-model="display.price_decimals" type="radio" value="2" class="w-4 h-4 text-orange-500" />
+                <input v-model="display.price_decimals" type="radio" value="2" class="w-4 h-4 text-orange-700 dark:text-orange-400" />
                 <span class="text-sm text-gray-700 dark:text-gray-300">2 décimales (120.00 MAD)</span>
               </label>
               <label class="flex items-center gap-2 cursor-pointer">
-                <input v-model="display.price_decimals" type="radio" value="3" class="w-4 h-4 text-orange-500" />
+                <input v-model="display.price_decimals" type="radio" value="3" class="w-4 h-4 text-orange-700 dark:text-orange-400" />
                 <span class="text-sm text-gray-700 dark:text-gray-300">3 décimales (120.000 MAD)</span>
               </label>
               <label class="flex items-center gap-2 cursor-pointer">
-                <input v-model="display.price_decimals" type="radio" value="4" class="w-4 h-4 text-orange-500" />
+                <input v-model="display.price_decimals" type="radio" value="4" class="w-4 h-4 text-orange-700 dark:text-orange-400" />
                 <span class="text-sm text-gray-700 dark:text-gray-300">4 décimales (120.0000 MAD)</span>
               </label>
             </div>
@@ -475,7 +475,7 @@
               />
               <span v-else class="flex-1 text-sm font-semibold text-gray-800 dark:text-gray-200">{{ optType.name }}</span>
 
-              <button v-if="editingTypeId !== optType.id" @click="startEditType(optType)" class="p-1 text-gray-400 hover:text-orange-500 transition">
+              <button v-if="editingTypeId !== optType.id" @click="startEditType(optType)" class="p-1 text-gray-400 hover:text-orange-700 transition">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" /></svg>
               </button>
               <button @click="variantStore.deleteType(optType.id)" class="p-1 text-gray-400 hover:text-red-500 transition">
@@ -521,7 +521,7 @@
                   <input v-model="newValueKey" aria-label="Clé de la nouvelle valeur" type="text" placeholder="Clé (ex: blanc)" class="px-2.5 py-1.5 text-sm border border-orange-300 dark:border-orange-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-orange-400" @keyup.enter="confirmAddValue(optType.id)" @keyup.escape="addingValueForType = null" />
                   <input v-model="newValueVal" aria-label="Nouvelle valeur" type="text" placeholder="Valeur (ex: #FFFFFF)" class="px-2.5 py-1.5 text-sm border border-orange-300 dark:border-orange-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-orange-400" @keyup.enter="confirmAddValue(optType.id)" @keyup.escape="addingValueForType = null" />
                 </div>
-                <button @click="confirmAddValue(optType.id)" :disabled="!newValueKey.trim() || !newValueVal.trim()" class="p-1 text-orange-500 hover:text-orange-600 disabled:opacity-40 transition">
+                <button @click="confirmAddValue(optType.id)" :disabled="!newValueKey.trim() || !newValueVal.trim()" class="p-1 text-orange-700 dark:text-orange-400 hover:text-orange-600 disabled:opacity-40 transition">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
                 </button>
                 <button @click="addingValueForType = null" class="p-1 text-gray-400 hover:text-gray-600 transition">
@@ -529,7 +529,7 @@
                 </button>
               </div>
 
-              <button @click="startAddValue(optType.id)" class="inline-flex items-center gap-1 text-xs text-orange-500 hover:text-orange-600 font-medium transition mt-1">
+              <button @click="startAddValue(optType.id)" class="inline-flex items-center gap-1 text-xs text-orange-700 dark:text-orange-400 hover:text-orange-600 font-medium transition mt-1">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                 Ajouter une valeur
               </button>
@@ -543,7 +543,7 @@
           <!-- Header -->
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
-              <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.016a3.001 3.001 0 003.75.614m-16.5 0a3.004 3.004 0 01-.621-4.72L4.318 3.44A1.5 1.5 0 015.378 3h13.243a1.5 1.5 0 011.06.44l1.19 2.189a3 3 0 01-.621 4.72m-13.5 8.65h3.75a.75.75 0 00.75-.75V13.5a.75.75 0 00-.75-.75H6.75a.75.75 0 00-.75.75v3.75c0 .415.336.75.75.75z" />
               </svg>
             </div>

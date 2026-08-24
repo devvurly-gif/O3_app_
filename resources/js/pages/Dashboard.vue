@@ -331,7 +331,7 @@ const paymentColors: Record<string, string> = {
           </span>
           <span class="text-xs text-gray-400 dark:text-gray-500">Live</span>
         </div>
-        <svg v-if="refreshing" class="w-4 h-4 text-orange-500 animate-spin" fill="none" viewBox="0 0 24 24">
+        <svg v-if="refreshing" class="w-4 h-4 text-orange-600 dark:text-orange-400 animate-spin" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
         </svg>
@@ -388,7 +388,7 @@ const paymentColors: Record<string, string> = {
             >
               <input
                 type="checkbox"
-                class="w-4 h-4 rounded border-gray-300 text-orange-500 focus:ring-orange-500"
+                class="w-4 h-4 rounded border-gray-300 text-orange-600 dark:text-orange-400 focus:ring-orange-500"
                 :checked="isVisible(w.key)"
                 @change="toggleWidget(w.key)"
               />

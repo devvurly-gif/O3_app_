@@ -90,7 +90,7 @@
             </div>
             <p class="text-xs font-medium text-gray-900 dark:text-white line-clamp-2 leading-tight mb-1">{{ product.p_title }}</p>
             <div class="mt-auto flex items-center justify-between">
-              <span class="text-sm font-bold text-orange-500">{{ formatPrice(product.p_salePrice) }}</span>
+              <span class="text-sm font-bold text-orange-700 dark:text-orange-400">{{ formatPrice(product.p_salePrice) }}</span>
               <span v-if="product.variants && product.variants.length > 0"
                 class="text-[10px] px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300">
                 {{ product.variants.length }} var.
@@ -114,7 +114,7 @@
         <div>
           <h2 class="text-sm font-bold text-gray-900 dark:text-white">
             Panier
-            <span v-if="posStore.cartItemCount" class="ml-1 text-xs bg-orange-100 text-orange-500 px-2 py-0.5 rounded-full">
+            <span v-if="posStore.cartItemCount" class="ml-1 text-xs bg-orange-100 text-orange-700 dark:text-orange-400 px-2 py-0.5 rounded-full">
               {{ posStore.cartItemCount }}
             </span>
           </h2>
@@ -371,7 +371,7 @@
           <div class="flex items-center justify-between gap-2">
             <!-- Price block -->
             <div>
-              <p class="text-xl font-bold text-orange-500 leading-none">
+              <p class="text-xl font-bold text-orange-700 dark:text-orange-400 leading-none">
                 {{ formatPrice(item.quantity * item.unit_price * (1 - item.discount_percent / 100)) }}
               </p>
               <div class="flex items-center gap-1.5 mt-1">
@@ -562,7 +562,7 @@
         <div class="flex items-center justify-between mb-4">
           <div>
             <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 3v18h18M7 14l3-3 4 4 6-6" />
               </svg>
               Ventes de la session
@@ -735,7 +735,7 @@
                 <!-- Kiosk mode tip (recommended) -->
                 <div class="p-3 rounded-xl bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800">
                   <div class="flex items-center gap-2 mb-2">
-                    <svg class="w-3.5 h-3.5 text-orange-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <svg class="w-3.5 h-3.5 text-orange-600 dark:text-orange-400 shrink-0" fill="currentColor" viewBox="0 0 20 20">
                       <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/>
                     </svg>
                     <p class="text-xs font-semibold text-orange-700 dark:text-orange-300">Impression silencieuse sans logiciel</p>
@@ -748,7 +748,7 @@
                       chrome.exe --kiosk-printing --app={{ currentUrl }}
                     </p>
                   </div>
-                  <p class="text-[10px] text-orange-500 mt-1.5">Définissez l'imprimante ticket comme imprimante par défaut dans Windows.</p>
+                  <p class="text-[10px] text-orange-700 dark:text-orange-400 mt-1.5">Définissez l'imprimante ticket comme imprimante par défaut dans Windows.</p>
                 </div>
 
                 <!-- QZ Tray option -->
@@ -812,7 +812,7 @@
                   type="button"
                   @click="testPrint"
                   :disabled="testPrinting"
-                  class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-dashed border-gray-300 dark:border-gray-600 text-sm text-gray-500 dark:text-gray-400 hover:border-orange-400 hover:text-orange-500 transition disabled:opacity-50"
+                  class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-dashed border-gray-300 dark:border-gray-600 text-sm text-gray-500 dark:text-gray-400 hover:border-orange-400 hover:text-orange-700 transition disabled:opacity-50"
                 >
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6v-8z"/>
@@ -881,7 +881,7 @@
               <p v-if="v.sku" class="text-[10px] text-gray-400">{{ v.sku }}</p>
             </div>
             <div class="text-right shrink-0 ml-3">
-              <p class="text-sm font-bold text-orange-500">{{ v.price ? formatPrice(v.price) : formatPrice(variantModalProduct.p_salePrice) }}</p>
+              <p class="text-sm font-bold text-orange-700 dark:text-orange-400">{{ v.price ? formatPrice(v.price) : formatPrice(variantModalProduct.p_salePrice) }}</p>
               <span class="text-[10px] px-1.5 py-0.5 rounded-full" :class="v.stock > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'">
                 {{ v.stock > 0 ? `Stock: ${v.stock}` : 'Rupture' }}
               </span>
@@ -1028,7 +1028,7 @@ const refreshingStats = ref(false)
 
 const PAYMENT_METHOD_META: Record<string, { title: string; bg: string; dot: string; label: string; muted: string }> = {
   cash:   { title: 'Espèces',   bg: 'bg-green-50 dark:bg-green-900/20',   dot: 'bg-green-500',   label: 'text-green-700 dark:text-green-400',   muted: 'text-green-600/70 dark:text-green-400/60' },
-  card:   { title: 'Carte',     bg: 'bg-orange-50 dark:bg-orange-900/20',     dot: 'bg-orange-500',    label: 'text-orange-600 dark:text-orange-400',     muted: 'text-orange-500/70 dark:text-orange-400/60' },
+  card:   { title: 'Carte',     bg: 'bg-orange-50 dark:bg-orange-900/20',     dot: 'bg-orange-500',    label: 'text-orange-600 dark:text-orange-400',     muted: 'text-orange-700/70 dark:text-orange-400/60' },
   credit: { title: 'En compte', bg: 'bg-amber-50 dark:bg-amber-900/20',   dot: 'bg-amber-500',   label: 'text-amber-700 dark:text-amber-400',   muted: 'text-amber-600/70 dark:text-amber-400/60' },
   cheque: { title: 'Chèque',    bg: 'bg-purple-50 dark:bg-purple-900/20', dot: 'bg-purple-500',  label: 'text-purple-700 dark:text-purple-400', muted: 'text-purple-600/70 dark:text-purple-400/60' },
   virement: { title: 'Virement', bg: 'bg-indigo-50 dark:bg-indigo-900/20', dot: 'bg-indigo-500', label: 'text-indigo-700 dark:text-indigo-400', muted: 'text-indigo-600/70 dark:text-indigo-400/60' },

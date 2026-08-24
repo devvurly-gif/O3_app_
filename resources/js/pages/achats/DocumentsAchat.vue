@@ -169,7 +169,7 @@ function viewDocument(doc: Record<string, unknown>) {
 
       <template #actions="{ row }">
         <button
-          class="text-orange-500 dark:text-orange-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm font-medium"
+          class="text-orange-700 dark:text-orange-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm font-medium"
           @click="viewDocument(row)"
         >
           Voir

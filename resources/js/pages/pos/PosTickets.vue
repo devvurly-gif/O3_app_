@@ -26,7 +26,7 @@
           <div>
             <div class="flex items-center gap-2 mb-1">
               <button
-                class="font-mono text-sm font-semibold text-orange-500 hover:text-orange-700 hover:underline transition"
+                class="font-mono text-sm font-semibold text-orange-700 dark:text-orange-400 hover:text-orange-800 hover:underline transition"
                 @click="openTicketDetail(ticket)"
               >
                 {{ ticket.reference }}
@@ -58,7 +58,7 @@
             <!-- Print button (not for already-created returns) -->
             <button
               v-if="ticket.status !== 'cancelled' && ticket.document_type !== 'ReturnSale'"
-              class="px-3 py-1.5 text-xs font-medium text-orange-500 bg-orange-50 hover:bg-orange-100 dark:bg-orange-900/30 dark:text-orange-400 dark:hover:bg-blue-900/50 rounded-lg transition flex items-center gap-1"
+              class="px-3 py-1.5 text-xs font-medium text-orange-700 bg-orange-50 hover:bg-orange-100 dark:bg-orange-900/30 dark:text-orange-400 dark:hover:bg-blue-900/50 rounded-lg transition flex items-center gap-1"
               :disabled="printing === ticket.id"
               @click="printTicket(ticket.id, ticket.reference)"
             >
@@ -84,7 +84,7 @@
     <!-- Ticket Detail Modal -->
     <BaseModal v-model="showTicketDetailModal" :title="ticketDetail?.reference ?? 'Ticket'" size="lg">
       <div v-if="ticketDetailLoading" class="flex items-center justify-center py-12">
-        <svg class="w-6 h-6 animate-spin text-orange-500" fill="none" viewBox="0 0 24 24">
+        <svg class="w-6 h-6 animate-spin text-orange-600 dark:text-orange-400" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
         </svg>

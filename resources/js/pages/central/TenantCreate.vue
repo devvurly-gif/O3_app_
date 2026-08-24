@@ -100,7 +100,7 @@ const plans = [
   <div class="max-w-2xl mx-auto space-y-6">
     <!-- Header -->
     <div>
-      <button @click="router.push('/central/tenants')" class="inline-flex items-center gap-1 text-sm text-orange-500 hover:text-orange-600 mb-4">
+      <button @click="router.push('/central/tenants')" class="inline-flex items-center gap-1 text-sm text-orange-700 dark:text-orange-400 hover:text-orange-600 mb-4">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
         </svg>
@@ -245,7 +245,7 @@ const plans = [
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
               <div class="w-9 h-9 rounded-lg flex items-center justify-center" :class="form.pos_enabled ? 'bg-orange-100 dark:bg-orange-900/30' : 'bg-gray-200 dark:bg-gray-700'">
-                <svg :class="['w-5 h-5', form.pos_enabled ? 'text-orange-500' : 'text-gray-400']" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <svg :class="['w-5 h-5', form.pos_enabled ? 'text-orange-600 dark:text-orange-400' : 'text-gray-400']" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                 </svg>
               </div>

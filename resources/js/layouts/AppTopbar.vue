@@ -17,7 +17,7 @@
     <button
       class="hidden lg:flex items-center justify-center p-2 rounded-lg transition-colors"
       :class="sidebarPinned
-        ? 'text-orange-500 bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30'
+        ? 'text-orange-700 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30'
         : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'"
       :title="sidebarPinned ? 'Réduire le menu' : 'Épingler le menu'"
       @click="emit('toggleSidebar')"
