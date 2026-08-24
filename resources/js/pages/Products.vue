@@ -44,7 +44,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
               </svg>
             </button>
-            <div v-if="exportMenuOpen" class="fixed inset-0 z-20" @click="exportMenuOpen = false" />
+            <div aria-hidden="true" v-if="exportMenuOpen" class="fixed inset-0 z-20" @click="exportMenuOpen = false" />
             <div
               v-if="exportMenuOpen"
               class="absolute right-0 mt-2 w-60 z-30 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden text-sm"
@@ -186,7 +186,7 @@
               <span>{{ $t('products.columns') ?? 'Colonnes' }}</span>
               <span class="text-[11px] font-bold text-[#7C5CFC]">{{ columns.length }}/{{ allColumns.length }}</span>
             </button>
-            <div v-if="columnsMenuOpen" class="fixed inset-0 z-20" @click="columnsMenuOpen = false" />
+            <div aria-hidden="true" v-if="columnsMenuOpen" class="fixed inset-0 z-20" @click="columnsMenuOpen = false" />
             <div
               v-if="columnsMenuOpen"
               class="absolute right-0 mt-2 w-64 z-30 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden text-sm"

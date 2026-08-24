@@ -8,7 +8,7 @@
     leave-from-class="opacity-100"
     leave-to-class="opacity-0"
   >
-    <div v-if="mobileOpen" class="fixed inset-0 z-40 bg-black/50 lg:hidden" @click="emit('closeMobile')" />
+    <div aria-hidden="true" v-if="mobileOpen" class="fixed inset-0 z-40 bg-black/50 lg:hidden" @click="emit('closeMobile')" />
   </Transition>
 
   <aside

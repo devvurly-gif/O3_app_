@@ -694,7 +694,7 @@
     >
       <div v-if="showTerminalSettings" class="fixed inset-0 z-50 flex justify-end">
         <!-- Backdrop -->
-        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="showTerminalSettings = false" />
+        <div aria-hidden="true" class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="showTerminalSettings = false" />
         <!-- Drawer -->
         <Transition
           enter-active-class="transition-transform duration-300 ease-out"
@@ -849,7 +849,7 @@
   <Teleport to="body">
     <div v-if="variantModalProduct" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
       <!-- Backdrop -->
-      <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="variantModalProduct = null" />
+      <div aria-hidden="true" class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="variantModalProduct = null" />
       <!-- Sheet -->
       <div class="relative w-full sm:max-w-sm bg-white dark:bg-gray-800 rounded-t-2xl sm:rounded-2xl shadow-xl p-5 z-10">
         <!-- Header -->

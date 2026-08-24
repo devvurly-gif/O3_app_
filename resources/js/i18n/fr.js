@@ -3,6 +3,7 @@ export default {
   // Libelles lus par les lecteurs d'ecran pour les champs qui n'ont pas
   // d'etiquette visible : barres de recherche et filtres de listes.
   a11y: {
+    skipToContent: 'Aller au contenu principal',
     search: 'Rechercher',
     searchProduct: 'Rechercher un produit',
     searchCustomer: 'Rechercher un client',

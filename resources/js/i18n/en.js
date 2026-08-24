@@ -3,6 +3,7 @@ export default {
   // Labels read by screen readers for controls with no visible label:
   // list search boxes and filter dropdowns.
   a11y: {
+    skipToContent: 'Skip to main content',
     search: 'Search',
     searchProduct: 'Search a product',
     searchCustomer: 'Search a customer',

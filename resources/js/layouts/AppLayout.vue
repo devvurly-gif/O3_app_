@@ -1,5 +1,15 @@
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <!-- Lien d'evitement : premier element focusable de la page, invisible
+         tant qu'il n'a pas le focus. Sans lui, atteindre le contenu au clavier
+         impose de traverser toute la navigation laterale a chaque page. -->
+    <a
+      href="#contenu-principal"
+      class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-orange-600 focus:text-white focus:text-sm focus:font-semibold focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-white"
+    >
+      {{ $t('a11y.skipToContent') }}
+    </a>
+
     <!-- Sidebar -->
     <AppSidebar
       :mobile-open="mobileOpen"
@@ -22,7 +32,10 @@
 
     <!-- Main content -->
     <div class="flex flex-col min-h-screen transition-all duration-300" :class="mainContentClass">
-      <main class="flex-1 pt-16">
+      <!-- tabindex="-1" : la cible d'un lien d'evitement doit pouvoir recevoir
+           le focus, sinon le lien deplace le defilement sans deplacer le
+           clavier et la tabulation repart de la navigation. -->
+      <main id="contenu-principal" tabindex="-1" class="flex-1 pt-16 focus:outline-none">
         <div class="px-3 py-4 sm:px-6 sm:py-6">
           <!-- Breadcrumb -->
           <div class="mb-4">
