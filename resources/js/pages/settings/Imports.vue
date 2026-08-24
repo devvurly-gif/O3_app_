@@ -30,13 +30,14 @@
       <!-- Upload + Template row -->
       <div class="flex flex-col sm:flex-row sm:items-end gap-4">
         <div class="flex-1">
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label for="imports-file" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             {{ $t('imports.selectFile') }}
           </label>
           <p class="text-xs text-gray-400 dark:text-gray-500 mb-2">
             {{ $t('imports.expectedColumns') }}: <code class="text-xs bg-gray-100 dark:bg-gray-700 px-1 rounded">{{ currentHeadings.join(', ') }}</code>
           </p>
           <input
+            id="imports-file"
             ref="fileInput"
             type="file"
             accept=".xlsx,.xls,.csv"

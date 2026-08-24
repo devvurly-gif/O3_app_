@@ -431,9 +431,10 @@
                   <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{ $t('suppliers.balanceAutoCalculated') }}</p>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('suppliers.creditLimit') }}</label>
+                  <label for="suppliers-seuil-credit" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('suppliers.creditLimit') }}</label>
                   <div class="relative">
                     <input
+                      id="suppliers-seuil-credit"
                       v-model.number="form.seuil_credit"
                       type="number"
                       min="0"
@@ -1203,11 +1204,12 @@
         <!-- Payment form -->
         <div v-if="bulkPaymentUnpaidDocs.length > 0 && !bulkPaymentLoading" class="space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            <label for="suppliers-bulkpaymentform-amount" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
               >Montant <span class="text-red-500">*</span></label
             >
             <div class="relative">
               <input
+                id="suppliers-bulkpaymentform-amount"
                 v-model.number="bulkPaymentForm.amount"
                 type="number"
                 min="0.01"

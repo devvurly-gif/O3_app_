@@ -170,9 +170,9 @@
           </div>
           <!-- Tax rate — only shown when enabled -->
           <div v-if="invoice.tax_enabled === 'true'" class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.defaultTaxRate') }}</label>
+            <label for="appsettings-invoice-default-tax-rate" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.defaultTaxRate') }}</label>
             <div class="flex items-center gap-2">
-              <input v-model="invoice.default_tax_rate" type="number" min="0" max="100" placeholder="20" :class="inputClass + ' max-w-xs'" />
+              <input id="appsettings-invoice-default-tax-rate" v-model="invoice.default_tax_rate" type="number" min="0" max="100" placeholder="20" :class="inputClass + ' max-w-xs'" />
               <span class="text-sm text-gray-500 dark:text-gray-400">%</span>
             </div>
           </div>
@@ -444,7 +444,7 @@
           <!-- Add type form -->
           <div v-if="addingType" class="flex items-center gap-2 p-3 bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-800 rounded-lg">
             <input
-              v-model="newTypeName"
+              v-model="newTypeName" aria-label="Nom de la rubrique"
               ref="newTypeInput"
               type="text"
               placeholder="Ex: Couleur, Taille, Matière..."
@@ -466,7 +466,7 @@
             <div class="flex items-center gap-3 px-4 py-3 bg-gray-50 dark:bg-gray-700/50">
               <input
                 v-if="editingTypeId === optType.id"
-                v-model="editingTypeName"
+                v-model="editingTypeName" aria-label="Renommer la rubrique"
                 type="text"
                 class="flex-1 px-2 py-1 text-sm font-semibold border border-orange-400 rounded bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none"
                 @keyup.enter="saveTypeName(optType)"
@@ -488,7 +488,7 @@
               <div v-for="val in optType.values" :key="val.id" class="flex items-center gap-2 group">
                 <div class="flex-1 grid grid-cols-2 gap-2">
                   <input
-                    :value="val.key"
+                    :value="val.key" aria-label="Clé de la valeur"
                     type="text"
                     placeholder="Clé (ex: blanc)"
                     class="px-2.5 py-1.5 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-orange-400"
@@ -496,7 +496,7 @@
                   />
                   <div class="flex items-center gap-1.5">
                     <input
-                      :value="val.value"
+                      :value="val.value" aria-label="Valeur de l'option"
                       type="text"
                       placeholder="Valeur (ex: #FFFFFF ou S)"
                       class="flex-1 px-2.5 py-1.5 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-orange-400"
@@ -518,8 +518,8 @@
               <!-- Add value row -->
               <div v-if="addingValueForType === optType.id" class="flex items-center gap-2">
                 <div class="flex-1 grid grid-cols-2 gap-2">
-                  <input v-model="newValueKey" type="text" placeholder="Clé (ex: blanc)" class="px-2.5 py-1.5 text-sm border border-orange-300 dark:border-orange-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-orange-400" @keyup.enter="confirmAddValue(optType.id)" @keyup.escape="addingValueForType = null" />
-                  <input v-model="newValueVal" type="text" placeholder="Valeur (ex: #FFFFFF)" class="px-2.5 py-1.5 text-sm border border-orange-300 dark:border-orange-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-orange-400" @keyup.enter="confirmAddValue(optType.id)" @keyup.escape="addingValueForType = null" />
+                  <input v-model="newValueKey" aria-label="Clé de la nouvelle valeur" type="text" placeholder="Clé (ex: blanc)" class="px-2.5 py-1.5 text-sm border border-orange-300 dark:border-orange-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-orange-400" @keyup.enter="confirmAddValue(optType.id)" @keyup.escape="addingValueForType = null" />
+                  <input v-model="newValueVal" aria-label="Nouvelle valeur" type="text" placeholder="Valeur (ex: #FFFFFF)" class="px-2.5 py-1.5 text-sm border border-orange-300 dark:border-orange-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-orange-400" @keyup.enter="confirmAddValue(optType.id)" @keyup.escape="addingValueForType = null" />
                 </div>
                 <button @click="confirmAddValue(optType.id)" :disabled="!newValueKey.trim() || !newValueVal.trim()" class="p-1 text-orange-500 hover:text-orange-600 disabled:opacity-40 transition">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
@@ -591,10 +591,10 @@
             <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">{{ $t('appSettings.ecomSectionAppearance') }}</p>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.ecomPrimaryColor') }}</label>
+                <label for="appsettings-ecommerce-primary-color" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.ecomPrimaryColor') }}</label>
                 <div class="flex items-center gap-3">
-                  <input v-model="ecommerce.primary_color" type="color" class="h-10 w-16 cursor-pointer rounded-lg border border-gray-300 dark:border-gray-600 p-1 bg-white dark:bg-gray-900" />
-                  <input v-model="ecommerce.primary_color" type="text" placeholder="#f97316" :class="inputClass + ' font-mono text-xs flex-1'" />
+                  <input id="appsettings-ecommerce-primary-color" v-model="ecommerce.primary_color" type="color" class="h-10 w-16 cursor-pointer rounded-lg border border-gray-300 dark:border-gray-600 p-1 bg-white dark:bg-gray-900" />
+                  <input v-model="ecommerce.primary_color" type="text" aria-label="Couleur principale, code hexadécimal" placeholder="#f97316" :class="inputClass + ' font-mono text-xs flex-1'" />
                 </div>
               </div>
               <div>
@@ -616,9 +616,9 @@
             <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">{{ $t('appSettings.ecomSectionDelivery') }}</p>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.ecomDeliveryThreshold') }}</label>
+                <label for="appsettings-ecommerce-delivery-threshold" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.ecomDeliveryThreshold') }}</label>
                 <div class="relative">
-                  <input v-model="ecommerce.delivery_threshold" type="text" inputmode="numeric" placeholder="2000" :class="inputClass + ' pr-14'" />
+                  <input id="appsettings-ecommerce-delivery-threshold" v-model="ecommerce.delivery_threshold" type="text" inputmode="numeric" placeholder="2000" :class="inputClass + ' pr-14'" />
                   <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-medium">MAD</span>
                 </div>
               </div>

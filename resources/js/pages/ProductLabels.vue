@@ -115,9 +115,10 @@
     >
       <template v-if="printer.transport === 'agent'">
         <div class="min-w-[16rem]">
-          <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Imprimante</label>
+          <label for="productlabels-imprimante" class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Imprimante</label>
           <div class="flex gap-1.5">
             <select
+              id="productlabels-imprimante"
               :value="printer.name"
               class="flex-1 h-9 px-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
               @change="selectPrinter(($event.target as HTMLSelectElement).value)"
@@ -338,13 +339,13 @@
                     {{ f.label }}
                   </label>
                 </td>
-                <td class="px-1"><input v-model.number="layout[f.key].x" :disabled="!layout[f.key].enabled" type="number" step="0.5" :class="cellClass" /></td>
-                <td class="px-1"><input v-model.number="layout[f.key].y" :disabled="!layout[f.key].enabled" type="number" step="0.5" :class="cellClass" /></td>
-                <td class="px-1"><input v-model.number="layout[f.key].size" :disabled="!layout[f.key].enabled" type="number" step="0.5" min="1" :class="cellClass" /></td>
+                <td class="px-1"><input v-model.number="layout[f.key].x" :aria-label="`${f.label} : position horizontale en mm`" :disabled="!layout[f.key].enabled" type="number" step="0.5" :class="cellClass" /></td>
+                <td class="px-1"><input v-model.number="layout[f.key].y" :aria-label="`${f.label} : position verticale en mm`" :disabled="!layout[f.key].enabled" type="number" step="0.5" :class="cellClass" /></td>
+                <td class="px-1"><input v-model.number="layout[f.key].size" :aria-label="`${f.label} : taille du texte`" :disabled="!layout[f.key].enabled" type="number" step="0.5" min="1" :class="cellClass" /></td>
                 <td class="px-1">
                   <input
                     v-if="f.key === 'barcode'"
-                    v-model.number="layout.barcode.height"
+                    v-model.number="layout.barcode.height" aria-label="Hauteur du code-barres en mm"
                     :disabled="!layout.barcode.enabled"
                     type="number"
                     step="0.5"
@@ -356,7 +357,7 @@
                 <td class="px-1 text-center">
                   <input
                     v-if="f.key !== 'barcode'"
-                    v-model="layout[f.key].bold"
+                    v-model="layout[f.key].bold" :aria-label="`${f.label} en gras`"
                     :disabled="!layout[f.key].enabled"
                     type="checkbox"
                     class="rounded border-gray-300 text-orange-500 focus:ring-orange-500"
@@ -365,7 +366,7 @@
                 <td class="px-1 text-center">
                   <input
                     v-if="f.key !== 'barcode'"
-                    v-model="layout[f.key].boxed"
+                    v-model="layout[f.key].boxed" :aria-label="`${f.label} encadré`"
                     :disabled="!layout[f.key].enabled"
                     type="checkbox"
                     class="rounded border-gray-300 text-orange-500 focus:ring-orange-500"
@@ -386,6 +387,7 @@
           <div class="relative mb-3">
             <input
               v-model="search"
+              aria-label="Rechercher un produit"
               type="text"
               placeholder="Rechercher un produit (titre, SKU, code)..."
               class="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
@@ -406,6 +408,7 @@
               <input
                 type="checkbox"
                 :checked="selected.has(p.id)"
+                :aria-label="`Sélectionner ${p.p_title}`"
                 class="rounded border-gray-300 text-orange-500 focus:ring-orange-500 shrink-0"
                 @change="toggleProduct(p)"
               />
@@ -445,6 +448,7 @@
               <span class="flex-1 truncate text-gray-800 dark:text-gray-200">{{ s.product.p_title }}</span>
               <input
                 v-model.number="s.qty"
+                :aria-label="`Nombre d'étiquettes pour ${s.product.p_title}`"
                 type="number"
                 min="1"
                 max="99"

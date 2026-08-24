@@ -101,13 +101,14 @@
             <!-- Password -->
             <div>
               <div class="flex items-center justify-between mb-1.5">
-                <label class="block text-sm font-medium text-gray-300">{{
+                <label for="login-password" class="block text-sm font-medium text-gray-300">{{
                   $t('auth.password')
                 }}</label>
                 <a href="#" class="text-xs text-orange-400 hover:text-orange-300 hover:underline">{{ $t('auth.forgotPassword') }}</a>
               </div>
               <div class="relative">
                 <input
+                  id="login-password"
                   v-model="form.password"
                   :type="showPassword ? 'text' : 'password'"
                   autocomplete="current-password"

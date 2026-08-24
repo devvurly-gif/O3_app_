@@ -431,9 +431,10 @@
                   <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{ $t('customers.balanceAutoCalculated') }}</p>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('customers.creditLimit') }}</label>
+                  <label for="customers-seuil-credit" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('customers.creditLimit') }}</label>
                   <div class="relative">
                     <input
+                      id="customers-seuil-credit"
                       v-model.number="form.seuil_credit"
                       type="number"
                       min="0"
@@ -894,11 +895,12 @@
             </select>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label for="customers-amount" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Montant <span class="text-red-500">*</span>
             </label>
             <div class="relative">
               <input
+                id="customers-amount"
                 v-model.number="paymentForm.amount"
                 type="number"
                 min="0.01"
@@ -955,11 +957,12 @@
         <!-- Payment form -->
         <div v-if="paymentUnpaidDocs.length > 0 && !paymentLoading" class="space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            <label for="customers-amount-2" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
               >Montant <span class="text-red-500">*</span></label
             >
             <div class="relative">
               <input
+                id="customers-amount-2"
                 v-model.number="paymentForm.amount"
                 type="number"
                 min="0.01"

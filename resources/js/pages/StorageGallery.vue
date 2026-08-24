@@ -66,7 +66,7 @@
       </span>
       <div class="flex-1 flex items-center gap-3">
         <select
-          v-model="selectedProductId"
+          v-model="selectedProductId" aria-label="Choisir le produit auquel rattacher les images"
           class="px-3 py-1.5 text-sm rounded-lg border border-blue-300 dark:border-orange-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 min-w-[250px]"
         >
           <option :value="null" disabled>-- Choisir un produit --</option>
@@ -159,7 +159,7 @@
             <th class="px-4 py-3 text-left w-10">
               <input
                 type="checkbox"
-                :checked="allFilteredSelected"
+                :checked="allFilteredSelected" aria-label="Tout sélectionner"
                 :indeterminate="someFilteredSelected && !allFilteredSelected"
                 @change="toggleSelectAll"
                 class="rounded border-gray-300 text-orange-500 focus:ring-orange-500"
@@ -182,7 +182,7 @@
             <td class="px-4 py-2" @click.stop>
               <input
                 type="checkbox"
-                :checked="selected.has(img.name)"
+                :checked="selected.has(img.name)" :aria-label="`Sélectionner ${img.name}`"
                 @change="toggleSelect(img)"
                 class="rounded border-gray-300 text-orange-500 focus:ring-orange-500"
               />

@@ -1265,13 +1265,13 @@
               </p>
               <div class="flex flex-col sm:flex-row gap-2 mt-2.5">
                 <input
-                  v-model="newVideoTitle"
+                  v-model="newVideoTitle" :aria-label="$t('products.videoTitlePlaceholder') ?? 'Title (optional)'"
                   type="text"
                   :placeholder="$t('products.videoTitlePlaceholder') ?? 'Title (optional)'"
                   class="flex-1 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:text-white"
                 />
                 <input
-                  v-model="newVideoUrl"
+                  v-model="newVideoUrl" :aria-label="$t('products.videoUrlPlaceholder') ?? 'Video URL'"
                   type="url"
                   :placeholder="$t('products.videoUrlPlaceholder') ?? 'https://youtube.com/watch?v=...'"
                   class="flex-[2] px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:text-white"
@@ -1378,20 +1378,20 @@
               <tbody>
                 <tr v-for="(v, idx) in productVariants" :key="idx" class="border-b border-gray-100 dark:border-gray-800">
                   <td class="py-1.5 pr-2">
-                    <input v-model="v.label" @input="variantsDirty = true" type="text" placeholder="Rouge / XL"
+                    <input v-model="v.label" :aria-label="`Libellé de la variante ${idx + 1}`" @input="variantsDirty = true" type="text" placeholder="Rouge / XL"
                       class="w-full px-2 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-xs text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-[#7C5CFC]" />
                   </td>
                   <td class="py-1.5 pr-2">
-                    <input v-model="v.sku" @input="variantsDirty = true" type="text" placeholder="SKU"
+                    <input v-model="v.sku" :aria-label="`SKU de la variante ${idx + 1}`" @input="variantsDirty = true" type="text" placeholder="SKU"
                       class="w-full px-2 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-xs text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-[#7C5CFC]" />
                   </td>
                   <td class="py-1.5 pr-2">
-                    <input v-model.number="v.price" @input="variantsDirty = true" type="number" step="0.01" placeholder="—"
+                    <input v-model.number="v.price" :aria-label="`Prix de la variante ${idx + 1}`" @input="variantsDirty = true" type="number" step="0.01" placeholder="—"
                       class="w-full px-2 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-xs text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-[#7C5CFC]" />
                   </td>
 
                   <td class="py-1.5 pr-2 text-center">
-                    <input type="checkbox" v-model="v.is_active" @change="variantsDirty = true" class="w-4 h-4 text-[#7C5CFC] rounded" />
+                    <input type="checkbox" v-model="v.is_active" :aria-label="`Variante ${idx + 1} active`" @change="variantsDirty = true" class="w-4 h-4 text-[#7C5CFC] rounded" />
                   </td>
                   <td class="py-1.5">
                     <button type="button" @click="removeVariant(idx)" class="p-1 text-red-400 hover:text-red-600 rounded transition">

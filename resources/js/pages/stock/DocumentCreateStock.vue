@@ -422,9 +422,10 @@ async function submit() {
           <div class="flex flex-col sm:flex-row items-stretch sm:items-end gap-3">
             <!-- Product search -->
             <div class="relative flex-1">
-              <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Produit</label>
+              <label for="documentcreatestock-pendingsearch" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Produit</label>
               <div class="flex gap-2">
                 <input
+                  id="documentcreatestock-pendingsearch"
                   v-model="pendingSearch"
                   placeholder="Chercher un produit..."
                   class="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"

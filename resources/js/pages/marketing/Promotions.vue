@@ -328,24 +328,24 @@
                 </select>
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Valeur *</label>
+                <label for="promotions-value" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Valeur *</label>
                 <div class="relative">
-                  <input v-model.number="promoForm.value" type="number" step="0.01" min="0" required class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
+                  <input id="promotions-value" v-model.number="promoForm.value" type="number" step="0.01" min="0" required class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
                   <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">{{ promoForm.type === 'percentage' ? '%' : 'MAD' }}</span>
                 </div>
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date début</label>
+                <label for="promotions-date-debut" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date début</label>
                 <div class="flex gap-2">
-                  <input :value="promoForm.starts_at?.slice(0, 10)" @input="promoForm.starts_at = ($event.target as HTMLInputElement).value + 'T' + (promoForm.starts_at?.slice(11, 16) || '00:00')" type="date" class="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
-                  <input :value="promoForm.starts_at?.slice(11, 16)" @input="promoForm.starts_at = (promoForm.starts_at?.slice(0, 10) || '') + 'T' + ($event.target as HTMLInputElement).value" type="time" class="w-28 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
+                  <input id="promotions-date-debut" :value="promoForm.starts_at?.slice(0, 10)" @input="promoForm.starts_at = ($event.target as HTMLInputElement).value + 'T' + (promoForm.starts_at?.slice(11, 16) || '00:00')" type="date" class="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
+                  <input :value="promoForm.starts_at?.slice(11, 16)" aria-label="Heure de début" @input="promoForm.starts_at = (promoForm.starts_at?.slice(0, 10) || '') + 'T' + ($event.target as HTMLInputElement).value" type="time" class="w-28 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
                 </div>
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date fin</label>
+                <label for="promotions-date-fin" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date fin</label>
                 <div class="flex gap-2">
-                  <input :value="promoForm.ends_at?.slice(0, 10)" @input="promoForm.ends_at = ($event.target as HTMLInputElement).value + 'T' + (promoForm.ends_at?.slice(11, 16) || '23:59')" type="date" class="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
-                  <input :value="promoForm.ends_at?.slice(11, 16)" @input="promoForm.ends_at = (promoForm.ends_at?.slice(0, 10) || '') + 'T' + ($event.target as HTMLInputElement).value" type="time" class="w-28 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
+                  <input id="promotions-date-fin" :value="promoForm.ends_at?.slice(0, 10)" @input="promoForm.ends_at = ($event.target as HTMLInputElement).value + 'T' + (promoForm.ends_at?.slice(11, 16) || '23:59')" type="date" class="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
+                  <input :value="promoForm.ends_at?.slice(11, 16)" aria-label="Heure de fin" @input="promoForm.ends_at = (promoForm.ends_at?.slice(0, 10) || '') + 'T' + ($event.target as HTMLInputElement).value" type="time" class="w-28 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
                 </div>
               </div>
               <div>
@@ -392,7 +392,7 @@
               <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-200 dark:border-gray-700"></div></div>
               <div class="relative flex justify-center"><span class="px-3 bg-white dark:bg-gray-800 text-xs text-gray-400 uppercase">ou coller une URL</span></div>
             </div>
-            <input v-model="promoForm.banner_image" type="text" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500" placeholder="https://exemple.com/banner.jpg">
+            <input v-model="promoForm.banner_image" aria-label="URL de l'image de bannière" type="text" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500" placeholder="https://exemple.com/banner.jpg">
           </div>
 
           <!-- ── Step 3: Produits ── -->
@@ -400,7 +400,7 @@
             <p class="text-sm text-gray-500 dark:text-gray-400">Sélectionnez les produits concernés par cette promotion. Vous pouvez forcer un prix promo spécifique par produit.</p>
             <div class="relative">
               <input
-                v-model="productSearch"
+                v-model="productSearch" aria-label="Rechercher un produit à ajouter"
                 type="text"
                 placeholder="Rechercher un produit à ajouter..."
                 class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500"
@@ -423,7 +423,7 @@
               <div v-for="(item, idx) in promoForm.product_ids" :key="item.id" class="flex items-center gap-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
                 <span class="flex-1 text-sm text-gray-900 dark:text-white truncate">{{ item.title }}</span>
                 <div class="flex items-center gap-2 shrink-0">
-                  <input v-model.number="item.promo_price" type="number" step="0.01" min="0" class="w-28 px-2 py-1 text-xs rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white" placeholder="Prix forcé" />
+                  <input v-model.number="item.promo_price" aria-label="Prix forcé pour ce produit" type="number" step="0.01" min="0" class="w-28 px-2 py-1 text-xs rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white" placeholder="Prix forcé" />
                   <button type="button" @click="promoForm.product_ids.splice(idx, 1)" class="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                   </button>
