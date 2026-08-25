@@ -13,17 +13,19 @@ use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /**
- * Produit une facture d'achat unique à partir de plusieurs documents.
+ * Produit une facture unique à partir de plusieurs documents d'un même tiers.
  *
  * Un fournisseur qui livre huit fois dans le mois n'envoie pas huit factures :
  * il en envoie une, qui récapitule les huit bons. Tant que la comptabilité du
  * tenant porte huit factures là où le fournisseur en a émis une, aucun
  * rapprochement ne tombe juste.
  *
- * Deux entrées, pour deux situations réelles :
+ * Trois entrées, pour trois situations réelles :
  *
- *   - `fromReceiptNotes()` — le cas courant : on coche les bons de réception
- *     reçus dans le mois et on les facture d'un coup.
+ *   - `fromReceiptNotes()` — achats : on coche les bons de réception reçus dans
+ *     le mois et on les facture d'un coup.
+ *   - `fromDeliveryNotes()` — ventes : le pendant exact, sur les bons de
+ *     livraison d'un client.
  *   - `fromInvoices()` — le rattrapage : les bons ont déjà été facturés un par
  *     un et il faut recoller les morceaux, en reprenant les règlements déjà
  *     imputés.
@@ -37,7 +39,7 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
  * et la commande l'appellent tous les deux : la laisser dans la commande
  * aurait obligé l'interface à la réimplémenter, et les deux auraient divergé.
  */
-class PurchaseInvoiceGroupingService
+class DocumentGroupingService
 {
     /**
      * Bons de réception → une facture d'achat unique.
@@ -66,7 +68,46 @@ class PurchaseInvoiceGroupingService
             }
         }
 
-        return $this->build($receipts, $issuedAt, $supplierRef, deleteSources: false);
+        return $this->build($receipts, $issuedAt, $supplierRef, 'InvoicePurchase', deleteSources: false);
+    }
+
+    /**
+     * Bons de livraison → une facture de vente unique.
+     *
+     * Le pendant exact du côté achat, à trois nuances près :
+     *
+     *   - un BL peut déjà porter des règlements quand l'option « paiement sur
+     *     BL » est active : ils suivent la facture, comme dans la conversion
+     *     unitaire ;
+     *   - un BL non facturé compte déjà dans l'encours du client. La facture
+     *     prend le relais, l'encours ne bouge donc pas ;
+     *   - le statut posé est 'converted' et non 'delivered'. `isBilled()`
+     *     reconnaît le premier, pas le second : marquer 'delivered' laisserait
+     *     le BL refacturable un par un par-dessus la facture groupée.
+     *
+     * @param  Collection<int, DocumentHeader>  $notes
+     * @return array{invoice: DocumentHeader, payments_moved: int, replaced: int}
+     */
+    public function fromDeliveryNotes(
+        Collection $notes,
+        ?string $issuedAt = null,
+        ?string $customerRef = null,
+    ): array {
+        $this->guardCommon($notes, 'DeliveryNote', 'Seuls des bons de livraison peuvent être facturés ici.');
+
+        foreach ($notes as $note) {
+            // Avec « paiement sur BL », encaisser fait passer le bon en
+            // 'partial' ou 'paid' : un bon paye reste un bon a facturer.
+            if (!in_array($note->status, ['confirmed', 'delivered', 'partial', 'paid'], true)) {
+                throw new HttpException(422, "Le bon {$note->reference} n'est pas confirmé (statut : {$note->status}).");
+            }
+
+            if ($note->isBilled() || $note->children()->where('document_type', 'InvoiceSale')->exists()) {
+                throw new HttpException(422, "Le bon {$note->reference} est déjà facturé.");
+            }
+        }
+
+        return $this->build($notes, $issuedAt, $customerRef, 'InvoiceSale', deleteSources: false);
     }
 
     /**
@@ -86,7 +127,7 @@ class PurchaseInvoiceGroupingService
             throw new HttpException(422, 'Il faut au moins deux factures à regrouper.');
         }
 
-        return $this->build($invoices, $issuedAt, $supplierRef, deleteSources: true);
+        return $this->build($invoices, $issuedAt, $supplierRef, 'InvoicePurchase', deleteSources: true);
     }
 
     // ── Fabrication ───────────────────────────────────────────────
@@ -95,6 +136,7 @@ class PurchaseInvoiceGroupingService
         Collection $sources,
         ?string $issuedAt,
         ?string $supplierRef,
+        string $targetType,
         bool $deleteSources,
     ): array {
         $sources->loadMissing(['lignes', 'footer', 'parent', 'payments', 'incrementor']);
@@ -107,7 +149,7 @@ class PurchaseInvoiceGroupingService
         DocumentNotificationObserver::$silent = true;
 
         try {
-            return DB::transaction(function () use ($sources, $issuedAt, $supplierRef, $deleteSources) {
+            return DB::transaction(function () use ($sources, $issuedAt, $supplierRef, $targetType, $deleteSources) {
                 $first     = $sources->first();
                 $totalTtc  = $this->sumFooter($sources, 'total_ttc');
                 $totalPaid = $this->sumFooter($sources, 'amount_paid');
@@ -115,13 +157,15 @@ class PurchaseInvoiceGroupingService
                 // Le compteur est celui des factures d'achat, pas celui du
                 // document source : partir de l'incrementeur d'un bon de
                 // reception donnerait a la facture une reference BDR-xxxx.
-                $incrementor = $this->invoiceIncrementor($first);
+                $incrementor = $this->invoiceIncrementor($first, $targetType);
 
                 $grouped = DocumentHeader::create([
                     'document_incrementor_id' => $incrementor?->id ?? $first->document_incrementor_id,
                     'reference'               => $this->nextReference($incrementor),
-                    'document_type'           => 'InvoicePurchase',
-                    'document_title'          => 'Facture Achat groupée',
+                    'document_type'           => $targetType,
+                    'document_title'          => $targetType === 'InvoiceSale'
+                        ? 'Facture Vente groupée'
+                        : 'Facture Achat groupée',
                     'parent_id'               => null,
                     'thirdPartner_id'         => $first->thirdPartner_id,
                     'company_role'            => $first->company_role,
@@ -296,9 +340,9 @@ class PurchaseInvoiceGroupingService
      * L'incrementeur des factures d'achat du tenant, quel que soit le type des
      * documents sources.
      */
-    private function invoiceIncrementor(DocumentHeader $first): ?DocumentIncrementor
+    private function invoiceIncrementor(DocumentHeader $first, string $targetType): ?DocumentIncrementor
     {
-        return DocumentIncrementor::where('di_model', 'InvoicePurchase')->first()
+        return DocumentIncrementor::where('di_model', $targetType)->first()
             ?? $first->incrementor;
     }
 

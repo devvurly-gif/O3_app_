@@ -116,7 +116,9 @@ export const useDocumentVenteStore = defineStore('documentVente', () => {
       // L'endpoint repond { message, data: <document> }, comme ses voisins
       // generer-* / confirmer-facture : sans deballer l'enveloppe, la page
       // de detail se lie a un objet sans aucun champ et s'affiche vide.
-      const { data } = await http.put<{ message: string; data: DocumentHeader }>(`/ventes/documents/${blId}/confirmer-bl`)
+      const { data } = await http.put<{ message: string; data: DocumentHeader }>(
+        `/ventes/documents/${blId}/confirmer-bl`,
+      )
       current.value = data.data
       return data.data
     } catch (e: unknown) {
@@ -249,6 +251,37 @@ export const useDocumentVenteStore = defineStore('documentVente', () => {
     }
   }
 
+  /**
+   * Facture d'un seul coup les bons de livraison coches dans la liste.
+   *
+   * Le serveur refuse les melanges de clients, les bons deja factures et les
+   * statuts non confirmes : on laisse remonter son message tel quel, il est
+   * plus precis que tout ce qu'on pourrait reconstituer ici.
+   */
+  async function regrouperBls(payload: {
+    delivery_note_ids: number[]
+    issued_at?: string | null
+    customer_ref?: string | null
+  }): Promise<{ success: boolean; facture?: DocumentHeader; message?: string }> {
+    loading.value = true
+    error.value = null
+
+    try {
+      const { data } = await http.post<{ data: DocumentHeader; message: string }>(
+        '/ventes/documents/regrouper-bls',
+        payload,
+      )
+      return { success: true, facture: data.data, message: data.message }
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { message?: string } } }
+      const message = err.response?.data?.message ?? 'Erreur lors du regroupement.'
+      error.value = message
+      return { success: false, message }
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     documents,
     current,
@@ -271,5 +304,6 @@ export const useDocumentVenteStore = defineStore('documentVente', () => {
     confirmerBL,
     retourClient,
     confirmerReception,
+    regrouperBls,
   }
 })

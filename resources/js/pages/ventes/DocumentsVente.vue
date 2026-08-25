@@ -1,8 +1,10 @@
 ﻿<script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useDocumentVenteStore } from '@/stores/ventes/useDocumentVenteStore'
+import { useToastStore } from '@/stores/toastStore'
 import { useExcelExport } from '@/composables/useExcelExport'
+import http from '@/services/http'
 import BaseTable from '@/components/BaseTable.vue'
 import BaseSkeleton from '@/components/BaseSkeleton.vue'
 import BasePagination from '@/components/BasePagination.vue'
@@ -11,13 +13,24 @@ import { useFormat } from '@/composables/useFormat'
 
 const router = useRouter()
 const store = useDocumentVenteStore()
-const { date: fmtDate } = useFormat()
+const toast = useToastStore()
+const { date: fmtDate, fmt } = useFormat()
 
 const search = ref('')
 const typeFilter = ref('')
+const customerFilter = ref('')
+const customers = ref<Array<{ id: number; tp_title: string }>>([])
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 
-const saleTypes = ['QuoteSale', 'CustomerOrder', 'DeliveryNote', 'InvoiceSale', 'TicketSale', 'CreditNoteSale', 'ReturnSale']
+const saleTypes = [
+  'QuoteSale',
+  'CustomerOrder',
+  'DeliveryNote',
+  'InvoiceSale',
+  'TicketSale',
+  'CreditNoteSale',
+  'ReturnSale',
+]
 
 const { exporting, exportExcel, canExport } = useExcelExport()
 
@@ -29,6 +42,7 @@ function buildFilters(): Record<string, string> {
   const f: Record<string, string> = {}
   if (search.value.trim()) f.search = search.value.trim()
   if (typeFilter.value) f.document_type = typeFilter.value
+  if (customerFilter.value) f.thirdPartner_id = customerFilter.value
   return f
 }
 
@@ -40,14 +54,125 @@ function onPageChange(page: number) {
   loadPage(page)
 }
 
-watch([search, typeFilter], () => {
+watch([search, typeFilter, customerFilter], () => {
   clearTimeout(searchTimer)
   searchTimer = setTimeout(() => loadPage(1), 350)
 })
 
-onMounted(() => loadPage())
+onMounted(() => {
+  loadPage()
+  http
+    .get('/third-partners', { params: { role: 'customer', per_page: 200 } })
+    .then(({ data }) => {
+      customers.value = data.data ?? data
+    })
+    .catch(() => {
+      customers.value = []
+    })
+})
+
+// ── Facturation groupee ───────────────────────────────────────────────────
+
+/**
+ * Un bon facturable : livre, confirme ou deja regle, et pas encore facture.
+ *
+ * 'converted' et 'delivered' sont poses par la facturation : ils sortent donc
+ * de la selection, ce qui empeche de facturer deux fois le meme bon.
+ */
+function isBillable(row: Record<string, unknown>): boolean {
+  return row.document_type === 'DeliveryNote' && ['confirmed', 'partial', 'paid'].includes(row.status as string)
+}
+
+const selectedIds = ref<number[]>([])
+
+const billableRows = computed(() => store.documents.filter(isBillable))
+
+const selectedRows = computed(() =>
+  store.documents.filter((d: Record<string, unknown>) => selectedIds.value.includes(d.id as number)),
+)
+
+const selectedTotal = computed(() =>
+  selectedRows.value.reduce(
+    (sum: number, d: Record<string, unknown>) => sum + Number((d.footer as { total_ttc?: number })?.total_ttc ?? 0),
+    0,
+  ),
+)
+
+/**
+ * Regrouper les bons de deux clients fabriquerait une creance attribuee au
+ * mauvais tiers. Le serveur le refuse ; l'ecran le dit avant d'y aller.
+ */
+const selectedCustomers = computed(() => [
+  ...new Set(selectedRows.value.map((d: Record<string, unknown>) => (d.third_partner as { id?: number })?.id)),
+])
+
+const mixedCustomers = computed(() => selectedCustomers.value.length > 1)
+
+const allBillableSelected = computed(
+  () => billableRows.value.length > 0 && billableRows.value.every((d) => selectedIds.value.includes(d.id as number)),
+)
+
+function toggleRow(id: number): void {
+  selectedIds.value = selectedIds.value.includes(id)
+    ? selectedIds.value.filter((x) => x !== id)
+    : [...selectedIds.value, id]
+}
+
+function toggleAll(): void {
+  selectedIds.value = allBillableSelected.value
+    ? []
+    : billableRows.value.map((d: Record<string, unknown>) => d.id as number)
+}
+
+// Une selection ne survit pas a un changement de page ou de filtre : les
+// lignes cochees ne seraient plus a l'ecran, et on facturerait a l'aveugle.
+watch([search, typeFilter, customerFilter], () => {
+  selectedIds.value = []
+})
+
+const showGroupModal = ref(false)
+const grouping = ref(false)
+const groupError = ref('')
+const groupForm = ref({ issued_at: '', customer_ref: '' })
+
+function openGroupModal(): void {
+  groupError.value = ''
+  const dates = selectedRows.value
+    .map((d: Record<string, unknown>) => String(d.issued_at ?? '').slice(0, 10))
+    .filter(Boolean)
+    .sort()
+  groupForm.value = { issued_at: dates[dates.length - 1] ?? '', customer_ref: '' }
+  showGroupModal.value = true
+}
+
+async function submitGroup(): Promise<void> {
+  groupError.value = ''
+  grouping.value = true
+
+  const result = await store.regrouperBls({
+    delivery_note_ids: selectedIds.value,
+    issued_at: groupForm.value.issued_at || null,
+    customer_ref: groupForm.value.customer_ref || null,
+  })
+
+  grouping.value = false
+
+  if (!result.success) {
+    groupError.value = result.message ?? 'Erreur lors du regroupement.'
+    return
+  }
+
+  showGroupModal.value = false
+  selectedIds.value = []
+  toast.success(result.message ?? 'Facture créée.')
+
+  if (result.facture) {
+    router.push(`/ventes/documents/${result.facture.id}`)
+  }
+}
 
 const columns = [
+  { key: 'select', label: '' },
   { key: 'reference', label: 'Référence' },
   { key: 'document_type', label: 'Type', hideOnMobile: true },
   { key: 'status', label: 'Statut', hideOnMobile: true },
@@ -57,9 +182,7 @@ const columns = [
 
 function mobileRowClass(row: Record<string, unknown>): string {
   const isPaid = row.status === 'paid'
-  return isPaid
-    ? 'border-gray-200 dark:border-gray-700'
-    : 'border-red-400 dark:border-red-600 border-l-4'
+  return isPaid ? 'border-gray-200 dark:border-gray-700' : 'border-red-400 dark:border-red-600 border-l-4'
 }
 
 const typeLabels: Record<string, string> = {
@@ -162,8 +285,8 @@ async function submitPayment() {
       <h1 class="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">Documents de Vente</h1>
       <div class="flex items-center gap-3">
         <button
-          class="flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition"
           v-if="canExport"
+          class="flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition"
           :disabled="exporting"
           @click="onExport"
         >
@@ -191,20 +314,71 @@ async function submitPayment() {
     <!-- Filters -->
     <div class="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 mb-6">
       <input
-        aria-label="Rechercher une vente"
         v-model="search"
+        aria-label="Rechercher une vente"
         type="text"
         placeholder="Rechercher référence..."
         class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-200 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 w-full sm:w-64"
       />
       <select
-        aria-label="Filtrer par type de document"
         v-model="typeFilter"
+        aria-label="Filtrer par type de document"
         class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500"
       >
         <option value="">Tous types</option>
         <option v-for="t in saleTypes" :key="t" :value="t">{{ typeLabels[t] }}</option>
       </select>
+      <select
+        v-model="customerFilter"
+        aria-label="Filtrer par client"
+        class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500"
+      >
+        <option value="">Tous clients</option>
+        <option v-for="c in customers" :key="c.id" :value="String(c.id)">{{ c.tp_title }}</option>
+      </select>
+      <button
+        v-if="billableRows.length"
+        class="px-3.5 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+        @click="toggleAll"
+      >
+        {{ allBillableSelected ? 'Tout décocher' : 'Cocher tous les BL' }}
+      </button>
+    </div>
+
+    <!-- Barre d'action : n'apparaît qu'une fois des BL cochés -->
+    <div
+      v-if="selectedIds.length"
+      class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 px-4 py-3 rounded-lg border border-teal-300 dark:border-teal-700 bg-teal-50 dark:bg-teal-900/20"
+    >
+      <div class="text-sm text-gray-700 dark:text-gray-200">
+        <strong>{{ selectedIds.length }}</strong> bon(s) de livraison sélectionné(s) —
+        <strong class="font-mono">{{ fmt(selectedTotal) }} DH</strong>
+        <span v-if="mixedCustomers" class="block sm:inline text-red-600 dark:text-red-400 sm:ml-2">
+          Clients différents : un seul client par facture.
+        </span>
+      </div>
+      <div class="flex items-center gap-2">
+        <button
+          class="px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-white/60 dark:hover:bg-gray-800 rounded-lg transition"
+          @click="selectedIds = []"
+        >
+          Annuler
+        </button>
+        <button
+          class="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700 transition disabled:opacity-50"
+          :disabled="mixedCustomers"
+          @click="openGroupModal"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            />
+          </svg>
+          Facturer en une seule facture
+        </button>
+      </div>
     </div>
 
     <!-- Flash messages -->
@@ -228,6 +402,18 @@ async function submitPayment() {
     <BaseSkeleton v-if="store.loading && !store.documents.length" type="table" :rows="8" />
 
     <BaseTable v-else :columns="columns" :rows="store.documents" :mobile-row-class="mobileRowClass">
+      <template #cell-select="{ row }">
+        <input
+          v-if="isBillable(row)"
+          type="checkbox"
+          class="rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+          :checked="selectedIds.includes(row.id)"
+          :aria-label="'Sélectionner le bon ' + row.reference"
+          @change="toggleRow(row.id)"
+        />
+        <span v-else class="text-gray-300 dark:text-gray-600">—</span>
+      </template>
+
       <template #cell-document_type="{ row }">
         <span class="text-sm">{{ typeLabels[row.document_type] ?? row.document_type }}</span>
       </template>
@@ -270,6 +456,77 @@ async function submitPayment() {
       </template>
     </BaseTable>
 
+    <BaseModal v-model="showGroupModal" title="Facturer les BL sélectionnés" size="md">
+      <div class="space-y-4">
+        <div class="rounded-lg bg-gray-50 dark:bg-gray-900 px-4 py-3 text-sm">
+          <div class="flex justify-between py-1">
+            <span class="text-gray-500 dark:text-gray-400">Client</span>
+            <span class="font-medium text-gray-800 dark:text-gray-200">
+              {{ selectedRows[0]?.third_partner?.tp_title ?? '—' }}
+            </span>
+          </div>
+          <div class="flex justify-between py-1">
+            <span class="text-gray-500 dark:text-gray-400">Bons de livraison</span>
+            <span class="font-medium text-gray-800 dark:text-gray-200">{{ selectedIds.length }}</span>
+          </div>
+          <div class="flex justify-between py-1 border-t border-gray-200 dark:border-gray-700 mt-1 pt-2">
+            <span class="text-gray-700 dark:text-gray-300 font-semibold">Total facture</span>
+            <span class="font-mono font-bold text-gray-900 dark:text-white">{{ fmt(selectedTotal) }} DH</span>
+          </div>
+        </div>
+
+        <div>
+          <label for="group-date-vente" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            Date de la facture
+          </label>
+          <input
+            id="group-date-vente"
+            v-model="groupForm.issued_at"
+            type="date"
+            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-teal-500"
+          />
+          <p class="text-xs text-gray-400 mt-1">Par défaut, la date du dernier BL sélectionné.</p>
+        </div>
+
+        <div>
+          <label for="group-ref-vente" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            Référence client
+          </label>
+          <input
+            id="group-ref-vente"
+            v-model="groupForm.customer_ref"
+            type="text"
+            placeholder="Facultatif — n° de commande du client"
+            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-teal-500"
+          />
+          <p class="text-xs text-gray-400 mt-1">Conservée dans les notes, pour le rapprochement.</p>
+        </div>
+
+        <p class="text-xs text-gray-500 dark:text-gray-400">
+          Les BL restent consultables et passent en « Converti ». Le stock n'est pas remouvementé : la marchandise est
+          sortie à la livraison. Les règlements déjà encaissés sur ces BL suivent la facture.
+        </p>
+
+        <p v-if="groupError" class="text-sm text-red-600 dark:text-red-400">{{ groupError }}</p>
+      </div>
+
+      <template #footer>
+        <button
+          class="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+          @click="showGroupModal = false"
+        >
+          Annuler
+        </button>
+        <button
+          class="px-4 py-2 text-sm font-semibold bg-teal-600 hover:bg-teal-700 text-white rounded-lg transition disabled:opacity-60"
+          :disabled="grouping"
+          @click="submitGroup"
+        >
+          {{ grouping ? 'Création…' : 'Créer la facture' }}
+        </button>
+      </template>
+    </BaseModal>
+
     <BasePagination
       v-if="store.meta.last_page > 1"
       :current-page="store.meta.current_page"
@@ -298,7 +555,11 @@ async function submitPayment() {
       </div>
       <form class="space-y-4" @submit.prevent="submitPayment">
         <div>
-          <label for="documentsvente-paymentform-amount" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Montant *</label>
+          <label
+            for="documentsvente-paymentform-amount"
+            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >Montant *</label
+          >
           <input
             id="documentsvente-paymentform-amount"
             v-model.number="paymentForm.amount"
@@ -310,7 +571,11 @@ async function submitPayment() {
           />
         </div>
         <div>
-          <label for="documentsvente-paymentform-method" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Méthode *</label>
+          <label
+            for="documentsvente-paymentform-method"
+            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >Méthode *</label
+          >
           <select
             id="documentsvente-paymentform-method"
             v-model="paymentForm.method"
@@ -325,7 +590,11 @@ async function submitPayment() {
           </select>
         </div>
         <div>
-          <label for="documentsvente-paymentform-paid-at" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
+          <label
+            for="documentsvente-paymentform-paid-at"
+            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >Date</label
+          >
           <input
             id="documentsvente-paymentform-paid-at"
             v-model="paymentForm.paid_at"
@@ -334,7 +603,11 @@ async function submitPayment() {
           />
         </div>
         <div>
-          <label for="documentsvente-paymentform-reference" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Référence</label>
+          <label
+            for="documentsvente-paymentform-reference"
+            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >Référence</label
+          >
           <input
             id="documentsvente-paymentform-reference"
             v-model="paymentForm.reference"
@@ -344,7 +617,11 @@ async function submitPayment() {
           />
         </div>
         <div>
-          <label for="documentsvente-paymentform-notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
+          <label
+            for="documentsvente-paymentform-notes"
+            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >Notes</label
+          >
           <textarea
             id="documentsvente-paymentform-notes"
             v-model="paymentForm.notes"

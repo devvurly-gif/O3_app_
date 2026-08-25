@@ -146,7 +146,15 @@ class ThirdPartner extends Model
             ->where(function ($q) {
                 $q->whereIn('document_type', ['InvoiceSale', 'TicketSale'])
                   ->orWhere(function ($sub) {
+                      // Un BL facture par une facture GROUPEE n'a pas cette
+                      // facture pour enfant : un parent_id ne peut designer
+                      // qu'un document. Sans le filtre de statut, le BL et la
+                      // facture comptaient tous les deux — l'encours doublait,
+                      // deja aujourd'hui pour la facturation periodique.
+                      // 'delivered' et 'converted' ne sont poses qu'a la
+                      // facturation : les deux valent "facture".
                       $sub->where('document_type', 'DeliveryNote')
+                          ->whereNotIn('status', ['converted', 'delivered'])
                           ->whereDoesntHave('children', fn ($c) => $c->where('document_type', 'InvoiceSale'));
                   });
             })

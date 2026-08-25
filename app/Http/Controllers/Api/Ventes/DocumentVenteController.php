@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Api\Ventes;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Ventes\GroupDeliveryNotesRequest;
 use App\Http\Requests\Ventes\StoreDocumentVenteRequest;
 use App\Models\DocumentHeader;
 use App\Models\Payment;
 use App\Models\ThirdPartner;
 use App\Repositories\Contracts\DocumentIncrementorRepositoryInterface;
+use App\Services\DocumentGroupingService;
 use App\Services\DocumentIncrementorService;
 use App\Services\StockMouvementService;
 use Illuminate\Http\JsonResponse;
@@ -592,6 +594,42 @@ class DocumentVenteController extends Controller
         return response()->json([
             'message' => count($created) . ' copie(s) créée(s) avec succès.',
             'data'    => $created,
+        ], 201);
+    }
+
+    // ── Plusieurs BL → une facture unique ────────────────────────────
+
+    /**
+     * POST /api/ventes/documents/regrouper-bls
+     *
+     * Facture d'un seul coup les bons de livraison cochés dans la liste des
+     * ventes. La facture périodique automatique répond au même besoin, mais
+     * seulement le 1er du mois et seulement pour les clients en compte : ici
+     * l'utilisateur choisit ses bons et sa date.
+     *
+     * Les bons ne sont pas supprimés — ils restent la preuve de la livraison —
+     * mais passent en 'converted' pour ne pas être facturés deux fois.
+     */
+    public function regrouper_bls(
+        GroupDeliveryNotesRequest $request,
+        DocumentGroupingService $grouping
+    ): JsonResponse {
+        $notes = DocumentHeader::whereIn('id', $request->validated('delivery_note_ids'))
+            ->with(['lignes', 'footer', 'payments'])
+            ->get();
+
+        // Le service refuse les mélanges de clients, les bons déjà facturés et
+        // les statuts non confirmés, et renvoie un 422 parlant.
+        $result = $grouping->fromDeliveryNotes(
+            $notes,
+            $request->validated('issued_at'),
+            $request->validated('customer_ref'),
+        );
+
+        return response()->json([
+            'message' => 'Facture ' . $result['invoice']->reference . ' créée à partir de '
+                       . $result['replaced'] . ' bon(s) de livraison.',
+            'data'    => $result['invoice']->load(['thirdPartner', 'lignes.product', 'footer', 'user', 'warehouse']),
         ], 201);
     }
 

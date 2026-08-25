@@ -10,7 +10,7 @@ use App\Models\Setting;
 use App\Models\ThirdPartner;
 use App\Repositories\Contracts\DocumentIncrementorRepositoryInterface;
 use App\Services\DocumentIncrementorService;
-use App\Services\PurchaseInvoiceGroupingService;
+use App\Services\DocumentGroupingService;
 use App\Services\StockMouvementService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -472,7 +472,7 @@ class DocumentAchatController extends Controller
      */
     public function regrouper_bons(
         GroupReceiptNotesRequest $request,
-        PurchaseInvoiceGroupingService $grouping
+        DocumentGroupingService $grouping
     ): JsonResponse {
         $receipts = DocumentHeader::whereIn('id', $request->validated('receipt_ids'))
             ->with(['lignes', 'footer', 'payments'])

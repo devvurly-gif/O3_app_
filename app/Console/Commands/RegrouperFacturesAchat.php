@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use App\Models\DocumentHeader;
 use App\Models\Tenant;
 use App\Models\ThirdPartner;
-use App\Services\PurchaseInvoiceGroupingService;
+use App\Services\DocumentGroupingService;
 use Illuminate\Console\Command;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
@@ -18,7 +18,7 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
  * bons ont deja ete factures un par un et qu'il faut recoller les morceaux sur
  * plusieurs mois d'historique.
  *
- * Toute la regle metier vit dans PurchaseInvoiceGroupingService, partage avec
+ * Toute la regle metier vit dans DocumentGroupingService, partage avec
  * l'ecran : la dupliquer ici aurait laisse les deux chemins diverger.
  */
 class RegrouperFacturesAchat extends Command
@@ -32,7 +32,7 @@ class RegrouperFacturesAchat extends Command
 
     protected $description = 'Fusionne les factures d\'achat d\'un fournisseur en une facture groupee';
 
-    public function handle(PurchaseInvoiceGroupingService $grouping): int
+    public function handle(DocumentGroupingService $grouping): int
     {
         if (!$this->argument('tenant')) {
             return $this->run_($grouping);
@@ -55,7 +55,7 @@ class RegrouperFacturesAchat extends Command
         return $exit;
     }
 
-    private function run_(PurchaseInvoiceGroupingService $grouping): int
+    private function run_(DocumentGroupingService $grouping): int
     {
         $supplier = null;
         if ($this->option('supplier')) {

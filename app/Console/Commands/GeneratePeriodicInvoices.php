@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\DocumentHeader;
 use App\Models\Payment;
 use App\Models\ThirdPartner;
+use App\Models\User;
 use App\Repositories\Contracts\DocumentIncrementorRepositoryInterface;
 use App\Services\DocumentIncrementorService;
 use Illuminate\Console\Command;
@@ -44,6 +45,14 @@ class GeneratePeriodicInvoices extends Command
             return self::SUCCESS;
         }
 
+        // Porteur des factures generees : le premier utilisateur du tenant.
+        $systemUserId = User::orderBy('id')->value('id');
+
+        if (!$systemUserId) {
+            $this->error('Aucun utilisateur dans ce tenant : impossible de porter les factures.');
+            return self::FAILURE;
+        }
+
         $isDryRun      = $this->option('dry-run');
         $invoiceCount   = 0;
         $totalAmount    = 0;
@@ -72,7 +81,7 @@ class GeneratePeriodicInvoices extends Command
             }
 
             try {
-                DB::transaction(function () use ($partner, $bls, $incrementors, $incrementorService, $blRefs, &$invoiceCount, &$totalAmount) {
+                DB::transaction(function () use ($partner, $bls, $incrementors, $incrementorService, $blRefs, $systemUserId, &$invoiceCount, &$totalAmount) {
                     // Generate invoice reference
                     $reference = $this->generateReference($incrementors, $incrementorService);
 
@@ -92,7 +101,12 @@ class GeneratePeriodicInvoices extends Command
                         'thirdPartner_id'         => $partner->id,
                         'company_role'            => 'seller',
                         'warehouse_id'            => $bls->first()->warehouse_id,
-                        'user_id'                 => 1, // System user
+                        // L'utilisateur 1 etait code en dur : sur un tenant ou il
+                        // a ete supprime, la contrainte de cle etrangere faisait
+                        // echouer la creation. L'exception etant capturee et
+                        // journalisee, la commande annoncait un succes et le
+                        // client n'etait jamais facture, sans que personne ne le voie.
+                        'user_id'                 => $systemUserId,
                         'status'                  => 'pending',
                         'issued_at'               => now(),
                         'due_at'                  => now()->addDays(60),

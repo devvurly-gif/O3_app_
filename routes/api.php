@@ -303,6 +303,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('ventes/documents/{bl}/confirmer',              [DocumentVenteController::class, 'confirmer_reception']);
         Route::post('ventes/documents/{bl}/annuler',               [DocumentVenteController::class, 'annuler_bl']);
         Route::post('ventes/documents/{document}/retour-client',   [DocumentVenteController::class, 'retour_client']);
+        // Plusieurs bons de livraison coches dans la liste -> une facture unique.
+        Route::post('ventes/documents/regrouper-bls',              [DocumentVenteController::class, 'regrouper_bls']);
 
         // ── Purchase workflow (Achats) ───────────────────────────────
         Route::post('achats/documents/{commande}/generer-reception',       [DocumentAchatController::class, 'generer_reception']);
