@@ -2,6 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\CashAccount;
+use App\Models\CashCategory;
+use App\Models\CashTransaction;
 use App\Models\DocumentHeader;
 use App\Models\Payment;
 use App\Models\PosSession;
@@ -65,9 +68,6 @@ class PosService
     }
 
     /**
-     * Close an existing session.
-     */
-    /**
      * Factures produites par la derniere cloture, pour que l'appelant puisse
      * les annoncer sans les rechercher.
      *
@@ -75,6 +75,9 @@ class PosService
      */
     public array $lastGeneratedInvoices = [];
 
+    /**
+     * Close an existing session.
+     */
     public function closeSession(PosSession $session, float $closingCash, ?string $notes = null): PosSession
     {
         if (!$session->isOpen()) {
@@ -172,6 +175,164 @@ class PosService
         }
 
         return $created;
+    }
+
+    /**
+     * Validation d'une session par un responsable.
+     *
+     * C'est ce geste, et lui seul, qui fait entrer l'argent de la caisse en
+     * tresorerie. Tant qu'une session n'est pas validee, ses encaissements
+     * restent hors du journal (voir TreasuryService::POS_EXCLUSION_SQL) : la
+     * recette theorique et les especes reellement en tiroir peuvent differer,
+     * et c'est le comptage endosse par un responsable qui tranche.
+     *
+     * Deux ecritures en sortent :
+     *   - les recettes, une par client et par moyen de paiement, imputees au
+     *     compte que ce moyen alimente ;
+     *   - l'ecart, s'il y en a un, en moins quand la caisse est courte, avec le
+     *     proces-verbal en note. Sans explication ecrite, la validation est
+     *     refusee : un manque non justifie ne doit pas pouvoir etre absorbe
+     *     d'un clic.
+     *
+     * @return array{recettes: array<int, array<string, mixed>>, ecart: ?CashTransaction}
+     */
+    public function validateSession(PosSession $session, ?string $varianceReason, ?int $validatorId): array
+    {
+        if ($session->isOpen()) {
+            abort(422, 'Cette session n\'est pas encore cloturee.');
+        }
+
+        if ($session->isValidated()) {
+            abort(422, 'Cette session a deja ete validee.');
+        }
+
+        if ($session->hasVariance() && !trim((string) $varianceReason)) {
+            abort(422, 'La caisse presente un ecart de '
+                . number_format((float) $session->cash_difference, 2, ',', ' ')
+                . ' : un proces-verbal expliquant l\'ecart est obligatoire.');
+        }
+
+        return DB::transaction(function () use ($session, $varianceReason, $validatorId) {
+            $recettes = $this->postSessionTakings($session, $validatorId);
+            $ecart    = $this->postSessionVariance($session, $varianceReason, $validatorId);
+
+            $session->update([
+                'validated_at'            => now(),
+                'validated_by'            => $validatorId,
+                'variance_reason'         => $varianceReason,
+                'variance_transaction_id' => $ecart?->id,
+            ]);
+
+            return ['recettes' => $recettes, 'ecart' => $ecart];
+        });
+    }
+
+    /**
+     * Les recettes de la session, une ecriture par client et par moyen.
+     *
+     * Le regroupement par moyen n'est pas cosmetique : c'est lui qui decide du
+     * compte credite. Des especes vont en caisse, une carte en banque — les
+     * fondre en une ligne rendrait tout solde de compte faux.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function postSessionTakings(PosSession $session, ?int $validatorId): array
+    {
+        $payments = Payment::query()
+            ->join('document_headers as dh', 'dh.id', '=', 'payments.document_header_id')
+            ->where('dh.pos_session_id', $session->id)
+            ->whereIn('dh.document_type', ['TicketSale', 'InvoiceSale'])
+            ->whereNotIn('payments.method', ['credit'])
+            ->whereNull('dh.deleted_at')
+            ->where('dh.status', '!=', 'cancelled')
+            ->selectRaw('dh.thirdPartner_id as partner_id, payments.method as method, SUM(payments.amount) as total')
+            ->groupBy('dh.thirdPartner_id', 'payments.method')
+            ->get();
+
+        $created = [];
+
+        foreach ($payments as $row) {
+            $amount = round((float) $row->total, 2);
+
+            if ($amount <= 0) {
+                continue;
+            }
+
+            $account = CashAccount::where('ca_payment_method', $row->method)->first();
+
+            if (!$account) {
+                abort(422, "Aucun compte de tresorerie n'est rattache au moyen de paiement '{$row->method}' : "
+                    . 'renseignez-le dans Tresorerie > Comptes avant de valider la session.');
+            }
+
+            $partner = $row->partner_id ? ThirdPartner::find($row->partner_id) : null;
+
+            $created[] = CashTransaction::create([
+                'cash_account_id'  => $account->id,
+                'cash_category_id' => $this->salesCategoryId(),
+                'ct_direction'     => 'in',
+                'ct_amount'        => $amount,
+                'ct_date'          => $session->closed_at?->toDateString() ?? now()->toDateString(),
+                'ct_label'         => 'Recette caisse — ' . ($partner?->tp_title ?? 'Client comptoir')
+                                      . ' — session #' . $session->id,
+                'ct_method'        => $row->method,
+                'ct_reference'     => 'POS-' . $session->id,
+                'thirdPartner_id'  => $row->partner_id,
+                'user_id'          => $validatorId,
+                'ct_notes'         => 'Encaissements de la session de caisse #' . $session->id
+                                      . ', valides le ' . now()->format('d/m/Y') . '.',
+            ]);
+        }
+
+        return $created;
+    }
+
+    /**
+     * L'ecart de caisse : ce qui manque ou ce qui reste en trop.
+     *
+     * Il est ecrit tel quel, en moins si la caisse est courte. Le lisser dans
+     * les recettes reviendrait a effacer l'incident du jour ou il a eu lieu.
+     */
+    private function postSessionVariance(PosSession $session, ?string $reason, ?int $validatorId): ?CashTransaction
+    {
+        if (!$session->hasVariance()) {
+            return null;
+        }
+
+        $difference = (float) $session->cash_difference;
+        $account    = CashAccount::where('ca_payment_method', 'cash')->first();
+
+        if (!$account) {
+            abort(422, "Aucun compte de tresorerie n'est rattache aux especes : "
+                . 'renseignez-le dans Tresorerie > Comptes avant de valider la session.');
+        }
+
+        $category = CashCategory::firstOrCreate(
+            ['cc_title' => 'Ecart de caisse'],
+            ['cc_direction' => 'both', 'cc_status' => true],
+        );
+
+        return CashTransaction::create([
+            'cash_account_id'  => $account->id,
+            'cash_category_id' => $category->id,
+            'ct_direction'     => $difference < 0 ? 'out' : 'in',
+            'ct_amount'        => abs(round($difference, 2)),
+            'ct_date'          => $session->closed_at?->toDateString() ?? now()->toDateString(),
+            'ct_label'         => ($difference < 0 ? 'Manque' : 'Excedent') . ' de caisse — session #' . $session->id,
+            'ct_method'        => 'cash',
+            'ct_reference'     => 'POS-' . $session->id,
+            'user_id'          => $validatorId,
+            'ct_notes'         => "Proces-verbal : " . trim((string) $reason),
+        ]);
+    }
+
+    /** Le poste ou atterrissent les recettes de caisse. */
+    private function salesCategoryId(): ?int
+    {
+        return CashCategory::firstOrCreate(
+            ['cc_title' => 'Ventes comptoir'],
+            ['cc_direction' => 'in', 'cc_status' => true],
+        )->id;
     }
 
     /**
@@ -526,6 +687,13 @@ class PosService
 
         if ($ticket->status === 'cancelled') {
             abort(422, 'Ce ticket est déjà annulé.');
+        }
+
+        // Une caisse fermee a des chiffres arretes : annuler un ticket apres
+        // coup contrepasserait le stock et ferait mentir un comptage deja
+        // signe. Seul un responsable peut encore corriger.
+        if ($ticket->isSealedFor(auth()->user())) {
+            abort(403, 'Cette caisse est clôturée : seul un responsable peut annuler ce ticket.');
         }
 
         return DB::transaction(function () use ($ticket) {

@@ -32,6 +32,10 @@ class PosSession extends Model
         'expected_cash',
         'cash_difference',
         'notes',
+        'validated_at',
+        'validated_by',
+        'variance_reason',
+        'variance_transaction_id',
     ];
 
     protected $casts = [
@@ -41,6 +45,7 @@ class PosSession extends Model
         'closing_cash'    => 'decimal:2',
         'expected_cash'   => 'decimal:2',
         'cash_difference' => 'decimal:2',
+        'validated_at'    => 'datetime',
     ];
 
     public function terminal(): BelongsTo
@@ -51,6 +56,28 @@ class PosSession extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function validator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'validated_by');
+    }
+
+    /** L'ecriture de tresorerie qui porte l'ecart de caisse, s'il y en a eu. */
+    public function varianceTransaction(): BelongsTo
+    {
+        return $this->belongsTo(CashTransaction::class, 'variance_transaction_id');
+    }
+
+    public function isValidated(): bool
+    {
+        return $this->validated_at !== null;
+    }
+
+    /** Une caisse qui ne tombe pas juste : l'ecart exige un proces-verbal. */
+    public function hasVariance(): bool
+    {
+        return abs((float) $this->cash_difference) >= 0.01;
     }
 
     public function tickets(): HasMany

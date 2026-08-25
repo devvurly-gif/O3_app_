@@ -33,6 +33,22 @@ class TreasuryService
     /** Méthodes de paiement qui ne représentent pas un mouvement d'argent. */
     private const NON_CASH_METHODS = ['credit'];
 
+    /**
+     * Les encaissements de caisse n'entrent pas au journal ticket par ticket.
+     *
+     * L'argent d'une session n'est acquis qu'une fois la caisse comptée et le
+     * comptage endossé par un responsable : jusque-là, la recette théorique et
+     * les espèces réellement en tiroir peuvent différer. La validation de la
+     * session écrit les recettes, client par client, et l'écart s'il y en a un
+     * — voir PosService::validateSession().
+     *
+     * Le filtre vise les tickets et les factures qui les récapitulent. Un bon
+     * de livraison POS (vente à crédit) en est exclu : son règlement ultérieur
+     * au comptoir est un encaissement ordinaire, qui doit se voir tout de suite.
+     */
+    private const POS_EXCLUSION_SQL =
+        "(dh.document_type = 'TicketSale' OR (dh.document_type = 'InvoiceSale' AND dh.pos_session_id IS NOT NULL))";
+
     // ── Journal ───────────────────────────────────────────────────
 
     /**
@@ -125,6 +141,7 @@ class TreasuryService
             })
             ->whereNotIn('p.method', self::NON_CASH_METHODS)
             ->whereNull('dh.deleted_at')
+            ->whereRaw('NOT ' . self::POS_EXCLUSION_SQL)
             ->selectRaw("
                 'payment' as source,
                 p.id as id,
@@ -219,6 +236,7 @@ class TreasuryService
             ->whereNotIn('p.method', self::NON_CASH_METHODS)
             ->whereNull('dh.deleted_at')
             ->whereNull('ca.deleted_at')
+            ->whereRaw('NOT ' . self::POS_EXCLUSION_SQL)
             ->groupBy('ca.id')
             ->selectRaw("ca.id as account_id, SUM(CASE WHEN dh.document_type LIKE '%Purchase%' THEN -p.amount ELSE p.amount END) as net")
             ->pluck('net', 'account_id');
@@ -269,6 +287,7 @@ class TreasuryService
             ->join('document_headers as dh', 'dh.id', '=', 'p.document_header_id')
             ->whereNotIn('p.method', self::NON_CASH_METHODS)
             ->whereNull('dh.deleted_at')
+            ->whereRaw('NOT ' . self::POS_EXCLUSION_SQL)
             ->when($from, fn ($q) => $q->whereDate('p.paid_at', '>=', $from))
             ->when($to,   fn ($q) => $q->whereDate('p.paid_at', '<=', $to))
             ->selectRaw("

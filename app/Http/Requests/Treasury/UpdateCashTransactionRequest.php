@@ -81,7 +81,12 @@ class UpdateCashTransactionRequest extends FormRequest
             return;
         }
 
-        $payments = Payment::where('document_header_id', $documentId)->count();
+        // Un document de caisse ne compte pas : ses reglements sont hors du
+        // journal jusqu'a la validation de la session, il n'y a donc rien a
+        // doubler.
+        $payments = Payment::where('document_header_id', $documentId)
+            ->whereHas('document', fn ($q) => $q->whereNull('pos_session_id'))
+            ->count();
 
         if ($payments > 0) {
             $v->errors()->add(

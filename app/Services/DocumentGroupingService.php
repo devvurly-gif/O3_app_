@@ -199,6 +199,10 @@ class DocumentGroupingService
                     'thirdPartner_id'         => $first->thirdPartner_id,
                     'company_role'            => $first->company_role,
                     'warehouse_id'            => $first->warehouse_id,
+                    // La facture herite de la session : elle se verrouille
+                    // avec elle a la cloture, comme les tickets qu'elle
+                    // recapitule.
+                    'pos_session_id'          => $first->pos_session_id,
                     'user_id'                 => auth()->id() ?? $first->user_id,
                     'status'                  => 'pending',
                     'issued_at'               => $issuedAt,

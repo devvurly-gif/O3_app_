@@ -359,6 +359,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('sessions/open',           [PosSessionController::class, 'open'])->middleware('permission:pos.open_session');
         Route::post('sessions/{session}/close', [PosSessionController::class, 'close'])->middleware('permission:pos.close_session');
         Route::post('sessions/{session}/force-close', [PosSessionController::class, 'forceClose'])->middleware('role:admin,manager');
+        // La validation du comptage fait entrer l'argent de la caisse en
+        // tresorerie : elle est reservee a un responsable, jamais au caissier
+        // qui a compte.
+        Route::post('sessions/{session}/valider', [PosSessionController::class, 'validate_session'])->middleware('role:admin,manager');
         Route::get('sessions/current',          [PosSessionController::class, 'current']);
 
         // Live session stats (sales by payment method, refreshed during the session)

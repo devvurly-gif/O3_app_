@@ -109,6 +109,37 @@ class DocumentHeader extends Model
             && $this->children()->where('document_type', 'InvoiceSale')->exists();
     }
 
+    /**
+     * Ce document appartient-il a une caisse deja fermee ?
+     *
+     * Une fois la session close, ses chiffres sont arretes : `expected_cash` a
+     * ete calcule, l'ecart constate, et le responsable va les endosser.
+     * Annuler un ticket apres coup contrepasserait le stock et ferait mentir un
+     * comptage deja signe.
+     */
+    public function belongsToClosedSession(): bool
+    {
+        if (!$this->pos_session_id) {
+            return false;
+        }
+
+        return $this->posSession()->whereNotNull('closed_at')->exists();
+    }
+
+    /**
+     * Le caissier n'a plus la main sur une caisse fermee ; un responsable, si —
+     * une correction reste possible, mais elle est faite par quelqu'un d'autre
+     * et tracee par le journal d'activite.
+     */
+    public function isSealedFor(?User $user): bool
+    {
+        if (!$this->belongsToClosedSession()) {
+            return false;
+        }
+
+        return !($user?->isAdmin() || $user?->isManager());
+    }
+
     public function lignes(): HasMany
     {
         return $this->hasMany(DocumentLigne::class, 'document_header_id')

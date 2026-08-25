@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Pos;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Pos\CloseSessionRequest;
 use App\Http\Requests\Pos\OpenSessionRequest;
+use App\Http\Requests\Pos\ValidateSessionRequest;
 use App\Mail\SessionClosingReportMail;
 use App\Models\DocumentHeader;
 use App\Models\Payment;
@@ -95,6 +96,30 @@ class PosSessionController extends Controller
         }
 
         return response()->json($session);
+    }
+
+    /**
+     * POST /api/pos/sessions/{session}/valider
+     *
+     * Le responsable endosse le comptage : les recettes de la session entrent
+     * en tresorerie, et l'ecart y est ecrit tel quel avec son proces-verbal.
+     * Fermer sa caisse et valider l'ecart sont deux gestes faits par deux
+     * personnes differentes — sans quoi celui qui constate le manque est aussi
+     * celui qui le justifie.
+     */
+    public function validate_session(ValidateSessionRequest $request, PosSession $session): JsonResponse
+    {
+        $result = $this->posService->validateSession(
+            $session,
+            $request->validated('variance_reason'),
+            auth()->id(),
+        );
+
+        return response()->json([
+            'message' => 'Session validee : ' . count($result['recettes']) . ' recette(s) enregistree(s)'
+                       . ($result['ecart'] ? ' et un ecart de caisse.' : '.'),
+            'data'    => $session->fresh(['terminal', 'user', 'validator', 'varianceTransaction']),
+        ]);
     }
 
     public function current(): JsonResponse
