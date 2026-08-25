@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Treasury;
 
 use App\Models\CashCategory;
+use App\Models\Payment;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 
@@ -35,6 +36,16 @@ class UpdateCashTransactionRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $v) {
+            // Seul un rattachement nouveau est controle : refuser un document
+            // deja porte par l'ecriture bloquerait toute modification ulterieure
+            // d'une ligne pourtant legitime.
+            $current = $this->route('cash_transaction')?->document_header_id;
+            $target  = $this->document_header_id ? (int) $this->document_header_id : null;
+
+            if ($target && $target !== $current) {
+                $this->refuseDoublonReglement($v, $target);
+            }
+
             if (!$this->cash_category_id) {
                 return;
             }
@@ -54,5 +65,31 @@ class UpdateCashTransactionRequest extends FormRequest
                 );
             }
         });
+    }
+
+    /**
+     * Un document deja regle ne peut pas porter une ecriture manuelle.
+     *
+     * Le journal de tresorerie reunit deux sources : les ecritures saisies a la
+     * main et les reglements des documents. Saisir a la main une depense qui
+     * correspond a un reglement deja enregistre la ferait compter deux fois —
+     * le solde de caisse serait faux, et rien ne le signalerait.
+     */
+    private function refuseDoublonReglement(Validator $v, ?int $documentId): void
+    {
+        if (!$documentId) {
+            return;
+        }
+
+        $payments = Payment::where('document_header_id', $documentId)->count();
+
+        if ($payments > 0) {
+            $v->errors()->add(
+                'document_header_id',
+                'Ce document porte déjà ' . $payments . ' règlement(s) : ils figurent au journal de trésorerie. '
+                . 'Pour encaisser ou décaisser davantage sur ce document, passez par le bouton de paiement de la facture '
+                . 'plutôt que par une écriture manuelle.'
+            );
+        }
     }
 }

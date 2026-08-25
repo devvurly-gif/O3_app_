@@ -143,6 +143,54 @@ class TreasuryTest extends TestCase
         $this->assertSame(900.0, round($before - $after, 2));
     }
 
+    public function test_a_manual_entry_cannot_double_a_document_payment(): void
+    {
+        $payment = $this->salePayment(1000);
+
+        // Le reglement figure deja au journal : le ressaisir a la main le
+        // ferait compter deux fois dans les sorties.
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson('/api/cash-transactions', [
+                'cash_account_id'    => $this->caisse->id,
+                'document_header_id' => $payment->document_header_id,
+                'ct_direction'       => 'in',
+                'ct_amount'          => 1000,
+                'ct_date'            => '2026-08-11',
+                'ct_label'           => 'Encaissement facture',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['document_header_id']);
+    }
+
+    public function test_a_manual_entry_can_reference_a_document_without_payments(): void
+    {
+        $doc = DocumentHeader::factory()->invoice()->create(['user_id' => $this->admin->id]);
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson('/api/cash-transactions', [
+                'cash_account_id'    => $this->caisse->id,
+                'document_header_id' => $doc->id,
+                'ct_direction'       => 'out',
+                'ct_amount'          => 150,
+                'ct_date'            => '2026-08-11',
+                'ct_label'           => 'Transport lié à la facture',
+            ])
+            ->assertCreated();
+    }
+
+    public function test_moving_an_entry_onto_a_settled_document_is_refused(): void
+    {
+        $payment = $this->salePayment(1000);
+        $entry   = $this->expense();
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->putJson("/api/cash-transactions/{$entry->id}", [
+                'document_header_id' => $payment->document_header_id,
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['document_header_id']);
+    }
+
     // ── Synthèse ──────────────────────────────────────────────────
 
     public function test_summary_merges_manual_entries_and_document_payments(): void
