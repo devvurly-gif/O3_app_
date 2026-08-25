@@ -10,6 +10,16 @@ use Illuminate\Support\Facades\Log;
 
 class DocumentNotificationObserver
 {
+    /**
+     * Coupe les notifications le temps d'un traitement par lot.
+     *
+     * Une régularisation qui crée huit factures antidatées enverrait huit
+     * mails et huit notifications push « nouvelle facture » pour des documents
+     * vieux de plusieurs semaines. Même logique — et même convention — que
+     * `Payment::$skipNotification`.
+     */
+    public static bool $silent = false;
+
     public function created(DocumentHeader $doc): void
     {
         $this->notifyIfConfirmed($doc);
@@ -26,6 +36,10 @@ class DocumentNotificationObserver
 
     private function notifyIfConfirmed(DocumentHeader $doc): void
     {
+        if (static::$silent) {
+            return;
+        }
+
         if (!in_array($doc->status, ['confirmed', 'pending'])) {
             return;
         }
