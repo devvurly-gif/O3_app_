@@ -54,6 +54,11 @@ use App\Http\Controllers\Api\Ecom\EcomOrderController;
 use App\Http\Controllers\Api\Ecom\EcomSlideController;
 use App\Http\Controllers\Api\Ecom\EcomConfigController;
 use App\Http\Controllers\Api\StorageGalleryController;
+use App\Http\Controllers\Api\Treasury\CashAccountController;
+use App\Http\Controllers\Api\Treasury\CashCategoryController;
+use App\Http\Controllers\Api\Treasury\CashRecurrenceController;
+use App\Http\Controllers\Api\Treasury\CashTransactionController;
+use App\Http\Controllers\Api\Treasury\TreasuryController;
 use App\Services\CacheService;
 use Illuminate\Support\Facades\Route;
 
@@ -147,6 +152,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('payments',                           [PaymentController::class, 'index']);
     Route::get('payments/{payment}',                 [PaymentController::class, 'show']);
     Route::get('settings',                           [SettingController::class, 'index']);
+
+    // ── Trésorerie : lecture (tout utilisateur authentifié) ──────────────
+    Route::get('treasury/summary',                   [TreasuryController::class, 'summary']);
+    Route::get('treasury/journal',                   [TreasuryController::class, 'journal']);
+    Route::get('cash-accounts',                      [CashAccountController::class, 'index']);
+    Route::get('cash-accounts/{cashAccount}',        [CashAccountController::class, 'show']);
+    Route::get('cash-categories',                    [CashCategoryController::class, 'index']);
+    Route::get('cash-categories/{cashCategory}',     [CashCategoryController::class, 'show']);
+    Route::get('cash-transactions',                  [CashTransactionController::class, 'index']);
+    Route::get('cash-transactions/{cashTransaction}',[CashTransactionController::class, 'show']);
+    Route::get('cash-recurrences',                   [CashRecurrenceController::class, 'index']);
+    Route::get('cash-recurrences/{cashRecurrence}',  [CashRecurrenceController::class, 'show']);
     Route::get('storage/products',                   [StorageGalleryController::class, 'products']);
 
     // ── Label printing (TSPL) ────────────────────────────────────────────
@@ -162,6 +179,23 @@ Route::middleware('auth:sanctum')->group(function () {
     // l'historique de stock. Ce n'est pas la même chose que consulter une
     // fiche à l'écran, et ça mérite le même garde-fou que les rapports
     // équivalents juste en dessous — qui, eux, étaient déjà restreints.
+    // ── Trésorerie : paramétrage (admin, manager) ────────────────────────
+    // Comptes, postes de dépense et récurrences décident de la lecture des
+    // chiffres : un caissier saisit des écritures, il ne redéfinit pas le plan.
+    Route::middleware('role:admin,manager')->group(function () {
+        Route::post('cash-accounts',                       [CashAccountController::class, 'store']);
+        Route::put('cash-accounts/{cashAccount}',          [CashAccountController::class, 'update']);
+        Route::delete('cash-accounts/{cashAccount}',       [CashAccountController::class, 'destroy']);
+
+        Route::post('cash-categories',                     [CashCategoryController::class, 'store']);
+        Route::put('cash-categories/{cashCategory}',       [CashCategoryController::class, 'update']);
+        Route::delete('cash-categories/{cashCategory}',    [CashCategoryController::class, 'destroy']);
+
+        Route::post('cash-recurrences',                    [CashRecurrenceController::class, 'store']);
+        Route::put('cash-recurrences/{cashRecurrence}',    [CashRecurrenceController::class, 'update']);
+        Route::delete('cash-recurrences/{cashRecurrence}', [CashRecurrenceController::class, 'destroy']);
+    });
+
     Route::middleware('role:admin,manager')->prefix('export')->group(function () {
         Route::get('products',         [ExportController::class, 'products']);
         Route::get('documents',        [ExportController::class, 'documents']);
@@ -250,6 +284,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('payments/{payment}',                           [PaymentController::class, 'destroy']);
 
         Route::post('third-partners/{thirdPartner}/bulk-payment',     [ThirdPartnerController::class, 'bulkPayment']);
+
+        // ── Trésorerie : saisie (dépenses, recettes, virements) ───────
+        Route::post('cash-transactions',                       [CashTransactionController::class, 'store']);
+        Route::post('cash-transactions/{cashTransaction}',     [CashTransactionController::class, 'update']);
+        Route::put('cash-transactions/{cashTransaction}',      [CashTransactionController::class, 'update']);
+        Route::delete('cash-transactions/{cashTransaction}',   [CashTransactionController::class, 'destroy']);
+        Route::post('cash-transfers',                          [CashTransactionController::class, 'transfer']);
+        Route::post('cash-recurrences/run',                    [CashRecurrenceController::class, 'run']);
 
         Route::get('document-incrementors/{documentIncrementor}/reserve',  [DocumentIncrementorController::class, 'reserveNext']);
         Route::post('document-incrementors/{documentIncrementor}/confirm', [DocumentIncrementorController::class, 'confirmNext']);

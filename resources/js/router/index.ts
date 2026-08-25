@@ -69,6 +69,11 @@ const routes: RouteRecordRaw[] = [
     meta: { layout: 'app', title: 'Warehouses', breadcrumb: 'Warehouses' },
   },
   {
+    path: '/treasury',
+    component: () => import('../pages/Treasury.vue'),
+    meta: { layout: 'app', title: 'Trésorerie', breadcrumb: 'Trésorerie' },
+  },
+  {
     path: '/customers',
     component: () => import('../pages/Customers.vue'),
     meta: { layout: 'app', title: 'Customers', breadcrumb: 'Customers' },

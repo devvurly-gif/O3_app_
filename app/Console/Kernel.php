@@ -16,6 +16,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('notify:due-invoices --days=0')->dailyAt('09:00');
         $schedule->command('billing:generate-periodic-invoices')->dailyAt('01:00');
         $schedule->command('tenants:sync-feature-flags')->dailyAt('02:00');
+        $schedule->command('treasury:generate')->dailyAt('03:00');
     }
 
     /**

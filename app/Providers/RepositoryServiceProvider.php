@@ -5,6 +5,9 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 
 use App\Repositories\Contracts\BrandRepositoryInterface;
+use App\Repositories\Contracts\CashAccountRepositoryInterface;
+use App\Repositories\Contracts\CashCategoryRepositoryInterface;
+use App\Repositories\Contracts\CashTransactionRepositoryInterface;
 use App\Repositories\Contracts\CategoryRepositoryInterface;
 use App\Repositories\Contracts\DocumentFooterRepositoryInterface;
 use App\Repositories\Contracts\DocumentHeaderRepositoryInterface;
@@ -29,6 +32,9 @@ use App\Repositories\Contracts\WarehouseStockRepositoryInterface;
 use App\Repositories\Contracts\WarehouseTransferRepositoryInterface;
 
 use App\Repositories\Eloquent\BrandRepository;
+use App\Repositories\Eloquent\CashAccountRepository;
+use App\Repositories\Eloquent\CashCategoryRepository;
+use App\Repositories\Eloquent\CashTransactionRepository;
 use App\Repositories\Eloquent\CategoryRepository;
 use App\Repositories\Eloquent\DocumentFooterRepository;
 use App\Repositories\Eloquent\DocumentHeaderRepository;
@@ -56,6 +62,9 @@ class RepositoryServiceProvider extends ServiceProvider
 {
     protected array $repositories = [
         BrandRepositoryInterface::class               => BrandRepository::class,
+        CashAccountRepositoryInterface::class          => CashAccountRepository::class,
+        CashCategoryRepositoryInterface::class         => CashCategoryRepository::class,
+        CashTransactionRepositoryInterface::class      => CashTransactionRepository::class,
         CategoryRepositoryInterface::class             => CategoryRepository::class,
         DocumentFooterRepositoryInterface::class       => DocumentFooterRepository::class,
         DocumentHeaderRepositoryInterface::class       => DocumentHeaderRepository::class,

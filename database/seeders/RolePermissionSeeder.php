@@ -32,6 +32,9 @@ class RolePermissionSeeder extends Seeder
             'payments'       => ['view', 'create', 'delete'],
             'stock'          => ['view', 'manage', 'transfer', 'adjust'],
             'warehouses'     => ['view', 'create', 'update', 'delete'],
+            // treasury.manage couvre le paramétrage (comptes, postes, récurrences),
+            // là où create/update ne couvrent que la saisie d'écritures.
+            'treasury'       => ['view', 'create', 'update', 'delete', 'manage'],
             'settings'       => ['view', 'manage'],
             'pos'            => ['access', 'manage_terminals', 'open_session', 'close_session', 'void_ticket', 'override_price'],
         ];
@@ -59,6 +62,7 @@ class RolePermissionSeeder extends Seeder
             'categories' => 'Catégories', 'brands' => 'Marques', 'third_partners' => 'Tiers',
             'documents' => 'Documents', 'payments' => 'Paiements', 'stock' => 'Stock',
             'warehouses' => 'Entrepôts', 'settings' => 'Paramètres', 'pos' => 'Point de Vente',
+            'treasury' => 'Trésorerie',
         ];
     }
 
@@ -121,6 +125,9 @@ class RolePermissionSeeder extends Seeder
             if (str_starts_with($name, 'documents.')) return true;
             if (str_starts_with($name, 'payments.')) return true;
             if (in_array($name, ['third_partners.create', 'third_partners.update'])) return true;
+            // Le caissier saisit les dépenses courantes de la journée, mais ne
+            // touche pas au plan de comptes (treasury.manage/delete).
+            if (in_array($name, ['treasury.create', 'treasury.update'])) return true;
             if (in_array($name, ['pos.access', 'pos.open_session', 'pos.close_session'])) return true;
             return false;
         });
