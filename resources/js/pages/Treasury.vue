@@ -1202,15 +1202,36 @@ const visibleTabs = computed(() => {
 })
 
 // ── Période ───────────────────────────────────────────────────────────────
-function firstOfMonth(): string {
-  const d = new Date()
-  return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10)
-}
-function today(): string {
-  return new Date().toISOString().slice(0, 10)
+
+/**
+ * Date au format AAAA-MM-JJ, dans le fuseau de l'utilisateur.
+ *
+ * `toISOString()` convertit d'abord en UTC : à Casablanca (UTC+1), le 1er août
+ * à minuit devient le 31 juillet à 23 h, et tous les raccourcis de période
+ * partaient donc un jour trop tôt.
+ */
+function isoDate(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
 
-const period = reactive({ from: firstOfMonth(), to: today() })
+function firstOfMonth(): string {
+  const d = new Date()
+  return isoDate(new Date(d.getFullYear(), d.getMonth(), 1))
+}
+function today(): string {
+  return isoDate(new Date())
+}
+
+/**
+ * L'écran s'ouvre sur la totalité de l'historique, pas sur le mois courant.
+ *
+ * Une trésorerie qu'on vient d'alimenter avec des mouvements passés — une
+ * reprise d'antériorité, une régularisation — s'affichait entièrement vide au
+ * premier chargement : les écritures existaient, mais hors de la fenêtre par
+ * défaut. Mieux vaut tout montrer et laisser l'utilisateur restreindre.
+ */
+const period = reactive({ from: '', to: '' })
 
 const shortcuts = computed(() => [
   { key: 'month', label: t('treasury.thisMonth') },
@@ -1225,10 +1246,10 @@ function applyShortcut(key: string): void {
     period.from = firstOfMonth()
     period.to = today()
   } else if (key === 'lastMonth') {
-    period.from = new Date(d.getFullYear(), d.getMonth() - 1, 1).toISOString().slice(0, 10)
-    period.to = new Date(d.getFullYear(), d.getMonth(), 0).toISOString().slice(0, 10)
+    period.from = isoDate(new Date(d.getFullYear(), d.getMonth() - 1, 1))
+    period.to = isoDate(new Date(d.getFullYear(), d.getMonth(), 0))
   } else if (key === 'year') {
-    period.from = new Date(d.getFullYear(), 0, 1).toISOString().slice(0, 10)
+    period.from = isoDate(new Date(d.getFullYear(), 0, 1))
     period.to = today()
   } else {
     period.from = ''
