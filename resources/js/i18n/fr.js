@@ -635,6 +635,9 @@ export default {
 
   // ── App Settings ──────────────────────────────────────────────────────
   appSettings: {
+    pos: 'Point de vente',
+    invoiceOnClose: 'Facturer les tickets à la clôture',
+    invoiceOnCloseDesc: 'À la fermeture de caisse, les tickets de la session sont récapitulés en une facture par client. Les tickets restent consultables.',
     title: 'Paramètres',
     subtitle: "Configuration globale de l'application",
     loading: 'Chargement des paramètres…',

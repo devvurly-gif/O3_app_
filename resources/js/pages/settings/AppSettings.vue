@@ -12,13 +12,17 @@
         <button
           v-for="tab in tabs"
           :key="tab.id"
-          @click="activeTab = tab.id"
           class="px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors"
-          :class="tab.id === 'danger'
-            ? (activeTab === tab.id ? 'border-red-500 text-red-600 dark:text-red-400' : 'border-transparent text-red-400 dark:text-red-500/70 hover:text-red-600 hover:border-red-300')
-            : activeTab === tab.id
-              ? 'border-orange-500 text-orange-700 dark:text-orange-400 dark:border-blue-400'
-              : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'"
+          :class="
+            tab.id === 'danger'
+              ? activeTab === tab.id
+                ? 'border-red-500 text-red-600 dark:text-red-400'
+                : 'border-transparent text-red-400 dark:text-red-500/70 hover:text-red-600 hover:border-red-300'
+              : activeTab === tab.id
+                ? 'border-orange-500 text-orange-700 dark:text-orange-400 dark:border-blue-400'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
+          "
+          @click="activeTab = tab.id"
         >
           {{ tab.label }}
         </button>
@@ -28,44 +32,88 @@
     <div v-if="store.loading" class="text-sm text-gray-400 dark:text-gray-500">{{ $t('appSettings.loading') }}</div>
 
     <div v-else class="space-y-6">
-
       <!-- ═══════════════════ TAB: INFO ═══════════════════ -->
       <template v-if="activeTab === 'info'">
         <!-- Company -->
         <section class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 space-y-4">
-          <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 uppercase tracking-wide">{{ $t('appSettings.company') }}</h3>
+          <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 uppercase tracking-wide">
+            {{ $t('appSettings.company') }}
+          </h3>
 
           <!-- Logo Upload -->
           <div class="flex items-start gap-5 pb-4 border-b border-gray-100 dark:border-gray-700">
             <div class="flex-shrink-0">
-              <div v-if="logoPreview || company.logo" class="w-24 h-24 rounded-xl border-2 border-gray-200 dark:border-gray-600 overflow-hidden bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+              <div
+                v-if="logoPreview || company.logo"
+                class="w-24 h-24 rounded-xl border-2 border-gray-200 dark:border-gray-600 overflow-hidden bg-gray-50 dark:bg-gray-900 flex items-center justify-center"
+              >
                 <img :src="logoPreview || company.logo" alt="Logo" class="max-w-full max-h-full object-contain" />
               </div>
-              <div v-else class="w-24 h-24 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-                <svg class="w-8 h-8 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
+              <div
+                v-else
+                class="w-24 h-24 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 flex items-center justify-center"
+              >
+                <svg
+                  class="w-8 h-8 text-gray-300 dark:text-gray-600"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z"
+                  />
                 </svg>
               </div>
             </div>
             <div class="flex-1 space-y-2">
-              <p class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $t('appSettings.companyLogo') || 'Logo de l\'entreprise' }}</p>
-              <p class="text-xs text-gray-400 dark:text-gray-500">{{ $t('appSettings.logoHint') || 'JPG, PNG, WebP ou SVG. Max 2 Mo. Apparaît sur les factures et documents imprimés.' }}</p>
+              <p class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                {{ $t('appSettings.companyLogo') || "Logo de l'entreprise" }}
+              </p>
+              <p class="text-xs text-gray-400 dark:text-gray-500">
+                {{
+                  $t('appSettings.logoHint') ||
+                  'JPG, PNG, WebP ou SVG. Max 2 Mo. Apparaît sur les factures et documents imprimés.'
+                }}
+              </p>
               <div class="flex items-center gap-2">
-                <label class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 rounded-lg hover:bg-orange-100 dark:hover:bg-blue-900/30 transition">
+                <label
+                  class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 rounded-lg hover:bg-orange-100 dark:hover:bg-blue-900/30 transition"
+                >
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
+                    />
                   </svg>
-                  {{ uploadingLogo ? ($t('common.uploading') || 'Upload...') : ($t('appSettings.uploadLogo') || 'Télécharger') }}
-                  <input type="file" accept="image/jpeg,image/png,image/webp,image/svg+xml" class="hidden" @change="handleLogoUpload" :disabled="uploadingLogo" />
+                  {{
+                    uploadingLogo
+                      ? $t('common.uploading') || 'Upload...'
+                      : $t('appSettings.uploadLogo') || 'Télécharger'
+                  }}
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/svg+xml"
+                    class="hidden"
+                    :disabled="uploadingLogo"
+                    @change="handleLogoUpload"
+                  />
                 </label>
                 <button
                   v-if="company.logo"
-                  @click="deleteLogo"
                   :disabled="deletingLogo"
                   class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition"
+                  @click="deleteLogo"
                 >
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"
+                    />
                   </svg>
                   {{ $t('common.delete') || 'Supprimer' }}
                 </button>
@@ -75,32 +123,102 @@
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label for="appsettings-company-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.companyName') }}</label>
-              <input id="appsettings-company-name" v-model="company.name" type="text" placeholder="Acme Corp" :class="inputClass" />
+              <label
+                for="appsettings-company-name"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >{{ $t('appSettings.companyName') }}</label
+              >
+              <input
+                id="appsettings-company-name"
+                v-model="company.name"
+                type="text"
+                placeholder="Acme Corp"
+                :class="inputClass"
+              />
             </div>
             <div>
-              <label for="appsettings-company-phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.phone') }}</label>
-              <input id="appsettings-company-phone" v-model="company.phone" type="text" placeholder="+212..." :class="inputClass" />
+              <label
+                for="appsettings-company-phone"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >{{ $t('common.phone') }}</label
+              >
+              <input
+                id="appsettings-company-phone"
+                v-model="company.phone"
+                type="text"
+                placeholder="+212..."
+                :class="inputClass"
+              />
             </div>
             <div>
-              <label for="appsettings-company-email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.email') }}</label>
-              <input id="appsettings-company-email" v-model="company.email" type="email" placeholder="contact@company.com" :class="inputClass" />
+              <label
+                for="appsettings-company-email"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >{{ $t('common.email') }}</label
+              >
+              <input
+                id="appsettings-company-email"
+                v-model="company.email"
+                type="email"
+                placeholder="contact@company.com"
+                :class="inputClass"
+              />
             </div>
             <div>
-              <label for="appsettings-company-ice" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.ice') }}</label>
-              <input id="appsettings-company-ice" v-model="company.ice" type="text" :placeholder="$t('appSettings.icePlaceholder')" :class="inputClass + ' font-mono'" />
+              <label
+                for="appsettings-company-ice"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >{{ $t('appSettings.ice') }}</label
+              >
+              <input
+                id="appsettings-company-ice"
+                v-model="company.ice"
+                type="text"
+                :placeholder="$t('appSettings.icePlaceholder')"
+                :class="inputClass + ' font-mono'"
+              />
             </div>
             <div>
-              <label for="appsettings-company-rc" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.rc') }}</label>
-              <input id="appsettings-company-rc" v-model="company.rc" type="text" :placeholder="$t('appSettings.rcPlaceholder')" :class="inputClass + ' font-mono'" />
+              <label
+                for="appsettings-company-rc"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >{{ $t('appSettings.rc') }}</label
+              >
+              <input
+                id="appsettings-company-rc"
+                v-model="company.rc"
+                type="text"
+                :placeholder="$t('appSettings.rcPlaceholder')"
+                :class="inputClass + ' font-mono'"
+              />
             </div>
             <div>
-              <label for="appsettings-company-if" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.if') }}</label>
-              <input id="appsettings-company-if" v-model="company.if" type="text" :placeholder="$t('appSettings.ifPlaceholder')" :class="inputClass + ' font-mono'" />
+              <label
+                for="appsettings-company-if"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >{{ $t('appSettings.if') }}</label
+              >
+              <input
+                id="appsettings-company-if"
+                v-model="company.if"
+                type="text"
+                :placeholder="$t('appSettings.ifPlaceholder')"
+                :class="inputClass + ' font-mono'"
+              />
             </div>
             <div class="col-span-1 sm:col-span-2">
-              <label for="appsettings-company-address" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.address') }}</label>
-              <input id="appsettings-company-address" v-model="company.address" type="text" :placeholder="$t('common.addressPlaceholder')" :class="inputClass" />
+              <label
+                for="appsettings-company-address"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >{{ $t('common.address') }}</label
+              >
+              <input
+                id="appsettings-company-address"
+                v-model="company.address"
+                type="text"
+                :placeholder="$t('common.addressPlaceholder')"
+                :class="inputClass"
+              />
             </div>
           </div>
           <div class="flex justify-end">
@@ -112,26 +230,72 @@
 
         <!-- Localization -->
         <section class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 space-y-4">
-          <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 uppercase tracking-wide">{{ $t('appSettings.localization') }}</h3>
+          <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 uppercase tracking-wide">
+            {{ $t('appSettings.localization') }}
+          </h3>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label for="appsettings-locale-currency" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.currency') }}</label>
-              <input id="appsettings-locale-currency" v-model="locale.currency" type="text" placeholder="MAD" :class="inputClass" />
+              <label
+                for="appsettings-locale-currency"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >{{ $t('appSettings.currency') }}</label
+              >
+              <input
+                id="appsettings-locale-currency"
+                v-model="locale.currency"
+                type="text"
+                placeholder="MAD"
+                :class="inputClass"
+              />
             </div>
             <div>
-              <label for="appsettings-locale-currency-symbol" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.currencySymbol') }}</label>
-              <input id="appsettings-locale-currency-symbol" v-model="locale.currency_symbol" type="text" placeholder="د.م." :class="inputClass" />
+              <label
+                for="appsettings-locale-currency-symbol"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >{{ $t('appSettings.currencySymbol') }}</label
+              >
+              <input
+                id="appsettings-locale-currency-symbol"
+                v-model="locale.currency_symbol"
+                type="text"
+                placeholder="د.م."
+                :class="inputClass"
+              />
             </div>
             <div>
-              <label for="appsettings-locale-timezone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.timezone') }}</label>
-              <input id="appsettings-locale-timezone" v-model="locale.timezone" type="text" placeholder="Africa/Casablanca" :class="inputClass" />
+              <label
+                for="appsettings-locale-timezone"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >{{ $t('appSettings.timezone') }}</label
+              >
+              <input
+                id="appsettings-locale-timezone"
+                v-model="locale.timezone"
+                type="text"
+                placeholder="Africa/Casablanca"
+                :class="inputClass"
+              />
             </div>
             <div>
-              <label for="appsettings-locale-date-format" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.dateFormat') }}</label>
-              <input id="appsettings-locale-date-format" v-model="locale.date_format" type="text" placeholder="DD/MM/YYYY" :class="inputClass + ' font-mono'" />
+              <label
+                for="appsettings-locale-date-format"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >{{ $t('appSettings.dateFormat') }}</label
+              >
+              <input
+                id="appsettings-locale-date-format"
+                v-model="locale.date_format"
+                type="text"
+                placeholder="DD/MM/YYYY"
+                :class="inputClass + ' font-mono'"
+              />
             </div>
             <div>
-              <label for="appsettings-locale-language" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.language') }}</label>
+              <label
+                for="appsettings-locale-language"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >{{ $t('appSettings.language') }}</label
+              >
               <select id="appsettings-locale-language" v-model="locale.language" :class="inputClass">
                 <option value="en">{{ $t('appSettings.langEn') }}</option>
                 <option value="fr">{{ $t('appSettings.langFr') }}</option>
@@ -153,7 +317,9 @@
         <section class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5">
           <div class="flex items-center justify-between">
             <div>
-              <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ $t('appSettings.taxActivation') }}</h3>
+              <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                {{ $t('appSettings.taxActivation') }}
+              </h3>
               <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ $t('appSettings.taxActivationHint') }}</p>
             </div>
             <label class="relative inline-flex items-center cursor-pointer">
@@ -165,14 +331,28 @@
                 class="sr-only peer"
                 @change="saveSection('invoice', { tax_enabled: invoice.tax_enabled })"
               />
-              <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-orange-500"></div>
+              <div
+                class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-orange-500"
+              ></div>
             </label>
           </div>
           <!-- Tax rate — only shown when enabled -->
           <div v-if="invoice.tax_enabled === 'true'" class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-            <label for="appsettings-invoice-default-tax-rate" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.defaultTaxRate') }}</label>
+            <label
+              for="appsettings-invoice-default-tax-rate"
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >{{ $t('appSettings.defaultTaxRate') }}</label
+            >
             <div class="flex items-center gap-2">
-              <input id="appsettings-invoice-default-tax-rate" v-model="invoice.default_tax_rate" type="number" min="0" max="100" placeholder="20" :class="inputClass + ' max-w-xs'" />
+              <input
+                id="appsettings-invoice-default-tax-rate"
+                v-model="invoice.default_tax_rate"
+                type="number"
+                min="0"
+                max="100"
+                placeholder="20"
+                :class="inputClass + ' max-w-xs'"
+              />
               <span class="text-sm text-gray-500 dark:text-gray-400">%</span>
             </div>
           </div>
@@ -180,15 +360,38 @@
 
         <!-- Facturation Settings -->
         <section class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 space-y-4">
-          <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 uppercase tracking-wide">{{ $t('appSettings.invoice') }}</h3>
+          <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 uppercase tracking-wide">
+            {{ $t('appSettings.invoice') }}
+          </h3>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label for="appsettings-invoice-payment-terms-days" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.paymentTerms') }}</label>
-              <input id="appsettings-invoice-payment-terms-days" v-model="invoice.payment_terms_days" type="number" min="0" placeholder="30" :class="inputClass" />
+              <label
+                for="appsettings-invoice-payment-terms-days"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >{{ $t('appSettings.paymentTerms') }}</label
+              >
+              <input
+                id="appsettings-invoice-payment-terms-days"
+                v-model="invoice.payment_terms_days"
+                type="number"
+                min="0"
+                placeholder="30"
+                :class="inputClass"
+              />
             </div>
             <div class="col-span-1 sm:col-span-2">
-              <label for="appsettings-invoice-footer-note" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.footerNote') }}</label>
-              <textarea id="appsettings-invoice-footer-note" v-model="invoice.footer_note" rows="2" :placeholder="$t('appSettings.footerNotePlaceholder')" :class="inputClass + ' resize-none'" />
+              <label
+                for="appsettings-invoice-footer-note"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >{{ $t('appSettings.footerNote') }}</label
+              >
+              <textarea
+                id="appsettings-invoice-footer-note"
+                v-model="invoice.footer_note"
+                rows="2"
+                :placeholder="$t('appSettings.footerNotePlaceholder')"
+                :class="inputClass + ' resize-none'"
+              />
             </div>
           </div>
           <div class="flex justify-end">
@@ -205,11 +408,21 @@
           <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 uppercase tracking-wide">Stock</h3>
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $t('appSettings.allowNegativeStock') }}</p>
-              <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{{ $t('appSettings.allowNegativeStockDesc') }}</p>
+              <p class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                {{ $t('appSettings.allowNegativeStock') }}
+              </p>
+              <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                {{ $t('appSettings.allowNegativeStockDesc') }}
+              </p>
             </div>
             <label class="relative inline-flex items-center cursor-pointer">
-              <input v-model="stock.autoriser_stock_negatif" type="checkbox" true-value="true" false-value="false" class="sr-only peer" />
+              <input
+                v-model="stock.autoriser_stock_negatif"
+                type="checkbox"
+                true-value="true"
+                false-value="false"
+                class="sr-only peer"
+              />
               <div :class="toggleClass"></div>
             </label>
           </div>
@@ -222,20 +435,56 @@
 
         <!-- Ventes -->
         <section class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 space-y-4">
-          <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 uppercase tracking-wide">{{ $t('appSettings.sales') }}</h3>
+          <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 uppercase tracking-wide">
+            {{ $t('appSettings.sales') }}
+          </h3>
           <div class="flex items-center justify-between">
             <div>
               <p class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $t('appSettings.paymentOnBL') }}</p>
               <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{{ $t('appSettings.paymentOnBLDesc') }}</p>
             </div>
             <label class="relative inline-flex items-center cursor-pointer">
-              <input v-model="ventes.paiement_sur_bl" type="checkbox" true-value="true" false-value="false" class="sr-only peer" />
+              <input
+                v-model="ventes.paiement_sur_bl"
+                type="checkbox"
+                true-value="true"
+                false-value="false"
+                class="sr-only peer"
+              />
               <div :class="toggleClass"></div>
             </label>
           </div>
           <div class="flex justify-end">
             <button :class="btnClass" :disabled="saving.ventes" @click="saveSection('ventes', ventes)">
               {{ saving.ventes ? $t('common.saving') : $t('appSettings.saveSales') }}
+            </button>
+          </div>
+        </section>
+
+        <!-- Point de vente -->
+        <section class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 space-y-4">
+          <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 uppercase tracking-wide">
+            {{ $t('appSettings.pos') }}
+          </h3>
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $t('appSettings.invoiceOnClose') }}</p>
+              <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{{ $t('appSettings.invoiceOnCloseDesc') }}</p>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input
+                v-model="pos.facture_cloture"
+                type="checkbox"
+                true-value="true"
+                false-value="false"
+                class="sr-only peer"
+              />
+              <div :class="toggleClass"></div>
+            </label>
+          </div>
+          <div class="flex justify-end">
+            <button :class="btnClass" :disabled="saving.pos" @click="saveSection('pos', pos)">
+              {{ saving.pos ? $t('common.saving') : $t('common.save') }}
             </button>
           </div>
         </section>
@@ -247,37 +496,82 @@
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
               <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
-                <path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.832-1.438A9.955 9.955 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18a7.963 7.963 0 01-4.106-1.14l-.294-.176-2.848.846.846-2.848-.176-.294A7.963 7.963 0 014 12c0-4.411 3.589-8 8-8s8 3.589 8 8-3.589 8-8 8z" />
+                <path
+                  d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"
+                />
+                <path
+                  d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.832-1.438A9.955 9.955 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18a7.963 7.963 0 01-4.106-1.14l-.294-.176-2.848.846.846-2.848-.176-.294A7.963 7.963 0 014 12c0-4.411 3.589-8 8-8s8 3.589 8 8-3.589 8-8 8z"
+                />
               </svg>
             </div>
             <div>
-              <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 uppercase tracking-wide">WhatsApp (Twilio)</h3>
+              <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 uppercase tracking-wide">
+                WhatsApp (Twilio)
+              </h3>
               <p class="text-xs text-gray-400 dark:text-gray-500">{{ $t('appSettings.whatsappDesc') }}</p>
             </div>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label for="appsettings-whatsapp-twilio-sid" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Twilio Account SID</label>
-              <input id="appsettings-whatsapp-twilio-sid" v-model="whatsapp.twilio_sid" type="text" placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" :class="inputClass + ' font-mono text-xs'" />
+              <label
+                for="appsettings-whatsapp-twilio-sid"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >Twilio Account SID</label
+              >
+              <input
+                id="appsettings-whatsapp-twilio-sid"
+                v-model="whatsapp.twilio_sid"
+                type="text"
+                placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                :class="inputClass + ' font-mono text-xs'"
+              />
             </div>
             <div>
-              <label for="appsettings-whatsapp-twilio-auth-token" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Twilio Auth Token</label>
-              <input id="appsettings-whatsapp-twilio-auth-token" v-model="whatsapp.twilio_auth_token" :type="showWhatsappToken ? 'text' : 'password'" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" :class="inputClass + ' font-mono text-xs'" />
-              <button @click="showWhatsappToken = !showWhatsappToken" class="text-xs text-orange-700 dark:text-orange-400 mt-1 hover:underline">
+              <label
+                for="appsettings-whatsapp-twilio-auth-token"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >Twilio Auth Token</label
+              >
+              <input
+                id="appsettings-whatsapp-twilio-auth-token"
+                v-model="whatsapp.twilio_auth_token"
+                :type="showWhatsappToken ? 'text' : 'password'"
+                placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                :class="inputClass + ' font-mono text-xs'"
+              />
+              <button
+                class="text-xs text-orange-700 dark:text-orange-400 mt-1 hover:underline"
+                @click="showWhatsappToken = !showWhatsappToken"
+              >
                 {{ showWhatsappToken ? $t('appSettings.hide') : $t('appSettings.show') }}
               </button>
             </div>
             <div>
-              <label for="appsettings-whatsapp-twilio-whatsapp-from" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.whatsappFrom') }}</label>
-              <input id="appsettings-whatsapp-twilio-whatsapp-from" v-model="whatsapp.twilio_whatsapp_from" type="text" placeholder="+14155238886" :class="inputClass" />
+              <label
+                for="appsettings-whatsapp-twilio-whatsapp-from"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >{{ $t('appSettings.whatsappFrom') }}</label
+              >
+              <input
+                id="appsettings-whatsapp-twilio-whatsapp-from"
+                v-model="whatsapp.twilio_whatsapp_from"
+                type="text"
+                placeholder="+14155238886"
+                :class="inputClass"
+              />
               <p class="text-xs text-gray-400 mt-1">{{ $t('appSettings.whatsappFromHint') }}</p>
             </div>
             <div class="flex items-end">
               <div class="flex items-center gap-2">
                 <label class="relative inline-flex items-center cursor-pointer">
-                  <input v-model="whatsapp.whatsapp_enabled" type="checkbox" true-value="true" false-value="false" class="sr-only peer" />
+                  <input
+                    v-model="whatsapp.whatsapp_enabled"
+                    type="checkbox"
+                    true-value="true"
+                    false-value="false"
+                    class="sr-only peer"
+                  />
                   <div :class="toggleClass"></div>
                 </label>
                 <span class="text-sm text-gray-700 dark:text-gray-300">{{ $t('appSettings.enableWhatsapp') }}</span>
@@ -286,16 +580,24 @@
           </div>
 
           <!-- WhatsApp Test Result -->
-          <div v-if="whatsappTestResult" class="rounded-lg p-3 text-sm" :class="whatsappTestResult.success ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-300' : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300'">
+          <div
+            v-if="whatsappTestResult"
+            class="rounded-lg p-3 text-sm"
+            :class="
+              whatsappTestResult.success
+                ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-300'
+                : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300'
+            "
+          >
             <p class="font-semibold">{{ whatsappTestResult.success ? 'Success' : 'Error' }}</p>
             <p class="mt-1 text-xs break-all">{{ whatsappTestResult.message }}</p>
           </div>
 
           <div class="flex justify-between items-center">
             <button
-              @click="testWhatsapp"
               :disabled="testingWhatsapp"
               class="px-4 py-2 text-sm font-medium border border-green-500 text-green-600 dark:text-green-400 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 transition disabled:opacity-60"
+              @click="testWhatsapp"
             >
               {{ testingWhatsapp ? $t('appSettings.testing') : $t('appSettings.testWhatsapp') }}
             </button>
@@ -311,23 +613,49 @@
         <section class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 space-y-4">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
-              <svg class="w-5 h-5 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+              <svg
+                class="w-5 h-5 text-orange-600 dark:text-orange-400"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
+                />
               </svg>
             </div>
             <div>
-              <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 uppercase tracking-wide">{{ $t('appSettings.emailSmtp') }}</h3>
+              <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 uppercase tracking-wide">
+                {{ $t('appSettings.emailSmtp') }}
+              </h3>
               <p class="text-xs text-gray-400 dark:text-gray-500">{{ $t('appSettings.emailDesc') }}</p>
             </div>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label for="appsettings-email-mail-host" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.mailHost') }}</label>
-              <input id="appsettings-email-mail-host" v-model="email.mail_host" type="text" placeholder="smtp.gmail.com" :class="inputClass" />
+              <label
+                for="appsettings-email-mail-host"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >{{ $t('appSettings.mailHost') }}</label
+              >
+              <input
+                id="appsettings-email-mail-host"
+                v-model="email.mail_host"
+                type="text"
+                placeholder="smtp.gmail.com"
+                :class="inputClass"
+              />
             </div>
             <div>
-              <label for="appsettings-email-mail-port" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.mailPort') }}</label>
+              <label
+                for="appsettings-email-mail-port"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >{{ $t('appSettings.mailPort') }}</label
+              >
               <select id="appsettings-email-mail-port" v-model="email.mail_port" :class="inputClass">
                 <option value="25">25 (SMTP)</option>
                 <option value="465">465 (SSL)</option>
@@ -336,18 +664,45 @@
               </select>
             </div>
             <div>
-              <label for="appsettings-email-mail-username" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.mailUsername') }}</label>
-              <input id="appsettings-email-mail-username" v-model="email.mail_username" type="text" placeholder="user@gmail.com" :class="inputClass" />
+              <label
+                for="appsettings-email-mail-username"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >{{ $t('appSettings.mailUsername') }}</label
+              >
+              <input
+                id="appsettings-email-mail-username"
+                v-model="email.mail_username"
+                type="text"
+                placeholder="user@gmail.com"
+                :class="inputClass"
+              />
             </div>
             <div>
-              <label for="appsettings-email-mail-password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.mailPassword') }}</label>
-              <input id="appsettings-email-mail-password" v-model="email.mail_password" :type="showEmailPassword ? 'text' : 'password'" placeholder="********" :class="inputClass" />
-              <button @click="showEmailPassword = !showEmailPassword" class="text-xs text-orange-700 dark:text-orange-400 mt-1 hover:underline">
+              <label
+                for="appsettings-email-mail-password"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >{{ $t('appSettings.mailPassword') }}</label
+              >
+              <input
+                id="appsettings-email-mail-password"
+                v-model="email.mail_password"
+                :type="showEmailPassword ? 'text' : 'password'"
+                placeholder="********"
+                :class="inputClass"
+              />
+              <button
+                class="text-xs text-orange-700 dark:text-orange-400 mt-1 hover:underline"
+                @click="showEmailPassword = !showEmailPassword"
+              >
                 {{ showEmailPassword ? $t('appSettings.hide') : $t('appSettings.show') }}
               </button>
             </div>
             <div>
-              <label for="appsettings-email-mail-encryption" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.mailEncryption') }}</label>
+              <label
+                for="appsettings-email-mail-encryption"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >{{ $t('appSettings.mailEncryption') }}</label
+              >
               <select id="appsettings-email-mail-encryption" v-model="email.mail_encryption" :class="inputClass">
                 <option value="">{{ $t('appSettings.none') }}</option>
                 <option value="tls">TLS</option>
@@ -355,17 +710,43 @@
               </select>
             </div>
             <div>
-              <label for="appsettings-email-mail-from-address" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.mailFromAddress') }}</label>
-              <input id="appsettings-email-mail-from-address" v-model="email.mail_from_address" type="email" placeholder="noreply@company.com" :class="inputClass" />
+              <label
+                for="appsettings-email-mail-from-address"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >{{ $t('appSettings.mailFromAddress') }}</label
+              >
+              <input
+                id="appsettings-email-mail-from-address"
+                v-model="email.mail_from_address"
+                type="email"
+                placeholder="noreply@company.com"
+                :class="inputClass"
+              />
             </div>
             <div>
-              <label for="appsettings-email-mail-from-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.mailFromName') }}</label>
-              <input id="appsettings-email-mail-from-name" v-model="email.mail_from_name" type="text" placeholder="Mon Entreprise" :class="inputClass" />
+              <label
+                for="appsettings-email-mail-from-name"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >{{ $t('appSettings.mailFromName') }}</label
+              >
+              <input
+                id="appsettings-email-mail-from-name"
+                v-model="email.mail_from_name"
+                type="text"
+                placeholder="Mon Entreprise"
+                :class="inputClass"
+              />
             </div>
             <div class="flex items-end">
               <div class="flex items-center gap-2">
                 <label class="relative inline-flex items-center cursor-pointer">
-                  <input v-model="email.mail_enabled" type="checkbox" true-value="true" false-value="false" class="sr-only peer" />
+                  <input
+                    v-model="email.mail_enabled"
+                    type="checkbox"
+                    true-value="true"
+                    false-value="false"
+                    class="sr-only peer"
+                  />
                   <div :class="toggleClass"></div>
                 </label>
                 <span class="text-sm text-gray-700 dark:text-gray-300">{{ $t('appSettings.enableEmail') }}</span>
@@ -374,16 +755,24 @@
           </div>
 
           <!-- Email Test Result -->
-          <div v-if="emailTestResult" class="rounded-lg p-3 text-sm" :class="emailTestResult.success ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-300' : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300'">
+          <div
+            v-if="emailTestResult"
+            class="rounded-lg p-3 text-sm"
+            :class="
+              emailTestResult.success
+                ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-300'
+                : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300'
+            "
+          >
             <p class="font-semibold">{{ emailTestResult.success ? 'Success' : 'Error' }}</p>
             <p class="mt-1 text-xs break-all">{{ emailTestResult.message }}</p>
           </div>
 
           <div class="flex justify-between items-center">
             <button
-              @click="testEmail"
               :disabled="testingEmail"
               class="px-4 py-2 text-sm font-medium border border-orange-500 text-orange-700 dark:text-orange-400 rounded-lg hover:bg-orange-50 dark:hover:bg-blue-900/20 transition disabled:opacity-60"
+              @click="testEmail"
             >
               {{ testingEmail ? $t('appSettings.testing') : $t('appSettings.testEmail') }}
             </button>
@@ -397,26 +786,50 @@
       <!-- ═══════════════════ TAB: DISPLAY ═══════════════════ -->
       <template v-if="activeTab === 'display'">
         <section class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 space-y-4">
-          <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 uppercase tracking-wide">{{ $t('appSettings.numberFormatting') || 'Format Numérique' }}</h3>
-          
+          <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 uppercase tracking-wide">
+            {{ $t('appSettings.numberFormatting') || 'Format Numérique' }}
+          </h3>
+
           <!-- Price Decimal Places -->
           <div class="space-y-3">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ $t('appSettings.priceDecimalPlaces') || 'Décimales pour les prix' }}</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{
+              $t('appSettings.priceDecimalPlaces') || 'Décimales pour les prix'
+            }}</label>
             <div class="flex gap-4">
               <label class="flex items-center gap-2 cursor-pointer">
-                <input v-model="display.price_decimals" type="radio" value="2" class="w-4 h-4 text-orange-700 dark:text-orange-400" />
+                <input
+                  v-model="display.price_decimals"
+                  type="radio"
+                  value="2"
+                  class="w-4 h-4 text-orange-700 dark:text-orange-400"
+                />
                 <span class="text-sm text-gray-700 dark:text-gray-300">2 décimales (120.00 MAD)</span>
               </label>
               <label class="flex items-center gap-2 cursor-pointer">
-                <input v-model="display.price_decimals" type="radio" value="3" class="w-4 h-4 text-orange-700 dark:text-orange-400" />
+                <input
+                  v-model="display.price_decimals"
+                  type="radio"
+                  value="3"
+                  class="w-4 h-4 text-orange-700 dark:text-orange-400"
+                />
                 <span class="text-sm text-gray-700 dark:text-gray-300">3 décimales (120.000 MAD)</span>
               </label>
               <label class="flex items-center gap-2 cursor-pointer">
-                <input v-model="display.price_decimals" type="radio" value="4" class="w-4 h-4 text-orange-700 dark:text-orange-400" />
+                <input
+                  v-model="display.price_decimals"
+                  type="radio"
+                  value="4"
+                  class="w-4 h-4 text-orange-700 dark:text-orange-400"
+                />
                 <span class="text-sm text-gray-700 dark:text-gray-300">4 décimales (120.0000 MAD)</span>
               </label>
             </div>
-            <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">{{ $t('appSettings.priceDecimalPlacesHint') || 'Affecte l\'affichage des prix dans tout le POS et les rapports' }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              {{
+                $t('appSettings.priceDecimalPlacesHint') ||
+                "Affecte l'affichage des prix dans tout le POS et les rapports"
+              }}
+            </p>
           </div>
 
           <div class="flex justify-end">
@@ -432,9 +845,16 @@
       <template v-if="activeTab === 'variants'">
         <section class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 space-y-5">
           <div class="flex items-center justify-between">
-            <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 uppercase tracking-wide">Rubriques de variantes</h3>
-            <button @click="startAddType" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-orange-700 text-white rounded-lg hover:bg-orange-800 transition">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+            <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 uppercase tracking-wide">
+              Rubriques de variantes
+            </h3>
+            <button
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-orange-700 text-white rounded-lg hover:bg-orange-800 transition"
+              @click="startAddType"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
               Nouvelle rubrique
             </button>
           </div>
@@ -442,44 +862,88 @@
           <div v-if="variantStore.loading" class="text-sm text-gray-400">Chargement...</div>
 
           <!-- Add type form -->
-          <div v-if="addingType" class="flex items-center gap-2 p-3 bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-800 rounded-lg">
+          <div
+            v-if="addingType"
+            class="flex items-center gap-2 p-3 bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-800 rounded-lg"
+          >
             <input
-              v-model="newTypeName" aria-label="Nom de la rubrique"
               ref="newTypeInput"
+              v-model="newTypeName"
+              aria-label="Nom de la rubrique"
               type="text"
               placeholder="Ex: Couleur, Taille, Matière..."
               class="flex-1 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-400"
               @keyup.enter="confirmAddType"
               @keyup.escape="addingType = false"
             />
-            <button @click="confirmAddType" :disabled="!newTypeName.trim()" class="px-3 py-1.5 text-xs font-medium bg-orange-700 text-white rounded-lg hover:bg-orange-800 disabled:opacity-40 transition">Créer</button>
-            <button @click="addingType = false" class="px-3 py-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition">Annuler</button>
+            <button
+              :disabled="!newTypeName.trim()"
+              class="px-3 py-1.5 text-xs font-medium bg-orange-700 text-white rounded-lg hover:bg-orange-800 disabled:opacity-40 transition"
+              @click="confirmAddType"
+            >
+              Créer
+            </button>
+            <button
+              class="px-3 py-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition"
+              @click="addingType = false"
+            >
+              Annuler
+            </button>
           </div>
 
           <!-- Option types list -->
-          <div v-if="!variantStore.loading && variantStore.items.length === 0 && !addingType" class="text-sm text-gray-400 dark:text-gray-500 text-center py-8">
+          <div
+            v-if="!variantStore.loading && variantStore.items.length === 0 && !addingType"
+            class="text-sm text-gray-400 dark:text-gray-500 text-center py-8"
+          >
             Aucune rubrique. Commencez par créer une rubrique (ex: Couleur, Taille...).
           </div>
 
-          <div v-for="optType in variantStore.items" :key="optType.id" class="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
+          <div
+            v-for="optType in variantStore.items"
+            :key="optType.id"
+            class="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden"
+          >
             <!-- Type header -->
             <div class="flex items-center gap-3 px-4 py-3 bg-gray-50 dark:bg-gray-700/50">
               <input
                 v-if="editingTypeId === optType.id"
-                v-model="editingTypeName" aria-label="Renommer la rubrique"
+                v-model="editingTypeName"
+                aria-label="Renommer la rubrique"
                 type="text"
                 class="flex-1 px-2 py-1 text-sm font-semibold border border-orange-400 rounded bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none"
                 @keyup.enter="saveTypeName(optType)"
                 @keyup.escape="editingTypeId = null"
                 @blur="saveTypeName(optType)"
               />
-              <span v-else class="flex-1 text-sm font-semibold text-gray-800 dark:text-gray-200">{{ optType.name }}</span>
+              <span v-else class="flex-1 text-sm font-semibold text-gray-800 dark:text-gray-200">{{
+                optType.name
+              }}</span>
 
-              <button v-if="editingTypeId !== optType.id" @click="startEditType(optType)" class="p-1 text-gray-400 hover:text-orange-700 transition">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" /></svg>
+              <button
+                v-if="editingTypeId !== optType.id"
+                class="p-1 text-gray-400 hover:text-orange-700 transition"
+                @click="startEditType(optType)"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"
+                  />
+                </svg>
               </button>
-              <button @click="variantStore.deleteType(optType.id)" class="p-1 text-gray-400 hover:text-red-500 transition">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
+              <button
+                class="p-1 text-gray-400 hover:text-red-500 transition"
+                @click="variantStore.deleteType(optType.id)"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"
+                  />
+                </svg>
               </button>
             </div>
 
@@ -488,19 +952,27 @@
               <div v-for="val in optType.values" :key="val.id" class="flex items-center gap-2 group">
                 <div class="flex-1 grid grid-cols-2 gap-2">
                   <input
-                    :value="val.key" aria-label="Clé de la valeur"
+                    :value="val.key"
+                    aria-label="Clé de la valeur"
                     type="text"
                     placeholder="Clé (ex: blanc)"
                     class="px-2.5 py-1.5 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-orange-400"
-                    @change="variantStore.updateValue(optType.id, val.id, { key: ($event.target as HTMLInputElement).value })"
+                    @change="
+                      variantStore.updateValue(optType.id, val.id, { key: ($event.target as HTMLInputElement).value })
+                    "
                   />
                   <div class="flex items-center gap-1.5">
                     <input
-                      :value="val.value" aria-label="Valeur de l'option"
+                      :value="val.value"
+                      aria-label="Valeur de l'option"
                       type="text"
                       placeholder="Valeur (ex: #FFFFFF ou S)"
                       class="flex-1 px-2.5 py-1.5 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-orange-400"
-                      @change="variantStore.updateValue(optType.id, val.id, { value: ($event.target as HTMLInputElement).value })"
+                      @change="
+                        variantStore.updateValue(optType.id, val.id, {
+                          value: ($event.target as HTMLInputElement).value,
+                        })
+                      "
                     />
                     <!-- Color preview if value looks like hex -->
                     <span
@@ -510,27 +982,61 @@
                     />
                   </div>
                 </div>
-                <button @click="variantStore.deleteValue(optType.id, val.id)" class="p-1 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                <button
+                  class="p-1 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"
+                  @click="variantStore.deleteValue(optType.id, val.id)"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 </button>
               </div>
 
               <!-- Add value row -->
               <div v-if="addingValueForType === optType.id" class="flex items-center gap-2">
                 <div class="flex-1 grid grid-cols-2 gap-2">
-                  <input v-model="newValueKey" aria-label="Clé de la nouvelle valeur" type="text" placeholder="Clé (ex: blanc)" class="px-2.5 py-1.5 text-sm border border-orange-300 dark:border-orange-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-orange-400" @keyup.enter="confirmAddValue(optType.id)" @keyup.escape="addingValueForType = null" />
-                  <input v-model="newValueVal" aria-label="Nouvelle valeur" type="text" placeholder="Valeur (ex: #FFFFFF)" class="px-2.5 py-1.5 text-sm border border-orange-300 dark:border-orange-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-orange-400" @keyup.enter="confirmAddValue(optType.id)" @keyup.escape="addingValueForType = null" />
+                  <input
+                    v-model="newValueKey"
+                    aria-label="Clé de la nouvelle valeur"
+                    type="text"
+                    placeholder="Clé (ex: blanc)"
+                    class="px-2.5 py-1.5 text-sm border border-orange-300 dark:border-orange-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-orange-400"
+                    @keyup.enter="confirmAddValue(optType.id)"
+                    @keyup.escape="addingValueForType = null"
+                  />
+                  <input
+                    v-model="newValueVal"
+                    aria-label="Nouvelle valeur"
+                    type="text"
+                    placeholder="Valeur (ex: #FFFFFF)"
+                    class="px-2.5 py-1.5 text-sm border border-orange-300 dark:border-orange-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-orange-400"
+                    @keyup.enter="confirmAddValue(optType.id)"
+                    @keyup.escape="addingValueForType = null"
+                  />
                 </div>
-                <button @click="confirmAddValue(optType.id)" :disabled="!newValueKey.trim() || !newValueVal.trim()" class="p-1 text-orange-700 dark:text-orange-400 hover:text-orange-600 disabled:opacity-40 transition">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                <button
+                  :disabled="!newValueKey.trim() || !newValueVal.trim()"
+                  class="p-1 text-orange-700 dark:text-orange-400 hover:text-orange-600 disabled:opacity-40 transition"
+                  @click="confirmAddValue(optType.id)"
+                >
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
                 </button>
-                <button @click="addingValueForType = null" class="p-1 text-gray-400 hover:text-gray-600 transition">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                <button class="p-1 text-gray-400 hover:text-gray-600 transition" @click="addingValueForType = null">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 </button>
               </div>
 
-              <button @click="startAddValue(optType.id)" class="inline-flex items-center gap-1 text-xs text-orange-700 dark:text-orange-400 hover:text-orange-600 font-medium transition mt-1">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+              <button
+                class="inline-flex items-center gap-1 text-xs text-orange-700 dark:text-orange-400 hover:text-orange-600 font-medium transition mt-1"
+                @click="startAddValue(optType.id)"
+              >
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
                 Ajouter une valeur
               </button>
             </div>
@@ -543,23 +1049,47 @@
           <!-- Header -->
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
-              <svg class="w-5 h-5 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.016a3.001 3.001 0 003.75.614m-16.5 0a3.004 3.004 0 01-.621-4.72L4.318 3.44A1.5 1.5 0 015.378 3h13.243a1.5 1.5 0 011.06.44l1.19 2.189a3 3 0 01-.621 4.72m-13.5 8.65h3.75a.75.75 0 00.75-.75V13.5a.75.75 0 00-.75-.75H6.75a.75.75 0 00-.75.75v3.75c0 .415.336.75.75.75z" />
+              <svg
+                class="w-5 h-5 text-orange-600 dark:text-orange-400"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.016a3.001 3.001 0 003.75.614m-16.5 0a3.004 3.004 0 01-.621-4.72L4.318 3.44A1.5 1.5 0 015.378 3h13.243a1.5 1.5 0 011.06.44l1.19 2.189a3 3 0 01-.621 4.72m-13.5 8.65h3.75a.75.75 0 00.75-.75V13.5a.75.75 0 00-.75-.75H6.75a.75.75 0 00-.75.75v3.75c0 .415.336.75.75.75z"
+                />
               </svg>
             </div>
             <div>
-              <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 uppercase tracking-wide">{{ $t('appSettings.ecomTitle') }}</h3>
+              <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 uppercase tracking-wide">
+                {{ $t('appSettings.ecomTitle') }}
+              </h3>
               <p class="text-xs text-gray-400 dark:text-gray-500">{{ $t('appSettings.ecomDesc') }}</p>
             </div>
           </div>
 
           <!-- Boutique -->
           <div>
-            <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">{{ $t('appSettings.ecomSectionShop') }}</p>
+            <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">
+              {{ $t('appSettings.ecomSectionShop') }}
+            </p>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div class="sm:col-span-2">
-                <label for="appsettings-ecommerce-shop-tagline" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.ecomTagline') }}</label>
-                <input id="appsettings-ecommerce-shop-tagline" v-model="ecommerce.shop_tagline" type="text" :placeholder="$t('appSettings.ecomTaglinePlaceholder')" :class="inputClass" />
+                <label
+                  for="appsettings-ecommerce-shop-tagline"
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  >{{ $t('appSettings.ecomTagline') }}</label
+                >
+                <input
+                  id="appsettings-ecommerce-shop-tagline"
+                  v-model="ecommerce.shop_tagline"
+                  type="text"
+                  :placeholder="$t('appSettings.ecomTaglinePlaceholder')"
+                  :class="inputClass"
+                />
               </div>
             </div>
           </div>
@@ -568,15 +1098,33 @@
 
           <!-- Promo banner -->
           <div>
-            <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">{{ $t('appSettings.ecomSectionBanner') }}</p>
+            <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">
+              {{ $t('appSettings.ecomSectionBanner') }}
+            </p>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div class="sm:col-span-2">
-                <label for="appsettings-ecommerce-promo-banner" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.ecomBannerText') }}</label>
-                <input id="appsettings-ecommerce-promo-banner" v-model="ecommerce.promo_banner" type="text" placeholder="🔥 Livraison gratuite dès 2 000 MAD" :class="inputClass" />
+                <label
+                  for="appsettings-ecommerce-promo-banner"
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  >{{ $t('appSettings.ecomBannerText') }}</label
+                >
+                <input
+                  id="appsettings-ecommerce-promo-banner"
+                  v-model="ecommerce.promo_banner"
+                  type="text"
+                  placeholder="🔥 Livraison gratuite dès 2 000 MAD"
+                  :class="inputClass"
+                />
               </div>
               <div class="flex items-center gap-2">
                 <label class="relative inline-flex items-center cursor-pointer">
-                  <input v-model="ecommerce.promo_banner_enabled" type="checkbox" true-value="true" false-value="false" class="sr-only peer" />
+                  <input
+                    v-model="ecommerce.promo_banner_enabled"
+                    type="checkbox"
+                    true-value="true"
+                    false-value="false"
+                    class="sr-only peer"
+                  />
                   <div :class="toggleClass"></div>
                 </label>
                 <span class="text-sm text-gray-700 dark:text-gray-300">{{ $t('appSettings.ecomBannerEnabled') }}</span>
@@ -588,21 +1136,46 @@
 
           <!-- Apparence -->
           <div>
-            <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">{{ $t('appSettings.ecomSectionAppearance') }}</p>
+            <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">
+              {{ $t('appSettings.ecomSectionAppearance') }}
+            </p>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label for="appsettings-ecommerce-primary-color" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.ecomPrimaryColor') }}</label>
+                <label
+                  for="appsettings-ecommerce-primary-color"
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  >{{ $t('appSettings.ecomPrimaryColor') }}</label
+                >
                 <div class="flex items-center gap-3">
-                  <input id="appsettings-ecommerce-primary-color" v-model="ecommerce.primary_color" type="color" class="h-10 w-16 cursor-pointer rounded-lg border border-gray-300 dark:border-gray-600 p-1 bg-white dark:bg-gray-900" />
-                  <input v-model="ecommerce.primary_color" type="text" aria-label="Couleur principale, code hexadécimal" placeholder="#f97316" :class="inputClass + ' font-mono text-xs flex-1'" />
+                  <input
+                    id="appsettings-ecommerce-primary-color"
+                    v-model="ecommerce.primary_color"
+                    type="color"
+                    class="h-10 w-16 cursor-pointer rounded-lg border border-gray-300 dark:border-gray-600 p-1 bg-white dark:bg-gray-900"
+                  />
+                  <input
+                    v-model="ecommerce.primary_color"
+                    type="text"
+                    aria-label="Couleur principale, code hexadécimal"
+                    placeholder="#f97316"
+                    :class="inputClass + ' font-mono text-xs flex-1'"
+                  />
                 </div>
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.ecomDefaultTheme') }}</label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{
+                  $t('appSettings.ecomDefaultTheme')
+                }}</label>
                 <div class="flex gap-3 mt-1">
-                  <label v-for="theme in ['light', 'dark', 'system']" :key="theme" class="flex items-center gap-2 cursor-pointer">
+                  <label
+                    v-for="theme in ['light', 'dark', 'system']"
+                    :key="theme"
+                    class="flex items-center gap-2 cursor-pointer"
+                  >
                     <input v-model="ecommerce.default_theme" type="radio" :value="theme" class="accent-orange-500" />
-                    <span class="text-sm text-gray-700 dark:text-gray-300 capitalize">{{ $t('appSettings.ecomTheme_' + theme) }}</span>
+                    <span class="text-sm text-gray-700 dark:text-gray-300 capitalize">{{
+                      $t('appSettings.ecomTheme_' + theme)
+                    }}</span>
                   </label>
                 </div>
               </div>
@@ -613,12 +1186,25 @@
 
           <!-- Livraison -->
           <div>
-            <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">{{ $t('appSettings.ecomSectionDelivery') }}</p>
+            <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">
+              {{ $t('appSettings.ecomSectionDelivery') }}
+            </p>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label for="appsettings-ecommerce-delivery-threshold" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.ecomDeliveryThreshold') }}</label>
+                <label
+                  for="appsettings-ecommerce-delivery-threshold"
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  >{{ $t('appSettings.ecomDeliveryThreshold') }}</label
+                >
                 <div class="relative">
-                  <input id="appsettings-ecommerce-delivery-threshold" v-model="ecommerce.delivery_threshold" type="text" inputmode="numeric" placeholder="2000" :class="inputClass + ' pr-14'" />
+                  <input
+                    id="appsettings-ecommerce-delivery-threshold"
+                    v-model="ecommerce.delivery_threshold"
+                    type="text"
+                    inputmode="numeric"
+                    placeholder="2000"
+                    :class="inputClass + ' pr-14'"
+                  />
                   <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-medium">MAD</span>
                 </div>
               </div>
@@ -629,23 +1215,65 @@
 
           <!-- Coordonnées -->
           <div>
-            <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">{{ $t('appSettings.ecomSectionContact') }}</p>
+            <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">
+              {{ $t('appSettings.ecomSectionContact') }}
+            </p>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div class="sm:col-span-2">
-                <label for="appsettings-ecommerce-address" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.address') }}</label>
-                <input id="appsettings-ecommerce-address" v-model="ecommerce.address" type="text" placeholder="Rue Example, Casablanca" :class="inputClass" />
+                <label
+                  for="appsettings-ecommerce-address"
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  >{{ $t('common.address') }}</label
+                >
+                <input
+                  id="appsettings-ecommerce-address"
+                  v-model="ecommerce.address"
+                  type="text"
+                  placeholder="Rue Example, Casablanca"
+                  :class="inputClass"
+                />
               </div>
               <div>
-                <label for="appsettings-ecommerce-location" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('appSettings.ecomLocation') }}</label>
-                <input id="appsettings-ecommerce-location" v-model="ecommerce.location" type="text" placeholder="Casablanca" :class="inputClass" />
+                <label
+                  for="appsettings-ecommerce-location"
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  >{{ $t('appSettings.ecomLocation') }}</label
+                >
+                <input
+                  id="appsettings-ecommerce-location"
+                  v-model="ecommerce.location"
+                  type="text"
+                  placeholder="Casablanca"
+                  :class="inputClass"
+                />
               </div>
               <div>
-                <label for="appsettings-ecommerce-phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.phone') }}</label>
-                <input id="appsettings-ecommerce-phone" v-model="ecommerce.phone" type="text" placeholder="+212 6XX XXX XXX" :class="inputClass" />
+                <label
+                  for="appsettings-ecommerce-phone"
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  >{{ $t('common.phone') }}</label
+                >
+                <input
+                  id="appsettings-ecommerce-phone"
+                  v-model="ecommerce.phone"
+                  type="text"
+                  placeholder="+212 6XX XXX XXX"
+                  :class="inputClass"
+                />
               </div>
               <div>
-                <label for="appsettings-ecommerce-email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.email') }}</label>
-                <input id="appsettings-ecommerce-email" v-model="ecommerce.email" type="email" placeholder="contact@teliphoni.ma" :class="inputClass" />
+                <label
+                  for="appsettings-ecommerce-email"
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  >{{ $t('common.email') }}</label
+                >
+                <input
+                  id="appsettings-ecommerce-email"
+                  v-model="ecommerce.email"
+                  type="email"
+                  placeholder="contact@teliphoni.ma"
+                  :class="inputClass"
+                />
               </div>
             </div>
           </div>
@@ -654,27 +1282,69 @@
 
           <!-- Réseaux sociaux -->
           <div>
-            <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">{{ $t('appSettings.ecomSectionSocial') }}</p>
+            <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">
+              {{ $t('appSettings.ecomSectionSocial') }}
+            </p>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label for="appsettings-ecommerce-instagram-url" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Instagram</label>
-                <input id="appsettings-ecommerce-instagram-url" v-model="ecommerce.instagram_url" type="url" placeholder="https://instagram.com/..." :class="inputClass" />
+                <label
+                  for="appsettings-ecommerce-instagram-url"
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  >Instagram</label
+                >
+                <input
+                  id="appsettings-ecommerce-instagram-url"
+                  v-model="ecommerce.instagram_url"
+                  type="url"
+                  placeholder="https://instagram.com/..."
+                  :class="inputClass"
+                />
               </div>
               <div>
-                <label for="appsettings-ecommerce-facebook-url" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Facebook</label>
-                <input id="appsettings-ecommerce-facebook-url" v-model="ecommerce.facebook_url" type="url" placeholder="https://facebook.com/..." :class="inputClass" />
+                <label
+                  for="appsettings-ecommerce-facebook-url"
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  >Facebook</label
+                >
+                <input
+                  id="appsettings-ecommerce-facebook-url"
+                  v-model="ecommerce.facebook_url"
+                  type="url"
+                  placeholder="https://facebook.com/..."
+                  :class="inputClass"
+                />
               </div>
               <div>
-                <label for="appsettings-ecommerce-whatsapp-number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">WhatsApp</label>
-                <input id="appsettings-ecommerce-whatsapp-number" v-model="ecommerce.whatsapp_number" type="text" placeholder="+212 6XX XXX XXX" :class="inputClass" />
+                <label
+                  for="appsettings-ecommerce-whatsapp-number"
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  >WhatsApp</label
+                >
+                <input
+                  id="appsettings-ecommerce-whatsapp-number"
+                  v-model="ecommerce.whatsapp_number"
+                  type="text"
+                  placeholder="+212 6XX XXX XXX"
+                  :class="inputClass"
+                />
               </div>
             </div>
           </div>
 
           <!-- Actions -->
           <div class="flex justify-between items-center pt-2">
-            <a href="https://shop.teliphoni.o3app.ma" target="_blank" class="flex items-center gap-1.5 px-4 py-2 text-sm font-medium border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" /></svg>
+            <a
+              href="https://shop.teliphoni.o3app.ma"
+              target="_blank"
+              class="flex items-center gap-1.5 px-4 py-2 text-sm font-medium border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
+                />
+              </svg>
               {{ $t('appSettings.ecomOpenShop') }}
             </a>
             <button :class="btnClass" :disabled="saving.ecommerce" @click="saveSection('ecommerce', ecommerce)">
@@ -686,10 +1356,14 @@
 
       <!-- ═══════════════════ TAB: DANGER ZONE ═══════════════════ -->
       <template v-if="activeTab === 'danger'">
-        <section class="bg-white dark:bg-gray-800 border border-red-200 dark:border-red-900/50 rounded-xl p-5 space-y-4">
+        <section
+          class="bg-white dark:bg-gray-800 border border-red-200 dark:border-red-900/50 rounded-xl p-5 space-y-4"
+        >
           <h3 class="text-sm font-semibold text-red-600 dark:text-red-400 uppercase tracking-wide">Zone de danger</h3>
 
-          <div class="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/40 rounded-lg p-4 text-sm text-red-800 dark:text-red-300 space-y-2">
+          <div
+            class="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/40 rounded-lg p-4 text-sm text-red-800 dark:text-red-300 space-y-2"
+          >
             <p class="font-medium">Réinitialiser les données de l'entreprise</p>
             <p>Cette action supprime <span class="font-semibold">définitivement et irréversiblement</span> :</p>
             <ul class="list-disc list-inside space-y-0.5">
@@ -699,12 +1373,21 @@
               <li>Toutes les sessions de caisse (POS)</li>
               <li>La numérotation des documents (repart à 1)</li>
             </ul>
-            <p>Sont <span class="font-semibold">conservés</span> : produits, catégories, marques, entrepôts, clients/fournisseurs, utilisateurs et paramètres.</p>
-            <p class="text-xs opacity-80">Une sauvegarde quotidienne automatique existe, mais cette action reste irréversible en pratique — assurez-vous d'avoir vérifié vos données avant de continuer.</p>
+            <p>
+              Sont <span class="font-semibold">conservés</span> : produits, catégories, marques, entrepôts,
+              clients/fournisseurs, utilisateurs et paramètres.
+            </p>
+            <p class="text-xs opacity-80">
+              Une sauvegarde quotidienne automatique existe, mais cette action reste irréversible en pratique —
+              assurez-vous d'avoir vérifié vos données avant de continuer.
+            </p>
           </div>
 
           <div>
-            <label for="appsettings-resetconfirmtext" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label
+              for="appsettings-resetconfirmtext"
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >
               Tapez <span class="font-mono font-semibold">{{ tenantId || '…' }}</span> pour confirmer
             </label>
             <input
@@ -728,13 +1411,13 @@
           </div>
         </section>
       </template>
-
     </div>
 
     <BaseModal v-model="showResetModal" title="Confirmer la réinitialisation" size="sm">
       <p class="text-sm text-gray-600 dark:text-gray-300">
         Vous êtes sur le point de supprimer définitivement toutes les transactions et de remettre le stock à zéro pour
-        <span class="font-mono font-semibold">{{ tenantId }}</span>. Cette action est irréversible.
+        <span class="font-mono font-semibold">{{ tenantId }}</span
+        >. Cette action est irréversible.
       </p>
       <template #footer>
         <button
@@ -863,7 +1546,16 @@ const tabs = computed(() => [
 ])
 
 const saving = reactive<Record<string, boolean>>({
-  company: false, locale: false, invoice: false, stock: false, ventes: false, whatsapp: false, email: false, display: false, ecommerce: false,
+  company: false,
+  locale: false,
+  invoice: false,
+  stock: false,
+  ventes: false,
+  pos: false,
+  whatsapp: false,
+  email: false,
+  display: false,
+  ecommerce: false,
 })
 
 const showWhatsappToken = ref(false)
@@ -882,6 +1574,7 @@ const display = reactive({ price_decimals: '2' })
 const invoice = reactive({ default_tax_rate: '', payment_terms_days: '', footer_note: '', tax_enabled: 'true' })
 const stock = reactive({ autoriser_stock_negatif: 'false' })
 const ventes = reactive({ paiement_sur_bl: 'false' })
+const pos = reactive({ facture_cloture: 'false' })
 const whatsapp = reactive({
   twilio_sid: '',
   twilio_auth_token: '',
@@ -915,9 +1608,12 @@ const email = reactive({
   mail_enabled: 'false',
 })
 
-const inputClass = 'w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent'
-const btnClass = 'px-4 py-2 text-sm font-semibold bg-orange-700 hover:bg-orange-800 text-white rounded-lg transition disabled:opacity-60'
-const toggleClass = 'w-11 h-6 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-orange-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[\'\'] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 dark:after:border-gray-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500'
+const inputClass =
+  'w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent'
+const btnClass =
+  'px-4 py-2 text-sm font-semibold bg-orange-700 hover:bg-orange-800 text-white rounded-lg transition disabled:opacity-60'
+const toggleClass =
+  "w-11 h-6 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-orange-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 dark:after:border-gray-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"
 
 /**
  * Merge a settings payload into a reactive form object, but ONLY for keys
@@ -926,11 +1622,14 @@ const toggleClass = 'w-11 h-6 bg-gray-200 dark:bg-gray-600 peer-focus:outline-no
  * back on save — the backend whitelist would reject them with 422
  * "Unknown setting keys for this domain."
  */
-function mergeKnownKeys<T extends Record<string, unknown>>(target: T, source: Record<string, unknown> | null | undefined): void {
+function mergeKnownKeys<T extends Record<string, unknown>>(
+  target: T,
+  source: Record<string, unknown> | null | undefined,
+): void {
   if (!source) return
   for (const key of Object.keys(target)) {
     if (key in source && source[key] != null) {
-      (target as Record<string, unknown>)[key] = source[key]
+      ;(target as Record<string, unknown>)[key] = source[key]
     }
   }
 }
@@ -942,6 +1641,7 @@ function applySettings() {
   mergeKnownKeys(invoice, s.invoice)
   mergeKnownKeys(stock, s.stock)
   mergeKnownKeys(ventes, s.ventes)
+  mergeKnownKeys(pos, s.pos)
   mergeKnownKeys(whatsapp, s.whatsapp)
   mergeKnownKeys(ecommerce, s.ecommerce)
   mergeKnownKeys(email, s.email)

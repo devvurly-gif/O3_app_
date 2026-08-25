@@ -635,6 +635,9 @@ export default {
 
   // ── App Settings ──────────────────────────────────────────────────────
   appSettings: {
+    pos: 'Point of sale',
+    invoiceOnClose: 'Invoice tickets on session close',
+    invoiceOnCloseDesc: 'When the till is closed, the session tickets are summarised into one invoice per customer. Tickets remain available.',
     title: 'App Settings',
     subtitle: 'Global configuration for the application',
     loading: 'Loading settings…',

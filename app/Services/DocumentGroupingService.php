@@ -20,12 +20,14 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
  * tenant porte huit factures là où le fournisseur en a émis une, aucun
  * rapprochement ne tombe juste.
  *
- * Trois entrées, pour trois situations réelles :
+ * Quatre entrées, pour quatre situations réelles :
  *
  *   - `fromReceiptNotes()` — achats : on coche les bons de réception reçus dans
  *     le mois et on les facture d'un coup.
  *   - `fromDeliveryNotes()` — ventes : le pendant exact, sur les bons de
  *     livraison d'un client.
+ *   - `fromTickets()` — caisse : les tickets d'une session, récapitulés à la
+ *     clôture, un client à la fois.
  *   - `fromInvoices()` — le rattrapage : les bons ont déjà été facturés un par
  *     un et il faut recoller les morceaux, en reprenant les règlements déjà
  *     imputés.
@@ -108,6 +110,33 @@ class DocumentGroupingService
         }
 
         return $this->build($notes, $issuedAt, $customerRef, 'InvoiceSale', deleteSources: false);
+    }
+
+    /**
+     * Tickets de caisse → une facture de vente unique.
+     *
+     * À la clôture, les tickets d'une session sont récapitulés par une facture,
+     * un client à la fois. Un ticket est toujours réglé — une vente POS à
+     * crédit devient un bon de livraison, pas un ticket — donc la facture naît
+     * payée, avec les règlements et leurs moyens repris tels quels.
+     *
+     * @param  Collection<int, DocumentHeader>  $tickets
+     * @return array{invoice: DocumentHeader, payments_moved: int, replaced: int}
+     */
+    public function fromTickets(
+        Collection $tickets,
+        ?string $issuedAt = null,
+        ?string $sessionRef = null,
+    ): array {
+        $this->guardCommon($tickets, 'TicketSale', 'Seuls des tickets de caisse peuvent être facturés ici.');
+
+        foreach ($tickets as $ticket) {
+            if ($ticket->status === 'converted' || $ticket->children()->where('document_type', 'InvoiceSale')->exists()) {
+                throw new HttpException(422, "Le ticket {$ticket->reference} est déjà facturé.");
+            }
+        }
+
+        return $this->build($tickets, $issuedAt, $sessionRef, 'InvoiceSale', deleteSources: false);
     }
 
     /**
@@ -319,7 +348,12 @@ class DocumentGroupingService
         $label = 'BR : ';
         if ($refs->isEmpty()) {
             $refs  = $sources->pluck('reference');
-            $label = $fromInvoices ? 'Factures : ' : 'BR : ';
+            $label = match (true) {
+                $fromInvoices                                     => 'Factures : ',
+                $sources->first()?->document_type === 'DeliveryNote' => 'BL : ',
+                $sources->first()?->document_type === 'TicketSale'   => 'Tickets : ',
+                default                                           => 'BR : ',
+            };
         }
 
         $notes = 'Facture groupée — ' . $label . $refs->implode(', ');

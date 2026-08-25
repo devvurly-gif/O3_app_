@@ -7,6 +7,7 @@ use App\Models\Payment;
 use App\Models\PosSession;
 use App\Models\PosTerminal;
 use App\Models\Product;
+use App\Models\Setting;
 use App\Models\ThirdPartner;
 use App\Repositories\Contracts\DocumentFooterRepositoryInterface;
 use App\Repositories\Contracts\DocumentHeaderRepositoryInterface;
@@ -15,6 +16,7 @@ use App\Repositories\Contracts\DocumentLigneRepositoryInterface;
 use App\Repositories\Contracts\PosSessionRepositoryInterface;
 use App\Repositories\Contracts\WarehouseStockRepositoryInterface;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PosService
 {
@@ -65,6 +67,14 @@ class PosService
     /**
      * Close an existing session.
      */
+    /**
+     * Factures produites par la derniere cloture, pour que l'appelant puisse
+     * les annoncer sans les rechercher.
+     *
+     * @var array<int, array{reference: string, partner: string, total: float, tickets: int}>
+     */
+    public array $lastGeneratedInvoices = [];
+
     public function closeSession(PosSession $session, float $closingCash, ?string $notes = null): PosSession
     {
         if (!$session->isOpen()) {
@@ -86,7 +96,82 @@ class PosService
             'notes'           => $notes,
         ]);
 
+        // Facturation des tickets, si le tenant l'a activee. Comme l'envoi du
+        // rapport de cloture, elle ne doit jamais faire echouer la fermeture :
+        // un caissier qui ferme sa caisse ne peut pas rester bloque parce
+        // qu'un document n'a pas pu etre cree.
+        $this->lastGeneratedInvoices = [];
+
+        if (Setting::get('pos', 'facture_cloture', 'false') === 'true') {
+            try {
+                $this->lastGeneratedInvoices = $this->invoiceSessionTickets($session);
+            } catch (\Throwable $e) {
+                Log::error('Facturation des tickets a la cloture impossible', [
+                    'session_id' => $session->id,
+                    'message'    => $e->getMessage(),
+                ]);
+            }
+        }
+
         return $session->fresh();
+    }
+
+    /**
+     * Recapitule les tickets d'une session en factures de vente.
+     *
+     * Une facture par client, jamais une seule pour toute la session : une
+     * session melange couramment des ventes au comptoir et des ventes
+     * nominatives, et les fondre en un document attribuerait le chiffre
+     * d'affaires — et la possibilite d'un avoir — au mauvais tiers.
+     *
+     * Les tickets ne sont pas supprimes : ils restent le justificatif remis au
+     * client. Ils passent en 'converted', ce qui les empeche d'etre factures
+     * deux fois si la session est refermee ou reprise a la main.
+     *
+     * @return array<int, array{reference: string, partner: string, total: float, tickets: int}>
+     */
+    public function invoiceSessionTickets(PosSession $session): array
+    {
+        $tickets = DocumentHeader::where('pos_session_id', $session->id)
+            ->where('document_type', 'TicketSale')
+            ->whereNotIn('status', ['cancelled', 'converted'])
+            ->whereDoesntHave('children', fn ($q) => $q->where('document_type', 'InvoiceSale'))
+            ->with(['lignes', 'footer', 'payments', 'thirdPartner'])
+            ->get();
+
+        if ($tickets->isEmpty()) {
+            return [];
+        }
+
+        $grouping = app(DocumentGroupingService::class);
+        $created  = [];
+
+        foreach ($tickets->groupBy('thirdPartner_id') as $partnerId => $group) {
+            if (!$partnerId) {
+                // Un ticket sans tiers ne peut pas porter une facture : on le
+                // laisse tel quel plutot que de l'attribuer d'office.
+                Log::warning('Tickets sans tiers ignores a la facturation de cloture', [
+                    'session_id' => $session->id,
+                    'tickets'    => $group->pluck('reference')->all(),
+                ]);
+                continue;
+            }
+
+            $result = $grouping->fromTickets(
+                $group->values(),
+                $session->closed_at?->toDateString(),
+                'Session caisse #' . $session->id,
+            );
+
+            $created[] = [
+                'reference' => $result['invoice']->reference,
+                'partner'   => $result['invoice']->thirdPartner?->tp_title ?? '—',
+                'total'     => (float) ($result['invoice']->footer?->total_ttc ?? 0),
+                'tickets'   => $result['replaced'],
+            ];
+        }
+
+        return $created;
     }
 
     /**

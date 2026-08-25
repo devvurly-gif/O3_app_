@@ -34,6 +34,9 @@ class SettingController extends Controller
         'display'  => ['price_decimals'],
         'stock'    => ['autoriser_stock_negatif', 'seuil_alerte_stock'],
         'ventes'   => ['paiement_sur_bl'],
+        // facture_cloture : recapitule les tickets d'une session en factures
+        // de vente au moment de fermer la caisse, un client a la fois.
+        'pos'      => ['facture_cloture'],
         'whatsapp' => ['twilio_sid', 'twilio_auth_token', 'twilio_whatsapp_from', 'whatsapp_enabled', 'enabled'],
         'ecommerce' => ['promo_banner', 'promo_banner_enabled', 'primary_color', 'default_theme', 'delivery_threshold', 'address', 'location', 'phone', 'email', 'instagram_url', 'facebook_url', 'whatsapp_number', 'shop_tagline'],
         'email'    => ['mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_encryption', 'mail_from_address', 'mail_from_name', 'mail_enabled'],
