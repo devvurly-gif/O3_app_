@@ -310,6 +310,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('achats/documents/{br}/confirmer-facture',              [DocumentAchatController::class, 'confirmer_facture']);
         Route::post('achats/documents/{br}/annuler',                       [DocumentAchatController::class, 'annuler_br']);
         Route::post('achats/documents/{document}/retour-fournisseur',      [DocumentAchatController::class, 'retour_fournisseur']);
+        // Plusieurs bons de reception coches dans la liste -> une facture unique.
+        Route::post('achats/documents/regrouper-bons',                     [DocumentAchatController::class, 'regrouper_bons']);
 
         // ── OCR Invoice Import ──────────────────────────────────────
         Route::post('achats/ocr/parse',   [\App\Http\Controllers\Api\Achats\OcrInvoiceController::class, 'parse']);

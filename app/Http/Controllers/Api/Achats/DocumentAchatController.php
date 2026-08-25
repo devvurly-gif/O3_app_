@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Api\Achats;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Achats\GroupReceiptNotesRequest;
 use App\Http\Requests\Achats\StoreDocumentAchatRequest;
 use App\Models\DocumentHeader;
 use App\Models\Setting;
 use App\Models\ThirdPartner;
 use App\Repositories\Contracts\DocumentIncrementorRepositoryInterface;
 use App\Services\DocumentIncrementorService;
+use App\Services\PurchaseInvoiceGroupingService;
 use App\Services\StockMouvementService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -452,6 +454,42 @@ class DocumentAchatController extends Controller
         return response()->json([
             'message' => 'Retour Fournisseur ' . $retour->reference . ' créé. Stock mis à jour.',
             'data'    => $retour->load(['thirdPartner', 'lignes.product', 'footer', 'user', 'warehouse']),
+        ], 201);
+    }
+
+    // ── Plusieurs BR → une facture unique ────────────────────────────
+
+    /**
+     * POST /api/achats/documents/regrouper-bons
+     *
+     * Facture d'un seul coup les bons de réception cochés dans la liste des
+     * achats. Un fournisseur qui livre huit fois dans le mois n'envoie pas huit
+     * factures : il en envoie une, et la comptabilité doit pouvoir en faire
+     * autant sans repasser huit fois par le même écran.
+     *
+     * Les bons ne sont pas supprimés — ils restent la preuve de la livraison —
+     * mais passent en 'converted' pour ne pas être facturés deux fois.
+     */
+    public function regrouper_bons(
+        GroupReceiptNotesRequest $request,
+        PurchaseInvoiceGroupingService $grouping
+    ): JsonResponse {
+        $receipts = DocumentHeader::whereIn('id', $request->validated('receipt_ids'))
+            ->with(['lignes', 'footer', 'payments'])
+            ->get();
+
+        // Le service refuse les mélanges de fournisseurs, les bons déjà
+        // facturés et les statuts non confirmés, et renvoie un 422 parlant.
+        $result = $grouping->fromReceiptNotes(
+            $receipts,
+            $request->validated('issued_at'),
+            $request->validated('supplier_ref'),
+        );
+
+        return response()->json([
+            'message' => 'Facture ' . $result['invoice']->reference . ' créée à partir de '
+                       . $result['replaced'] . ' bon(s) de réception.',
+            'data'    => $result['invoice']->load(['thirdPartner', 'lignes.product', 'footer', 'user', 'warehouse']),
         ], 201);
     }
 

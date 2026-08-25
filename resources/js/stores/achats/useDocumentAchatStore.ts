@@ -47,6 +47,37 @@ export const useDocumentAchatStore = defineStore('documentAchat', () => {
     }
   }
 
+  /**
+   * Facture d'un seul coup les bons de reception coches dans la liste.
+   *
+   * Le serveur refuse les melanges de fournisseurs, les bons deja factures et
+   * les statuts non confirmes : on laisse remonter son message tel quel, il est
+   * plus precis que tout ce qu'on pourrait reconstituer ici.
+   */
+  async function regrouperBons(payload: {
+    receipt_ids: number[]
+    issued_at?: string | null
+    supplier_ref?: string | null
+  }): Promise<{ success: boolean; facture?: DocumentHeader; message?: string }> {
+    loading.value = true
+    error.value = null
+
+    try {
+      const { data } = await http.post<{ data: DocumentHeader; message: string }>(
+        '/achats/documents/regrouper-bons',
+        payload,
+      )
+      return { success: true, facture: data.data, message: data.message }
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { message?: string } } }
+      const message = err.response?.data?.message ?? 'Erreur lors du regroupement.'
+      error.value = message
+      return { success: false, message }
+    } finally {
+      loading.value = false
+    }
+  }
+
   async function fetchOne(id: number): Promise<DocumentHeader | null> {
     loading.value = true
     error.value = null
@@ -93,7 +124,9 @@ export const useDocumentAchatStore = defineStore('documentAchat', () => {
       // L'endpoint repond { message, data: <document> }, comme ses voisins
       // generer-* / confirmer-facture : sans deballer l'enveloppe, la page
       // de detail se lie a un objet sans aucun champ et s'affiche vide.
-      const { data } = await http.put<{ message: string; data: DocumentHeader }>(`/achats/documents/${brId}/confirmer-br`)
+      const { data } = await http.put<{ message: string; data: DocumentHeader }>(
+        `/achats/documents/${brId}/confirmer-br`,
+      )
       current.value = data.data
       return data.data
     } catch (e: unknown) {
@@ -246,6 +279,7 @@ export const useDocumentAchatStore = defineStore('documentAchat', () => {
     genererReception,
     confirmerBR,
     confirmerFacture,
+    regrouperBons,
     retourFournisseur,
   }
 })

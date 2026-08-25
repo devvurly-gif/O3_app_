@@ -50,6 +50,12 @@ class DocumentHeaderController extends Controller
             $query->where('document_type', $request->document_type);
         }
 
+        // Filtrer par tiers : l'ecran des achats s'en sert pour ne montrer que
+        // les bons d'un fournisseur avant de les facturer ensemble.
+        if ($request->filled('thirdPartner_id')) {
+            $query->where('thirdPartner_id', $request->thirdPartner_id);
+        }
+
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
