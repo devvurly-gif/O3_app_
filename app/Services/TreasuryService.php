@@ -233,6 +233,12 @@ class TreasuryService
                 'ca_title'        => $account->ca_title,
                 'ca_code'         => $account->ca_code,
                 'ca_type'         => $account->ca_type,
+                // Le formulaire de modification repart de cette réponse : omettre
+                // un champ modifiable, c'est le renvoyer vide au serveur au
+                // premier enregistrement — et rompre le rattachement des
+                // règlements à ce compte sans que personne ne le voie.
+                'ca_payment_method' => $account->ca_payment_method,
+                'ca_notes'        => $account->ca_notes,
                 'ca_status'       => $account->ca_status,
                 'initial_balance' => round($initial, 2),
                 'manual_net'      => round($manualNet, 2),

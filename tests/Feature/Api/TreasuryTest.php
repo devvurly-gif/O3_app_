@@ -187,6 +187,20 @@ class TreasuryTest extends TestCase
         $this->assertSame(2500.0, (float) $caisse['balance']);
     }
 
+    public function test_the_accounts_endpoint_exposes_every_editable_field(): void
+    {
+        // L'ecran de modification repart de cette reponse : un champ absent
+        // revient vide au serveur des le premier enregistrement.
+        $accounts = $this->actingAs($this->admin, 'sanctum')
+            ->getJson('/api/cash-accounts')->assertOk()->json();
+
+        $caisse = collect($accounts)->firstWhere('id', $this->caisse->id);
+
+        $this->assertSame('cash', $caisse['ca_payment_method']);
+        $this->assertArrayHasKey('ca_notes', $caisse);
+        $this->assertArrayHasKey('ca_status', $caisse);
+    }
+
     public function test_summary_respects_the_period(): void
     {
         $this->expense(['ct_amount' => 300, 'ct_date' => '2026-07-15']);
