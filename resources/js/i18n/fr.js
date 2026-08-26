@@ -96,7 +96,7 @@ export default {
     allAccounts: 'Tous les comptes',
     category: 'Catégorie',
     byCategory: 'Par poste',
-    byCategoryHint: "Seules les écritures saisies à la main sont ventilées : les règlements de factures n'ont pas de poste de dépense.",
+    byCategoryHint: 'Les règlements de factures sont rangés selon le document qu’ils soldent : achats en Achat Marchandises, ventes en Ventes.',
     label: 'Libellé',
     partner: 'Tiers',
     paymentMethod: 'Moyen de paiement',

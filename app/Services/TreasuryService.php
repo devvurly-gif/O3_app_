@@ -34,6 +34,16 @@ class TreasuryService
     private const NON_CASH_METHODS = ['credit'];
 
     /**
+     * Postes sous lesquels sont rangés les règlements de documents.
+     *
+     * Un règlement n'a pas de catégorie propre : le poste se déduit du sens du
+     * document qu'il solde. Les deux libellés correspondent à des catégories
+     * réelles, pour qu'ils se retrouvent dans l'écran Catégories.
+     */
+    private const POSTE_ACHAT = 'Achat Marchandises';
+    private const POSTE_VENTE = 'Ventes';
+
+    /**
      * Les encaissements de caisse n'entrent pas au journal ticket par ticket.
      *
      * L'argent d'une session n'est acquis qu'une fois la caisse comptée et le
@@ -321,15 +331,29 @@ class TreasuryService
     }
 
     /**
-     * Ventilation des écritures manuelles par poste. Les règlements documents
-     * n'y figurent pas : ils n'ont pas de catégorie de dépense, et les compter
-     * dans une ligne « Non catégorisé » écraserait la lecture des vrais postes.
+     * Ventilation par poste, écritures manuelles et règlements confondus.
+     *
+     * Un règlement de facture n'a pas de catégorie : il vit dans `payments`,
+     * rattaché à un document, et rien ne l'y range. Longtemps il est donc resté
+     * hors de cette ventilation — mais l'omission donnait une image fausse des
+     * dépenses d'un négoce, dont le premier poste est justement la marchandise
+     * achetée. Un commerçant lisait « Loyer 8 000, Carburant 1 200 » sans voir
+     * les 60 000 de marchandise reglee dans le mois.
+     *
+     * Le poste est donc déduit du sens du règlement : ce qui paie un document
+     * d'achat va en « Achat Marchandises », ce qui encaisse une vente va en
+     * « Ventes ». Les deux postes existent en base, pour qu'ils se retrouvent
+     * dans l'écran Catégories comme les autres.
+     *
+     * Les mêmes exclusions que le journal s'appliquent : pas de règlement à
+     * crédit — ce n'est pas de l'argent — et pas d'encaissement de caisse tant
+     * que la session n'est pas validée.
      *
      * @return array<int, array<string, mixed>>
      */
     public function byCategory(?string $from = null, ?string $to = null): array
     {
-        return DB::table('cash_transactions as ct')
+        $postes = DB::table('cash_transactions as ct')
             ->leftJoin('cash_categories as cc', 'cc.id', '=', 'ct.cash_category_id')
             ->whereNull('ct.deleted_at')
             ->where('ct.ct_status', 'active')
@@ -343,7 +367,6 @@ class TreasuryService
                 SUM(ct.ct_amount) as total,
                 COUNT(*) as entries
             ")
-            ->orderByDesc('total')
             ->get()
             ->map(fn ($row) => [
                 'category_id'    => $row->category_id,
@@ -353,6 +376,49 @@ class TreasuryService
                 'entries'        => (int) $row->entries,
             ])
             ->all();
+
+        return collect($postes)
+            ->merge($this->paymentsByCategory($from, $to))
+            ->sortByDesc('total')
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Les règlements de documents, ranges sous le poste que leur sens impose.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function paymentsByCategory(?string $from, ?string $to): array
+    {
+        $lignes = DB::table('payments as p')
+            ->join('document_headers as dh', 'dh.id', '=', 'p.document_header_id')
+            ->whereNotIn('p.method', self::NON_CASH_METHODS)
+            ->whereNull('dh.deleted_at')
+            ->whereRaw('NOT ' . self::POS_EXCLUSION_SQL)
+            ->when($from, fn ($q) => $q->whereDate('p.paid_at', '>=', $from))
+            ->when($to,   fn ($q) => $q->whereDate('p.paid_at', '<=', $to))
+            ->groupByRaw($this->paymentDirectionSql())
+            ->selectRaw($this->paymentDirectionSql() . ' as direction, SUM(p.amount) as total, COUNT(*) as entries')
+            ->get();
+
+        // Le titre sert de cle d'affichage ; l'identifiant permet a l'ecran de
+        // filtrer dessus comme sur un poste ordinaire, quand il existe.
+        $ids = DB::table('cash_categories')
+            ->whereIn('cc_title', [self::POSTE_ACHAT, self::POSTE_VENTE])
+            ->pluck('id', 'cc_title');
+
+        return $lignes->map(function ($row) use ($ids) {
+            $titre = $row->direction === 'out' ? self::POSTE_ACHAT : self::POSTE_VENTE;
+
+            return [
+                'category_id'    => $ids[$titre] ?? null,
+                'category_title' => $titre,
+                'direction'      => $row->direction,
+                'total'          => round((float) $row->total, 2),
+                'entries'        => (int) $row->entries,
+            ];
+        })->all();
     }
 
     // ── Virements ─────────────────────────────────────────────────

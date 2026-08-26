@@ -96,7 +96,7 @@ export default {
     allAccounts: 'All accounts',
     category: 'Category',
     byCategory: 'By category',
-    byCategoryHint: 'Only manual entries are broken down: invoice payments carry no expense category.',
+    byCategoryHint: 'Invoice payments are filed by the document they settle: purchases under Goods purchase, sales under Sales.',
     label: 'Label',
     partner: 'Partner',
     paymentMethod: 'Payment method',

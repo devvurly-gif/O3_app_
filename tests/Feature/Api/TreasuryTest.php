@@ -387,6 +387,67 @@ class TreasuryTest extends TestCase
         $this->assertSame(700.0, (float) $summary['total_out']);
     }
 
+    // ── Ventilation par poste ─────────────────────────────────────
+
+    public function test_supplier_payments_land_in_the_goods_purchase_category(): void
+    {
+        $this->purchasePayment(60000);
+
+        $postes = $this->actingAs($this->admin, 'sanctum')
+            ->getJson('/api/treasury/summary')->assertOk()->json('by_category');
+
+        $achat = collect($postes)->firstWhere('category_title', 'Achat Marchandises');
+
+        $this->assertNotNull($achat, 'Le reglement fournisseur doit etre ventile.');
+        $this->assertSame('out', $achat['direction']);
+        $this->assertSame(60000.0, (float) $achat['total']);
+        // L'identifiant permet a l'ecran de filtrer dessus comme sur un poste
+        // ordinaire : le libelle seul ne suffirait pas.
+        $this->assertNotNull($achat['category_id']);
+    }
+
+    public function test_customer_payments_land_in_the_sales_category(): void
+    {
+        $this->salePayment(2500);
+
+        $postes = $this->actingAs($this->admin, 'sanctum')
+            ->getJson('/api/treasury/summary')->assertOk()->json('by_category');
+
+        $ventes = collect($postes)->firstWhere('category_title', 'Ventes');
+
+        $this->assertNotNull($ventes);
+        $this->assertSame('in', $ventes['direction']);
+        $this->assertSame(2500.0, (float) $ventes['total']);
+    }
+
+    public function test_manual_entries_and_payments_coexist_in_the_breakdown(): void
+    {
+        $this->expense(['ct_amount' => 800]);   // depense manuelle, sans poste
+        $this->purchasePayment(60000);
+
+        $postes = $this->actingAs($this->admin, 'sanctum')
+            ->getJson('/api/treasury/summary')->assertOk()->json('by_category');
+
+        $titres = collect($postes)->pluck('category_title')->all();
+
+        $this->assertContains('Achat Marchandises', $titres);
+        $this->assertContains('Non catégorisé', $titres);
+
+        // La ventilation des sorties doit retomber sur le total des sorties.
+        $sorties = collect($postes)->where('direction', 'out')->sum('total');
+        $this->assertSame(60800.0, (float) $sorties);
+    }
+
+    public function test_credit_payments_stay_out_of_the_breakdown(): void
+    {
+        $this->salePayment(1000, 'credit');
+
+        $postes = $this->actingAs($this->admin, 'sanctum')
+            ->getJson('/api/treasury/summary')->assertOk()->json('by_category');
+
+        $this->assertNull(collect($postes)->firstWhere('category_title', 'Ventes'));
+    }
+
     // ── Journal ───────────────────────────────────────────────────
 
     public function test_journal_lists_both_sources(): void
