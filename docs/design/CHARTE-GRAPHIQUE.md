@@ -1,8 +1,8 @@
 # Charte graphique O3app
 
-> **Statut : v0.2 — orientation validée.** L'orange est confirmé comme couleur
-> de marque, le logo est aligné dessus, la personnalisation par tenant et la
-> cible RGAA sont retenues. Reste à trancher la densité typographique (§10).
+> **Statut : v0.3 — orientation arrêtée.** Orange confirmé comme couleur de
+> marque, logo aligné, personnalisation par tenant et cible RGAA retenues,
+> densité tranchée (§11). Reste le choix du jeu de palettes tenant.
 
 ---
 
@@ -720,16 +720,37 @@ c'est faisable, mais c'est un développement à part entière.
 
 ## 10. Ce qu'il reste à décider
 
-1. **La densité actuelle est-elle un choix ?** Passer le corps à 15 px et les
-   champs à 16 px allonge les écrans de tableaux. C'est l'arbitrage lisibilité
-   / densité, et je ne le tranche pas seul. C'est le dernier point ouvert de
-   cette charte.
-2. **Le jeu de palettes de §9 te convient-il ?** Six thèmes, ou faut-il ouvrir
+1. **Le jeu de palettes de §9 te convient-il ?** Six thèmes, ou faut-il ouvrir
    la saisie libre avec garde-fou serveur ?
-3. **Dans quel ordre appliquer ?** Ma recommandation : d'abord la règle orange
-   (§2.1) sur les 187 sites concernés — c'est mécanique, sans risque visuel, et
-   ça lève le principal écart AA. Ensuite les jetons, ensuite le reste.
+2. **Le dessin du logo lui-même.** Le sigle « O3 » en Arial dans un disque est
+   un logotype par défaut, pas un logo. La charte le rend correct ; elle ne le
+   rend pas distinctif.
 
 ---
 
-*v0.2 — orange validé, logo appliqué. Le reste attend le point 1 ci-dessus.*
+## 11. Densité : arbitrage tranché
+
+La question était de savoir si la densité actuelle — 91 % du texte à 14 px ou
+moins — relevait du choix ou de la dérive. **Décision : les deux, selon
+l'endroit.** Une règle unique appliquée partout serait fausse dans un sens ou
+dans l'autre.
+
+| Contexte | Taille | Raison |
+|---|---|---|
+| **Cellules de tableau, grilles de données** | **14 px** — inchangé | La densité y gagne sa place. Un inventaire de 200 lignes se lit mieux serré, et l'utilisateur est un habitué qui balaie plus qu'il ne lit. |
+| **Champs de saisie** | **16 px** | Non négociable : en dessous, iOS zoome à la prise de focus. C'est ce qui permet de retirer le `user-scalable=no` sans effet de bord. |
+| **Corps de texte, formulaires, modales, messages** | **15 px** | Ce sont des zones qu'on lit vraiment, souvent sous pression et parfois par-dessus l'épaule de quelqu'un. |
+| **Libellés, métadonnées** | 14 / 13 px | Inchangé. |
+
+Autrement dit : **la densité est conservée là où elle sert à comparer, et
+relâchée là où il faut comprendre.** Les tableaux — le cœur d'un ERP — ne
+s'allongent pas.
+
+Ce découpage a un effet secondaire utile : le seul changement à portée large
+est celui des champs, et c'est un remplacement mécanique de `text-sm` par
+`text-input` sur les 325 `<input>`. Le reste suit naturellement l'adoption de
+`BaseInput`.
+
+---
+
+*v0.3 — orange validé, logo appliqué, densité tranchée. Reste le jeu de palettes tenant.*
