@@ -31,7 +31,7 @@ class PosSessionController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = PosSession::with(['terminal', 'user:id,name'])
+        $query = PosSession::with(['terminal', 'user:id,name', 'validator:id,name'])
             ->latest('opened_at');
 
         // Filter by status
@@ -39,6 +39,13 @@ class PosSessionController extends Controller
             $query->whereNull('closed_at');
         } elseif ($request->query('status') === 'closed') {
             $query->whereNotNull('closed_at');
+        }
+
+        // Les caisses fermees qui attendent encore l'aval d'un responsable :
+        // c'est la file de travail de l'ecran de validation, et tant qu'une
+        // session y figure ses recettes ne sont pas en tresorerie.
+        if ($request->boolean('pending_validation')) {
+            $query->whereNotNull('closed_at')->whereNull('validated_at');
         }
 
         // Filter by terminal
@@ -218,7 +225,7 @@ class PosSessionController extends Controller
             return response()->json(['message' => 'Accès refusé.'], 403);
         }
 
-        $session->load(['terminal', 'user:id,name']);
+        $session->load(['terminal', 'user:id,name', 'validator:id,name', 'varianceTransaction']);
         $stats = $this->buildSessionStats($session);
 
         return response()->json([
@@ -229,8 +236,34 @@ class PosSessionController extends Controller
                 'opening_cash' => (float) $session->opening_cash,
                 'terminal'     => $session->terminal?->name,
                 'user'         => $session->user?->name,
+                // Le comptage : ce que la caisse aurait du contenir, ce qu'elle
+                // contenait, et l'ecart que le responsable doit endosser.
+                'closing_cash'    => $session->closing_cash === null ? null : (float) $session->closing_cash,
+                'expected_cash'   => $session->expected_cash === null ? null : (float) $session->expected_cash,
+                'cash_difference' => $session->cash_difference === null ? null : (float) $session->cash_difference,
+                'validated_at'    => $session->validated_at,
+                'validated_by'    => $session->validator?->name,
+                'variance_reason' => $session->variance_reason,
+                'variance_transaction' => $session->varianceTransaction ? [
+                    'id'        => $session->varianceTransaction->id,
+                    'code'      => $session->varianceTransaction->ct_code,
+                    'direction' => $session->varianceTransaction->ct_direction,
+                    'amount'    => (float) $session->varianceTransaction->ct_amount,
+                ] : null,
             ],
-            'stats' => $stats,
+            'stats'    => $stats,
+            // Les factures nees de la cloture, pour que le responsable voie ce
+            // qu'il endosse avant de valider.
+            'invoices' => DocumentHeader::where('pos_session_id', $session->id)
+                ->where('document_type', 'InvoiceSale')
+                ->with(['thirdPartner:id,tp_title', 'footer'])
+                ->get()
+                ->map(fn ($invoice) => [
+                    'id'        => $invoice->id,
+                    'reference' => $invoice->reference,
+                    'partner'   => $invoice->thirdPartner?->tp_title,
+                    'total_ttc' => (float) ($invoice->footer?->total_ttc ?? 0),
+                ]),
         ]);
     }
 

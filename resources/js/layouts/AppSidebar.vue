@@ -910,7 +910,9 @@ const tenantGroups: SidebarGroup[] = [
         to: '/settings/pos-sessions',
         labelKey: 'nav.posSessions',
         icon: icons.listdoc,
-        permission: 'settings.manage',
+        // pos.manage_terminals plutot que settings.manage : un manager valide
+        // les caisses sans avoir la main sur les reglages de l'application.
+        permission: 'pos.manage_terminals',
         module: 'pos',
       },
       { to: '/settings/activity-log', labelKey: 'nav.audit', icon: icons.audit, permission: 'settings.manage' },

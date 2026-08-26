@@ -11,19 +11,20 @@
     <!-- Filters -->
     <div class="flex flex-wrap items-center gap-3">
       <select
-        :aria-label="$t('a11y.filterStatus')"
         v-model="filterStatus"
+        :aria-label="$t('a11y.filterStatus')"
         class="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
         @change="fetchSessions()"
       >
         <option value="">Toutes les sessions</option>
         <option value="open">Ouvertes</option>
         <option value="closed">Fermées</option>
+        <option value="pending">À valider</option>
       </select>
 
       <select
-        :aria-label="$t('a11y.filterTerminal')"
         v-model="filterTerminal"
+        :aria-label="$t('a11y.filterTerminal')"
         class="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
         @change="fetchSessions()"
       >
@@ -43,6 +44,14 @@
 
     <!-- Table -->
     <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
+      <div
+        v-if="pendingCount > 0"
+        class="px-4 py-3 border-b border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 text-sm text-gray-700 dark:text-gray-200"
+      >
+        <strong>{{ pendingCount }}</strong> caisse(s) fermée(s) attendent une validation : leurs recettes ne sont pas
+        encore entrées en trésorerie.
+      </div>
+
       <div class="overflow-x-auto">
         <table class="w-full text-sm">
           <thead class="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
@@ -71,14 +80,32 @@
               class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
             >
               <td class="px-4 py-3">
-                <span class="font-mono text-xs bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 px-2 py-0.5 rounded">
+                <span
+                  class="font-mono text-xs bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 px-2 py-0.5 rounded"
+                >
                   {{ s.terminal?.name ?? '—' }}
                 </span>
               </td>
               <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">{{ s.user?.name ?? '—' }}</td>
               <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{{ formatDate(s.opened_at) }}</td>
-              <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{{ s.closed_at ? formatDate(s.closed_at) : '—' }}</td>
-              <td class="px-4 py-3 text-right font-mono text-gray-700 dark:text-gray-300">{{ formatMoney(s.opening_cash) }}</td>
+              <td class="px-4 py-3 text-gray-600 dark:text-gray-400">
+                {{ s.closed_at ? formatDate(s.closed_at) : '—' }}
+                <span
+                  v-if="isPending(s)"
+                  class="ml-1.5 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300"
+                >
+                  à valider
+                </span>
+                <span
+                  v-else-if="s.validated_at"
+                  class="ml-1.5 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300"
+                >
+                  validée
+                </span>
+              </td>
+              <td class="px-4 py-3 text-right font-mono text-gray-700 dark:text-gray-300">
+                {{ formatMoney(s.opening_cash) }}
+              </td>
               <td class="px-4 py-3 text-right font-mono text-gray-700 dark:text-gray-300">
                 {{ s.closing_cash != null ? formatMoney(s.closing_cash) : '—' }}
               </td>
@@ -88,14 +115,9 @@
               <td class="px-4 py-3">
                 <span
                   class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium"
-                  :class="s.closed_at
-                    ? 'bg-gray-100 text-gray-500'
-                    : 'bg-green-100 text-green-700'"
+                  :class="s.closed_at ? 'bg-gray-100 text-gray-500' : 'bg-green-100 text-green-700'"
                 >
-                  <span
-                    v-if="!s.closed_at"
-                    class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"
-                  ></span>
+                  <span v-if="!s.closed_at" class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
                   {{ s.closed_at ? 'Fermée' : 'Ouverte' }}
                 </span>
               </td>
@@ -109,7 +131,11 @@
                     @click="confirmForceClose(s)"
                   >
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
+                      />
                     </svg>
                     Fermer
                   </button>
@@ -122,7 +148,11 @@
                   >
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                      />
                     </svg>
                   </button>
                 </div>
@@ -167,7 +197,8 @@
           <span class="font-semibold">{{ forceCloseTarget?.terminal?.name }}</span> ?
         </p>
         <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-700">
-          <strong>Attention :</strong> Le fond de caisse sera défini à la valeur d'ouverture. L'utilisateur ne pourra plus utiliser cette session.
+          <strong>Attention :</strong> Le fond de caisse sera défini à la valeur d'ouverture. L'utilisateur ne pourra
+          plus utiliser cette session.
         </div>
       </div>
       <template #footer>
@@ -211,7 +242,9 @@
           </div>
           <div>
             <span class="text-gray-500 dark:text-gray-400">Fond d'ouverture</span>
-            <p class="font-mono font-medium text-gray-900 dark:text-white">{{ formatMoney(detailTarget.opening_cash) }}</p>
+            <p class="font-mono font-medium text-gray-900 dark:text-white">
+              {{ formatMoney(detailTarget.opening_cash) }}
+            </p>
           </div>
           <div>
             <span class="text-gray-500 dark:text-gray-400">Fond de fermeture</span>
@@ -234,7 +267,54 @@
         </div>
         <div v-if="detailTarget.notes">
           <span class="text-sm text-gray-500 dark:text-gray-400">Notes</span>
-          <p class="text-sm text-gray-900 dark:text-white mt-0.5 bg-gray-50 dark:bg-gray-900 rounded-lg p-3">{{ detailTarget.notes }}</p>
+          <p class="text-sm text-gray-900 dark:text-white mt-0.5 bg-gray-50 dark:bg-gray-900 rounded-lg p-3">
+            {{ detailTarget.notes }}
+          </p>
+        </div>
+
+        <!-- Déjà endossée -->
+        <div
+          v-if="detailTarget.validated_at"
+          class="rounded-lg border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 px-4 py-3 text-sm space-y-1"
+        >
+          <p class="font-semibold text-emerald-800 dark:text-emerald-200">
+            Validée le {{ formatDate(detailTarget.validated_at) }}
+            <span v-if="detailTarget.validator"> par {{ detailTarget.validator.name }}</span>
+          </p>
+          <p v-if="detailTarget.variance_reason" class="text-emerald-900/80 dark:text-emerald-100/80">
+            <span class="font-semibold">PV :</span> {{ detailTarget.variance_reason }}
+          </p>
+        </div>
+
+        <!-- À endosser -->
+        <div v-else-if="detailTarget.closed_at" class="space-y-3">
+          <div
+            class="rounded-lg bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 px-4 py-3 text-sm text-gray-700 dark:text-gray-200"
+          >
+            La validation fait entrer les recettes de cette session en trésorerie, une écriture par client et par moyen
+            de paiement.
+            <span v-if="hasVariance(detailTarget)">
+              L'écart de
+              <strong class="font-mono">{{ formatMoney(detailTarget.cash_difference) }}</strong>
+              y sera écrit séparément.
+            </span>
+          </div>
+
+          <div v-if="hasVariance(detailTarget)">
+            <label for="pos-pv" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              Procès-verbal — obligatoire *
+            </label>
+            <textarea
+              id="pos-pv"
+              v-model="varianceReason"
+              rows="3"
+              placeholder="Expliquez l'origine de l'écart : erreur de rendu de monnaie, fond d'ouverture mal déclaré…"
+              class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-teal-500"
+            />
+            <p class="text-xs text-gray-400 mt-1">Conservé sur la session et en note de l'écriture de trésorerie.</p>
+          </div>
+
+          <p v-if="validateError" class="text-sm text-red-600 dark:text-red-400">{{ validateError }}</p>
         </div>
       </div>
       <template #footer>
@@ -243,6 +323,14 @@
           @click="showDetail = false"
         >
           Fermer
+        </button>
+        <button
+          v-if="detailTarget && isPending(detailTarget)"
+          class="px-4 py-2 text-sm font-semibold bg-teal-600 hover:bg-teal-700 text-white rounded-lg transition disabled:opacity-60"
+          :disabled="validating"
+          @click="doValidate"
+        >
+          {{ validating ? 'Validation…' : 'Valider la session' }}
         </button>
       </template>
     </BaseModal>
@@ -284,6 +372,9 @@ interface PosSessionRow {
   notes: string | null
   terminal: SessionTerminal | null
   user: SessionUser | null
+  validated_at: string | null
+  variance_reason: string | null
+  validator: SessionUser | null
 }
 
 interface PaginatedResponse {
@@ -309,13 +400,28 @@ const forceClosing = ref(false)
 const showDetail = ref(false)
 const detailTarget = ref<PosSessionRow | null>(null)
 
+const validating = ref(false)
+const varianceReason = ref('')
+const validateError = ref('')
+
+/** Une caisse fermee qu'aucun responsable n'a encore endossee. */
+function isPending(s: PosSessionRow): boolean {
+  return !!s.closed_at && !s.validated_at
+}
+
+function hasVariance(s: PosSessionRow | null): boolean {
+  return Math.abs(Number(s?.cash_difference ?? 0)) >= 0.01
+}
+
+const pendingCount = computed(() => sessions.value.filter(isPending).length)
+
 const toast = ref<InstanceType<typeof BaseNotification> | null>(null)
 
-const openCount = computed(() => sessions.value.filter(s => !s.closed_at).length)
+const openCount = computed(() => sessions.value.filter((s) => !s.closed_at).length)
 
 onMounted(async () => {
   const { data } = await http.get('/pos/terminals')
-  terminals.value = Array.isArray(data) ? data : data.data ?? []
+  terminals.value = Array.isArray(data) ? data : (data.data ?? [])
   await fetchSessions()
 })
 
@@ -323,7 +429,13 @@ async function fetchSessions(page = 1) {
   loading.value = true
   try {
     const params: Record<string, string | number> = { page, per_page: 20 }
-    if (filterStatus.value) params.status = filterStatus.value
+    // 'pending' n'est pas un statut de session mais une file de travail : les
+    // caisses fermees dont les recettes attendent encore d'entrer en tresorerie.
+    if (filterStatus.value === 'pending') {
+      params.pending_validation = 1
+    } else if (filterStatus.value) {
+      params.status = filterStatus.value
+    }
     if (filterTerminal.value) params.terminal_id = filterTerminal.value
 
     const { data } = await http.get<PaginatedResponse>('/pos/sessions', { params })
@@ -366,7 +478,37 @@ async function doForceClose() {
 
 function openDetail(s: PosSessionRow) {
   detailTarget.value = s
+  varianceReason.value = ''
+  validateError.value = ''
   showDetail.value = true
+}
+
+/**
+ * Endosser le comptage : c'est ce geste qui fait entrer les recettes de la
+ * session en tresorerie, et qui y ecrit l'ecart avec son proces-verbal.
+ *
+ * Le serveur refuse une session ouverte, deja validee, ou un ecart sans
+ * explication ecrite : on affiche son message plutot que de le reformuler.
+ */
+async function doValidate() {
+  if (!detailTarget.value) return
+
+  validateError.value = ''
+  validating.value = true
+
+  try {
+    const { data } = await http.post(`/pos/sessions/${detailTarget.value.id}/valider`, {
+      variance_reason: varianceReason.value || null,
+    })
+    toast.value?.notify(data.message ?? 'Session validee.', 'success')
+    showDetail.value = false
+    await fetchSessions(currentPage.value)
+  } catch (err: unknown) {
+    const e = err as { response?: { data?: { message?: string } } }
+    validateError.value = e.response?.data?.message ?? 'Validation impossible.'
+  } finally {
+    validating.value = false
+  }
 }
 
 function formatDate(dateStr: string): string {

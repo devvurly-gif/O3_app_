@@ -242,7 +242,9 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/settings/pos-sessions',
     component: () => import('../pages/settings/PosSessions.vue'),
-    meta: { layout: 'app', title: 'Sessions POS', breadcrumb: 'Sessions POS', adminOnly: true },
+    // Plus adminOnly : valider une caisse est un geste de responsable, et le
+    // serveur ouvre deja la route a admin comme a manager.
+    meta: { layout: 'app', title: 'Sessions POS', breadcrumb: 'Sessions POS' },
   },
   {
     path: '/settings/imports',

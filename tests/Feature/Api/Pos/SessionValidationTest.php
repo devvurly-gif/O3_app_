@@ -147,6 +147,51 @@ class SessionValidationTest extends TestCase
             ->assertForbidden();
     }
 
+    // ── Ce dont l'ecran a besoin ──────────────────────────────────
+
+    public function test_the_pending_queue_lists_only_unvalidated_closed_tills(): void
+    {
+        $validee = $this->sellAndClose(500, 500);
+        $attente = $this->sellAndClose(300, 300);
+
+        $this->actingAs($this->manager, 'sanctum')
+            ->postJson("/api/pos/sessions/{$validee->id}/valider", [])->assertOk();
+
+        $rows = $this->actingAs($this->manager, 'sanctum')
+            ->getJson('/api/pos/sessions?pending_validation=1')
+            ->assertOk()->json('data');
+
+        $this->assertCount(1, $rows);
+        $this->assertSame($attente->id, $rows[0]['id']);
+    }
+
+    public function test_the_detail_carries_the_count_and_the_validation_state(): void
+    {
+        $session = $this->sellAndClose(500, 470);
+
+        $detail = $this->actingAs($this->manager, 'sanctum')
+            ->getJson("/api/pos/sessions/{$session->id}/live-stats")
+            ->assertOk()->json();
+
+        $this->assertSame(500.0, (float) $detail['session']['expected_cash']);
+        $this->assertSame(470.0, (float) $detail['session']['closing_cash']);
+        $this->assertSame(-30.0, (float) $detail['session']['cash_difference']);
+        $this->assertNull($detail['session']['validated_at']);
+        $this->assertSame(500.0, (float) $detail['stats']['payments_by_method']['cash']);
+
+        $this->actingAs($this->manager, 'sanctum')
+            ->postJson("/api/pos/sessions/{$session->id}/valider", ['variance_reason' => 'Erreur de rendu.'])
+            ->assertOk();
+
+        $detail = $this->actingAs($this->manager, 'sanctum')
+            ->getJson("/api/pos/sessions/{$session->id}/live-stats")->json();
+
+        $this->assertNotNull($detail['session']['validated_at']);
+        $this->assertSame($this->manager->name, $detail['session']['validated_by']);
+        $this->assertSame('Erreur de rendu.', $detail['session']['variance_reason']);
+        $this->assertSame(30.0, (float) $detail['session']['variance_transaction']['amount']);
+    }
+
     // ── Écart de caisse ───────────────────────────────────────────
 
     public function test_a_shortfall_is_refused_without_a_written_explanation(): void
