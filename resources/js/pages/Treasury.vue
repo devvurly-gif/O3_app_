@@ -205,7 +205,7 @@
         <select
           v-model="journalFilters.direction"
           :aria-label="$t('treasury.direction')"
-          class="px-3 py-2.5 text-[13px] font-semibold rounded-[10px] border border-[#E1E3E9] dark:border-gray-600 bg-[#FAFBFC] dark:bg-gray-700 dark:text-gray-200"
+          class="px-3 py-2.5 text-input font-semibold rounded-[10px] border border-[#E1E3E9] dark:border-gray-600 bg-[#FAFBFC] dark:bg-gray-700 dark:text-gray-200"
         >
           <option value="">{{ $t('treasury.allDirections') }}</option>
           <option value="in">{{ $t('treasury.in') }}</option>
@@ -214,7 +214,7 @@
         <select
           v-model="journalFilters.source"
           :aria-label="$t('treasury.source')"
-          class="px-3 py-2.5 text-[13px] font-semibold rounded-[10px] border border-[#E1E3E9] dark:border-gray-600 bg-[#FAFBFC] dark:bg-gray-700 dark:text-gray-200"
+          class="px-3 py-2.5 text-input font-semibold rounded-[10px] border border-[#E1E3E9] dark:border-gray-600 bg-[#FAFBFC] dark:bg-gray-700 dark:text-gray-200"
         >
           <option value="all">{{ $t('treasury.allSources') }}</option>
           <option value="manual">{{ $t('treasury.sourceManual') }}</option>
@@ -223,7 +223,7 @@
         <select
           v-model="journalFilters.account_id"
           :aria-label="$t('treasury.account')"
-          class="px-3 py-2.5 text-[13px] font-semibold rounded-[10px] border border-[#E1E3E9] dark:border-gray-600 bg-[#FAFBFC] dark:bg-gray-700 dark:text-gray-200"
+          class="px-3 py-2.5 text-input font-semibold rounded-[10px] border border-[#E1E3E9] dark:border-gray-600 bg-[#FAFBFC] dark:bg-gray-700 dark:text-gray-200"
         >
           <option value="">{{ $t('treasury.allAccounts') }}</option>
           <option v-for="acc in accounts" :key="acc.id" :value="acc.id">{{ acc.ca_title }}</option>

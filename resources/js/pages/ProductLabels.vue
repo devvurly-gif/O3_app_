@@ -486,8 +486,11 @@ const PT_TO_MM = 0.352778
 
 const numClass =
   'w-24 h-9 px-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-input text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500'
+// text-input : 16 px, sinon iOS zoome des qu'on touche une de ces cases
+// (charte v0.3, §11). Ces champs sont des saisies numeriques en millimetres,
+// tapees au doigt sur tablette.
 const cellClass =
-  'w-full px-1 py-1 text-center rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 disabled:opacity-40 focus:outline-none focus:ring-1 focus:ring-orange-500'
+  'text-input w-full px-1 py-1 text-center rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 disabled:opacity-40 focus:outline-none focus:ring-1 focus:ring-orange-500'
 
 // ── Search / listing ─────────────────────────────────────────────
 const search = ref('')

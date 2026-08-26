@@ -86,7 +86,7 @@
       <select
         :aria-label="$t('a11y.filterStatus')"
         v-model="statusFilter"
-        class="px-3.5 py-2.5 text-[13px] font-semibold rounded-[10px] border border-[#E1E3E9] dark:border-gray-600 bg-[#FAFBFC] dark:bg-gray-700 text-[#4A4F5B] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
+        class="px-3.5 py-2.5 text-input font-semibold rounded-[10px] border border-[#E1E3E9] dark:border-gray-600 bg-[#FAFBFC] dark:bg-gray-700 text-[#4A4F5B] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
       >
         <option value="">{{ $t('common.allStatus') }}</option>
         <option value="1">{{ $t('common.active') }}</option>

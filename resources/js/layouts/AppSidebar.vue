@@ -67,7 +67,7 @@
             v-model="query"
             type="search"
             :placeholder="$t('nav.searchPlaceholder')"
-            class="flex-1 min-w-0 bg-transparent border-0 p-0 text-[13px] text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-0"
+            class="flex-1 min-w-0 bg-transparent border-0 p-0 text-input text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-0"
           />
           <button
             v-if="query"
@@ -360,7 +360,7 @@
             v-model="paletteQuery"
             type="text"
             :placeholder="$t('nav.searchPlaceholder')"
-            class="flex-1 bg-transparent border-0 p-0 text-[15px] text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-0"
+            class="flex-1 bg-transparent border-0 p-0 text-input text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-0"
             @keydown.down.prevent="movePalette(1)"
             @keydown.up.prevent="movePalette(-1)"
             @keydown.enter.prevent="commitPalette()"

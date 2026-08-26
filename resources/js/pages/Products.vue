@@ -135,7 +135,7 @@
           <select
             :aria-label="$t('a11y.filterStatus')"
             v-model="statusFilter"
-            class="flex-1 sm:flex-none px-3.5 py-2.5 text-[13px] font-semibold rounded-[10px] border border-[#E1E3E9] dark:border-gray-600 bg-[#FAFBFC] dark:bg-gray-700 text-[#4A4F5B] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
+            class="flex-1 sm:flex-none px-3.5 py-2.5 text-input font-semibold rounded-[10px] border border-[#E1E3E9] dark:border-gray-600 bg-[#FAFBFC] dark:bg-gray-700 text-[#4A4F5B] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
           >
             <option value="">{{ $t('common.allStatus') }}</option>
             <option value="1">{{ $t('common.active') }}</option>
@@ -144,7 +144,7 @@
           <select
             :aria-label="$t('a11y.filterStock')"
             v-model="stockFilter"
-            class="flex-1 sm:flex-none px-3.5 py-2.5 text-[13px] font-semibold rounded-[10px] border border-[#E1E3E9] dark:border-gray-600 bg-[#FAFBFC] dark:bg-gray-700 text-[#4A4F5B] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
+            class="flex-1 sm:flex-none px-3.5 py-2.5 text-input font-semibold rounded-[10px] border border-[#E1E3E9] dark:border-gray-600 bg-[#FAFBFC] dark:bg-gray-700 text-[#4A4F5B] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
             title="Filtrer par disponibilité du stock"
           >
             <option value="">Stock : tous</option>
@@ -155,7 +155,7 @@
             :aria-label="$t('a11y.filterEcom')"
             v-if="ecomEnabled"
             v-model="ecomFilter"
-            class="flex-1 sm:flex-none px-3.5 py-2.5 text-[13px] font-semibold rounded-[10px] border border-[#E1E3E9] dark:border-gray-600 bg-[#FAFBFC] dark:bg-gray-700 text-[#4A4F5B] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
+            class="flex-1 sm:flex-none px-3.5 py-2.5 text-input font-semibold rounded-[10px] border border-[#E1E3E9] dark:border-gray-600 bg-[#FAFBFC] dark:bg-gray-700 text-[#4A4F5B] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
             title="Filtrer par publication sur la boutique en ligne"
           >
             <option value="">Boutique : tous</option>
@@ -165,7 +165,7 @@
           <select
             :aria-label="$t('a11y.filterPromo')"
             v-model="promoFilter"
-            class="flex-1 sm:flex-none px-3.5 py-2.5 text-[13px] font-semibold rounded-[10px] border border-[#E1E3E9] dark:border-gray-600 bg-[#FAFBFC] dark:bg-gray-700 text-[#4A4F5B] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
+            class="flex-1 sm:flex-none px-3.5 py-2.5 text-input font-semibold rounded-[10px] border border-[#E1E3E9] dark:border-gray-600 bg-[#FAFBFC] dark:bg-gray-700 text-[#4A4F5B] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
             title="Filtrer par promotion active"
           >
             <option value="">Promo : tous</option>

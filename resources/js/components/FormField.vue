@@ -135,7 +135,10 @@ textarea {
   padding: 0.75rem;
   border: 1px solid #d1d5db;
   border-radius: 0.375rem;
-  font-size: 0.875rem;
+  /* 16 px : en dessous, iOS zoome a la prise de focus (charte v0.3, §11).
+     Ce composant se style en CSS et non en classes utilitaires : la valeur
+     est donc posee ici plutot que par text-input. */
+  font-size: 1rem;
   font-family: inherit;
   transition: all 0.2s;
 }

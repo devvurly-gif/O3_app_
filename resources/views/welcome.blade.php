@@ -2,7 +2,13 @@
 <html lang="fr" dir="ltr">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+    {{-- maximum-scale et user-scalable=no empechaient d'agrandir la page :
+         un utilisateur malvoyant ne pouvait pas zoomer, et le RGAA l'exige
+         (critere 10.11). Ces attributs etaient la pour eviter le zoom
+         intempestif d'iOS a la prise de focus sur un champ ; ce zoom vient
+         d'une taille de police inferieure a 16 px, corrigee a la source par
+         la charte v0.3 §11. Le verrou n'a donc plus lieu d'etre. --}}
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 
     {{-- ── PWA / Kiosk mode ───────────────────────────────────────── --}}
     <meta name="mobile-web-app-capable" content="yes">
