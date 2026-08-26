@@ -151,6 +151,35 @@ class DocumentHeader extends Model
         return $this->hasOne(DocumentFooter::class, 'document_header_id');
     }
 
+    /**
+     * Les écritures de trésorerie saisies à la main qui pointent vers ce
+     * document — un renvoi, jamais un règlement.
+     */
+    public function cashTransactions(): HasMany
+    {
+        return $this->hasMany(CashTransaction::class, 'document_header_id');
+    }
+
+    /**
+     * Ce document est-il déjà porté par une écriture de trésorerie manuelle ?
+     *
+     * Le journal réunit deux sources : les écritures saisies et les règlements
+     * des documents. Encaisser sur un document que quelqu'un a déjà passé à la
+     * main ferait compter la somme deux fois — le solde de caisse serait faux,
+     * et rien ne le signalerait.
+     *
+     * Les documents de caisse en sont exclus : leurs règlements restent hors du
+     * journal jusqu'à la validation de la session, il n'y a donc rien à doubler.
+     */
+    public function hasManualTreasuryEntry(): bool
+    {
+        if ($this->pos_session_id) {
+            return false;
+        }
+
+        return $this->cashTransactions()->where('ct_status', 'active')->exists();
+    }
+
     public function stockMouvements(): HasMany
     {
         return $this->hasMany(StockMouvement::class, 'document_header_id');

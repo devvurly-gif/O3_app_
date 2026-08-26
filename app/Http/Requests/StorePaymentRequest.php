@@ -39,6 +39,19 @@ class StorePaymentRequest extends FormRequest
                 return;
             }
 
+            // Symetrique du controle pose sur l'ecriture manuelle : la
+            // saisie a la main d'abord, le reglement ensuite, doublerait le
+            // montant au journal de tresorerie.
+            if ($doc->hasManualTreasuryEntry()) {
+                $v->errors()->add(
+                    'document_header_id',
+                    'Une ecriture de tresorerie saisie a la main pointe deja vers ce document : '
+                    . 'enregistrer un reglement par-dessus compterait la somme deux fois. '
+                    . 'Annulez l\'ecriture manuelle depuis la Tresorerie, puis ressaisissez le reglement ici.'
+                );
+                return;
+            }
+
             $allowedTypes = ['InvoiceSale', 'InvoicePurchase'];
 
             if (Setting::get('ventes', 'paiement_sur_bl', 'false') === 'true') {

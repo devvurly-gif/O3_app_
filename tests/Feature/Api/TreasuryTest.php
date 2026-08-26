@@ -8,6 +8,7 @@ use App\Models\CashRecurrence;
 use App\Models\CashTransaction;
 use App\Models\DocumentFooter;
 use App\Models\DocumentHeader;
+use App\Models\ThirdPartner;
 use App\Models\Payment;
 use App\Models\User;
 use Tests\Concerns\RefreshTenantDatabase;
@@ -189,6 +190,132 @@ class TreasuryTest extends TestCase
             ])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['document_header_id']);
+    }
+
+    public function test_a_payment_is_refused_on_a_document_carried_by_a_manual_entry(): void
+    {
+        $doc = DocumentHeader::factory()->invoice()->create(['user_id' => $this->admin->id]);
+        DocumentFooter::factory()->create([
+            'document_header_id' => $doc->id,
+            'total_ttc'          => 1000,
+            'amount_due'         => 1000,
+        ]);
+
+        // Quelqu'un a saisi l'encaissement a la main, en le rattachant au document.
+        CashTransaction::create([
+            'cash_account_id'    => $this->caisse->id,
+            'document_header_id' => $doc->id,
+            'ct_direction'       => 'in',
+            'ct_amount'          => 1000,
+            'ct_date'            => '2026-08-11',
+            'ct_label'           => 'Encaissement saisi a la main',
+        ]);
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson('/api/payments', [
+                'document_header_id' => $doc->id,
+                'amount'             => 1000,
+                'method'             => 'cash',
+                'paid_at'            => '2026-08-11',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['document_header_id']);
+
+        $this->assertSame(0, Payment::count());
+    }
+
+    public function test_a_cancelled_manual_entry_no_longer_blocks_the_payment(): void
+    {
+        $doc = DocumentHeader::factory()->invoice()->create(['user_id' => $this->admin->id]);
+        DocumentFooter::factory()->create([
+            'document_header_id' => $doc->id,
+            'total_ttc'          => 1000,
+            'amount_due'         => 1000,
+        ]);
+
+        $entry = CashTransaction::create([
+            'cash_account_id'    => $this->caisse->id,
+            'document_header_id' => $doc->id,
+            'ct_direction'       => 'in',
+            'ct_amount'          => 1000,
+            'ct_date'            => '2026-08-11',
+            'ct_label'           => 'Saisie a corriger',
+        ]);
+
+        $entry->update(['ct_status' => 'cancelled']);
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson('/api/payments', [
+                'document_header_id' => $doc->id,
+                'amount'             => 1000,
+                'method'             => 'cash',
+                'paid_at'            => '2026-08-11',
+            ])
+            ->assertCreated();
+    }
+
+    public function test_the_bulk_payment_refuses_the_batch_and_names_the_document(): void
+    {
+        $partner = ThirdPartner::factory()->create(['tp_title' => 'ACME', 'tp_Role' => 'customer']);
+
+        $doc = DocumentHeader::factory()->invoice()->create([
+            'user_id'         => $this->admin->id,
+            'thirdPartner_id' => $partner->id,
+        ]);
+        DocumentFooter::factory()->create([
+            'document_header_id' => $doc->id,
+            'total_ttc'          => 1000,
+            'amount_due'         => 1000,
+        ]);
+
+        CashTransaction::create([
+            'cash_account_id'    => $this->caisse->id,
+            'document_header_id' => $doc->id,
+            'ct_direction'       => 'in',
+            'ct_amount'          => 1000,
+            'ct_date'            => '2026-08-11',
+            'ct_label'           => 'Encaissement saisi a la main',
+        ]);
+
+        $response = $this->actingAs($this->admin, 'sanctum')
+            ->postJson("/api/third-partners/{$partner->id}/bulk-payment", [
+                'amount' => 1000,
+                'method' => 'cash',
+            ])
+            ->assertStatus(422);
+
+        $this->assertStringContainsString($doc->reference, $response->json('message'));
+        $this->assertSame(0, Payment::count());
+    }
+
+    /**
+     * Les documents de caisse sont exemptes : leurs reglements restent hors du
+     * journal jusqu'a la validation de la session, il n'y a rien a doubler.
+     */
+    public function test_a_till_document_is_not_blocked(): void
+    {
+        $session = \App\Models\PosSession::factory()->create();
+
+        $doc = DocumentHeader::factory()->invoice()->create([
+            'user_id'        => $this->admin->id,
+            'pos_session_id' => $session->id,
+        ]);
+        DocumentFooter::factory()->create([
+            'document_header_id' => $doc->id,
+            'total_ttc'          => 500,
+            'amount_due'         => 500,
+        ]);
+
+        CashTransaction::create([
+            'cash_account_id'    => $this->caisse->id,
+            'document_header_id' => $doc->id,
+            'ct_direction'       => 'in',
+            'ct_amount'          => 500,
+            'ct_date'            => '2026-08-11',
+            'ct_label'           => 'Renvoi vers un document de caisse',
+        ]);
+
+        $this->assertFalse($doc->fresh()->hasManualTreasuryEntry());
     }
 
     // ── Synthèse ──────────────────────────────────────────────────

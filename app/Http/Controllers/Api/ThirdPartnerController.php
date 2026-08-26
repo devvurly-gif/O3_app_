@@ -157,6 +157,20 @@ class ThirdPartnerController extends Controller
             return response()->json(['message' => 'Aucune facture impayée trouvée.'], 422);
         }
 
+        // Le reglement groupe passe a cote de StorePaymentRequest : sans ce
+        // controle, il rouvrirait la porte que l'on vient de fermer. On refuse
+        // le lot entier plutot que d'ecarter une facture en silence — le
+        // repartir sans le dire donnerait un resultat que personne n'a demande.
+        $doubleCounted = $unpaidDocs->first(fn ($doc) => $doc->hasManualTreasuryEntry());
+
+        if ($doubleCounted) {
+            return response()->json([
+                'message' => 'Le document ' . $doubleCounted->reference . ' est deja porte par une ecriture '
+                           . 'de tresorerie saisie a la main : un reglement par-dessus compterait la somme '
+                           . 'deux fois. Annulez cette ecriture depuis la Tresorerie, puis relancez le reglement.',
+            ], 422);
+        }
+
         $remaining = (float) $data['amount'];
         $paymentsCreated = [];
         $affectedInvoices = [];
