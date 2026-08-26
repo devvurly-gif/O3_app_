@@ -13,7 +13,7 @@
       <select
         v-model="filterStatus"
         :aria-label="$t('a11y.filterStatus')"
-        class="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+        class="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
         @change="fetchSessions()"
       >
         <option value="">Toutes les sessions</option>
@@ -25,7 +25,7 @@
       <select
         v-model="filterTerminal"
         :aria-label="$t('a11y.filterTerminal')"
-        class="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+        class="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
         @change="fetchSessions()"
       >
         <option value="">Tous les terminaux</option>
@@ -309,7 +309,7 @@
               v-model="varianceReason"
               rows="3"
               placeholder="Expliquez l'origine de l'écart : erreur de rendu de monnaie, fond d'ouverture mal déclaré…"
-              class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-teal-500"
+              class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
             <p class="text-xs text-gray-400 mt-1">Conservé sur la session et en note de l'écriture de trésorerie.</p>
           </div>

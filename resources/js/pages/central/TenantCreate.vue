@@ -122,7 +122,7 @@ const plans = [
           type="text"
           required
           placeholder="acme"
-          class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-orange-500"
+          class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-input focus:ring-2 focus:ring-orange-500"
         />
         <p class="text-xs text-gray-400 mt-1">Lettres minuscules, chiffres et tirets uniquement. Sert d'identifiant et de préfixe DB.</p>
         <p v-if="errors.id" class="text-xs text-red-500 mt-1">{{ errors.id[0] }}</p>
@@ -137,7 +137,7 @@ const plans = [
           type="text"
           required
           placeholder="Acme Corporation"
-          class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-orange-500"
+          class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-input focus:ring-2 focus:ring-orange-500"
         />
         <p v-if="errors.name" class="text-xs text-red-500 mt-1">{{ errors.name[0] }}</p>
       </div>
@@ -151,7 +151,7 @@ const plans = [
           type="email"
           required
           placeholder="admin@acme.com"
-          class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-orange-500"
+          class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-input focus:ring-2 focus:ring-orange-500"
         />
         <p v-if="errors.email" class="text-xs text-red-500 mt-1">{{ errors.email[0] }}</p>
       </div>
@@ -165,7 +165,7 @@ const plans = [
           type="text"
           required
           placeholder="acme.o3app.com"
-          class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-orange-500"
+          class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white text-input focus:ring-2 focus:ring-orange-500"
         />
         <p class="text-xs text-gray-400 mt-1">Le client accédera à l'application via ce domaine.</p>
         <p v-if="errors.domain" class="text-xs text-red-500 mt-1">{{ errors.domain[0] }}</p>
@@ -181,7 +181,7 @@ const plans = [
           required
           minlength="6"
           placeholder="Minimum 6 caractères"
-          class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-orange-500"
+          class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-input focus:ring-2 focus:ring-orange-500"
         />
         <p v-if="errors.admin_password" class="text-xs text-red-500 mt-1">{{ errors.admin_password[0] }}</p>
       </div>

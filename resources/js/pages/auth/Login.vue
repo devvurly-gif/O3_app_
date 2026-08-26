@@ -94,7 +94,7 @@
                 autocomplete="email"
                 required
                 placeholder="you@example.com"
-                class="w-full px-3.5 py-2.5 rounded-lg border border-gray-600 bg-gray-900 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
+                class="w-full px-3.5 py-2.5 rounded-lg border border-gray-600 bg-gray-900 text-input text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
               />
             </div>
 
@@ -114,7 +114,7 @@
                   autocomplete="current-password"
                   required
                   placeholder="••••••••"
-                  class="w-full px-3.5 py-2.5 pr-10 rounded-lg border border-gray-600 bg-gray-900 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
+                  class="w-full px-3.5 py-2.5 pr-10 rounded-lg border border-gray-600 bg-gray-900 text-input text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
                 />
                 <button
                   type="button"

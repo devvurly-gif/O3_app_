@@ -1024,7 +1024,7 @@ function matchLabel(score: number) {
                   class="px-1.5 py-0.5 text-[9px] font-bold rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">A creer</span>
               </label>
               <select id="ocrinvoiceimport-supplier-id" v-model="form.supplier_id"
-                class="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 dark:text-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none">
+                class="w-full px-2.5 py-1.5 text-input border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 dark:text-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none">
                 <option :value="null">-- Selectionner --</option>
                 <option v-for="s in suppliers" :key="s.id" :value="s.id">{{ s.tp_title }}</option>
               </select>
@@ -1045,7 +1045,7 @@ function matchLabel(score: number) {
                   </button>
                 </label>
                 <input id="ocrinvoiceimport-invoice-number" v-model="form.invoice_number" type="text"
-                  class="w-full px-2.5 py-1.5 text-sm border rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                  class="w-full px-2.5 py-1.5 text-input border rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none"
                   :class="activeField?.field === 'invoice_number' ? 'border-blue-400 ring-2 ring-blue-200 dark:ring-blue-800 bg-blue-50 dark:bg-blue-950' : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 dark:text-gray-200'" />
               </div>
               <!-- Invoice Date -->
@@ -1058,7 +1058,7 @@ function matchLabel(score: number) {
                   </button>
                 </label>
                 <input id="ocrinvoiceimport-invoice-date" v-model="form.invoice_date" type="date"
-                  class="w-full px-2.5 py-1.5 text-sm border rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                  class="w-full px-2.5 py-1.5 text-input border rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none"
                   :class="activeField?.field === 'invoice_date' ? 'border-teal-400 ring-2 ring-teal-200 dark:ring-teal-800 bg-teal-50 dark:bg-teal-950' : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 dark:text-gray-200'" />
               </div>
             </div>
@@ -1074,14 +1074,14 @@ function matchLabel(score: number) {
                   </button>
                 </label>
                 <input id="ocrinvoiceimport-due-date" v-model="form.due_date" type="date"
-                  class="w-full px-2.5 py-1.5 text-sm border rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                  class="w-full px-2.5 py-1.5 text-input border rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none"
                   :class="activeField?.field === 'due_date' ? 'border-teal-400 ring-2 ring-teal-200 dark:ring-teal-800 bg-teal-50 dark:bg-teal-950' : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 dark:text-gray-200'" />
               </div>
               <!-- Warehouse -->
               <div>
                 <label for="ocrinvoiceimport-warehouse-id" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Entrepôt <span class="text-red-500">*</span></label>
                 <select id="ocrinvoiceimport-warehouse-id" v-model="form.warehouse_id" required
-                  class="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 dark:text-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                  class="w-full px-2.5 py-1.5 text-input border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 dark:text-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none"
                   :class="{ 'border-red-400': !form.warehouse_id }">
                   <option :value="null" disabled>-- Sélectionner --</option>
                   <option v-for="w in warehouses" :key="w.id" :value="w.id">{{ w.name }}</option>
@@ -1093,7 +1093,7 @@ function matchLabel(score: number) {
             <div>
               <label for="ocrinvoiceimport-payment-method" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Mode de paiement</label>
               <select id="ocrinvoiceimport-payment-method" v-model="form.payment_method"
-                class="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 dark:text-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none">
+                class="w-full px-2.5 py-1.5 text-input border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 dark:text-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none">
                 <option value="cash">Especes</option>
                 <option value="check">Cheque</option>
                 <option value="transfer">Virement</option>
@@ -1256,7 +1256,7 @@ function matchLabel(score: number) {
             id="ocrinvoiceimport-notes"
             v-model="form.notes"
             rows="2"
-            class="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 dark:text-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none resize-none"
+            class="w-full px-2.5 py-1.5 text-input border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 dark:text-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none resize-none"
             :placeholder="form.invoice_number ? `Facture fournisseur ref: ${form.invoice_number}` : 'Notes...'"
           ></textarea>
         </div>

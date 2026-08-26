@@ -287,7 +287,7 @@ async function submit() {
                 id="documenteditstock-header-warehouse-id"
                 v-model="header.warehouse_id"
                 required
-                class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
+                class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
               >
                 <option value="">Sélectionner un dépôt</option>
                 <option v-for="wh in whStore.items" :key="wh.id" :value="wh.id">{{ wh.wh_title }}</option>
@@ -303,7 +303,7 @@ async function submit() {
                 id="documenteditstock-header-warehouse-dest-id"
                 v-model="header.warehouse_dest_id"
                 required
-                class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
+                class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
               >
                 <option value="">Sélectionner un dépôt</option>
                 <option v-for="wh in destWarehouses" :key="wh.id" :value="wh.id">{{ wh.wh_title }}</option>
@@ -318,7 +318,7 @@ async function submit() {
                 v-model="header.issued_at"
                 type="date"
                 required
-                class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
+                class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
               />
             </div>
 
@@ -330,7 +330,7 @@ async function submit() {
                 v-model="header.notes"
                 type="text"
                 placeholder="Motif, observations..."
-                class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
+                class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
               />
             </div>
           </div>
@@ -357,7 +357,7 @@ async function submit() {
                     id="documenteditstock-pendingsearch"
                     v-model="pendingSearch"
                     placeholder="Chercher un produit..."
-                    class="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
+                    class="flex-1 px-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
                     @input="showPendingDropdown = true"
                     @blur="delayedClosePending"
                   />
@@ -402,7 +402,7 @@ async function submit() {
                   type="number"
                   min="0.01"
                   step="0.01"
-                  class="w-full px-3 py-2 text-sm text-right rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
+                  class="w-full px-3 py-2 text-input text-right rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
                   @keydown.enter.prevent="addArticle()"
                 />
               </div>
@@ -460,7 +460,7 @@ async function submit() {
                         :aria-label="`Chercher un produit pour cette ligne`"
                         v-model="productSearches[line.key]"
                         :placeholder="line.designation || 'Chercher un produit...'"
-                        class="flex-1 min-w-0 px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-violet-400 transition"
+                        class="flex-1 min-w-0 px-3 py-2 text-input rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-violet-400 transition"
                         @input="openProductDropdown(line.key)"
                         @blur="delayedCloseProduct(line.key)"
                       />
@@ -512,7 +512,7 @@ async function submit() {
                       type="number"
                       min="0.01"
                       step="0.01"
-                      class="w-full px-3 py-2 text-sm text-right rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-400 transition"
+                      class="w-full px-3 py-2 text-input text-right rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-400 transition"
                     />
                   </td>
 
@@ -522,7 +522,7 @@ async function submit() {
                       :aria-label="`Unité de ${line.designation || 'la ligne'}`"
                       v-model="line.unit"
                       type="text"
-                      class="w-full px-3 py-2 text-sm text-center rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-400 transition"
+                      class="w-full px-3 py-2 text-input text-center rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-400 transition"
                     />
                   </td>
 
@@ -534,7 +534,7 @@ async function submit() {
                       type="number"
                       min="0"
                       step="0.01"
-                      class="w-full px-3 py-2 text-sm text-right rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-400 transition"
+                      class="w-full px-3 py-2 text-input text-right rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-400 transition"
                       placeholder="0.00"
                     />
                   </td>

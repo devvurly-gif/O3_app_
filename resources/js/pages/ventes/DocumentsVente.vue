@@ -318,12 +318,12 @@ async function submitPayment() {
         aria-label="Rechercher une vente"
         type="text"
         placeholder="Rechercher référence..."
-        class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-200 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 w-full sm:w-64"
+        class="px-3.5 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-200 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 w-full sm:w-64"
       />
       <select
         v-model="typeFilter"
         aria-label="Filtrer par type de document"
-        class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500"
+        class="px-3.5 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500"
       >
         <option value="">Tous types</option>
         <option v-for="t in saleTypes" :key="t" :value="t">{{ typeLabels[t] }}</option>
@@ -331,7 +331,7 @@ async function submitPayment() {
       <select
         v-model="customerFilter"
         aria-label="Filtrer par client"
-        class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500"
+        class="px-3.5 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500"
       >
         <option value="">Tous clients</option>
         <option v-for="c in customers" :key="c.id" :value="String(c.id)">{{ c.tp_title }}</option>
@@ -483,7 +483,7 @@ async function submitPayment() {
             id="group-date-vente"
             v-model="groupForm.issued_at"
             type="date"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-teal-500"
+            class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-teal-500"
           />
           <p class="text-xs text-gray-400 mt-1">Par défaut, la date du dernier BL sélectionné.</p>
         </div>
@@ -497,7 +497,7 @@ async function submitPayment() {
             v-model="groupForm.customer_ref"
             type="text"
             placeholder="Facultatif — n° de commande du client"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-teal-500"
+            class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-teal-500"
           />
           <p class="text-xs text-gray-400 mt-1">Conservée dans les notes, pour le rapprochement.</p>
         </div>
@@ -567,7 +567,7 @@ async function submitPayment() {
             step="0.01"
             min="0.01"
             required
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+            class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
           />
         </div>
         <div>
@@ -580,7 +580,7 @@ async function submitPayment() {
             id="documentsvente-paymentform-method"
             v-model="paymentForm.method"
             required
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+            class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
           >
             <option value="cash">Espèces</option>
             <option value="bank_transfer">Virement</option>
@@ -599,7 +599,7 @@ async function submitPayment() {
             id="documentsvente-paymentform-paid-at"
             v-model="paymentForm.paid_at"
             type="date"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+            class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
           />
         </div>
         <div>
@@ -613,7 +613,7 @@ async function submitPayment() {
             v-model="paymentForm.reference"
             type="text"
             placeholder="N° chèque, virement..."
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+            class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
           />
         </div>
         <div>
@@ -627,7 +627,7 @@ async function submitPayment() {
             v-model="paymentForm.notes"
             rows="2"
             placeholder="Notes..."
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+            class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
           ></textarea>
         </div>
       </form>

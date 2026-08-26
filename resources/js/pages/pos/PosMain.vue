@@ -55,7 +55,7 @@
             v-model="posStore.searchQuery"
             type="text"
             placeholder="Rechercher par nom, SKU, code-barres..."
-            class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             @input="debouncedSearch"
           />
         </div>
@@ -287,7 +287,7 @@
                 v-model="customerSearch"
                 type="text"
                 placeholder="Client (optionnel)..."
-                class="w-full pl-8 pr-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                class="w-full pl-8 pr-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-input text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 @input="debouncedCustomerSearch"
                 @focus="showCustomerDropdown = true"
               />
@@ -477,7 +477,7 @@
               id="posmain-newcustomer-tp-title"
               v-model="newCustomer.tp_title"
               type="text"
-              class="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
+              class="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-input text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
               placeholder="Nom du client"
             />
           </div>
@@ -487,7 +487,7 @@
               id="posmain-newcustomer-tp-phone"
               v-model="newCustomer.tp_phone"
               type="text"
-              class="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
+              class="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-input text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
               placeholder="06 xx xx xx xx"
             />
           </div>
@@ -497,7 +497,7 @@
               id="posmain-newcustomer-tp-email"
               v-model="newCustomer.tp_email"
               type="email"
-              class="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
+              class="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-input text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
               placeholder="email@exemple.com"
             />
           </div>
@@ -528,7 +528,7 @@
               type="number"
               min="0"
               step="100"
-              class="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
+              class="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-input text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
               placeholder="0 = illimité"
             />
           </div>
@@ -776,7 +776,7 @@
                   v-model="terminalSettingsForm.printer_name"
                   type="text"
                   placeholder="ex: Epson TM-T20 Caisse 1"
-                  class="w-full px-3 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  class="w-full px-3 py-2.5 text-input rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 />
                 <p class="text-[10px] text-gray-400 mt-1">
                   Doit correspondre exactement au nom de l'imprimante dans Windows.

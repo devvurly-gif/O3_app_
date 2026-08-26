@@ -124,12 +124,12 @@ function viewDoc(row: Record<string, unknown>) {
         v-model="search"
         type="text"
         placeholder="Rechercher référence..."
-        class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-200 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500 w-full sm:w-64"
+        class="px-3.5 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-200 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500 w-full sm:w-64"
       />
       <select
         aria-label="Filtrer par type de document"
         v-model="typeFilter"
-        class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-500"
+        class="px-3.5 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-500"
       >
         <option value="">Tous types</option>
         <option v-for="t in stockTypes" :key="t" :value="t">{{ typeLabels[t] }}</option>
@@ -137,7 +137,7 @@ function viewDoc(row: Record<string, unknown>) {
       <select
         aria-label="Filtrer par statut"
         v-model="statFilter"
-        class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-500"
+        class="px-3.5 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-500"
       >
         <option value="">Tous statuts</option>
         <option v-for="(label, key) in statusLabels" :key="key" :value="key">{{ label }}</option>

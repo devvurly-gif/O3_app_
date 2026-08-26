@@ -872,7 +872,7 @@
               aria-label="Nom de la rubrique"
               type="text"
               placeholder="Ex: Couleur, Taille, Matière..."
-              class="flex-1 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-400"
+              class="flex-1 px-3 py-1.5 text-input border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-400"
               @keyup.enter="confirmAddType"
               @keyup.escape="addingType = false"
             />
@@ -911,7 +911,7 @@
                 v-model="editingTypeName"
                 aria-label="Renommer la rubrique"
                 type="text"
-                class="flex-1 px-2 py-1 text-sm font-semibold border border-orange-400 rounded bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none"
+                class="flex-1 px-2 py-1 text-input font-semibold border border-orange-400 rounded bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none"
                 @keyup.enter="saveTypeName(optType)"
                 @keyup.escape="editingTypeId = null"
                 @blur="saveTypeName(optType)"
@@ -956,7 +956,7 @@
                     aria-label="Clé de la valeur"
                     type="text"
                     placeholder="Clé (ex: blanc)"
-                    class="px-2.5 py-1.5 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-orange-400"
+                    class="px-2.5 py-1.5 text-input border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-orange-400"
                     @change="
                       variantStore.updateValue(optType.id, val.id, { key: ($event.target as HTMLInputElement).value })
                     "
@@ -967,7 +967,7 @@
                       aria-label="Valeur de l'option"
                       type="text"
                       placeholder="Valeur (ex: #FFFFFF ou S)"
-                      class="flex-1 px-2.5 py-1.5 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-orange-400"
+                      class="flex-1 px-2.5 py-1.5 text-input border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-orange-400"
                       @change="
                         variantStore.updateValue(optType.id, val.id, {
                           value: ($event.target as HTMLInputElement).value,
@@ -1000,7 +1000,7 @@
                     aria-label="Clé de la nouvelle valeur"
                     type="text"
                     placeholder="Clé (ex: blanc)"
-                    class="px-2.5 py-1.5 text-sm border border-orange-300 dark:border-orange-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-orange-400"
+                    class="px-2.5 py-1.5 text-input border border-orange-300 dark:border-orange-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-orange-400"
                     @keyup.enter="confirmAddValue(optType.id)"
                     @keyup.escape="addingValueForType = null"
                   />
@@ -1009,7 +1009,7 @@
                     aria-label="Nouvelle valeur"
                     type="text"
                     placeholder="Valeur (ex: #FFFFFF)"
-                    class="px-2.5 py-1.5 text-sm border border-orange-300 dark:border-orange-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-orange-400"
+                    class="px-2.5 py-1.5 text-input border border-orange-300 dark:border-orange-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-orange-400"
                     @keyup.enter="confirmAddValue(optType.id)"
                     @keyup.escape="addingValueForType = null"
                   />
@@ -1395,7 +1395,7 @@
               v-model="resetConfirmText"
               type="text"
               :placeholder="tenantId || ''"
-              class="w-full sm:w-80 px-3 py-2 text-sm font-mono border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-400"
+              class="w-full sm:w-80 px-3 py-2 text-input font-mono border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-400"
             />
           </div>
 
@@ -1609,7 +1609,7 @@ const email = reactive({
 })
 
 const inputClass =
-  'w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent'
+  'w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-input focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent'
 const btnClass =
   'px-4 py-2 text-sm font-semibold bg-orange-700 hover:bg-orange-800 text-white rounded-lg transition disabled:opacity-60'
 const toggleClass =

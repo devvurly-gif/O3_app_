@@ -46,12 +46,12 @@
           v-model="search"
           type="text"
           placeholder="Rechercher une promotion..."
-          class="w-full sm:w-64 px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+          class="w-full sm:w-64 px-3.5 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
         />
         <select
           :aria-label="$t('a11y.filterStatus')"
           v-model="statusFilter"
-          class="w-full sm:w-auto px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+          class="w-full sm:w-auto px-3.5 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
         >
           <option value="">Tous</option>
           <option value="active">Actives</option>
@@ -318,11 +318,11 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div class="sm:col-span-2">
                 <label for="promotions-promoform-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nom *</label>
-                <input id="promotions-promoform-name" v-model="promoForm.name" type="text" required class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500" placeholder="Ex: Soldes d'été -20%">
+                <input id="promotions-promoform-name" v-model="promoForm.name" type="text" required class="w-full px-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500" placeholder="Ex: Soldes d'été -20%">
               </div>
               <div>
                 <label for="promotions-promoform-type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type *</label>
-                <select id="promotions-promoform-type" v-model="promoForm.type" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
+                <select id="promotions-promoform-type" v-model="promoForm.type" class="w-full px-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
                   <option value="percentage">Pourcentage (%)</option>
                   <option value="fixed_amount">Montant fixe (MAD)</option>
                 </select>
@@ -330,35 +330,35 @@
               <div>
                 <label for="promotions-value" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Valeur *</label>
                 <div class="relative">
-                  <input id="promotions-value" v-model.number="promoForm.value" type="number" step="0.01" min="0" required class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
+                  <input id="promotions-value" v-model.number="promoForm.value" type="number" step="0.01" min="0" required class="w-full px-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
                   <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">{{ promoForm.type === 'percentage' ? '%' : 'MAD' }}</span>
                 </div>
               </div>
               <div>
                 <label for="promotions-date-debut" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date début</label>
                 <div class="flex gap-2">
-                  <input id="promotions-date-debut" :value="promoForm.starts_at?.slice(0, 10)" @input="promoForm.starts_at = ($event.target as HTMLInputElement).value + 'T' + (promoForm.starts_at?.slice(11, 16) || '00:00')" type="date" class="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
-                  <input :value="promoForm.starts_at?.slice(11, 16)" aria-label="Heure de début" @input="promoForm.starts_at = (promoForm.starts_at?.slice(0, 10) || '') + 'T' + ($event.target as HTMLInputElement).value" type="time" class="w-28 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
+                  <input id="promotions-date-debut" :value="promoForm.starts_at?.slice(0, 10)" @input="promoForm.starts_at = ($event.target as HTMLInputElement).value + 'T' + (promoForm.starts_at?.slice(11, 16) || '00:00')" type="date" class="flex-1 px-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
+                  <input :value="promoForm.starts_at?.slice(11, 16)" aria-label="Heure de début" @input="promoForm.starts_at = (promoForm.starts_at?.slice(0, 10) || '') + 'T' + ($event.target as HTMLInputElement).value" type="time" class="w-28 px-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
                 </div>
               </div>
               <div>
                 <label for="promotions-date-fin" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date fin</label>
                 <div class="flex gap-2">
-                  <input id="promotions-date-fin" :value="promoForm.ends_at?.slice(0, 10)" @input="promoForm.ends_at = ($event.target as HTMLInputElement).value + 'T' + (promoForm.ends_at?.slice(11, 16) || '23:59')" type="date" class="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
-                  <input :value="promoForm.ends_at?.slice(11, 16)" aria-label="Heure de fin" @input="promoForm.ends_at = (promoForm.ends_at?.slice(0, 10) || '') + 'T' + ($event.target as HTMLInputElement).value" type="time" class="w-28 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
+                  <input id="promotions-date-fin" :value="promoForm.ends_at?.slice(0, 10)" @input="promoForm.ends_at = ($event.target as HTMLInputElement).value + 'T' + (promoForm.ends_at?.slice(11, 16) || '23:59')" type="date" class="flex-1 px-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
+                  <input :value="promoForm.ends_at?.slice(11, 16)" aria-label="Heure de fin" @input="promoForm.ends_at = (promoForm.ends_at?.slice(0, 10) || '') + 'T' + ($event.target as HTMLInputElement).value" type="time" class="w-28 px-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
                 </div>
               </div>
               <div>
                 <label for="promotions-promoform-max-discount" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Remise max (MAD)</label>
-                <input id="promotions-promoform-max-discount" v-model.number="promoForm.max_discount" type="number" step="0.01" min="0" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500" placeholder="Optionnel">
+                <input id="promotions-promoform-max-discount" v-model.number="promoForm.max_discount" type="number" step="0.01" min="0" class="w-full px-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500" placeholder="Optionnel">
               </div>
               <div>
                 <label for="promotions-promoform-priority" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Priorité</label>
-                <input id="promotions-promoform-priority" v-model.number="promoForm.priority" type="number" min="0" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500" placeholder="0">
+                <input id="promotions-promoform-priority" v-model.number="promoForm.priority" type="number" min="0" class="w-full px-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500" placeholder="0">
               </div>
               <div class="sm:col-span-2">
                 <label for="promotions-promoform-description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
-                <textarea id="promotions-promoform-description" v-model="promoForm.description" rows="2" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500" placeholder="Description optionnelle..."></textarea>
+                <textarea id="promotions-promoform-description" v-model="promoForm.description" rows="2" class="w-full px-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500" placeholder="Description optionnelle..."></textarea>
               </div>
             </div>
           </div>
@@ -392,7 +392,7 @@
               <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-200 dark:border-gray-700"></div></div>
               <div class="relative flex justify-center"><span class="px-3 bg-white dark:bg-gray-800 text-xs text-gray-400 uppercase">ou coller une URL</span></div>
             </div>
-            <input v-model="promoForm.banner_image" aria-label="URL de l'image de bannière" type="text" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500" placeholder="https://exemple.com/banner.jpg">
+            <input v-model="promoForm.banner_image" aria-label="URL de l'image de bannière" type="text" class="w-full px-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500" placeholder="https://exemple.com/banner.jpg">
           </div>
 
           <!-- ── Step 3: Produits ── -->
@@ -403,7 +403,7 @@
                 v-model="productSearch" aria-label="Rechercher un produit à ajouter"
                 type="text"
                 placeholder="Rechercher un produit à ajouter..."
-                class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500"
+                class="w-full px-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500"
                 @input="searchProducts"
               />
               <div v-if="productResults.length" class="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto">
@@ -459,11 +459,11 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div class="sm:col-span-2">
               <label for="promotions-slideform-title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Titre *</label>
-              <input id="promotions-slideform-title" v-model="slideForm.title" type="text" required class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
+              <input id="promotions-slideform-title" v-model="slideForm.title" type="text" required class="w-full px-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
             </div>
             <div class="sm:col-span-2">
               <label for="promotions-slideform-subtitle" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sous-titre</label>
-              <input id="promotions-slideform-subtitle" v-model="slideForm.subtitle" type="text" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
+              <input id="promotions-slideform-subtitle" v-model="slideForm.subtitle" type="text" class="w-full px-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
             </div>
             <div class="sm:col-span-2">
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Image *</label>
@@ -478,11 +478,11 @@
             </div>
             <div>
               <label for="promotions-slideform-button-text" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Texte bouton</label>
-              <input id="promotions-slideform-button-text" v-model="slideForm.button_text" type="text" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500" placeholder="Voir les offres">
+              <input id="promotions-slideform-button-text" v-model="slideForm.button_text" type="text" class="w-full px-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500" placeholder="Voir les offres">
             </div>
             <div>
               <label for="promotions-slideform-position" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Position *</label>
-              <select id="promotions-slideform-position" v-model="slideForm.position" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
+              <select id="promotions-slideform-position" v-model="slideForm.position" class="w-full px-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
                 <option value="hero">Hero (principal)</option>
                 <option value="sidebar">Sidebar</option>
                 <option value="popup">Popup</option>
@@ -490,7 +490,7 @@
             </div>
             <div>
               <label for="promotions-slideform-link-type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type de lien</label>
-              <select id="promotions-slideform-link-type" v-model="slideForm.link_type" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
+              <select id="promotions-slideform-link-type" v-model="slideForm.link_type" class="w-full px-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
                 <option value="none">Aucun</option>
                 <option value="promotion">Promotion</option>
                 <option value="category">Catégorie</option>
@@ -500,40 +500,40 @@
             </div>
             <div v-if="slideForm.link_type === 'url'">
               <label for="promotions-slideform-link-url" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">URL</label>
-              <input id="promotions-slideform-link-url" v-model="slideForm.link_url" type="text" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500" placeholder="https://...">
+              <input id="promotions-slideform-link-url" v-model="slideForm.link_url" type="text" class="w-full px-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500" placeholder="https://...">
             </div>
             <div v-if="slideForm.link_type === 'promotion'">
               <label for="promotions-slideform-link-id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Promotion</label>
-              <select id="promotions-slideform-link-id" v-model.number="slideForm.link_id" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
+              <select id="promotions-slideform-link-id" v-model.number="slideForm.link_id" class="w-full px-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
                 <option :value="null">-- Sélectionner --</option>
                 <option v-for="pr in linkPromotions" :key="pr.id" :value="pr.id">{{ pr.name }}</option>
               </select>
             </div>
             <div v-if="slideForm.link_type === 'category'">
               <label for="promotions-slideform-link-id-2" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Catégorie</label>
-              <select id="promotions-slideform-link-id-2" v-model.number="slideForm.link_id" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
+              <select id="promotions-slideform-link-id-2" v-model.number="slideForm.link_id" class="w-full px-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
                 <option :value="null">-- Sélectionner --</option>
                 <option v-for="c in linkCategories" :key="c.id" :value="c.id">{{ c.name }}</option>
               </select>
             </div>
             <div v-if="slideForm.link_type === 'product'">
               <label for="promotions-slideform-link-id-3" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Produit</label>
-              <select id="promotions-slideform-link-id-3" v-model.number="slideForm.link_id" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
+              <select id="promotions-slideform-link-id-3" v-model.number="slideForm.link_id" class="w-full px-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
                 <option :value="null">-- Sélectionner --</option>
                 <option v-for="p in linkProducts" :key="p.id" :value="p.id">{{ p.p_name }} ({{ p.p_code }})</option>
               </select>
             </div>
             <div>
               <label for="promotions-slideform-sort-order" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ordre</label>
-              <input id="promotions-slideform-sort-order" v-model.number="slideForm.sort_order" type="number" min="0" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
+              <input id="promotions-slideform-sort-order" v-model.number="slideForm.sort_order" type="number" min="0" class="w-full px-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
             </div>
             <div>
               <label for="promotions-slideform-starts-at" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date début</label>
-              <input id="promotions-slideform-starts-at" v-model="slideForm.starts_at" type="date" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
+              <input id="promotions-slideform-starts-at" v-model="slideForm.starts_at" type="date" class="w-full px-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
             </div>
             <div>
               <label for="promotions-slideform-ends-at" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date fin</label>
-              <input id="promotions-slideform-ends-at" v-model="slideForm.ends_at" type="date" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
+              <input id="promotions-slideform-ends-at" v-model="slideForm.ends_at" type="date" class="w-full px-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
             </div>
           </div>
 

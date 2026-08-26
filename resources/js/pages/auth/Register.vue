@@ -151,7 +151,7 @@ const canSubmit = computed(() =>
               required
               maxlength="255"
               placeholder="Ex: Teliphoni SARL"
-              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-input text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             />
             <p v-if="errors.company_name" class="mt-1 text-xs text-red-500">{{ errors.company_name[0] }}</p>
           </div>
@@ -169,7 +169,7 @@ const canSubmit = computed(() =>
                 minlength="3"
                 maxlength="31"
                 placeholder="monentreprise"
-                class="flex-1 px-3.5 py-2.5 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none"
+                class="flex-1 px-3.5 py-2.5 bg-white dark:bg-gray-900 text-input text-gray-900 dark:text-white focus:outline-none"
               />
               <span class="flex items-center px-3 bg-gray-50 dark:bg-gray-700 text-sm font-mono text-gray-500 dark:text-gray-400 border-l border-gray-300 dark:border-gray-600">
                 .{{ centralDomain }}
@@ -205,7 +205,7 @@ const canSubmit = computed(() =>
                 required
                 maxlength="255"
                 placeholder="Ex: Hassan Alami"
-                class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-input text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               />
               <p v-if="errors.admin_name" class="mt-1 text-xs text-red-500">{{ errors.admin_name[0] }}</p>
             </div>
@@ -219,7 +219,7 @@ const canSubmit = computed(() =>
                 type="tel"
                 maxlength="30"
                 placeholder="+212 6XX XX XX XX"
-                class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-input text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               />
             </div>
           </div>
@@ -235,7 +235,7 @@ const canSubmit = computed(() =>
               required
               maxlength="255"
               placeholder="vous@monentreprise.ma"
-              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-input text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             />
             <p class="mt-1 text-xs text-gray-400">Un lien de vérification y sera envoyé.</p>
             <p v-if="errors.email" class="mt-1 text-xs text-red-500">{{ errors.email[0] }}</p>
@@ -253,7 +253,7 @@ const canSubmit = computed(() =>
                 required
                 minlength="8"
                 placeholder="8 caractères minimum"
-                class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-input text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               />
               <p v-if="errors.password" class="mt-1 text-xs text-red-500">{{ errors.password[0] }}</p>
             </div>
@@ -267,7 +267,7 @@ const canSubmit = computed(() =>
                 type="password"
                 required
                 placeholder="Retapez le mot de passe"
-                class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-input text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               />
               <p v-if="!passwordsMatch" class="mt-1 text-xs text-red-500">Les mots de passe ne correspondent pas.</p>
             </div>

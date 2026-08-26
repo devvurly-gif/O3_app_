@@ -57,7 +57,7 @@
         v-model="search"
         type="text"
         :placeholder="$t('pricelists.search')"
-        class="px-3.5 py-2.5 text-sm rounded-[10px] border border-[#E1E3E9] dark:border-gray-600 bg-[#FAFBFC] dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent w-64"
+        class="px-3.5 py-2.5 text-input rounded-[10px] border border-[#E1E3E9] dark:border-gray-600 bg-[#FAFBFC] dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent w-64"
       />
       <select
         :aria-label="$t('a11y.filterChannel')"
@@ -168,7 +168,7 @@
             type="text"
             required
             :placeholder="$t('pricelists.namePlaceholder')"
-            class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
+            class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
           />
         </div>
         <div>
@@ -179,7 +179,7 @@
             id="pricelists-description"
             v-model="form.description"
             rows="2"
-            class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
+            class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
           />
         </div>
         <div class="grid grid-cols-2 gap-4">
@@ -190,7 +190,7 @@
             <select
               id="pricelists-channel"
               v-model="form.channel"
-              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
+              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
             >
               <option value="all">{{ $t('pricelists.channelAll') }}</option>
               <option value="pos">{{ $t('pricelists.channelPos') }}</option>
@@ -206,7 +206,7 @@
               v-model.number="form.priority"
               type="number"
               min="0"
-              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
+              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
             />
           </div>
         </div>
@@ -262,7 +262,7 @@
               v-model="productSearch"
               type="text"
               :placeholder="$t('pricelists.search')"
-              class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]"
+              class="w-full px-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]"
               @focus="productDropdown = true"
             />
             <div
@@ -291,7 +291,7 @@
               type="number"
               step="0.01"
               min="0"
-              class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]"
+              class="w-full px-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]"
             />
           </div>
           <div class="w-24">
@@ -303,7 +303,7 @@
               v-model.number="newItem.min_qty"
               type="number"
               min="1"
-              class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]"
+              class="w-full px-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]"
             />
           </div>
           <div class="w-36">
@@ -314,7 +314,7 @@
               id="pricelists-newitem-valid-from"
               v-model="newItem.valid_from"
               type="date"
-              class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]"
+              class="w-full px-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]"
             />
           </div>
           <div class="w-36">
@@ -325,7 +325,7 @@
               id="pricelists-newitem-valid-to"
               v-model="newItem.valid_to"
               type="date"
-              class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]"
+              class="w-full px-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]"
             />
           </div>
           <button

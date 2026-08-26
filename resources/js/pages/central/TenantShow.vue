@@ -442,7 +442,7 @@ function getPlanColor(plan: string) {
                 id="tenantshow-editform-name"
                 v-model="editForm.name"
                 type="text"
-                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
+                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-input text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
               />
             </div>
             <div>
@@ -451,7 +451,7 @@ function getPlanColor(plan: string) {
                 id="tenantshow-editform-email"
                 v-model="editForm.email"
                 type="email"
-                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
+                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-input text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
               />
             </div>
             <div>
@@ -461,7 +461,7 @@ function getPlanColor(plan: string) {
                 v-model="editForm.domain"
                 type="text"
                 placeholder="tenant.o3app.ma"
-                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
+                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-input text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
               />
             </div>
             <div class="flex justify-between text-xs text-gray-400 dark:text-gray-500">
@@ -681,7 +681,7 @@ function getPlanColor(plan: string) {
                 v-model="newPassword"
                 :type="showPassword ? 'text' : 'password'"
                 placeholder="Min. 6 caractères"
-                class="w-full px-3 py-2 pr-10 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
+                class="w-full px-3 py-2 pr-10 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-input text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
                 @keyup.enter="resetPassword"
               />
               <button
@@ -750,7 +750,7 @@ function getPlanColor(plan: string) {
                   v-model="resetAdminPassword"
                   :type="showResetPassword ? 'text' : 'password'"
                   placeholder="Min. 6 caractères"
-                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
+                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-input text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
                 />
                 <button
                   type="button"
@@ -769,7 +769,7 @@ function getPlanColor(plan: string) {
                 v-model="resetConfirmText"
                 type="text"
                 placeholder="RESET"
-                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition font-mono"
+                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-input text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition font-mono"
               />
               <button
                 @click="resetDatabase"
@@ -862,7 +862,7 @@ function getPlanColor(plan: string) {
               v-model="scrapeUrl"
               type="url"
               placeholder="https://example.com/collections/smartphones"
-              class="flex-1 px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
+              class="flex-1 px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-input text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
               @keyup.enter="scrapeProducts"
             />
             <button
@@ -911,7 +911,7 @@ function getPlanColor(plan: string) {
               v-model="scrapeCategory"
               type="text"
               placeholder="Smartphones"
-              class="w-48 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 transition"
+              class="w-48 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-input text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 transition"
             />
           </div>
 
@@ -1103,7 +1103,7 @@ function getPlanColor(plan: string) {
               type="email"
               required
               placeholder="contact@exemple.ma"
-              class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+              class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-input text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
           </div>
 
@@ -1114,7 +1114,7 @@ function getPlanColor(plan: string) {
               v-model="sendContractForm.cc"
               type="text"
               placeholder="email1@exemple.ma, email2@exemple.ma"
-              class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+              class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-input text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
             <p class="mt-1 text-[11px] text-gray-400">Séparer plusieurs emails par virgule ou espace.</p>
           </div>
@@ -1126,7 +1126,7 @@ function getPlanColor(plan: string) {
               v-model="sendContractForm.message"
               rows="4"
               placeholder="Ajoutez un mot personnel à l'attention du client..."
-              class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+              class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-input text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
             />
           </div>
 

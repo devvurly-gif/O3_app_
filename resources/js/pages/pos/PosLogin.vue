@@ -41,7 +41,7 @@
             id="poslogin-terminalid"
             v-model="terminalId"
             required
-            class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
           >
             <option :value="null" disabled>-- Sélectionner un terminal --</option>
             <option v-for="t in terminals" :key="t.id" :value="t.id" :disabled="!t.is_active">
@@ -61,7 +61,7 @@
             min="0"
             required
             placeholder="0.00"
-            class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
           />
         </div>
 

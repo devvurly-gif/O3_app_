@@ -52,7 +52,7 @@
         v-model="search"
         type="text"
         placeholder="Rechercher..."
-        class="w-full sm:w-64 px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+        class="w-full sm:w-64 px-3.5 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
       />
     </div>
 
@@ -67,7 +67,7 @@
       <div class="flex-1 flex items-center gap-3">
         <select
           v-model="selectedProductId" aria-label="Choisir le produit auquel rattacher les images"
-          class="px-3 py-1.5 text-sm rounded-lg border border-blue-300 dark:border-orange-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 min-w-[250px]"
+          class="px-3 py-1.5 text-input rounded-lg border border-blue-300 dark:border-orange-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 min-w-[250px]"
         >
           <option :value="null" disabled>-- Choisir un produit --</option>
           <option v-for="p in products" :key="p.id" :value="p.id">

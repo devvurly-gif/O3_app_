@@ -45,7 +45,7 @@ function onInput(event: Event) {
       :readonly="readonly"
       :required="required"
       :rows="rows"
-      class="w-full rounded-lg border px-3 py-2 text-sm transition focus:outline-none focus:ring-2 disabled:opacity-60 disabled:cursor-not-allowed dark:bg-gray-800 dark:text-gray-100"
+      class="w-full rounded-lg border px-3 py-2 text-input transition focus:outline-none focus:ring-2 disabled:opacity-60 disabled:cursor-not-allowed dark:bg-gray-800 dark:text-gray-100"
       :class="
         error
           ? 'border-danger-300 dark:border-danger-700 focus:ring-danger-500'
@@ -64,7 +64,7 @@ function onInput(event: Event) {
       :disabled="disabled"
       :readonly="readonly"
       :required="required"
-      class="w-full rounded-lg border px-3 py-2 text-sm transition focus:outline-none focus:ring-2 disabled:opacity-60 disabled:cursor-not-allowed dark:bg-gray-800 dark:text-gray-100"
+      class="w-full rounded-lg border px-3 py-2 text-input transition focus:outline-none focus:ring-2 disabled:opacity-60 disabled:cursor-not-allowed dark:bg-gray-800 dark:text-gray-100"
       :class="
         error
           ? 'border-danger-300 dark:border-danger-700 focus:ring-danger-500'

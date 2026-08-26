@@ -120,7 +120,7 @@
             <select
               id="productlabels-imprimante"
               :value="printer.name"
-              class="flex-1 h-9 px-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
+              class="flex-1 h-9 px-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-input text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
               @change="selectPrinter(($event.target as HTMLSelectElement).value)"
             >
               <option value="">— choisir —</option>
@@ -150,7 +150,7 @@
           <select
             id="productlabels-format-papier-du-pilote"
             :value="printer.paper"
-            class="w-full h-9 px-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
+            class="w-full h-9 px-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-input text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
             @change="selectPaper(($event.target as HTMLSelectElement).value)"
           >
             <option value="">— aucun —</option>
@@ -162,7 +162,7 @@
       </template>
       <div v-if="printer.transport === 'agent'" class="min-w-[16rem]">
         <label for="productlabels-printer-agent-url" class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">URL de l'agent local</label>
-        <input id="productlabels-printer-agent-url" v-model="printer.agent_url" type="text" class="w-full h-9 px-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500" />
+        <input id="productlabels-printer-agent-url" v-model="printer.agent_url" type="text" class="w-full h-9 px-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-input text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500" />
       </div>
       <template v-if="printer.transport === 'server'">
         <div>
@@ -390,7 +390,7 @@
               aria-label="Rechercher un produit"
               type="text"
               placeholder="Rechercher un produit (titre, SKU, code)..."
-              class="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
+              class="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-input text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
             <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
@@ -485,7 +485,7 @@ const PX_PER_MM = 5
 const PT_TO_MM = 0.352778
 
 const numClass =
-  'w-24 h-9 px-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500'
+  'w-24 h-9 px-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-input text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500'
 const cellClass =
   'w-full px-1 py-1 text-center rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 disabled:opacity-40 focus:outline-none focus:ring-1 focus:ring-orange-500'
 

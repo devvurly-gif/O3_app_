@@ -39,7 +39,7 @@
               id="reports-from"
               v-model="filters.from"
               type="date"
-              class="block w-44 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-primary-500 focus:border-primary-500"
+              class="block w-44 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-input focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
           <div>
@@ -48,7 +48,7 @@
               id="reports-to"
               v-model="filters.to"
               type="date"
-              class="block w-44 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-primary-500 focus:border-primary-500"
+              class="block w-44 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-input focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
         </template>
@@ -60,7 +60,7 @@
             <select
               id="reports-warehouse-id"
               v-model="filters.warehouse_id"
-              class="block w-52 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-primary-500 focus:border-primary-500"
+              class="block w-52 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-input focus:ring-primary-500 focus:border-primary-500"
             >
               <option value="">Tous les entrepôts</option>
               <option v-for="wh in warehouses" :key="wh.id" :value="wh.id">{{ wh.wh_title }}</option>
@@ -76,7 +76,7 @@
               id="reports-pos-date"
               v-model="filters.pos_date"
               type="date"
-              class="block w-44 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-primary-500 focus:border-primary-500"
+              class="block w-44 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-input focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
         </template>

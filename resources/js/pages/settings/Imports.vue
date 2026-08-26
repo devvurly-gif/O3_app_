@@ -41,9 +41,9 @@
             ref="fileInput"
             type="file"
             accept=".xlsx,.xls,.csv"
-            class="block w-full text-sm text-gray-600 dark:text-gray-400
+            class="block w-full text-input text-gray-600 dark:text-gray-400
               file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0
-              file:text-sm file:font-semibold
+              file:text-input file:font-semibold
               file:bg-orange-50 file:text-orange-600 dark:file:bg-blue-900/30 dark:file:text-blue-400
               hover:file:bg-orange-100 dark:hover:file:bg-blue-900/50
               cursor-pointer"

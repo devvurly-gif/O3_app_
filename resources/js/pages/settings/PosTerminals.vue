@@ -97,7 +97,7 @@
             type="text"
             required
             placeholder="Caisse 1"
-            class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
+            class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
           />
         </div>
         <div>
@@ -108,7 +108,7 @@
             type="text"
             required
             placeholder="POS-01"
-            class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
+            class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
           />
         </div>
         <div>
@@ -117,7 +117,7 @@
             id="posterminals-warehouse-id"
             v-model="form.warehouse_id"
             required
-            class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
+            class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
           >
             <option :value="null" disabled>-- Sélectionner --</option>
             <option v-for="w in warehouses" :key="w.id" :value="w.id">{{ w.wh_title }}</option>
@@ -134,7 +134,7 @@
                 v-model="form.printer_name"
                 type="text"
                 placeholder="ex: Epson TM-T20 Caisse 1"
-                class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
+                class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
               />
               <p class="text-xs text-gray-400 mt-1">Affiché au caissier comme rappel lors de l'impression.</p>
             </div>

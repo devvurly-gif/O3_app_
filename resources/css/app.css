@@ -63,4 +63,11 @@
   --color-info-800: var(--color-blue-800);
   --color-info-900: var(--color-blue-900);
   --color-info-950: var(--color-blue-950);
+
+  /* Taille des champs de saisie — charte v0.3, §11.
+     16 px n'est pas un choix esthetique : en dessous de ce seuil, iOS zoome
+     a la prise de focus sur un champ. C'est ce qui permettra de retirer le
+     user-scalable=no sans que le formulaire saute a chaque tap. */
+  --text-input: 1rem;
+  --text-input--line-height: 1.5rem;
 }

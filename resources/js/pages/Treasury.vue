@@ -53,7 +53,7 @@
         v-model="period.from"
         type="date"
         :aria-label="$t('treasury.from')"
-        class="px-3 py-2 text-sm rounded-[10px] border border-[#E1E3E9] dark:border-gray-600 bg-[#FAFBFC] dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]"
+        class="px-3 py-2 text-input rounded-[10px] border border-[#E1E3E9] dark:border-gray-600 bg-[#FAFBFC] dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]"
       />
       <span class="text-gray-400">→</span>
       <input
@@ -61,7 +61,7 @@
         v-model="period.to"
         type="date"
         :aria-label="$t('treasury.to')"
-        class="px-3 py-2 text-sm rounded-[10px] border border-[#E1E3E9] dark:border-gray-600 bg-[#FAFBFC] dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]"
+        class="px-3 py-2 text-input rounded-[10px] border border-[#E1E3E9] dark:border-gray-600 bg-[#FAFBFC] dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]"
       />
       <button
         v-for="shortcut in shortcuts"
@@ -200,7 +200,7 @@
           type="text"
           :placeholder="$t('common.search')"
           :aria-label="$t('common.search')"
-          class="px-3.5 py-2.5 text-sm rounded-[10px] border border-[#E1E3E9] dark:border-gray-600 bg-[#FAFBFC] dark:bg-gray-700 dark:text-gray-100 w-56 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]"
+          class="px-3.5 py-2.5 text-input rounded-[10px] border border-[#E1E3E9] dark:border-gray-600 bg-[#FAFBFC] dark:bg-gray-700 dark:text-gray-100 w-56 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]"
         />
         <select
           v-model="journalFilters.direction"
@@ -650,7 +650,7 @@
             id="trz-label"
             v-model="form.ct_label"
             type="text"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]"
+            class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]"
           />
         </div>
         <div>
@@ -663,7 +663,7 @@
             type="number"
             step="0.01"
             min="0.01"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]"
+            class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]"
           />
         </div>
         <div>
@@ -674,7 +674,7 @@
             id="trz-date"
             v-model="form.ct_date"
             type="date"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]"
+            class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]"
           />
         </div>
         <div>
@@ -684,7 +684,7 @@
           <select
             id="trz-account"
             v-model="form.cash_account_id"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]"
+            class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]"
           >
             <option v-for="acc in activeAccounts" :key="acc.id" :value="acc.id">{{ acc.ca_title }}</option>
           </select>
@@ -696,7 +696,7 @@
           <select
             id="trz-category"
             v-model="form.cash_category_id"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]"
+            class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]"
           >
             <option :value="null">—</option>
             <option v-for="cat in categoriesForDirection" :key="cat.id" :value="cat.id">{{ cat.cc_title }}</option>
@@ -709,7 +709,7 @@
           <select
             id="trz-partner"
             v-model="form.thirdPartner_id"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]"
+            class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]"
           >
             <option :value="null">—</option>
             <option v-for="tp in partners" :key="tp.id" :value="tp.id">{{ tp.tp_title }}</option>
@@ -722,7 +722,7 @@
           <select
             id="trz-method"
             v-model="form.ct_method"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]"
+            class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]"
           >
             <option :value="null">—</option>
             <option v-for="m in methods" :key="m" :value="m">{{ $t('treasury.methods.' + m) }}</option>
@@ -736,7 +736,7 @@
             id="trz-file"
             type="file"
             accept="image/*,application/pdf"
-            class="w-full text-sm text-gray-600 dark:text-gray-300 file:mr-3 file:px-3 file:py-2 file:rounded-lg file:border-0 file:bg-gray-100 dark:file:bg-gray-700 file:text-sm file:font-semibold"
+            class="w-full text-input text-gray-600 dark:text-gray-300 file:mr-3 file:px-3 file:py-2 file:rounded-lg file:border-0 file:bg-gray-100 dark:file:bg-gray-700 file:text-input file:font-semibold"
             @change="onFile"
           />
         </div>
@@ -748,7 +748,7 @@
             id="trz-notes"
             v-model="form.ct_notes"
             rows="2"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]"
+            class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]"
           />
         </div>
         <p v-if="formError" class="sm:col-span-2 text-sm text-red-600">{{ formError }}</p>
@@ -781,7 +781,7 @@
           <select
             id="trf-from"
             v-model="transferForm.from_account_id"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+            class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
           >
             <option v-for="acc in activeAccounts" :key="acc.id" :value="acc.id">{{ acc.ca_title }}</option>
           </select>
@@ -793,7 +793,7 @@
           <select
             id="trf-to"
             v-model="transferForm.to_account_id"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+            class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
           >
             <option v-for="acc in activeAccounts" :key="acc.id" :value="acc.id">{{ acc.ca_title }}</option>
           </select>
@@ -808,7 +808,7 @@
               v-model="transferForm.amount"
               type="number"
               step="0.01"
-              class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+              class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
             />
           </div>
           <div>
@@ -819,7 +819,7 @@
               id="trf-date"
               v-model="transferForm.date"
               type="date"
-              class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+              class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
             />
           </div>
         </div>
@@ -831,7 +831,7 @@
             id="trf-label"
             v-model="transferForm.label"
             type="text"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+            class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
           />
         </div>
         <p v-if="formError" class="text-sm text-red-600">{{ formError }}</p>
@@ -864,7 +864,7 @@
             id="acc-title"
             v-model="accountForm.ca_title"
             type="text"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+            class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
           />
         </div>
         <div class="grid grid-cols-2 gap-4">
@@ -875,7 +875,7 @@
             <select
               id="acc-type"
               v-model="accountForm.ca_type"
-              class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+              class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
             >
               <option v-for="accType in accountTypes" :key="accType" :value="accType">
                 {{ $t('treasury.types.' + accType) }}
@@ -891,7 +891,7 @@
               v-model="accountForm.ca_initial_balance"
               type="number"
               step="0.01"
-              class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+              class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
             />
           </div>
         </div>
@@ -902,7 +902,7 @@
           <select
             id="acc-method"
             v-model="accountForm.ca_payment_method"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+            class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
           >
             <option :value="null">—</option>
             <option v-for="m in methods" :key="m" :value="m">{{ $t('treasury.methods.' + m) }}</option>
@@ -943,7 +943,7 @@
             id="cat-title"
             v-model="categoryForm.cc_title"
             type="text"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+            class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
           />
         </div>
         <div>
@@ -953,7 +953,7 @@
           <select
             id="cat-direction"
             v-model="categoryForm.cc_direction"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+            class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
           >
             <option value="out">{{ $t('treasury.directions.out') }}</option>
             <option value="in">{{ $t('treasury.directions.in') }}</option>
@@ -994,7 +994,7 @@
             id="rec-label"
             v-model="recurrenceForm.cr_label"
             type="text"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+            class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
           />
         </div>
         <div>
@@ -1004,7 +1004,7 @@
           <select
             id="rec-direction"
             v-model="recurrenceForm.cr_direction"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+            class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
           >
             <option value="out">{{ $t('treasury.directions.out') }}</option>
             <option value="in">{{ $t('treasury.directions.in') }}</option>
@@ -1019,7 +1019,7 @@
             v-model="recurrenceForm.cr_amount"
             type="number"
             step="0.01"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+            class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
           />
         </div>
         <div>
@@ -1029,7 +1029,7 @@
           <select
             id="rec-account"
             v-model="recurrenceForm.cash_account_id"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+            class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
           >
             <option v-for="acc in activeAccounts" :key="acc.id" :value="acc.id">{{ acc.ca_title }}</option>
           </select>
@@ -1041,7 +1041,7 @@
           <select
             id="rec-category"
             v-model="recurrenceForm.cash_category_id"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+            class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
           >
             <option :value="null">—</option>
             <option v-for="cat in allCategories" :key="cat.id" :value="cat.id">{{ cat.cc_title }}</option>
@@ -1054,7 +1054,7 @@
           <select
             id="rec-frequency"
             v-model="recurrenceForm.cr_frequency"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+            class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
           >
             <option v-for="f in frequencies" :key="f" :value="f">{{ $t('treasury.frequencies.' + f) }}</option>
           </select>
@@ -1069,7 +1069,7 @@
             type="number"
             min="1"
             max="31"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+            class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
           />
         </div>
         <div>
@@ -1080,7 +1080,7 @@
             id="rec-start"
             v-model="recurrenceForm.cr_start_date"
             type="date"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+            class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
           />
         </div>
         <div>
@@ -1091,7 +1091,7 @@
             id="rec-end"
             v-model="recurrenceForm.cr_end_date"
             type="date"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+            class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
           />
         </div>
         <label class="sm:col-span-2 flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">

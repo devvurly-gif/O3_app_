@@ -109,11 +109,11 @@
           <div class="grid grid-cols-2 gap-4">
             <div class="col-span-2">
               <label for="slides-title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Titre *</label>
-              <input id="slides-title" v-model="form.title" type="text" required class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
+              <input id="slides-title" v-model="form.title" type="text" required class="w-full px-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
             </div>
             <div class="col-span-2">
               <label for="slides-subtitle" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sous-titre</label>
-              <input id="slides-subtitle" v-model="form.subtitle" type="text" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
+              <input id="slides-subtitle" v-model="form.subtitle" type="text" class="w-full px-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
             </div>
             <div class="col-span-2">
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Image *</label>
@@ -130,11 +130,11 @@
             </div>
             <div>
               <label for="slides-button-text" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Texte bouton</label>
-              <input id="slides-button-text" v-model="form.button_text" type="text" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500" placeholder="Voir les offres">
+              <input id="slides-button-text" v-model="form.button_text" type="text" class="w-full px-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500" placeholder="Voir les offres">
             </div>
             <div>
               <label for="slides-position" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Position *</label>
-              <select id="slides-position" v-model="form.position" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
+              <select id="slides-position" v-model="form.position" class="w-full px-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
                 <option value="hero">Hero (principal)</option>
                 <option value="sidebar">Sidebar</option>
                 <option value="popup">Popup</option>
@@ -142,7 +142,7 @@
             </div>
             <div>
               <label for="slides-link-type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type de lien</label>
-              <select id="slides-link-type" v-model="form.link_type" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
+              <select id="slides-link-type" v-model="form.link_type" class="w-full px-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
                 <option value="none">Aucun</option>
                 <option value="promotion">Promotion</option>
                 <option value="category">Catégorie</option>
@@ -152,40 +152,40 @@
             </div>
             <div v-if="form.link_type === 'url'">
               <label for="slides-link-url" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">URL</label>
-              <input id="slides-link-url" v-model="form.link_url" type="text" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500" placeholder="https://...">
+              <input id="slides-link-url" v-model="form.link_url" type="text" class="w-full px-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500" placeholder="https://...">
             </div>
             <div v-if="form.link_type === 'product'">
               <label for="slides-link-id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Produit</label>
-              <select id="slides-link-id" v-model.number="form.link_id" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
+              <select id="slides-link-id" v-model.number="form.link_id" class="w-full px-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
                 <option :value="null">-- Sélectionner un produit --</option>
                 <option v-for="p in productsList" :key="p.id" :value="p.id">{{ p.p_name }} ({{ p.p_code }})</option>
               </select>
             </div>
             <div v-if="form.link_type === 'category'">
               <label for="slides-link-id-2" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Catégorie</label>
-              <select id="slides-link-id-2" v-model.number="form.link_id" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
+              <select id="slides-link-id-2" v-model.number="form.link_id" class="w-full px-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
                 <option :value="null">-- Sélectionner une catégorie --</option>
                 <option v-for="c in categoriesList" :key="c.id" :value="c.id">{{ c.name }}</option>
               </select>
             </div>
             <div v-if="form.link_type === 'promotion'">
               <label for="slides-link-id-3" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Promotion</label>
-              <select id="slides-link-id-3" v-model.number="form.link_id" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
+              <select id="slides-link-id-3" v-model.number="form.link_id" class="w-full px-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
                 <option :value="null">-- Sélectionner une promotion --</option>
                 <option v-for="pr in promotionsList" :key="pr.id" :value="pr.id">{{ pr.name }}</option>
               </select>
             </div>
             <div>
               <label for="slides-sort-order" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ordre</label>
-              <input id="slides-sort-order" v-model.number="form.sort_order" type="number" min="0" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
+              <input id="slides-sort-order" v-model.number="form.sort_order" type="number" min="0" class="w-full px-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
             </div>
             <div>
               <label for="slides-starts-at" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date début</label>
-              <input id="slides-starts-at" v-model="form.starts_at" type="date" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
+              <input id="slides-starts-at" v-model="form.starts_at" type="date" class="w-full px-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
             </div>
             <div>
               <label for="slides-ends-at" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date fin</label>
-              <input id="slides-ends-at" v-model="form.ends_at" type="date" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
+              <input id="slides-ends-at" v-model="form.ends_at" type="date" class="w-full px-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500">
             </div>
           </div>
 

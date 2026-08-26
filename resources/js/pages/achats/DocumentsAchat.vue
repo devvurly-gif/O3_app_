@@ -261,12 +261,12 @@ function viewDocument(doc: Record<string, unknown>) {
         aria-label="Rechercher un achat"
         type="text"
         placeholder="Rechercher référence..."
-        class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-200 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 w-full sm:w-64"
+        class="px-3.5 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-200 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 w-full sm:w-64"
       />
       <select
         v-model="typeFilter"
         aria-label="Filtrer par type de document"
-        class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500"
+        class="px-3.5 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500"
       >
         <option value="">Tous types</option>
         <option v-for="t in purchaseTypes" :key="t" :value="t">{{ typeLabels[t] }}</option>
@@ -274,7 +274,7 @@ function viewDocument(doc: Record<string, unknown>) {
       <select
         v-model="supplierFilter"
         aria-label="Filtrer par fournisseur"
-        class="px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500"
+        class="px-3.5 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500"
       >
         <option value="">Tous fournisseurs</option>
         <option v-for="f in suppliers" :key="f.id" :value="String(f.id)">{{ f.tp_title }}</option>
@@ -392,7 +392,7 @@ function viewDocument(doc: Record<string, unknown>) {
             id="group-date"
             v-model="groupForm.issued_at"
             type="date"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-teal-500"
+            class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-teal-500"
           />
           <p class="text-xs text-gray-400 mt-1">Par défaut, la date du dernier bon sélectionné.</p>
         </div>
@@ -406,7 +406,7 @@ function viewDocument(doc: Record<string, unknown>) {
             v-model="groupForm.supplier_ref"
             type="text"
             placeholder="Facultatif"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-teal-500"
+            class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-teal-500"
           />
           <p class="text-xs text-gray-400 mt-1">Conservé dans les notes, pour le rapprochement.</p>
         </div>

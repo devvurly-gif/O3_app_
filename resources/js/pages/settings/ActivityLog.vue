@@ -14,7 +14,7 @@
           <select
             id="activitylog-subject-type"
             v-model="filters.subject_type"
-            class="block w-44 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-primary-500 focus:border-primary-500"
+            class="block w-44 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-input focus:ring-primary-500 focus:border-primary-500"
           >
             <option value="">Tous</option>
             <option v-for="t in subjectTypes" :key="t.value" :value="t.value">{{ t.label }}</option>
@@ -25,7 +25,7 @@
           <select
             id="activitylog-event"
             v-model="filters.event"
-            class="block w-36 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-primary-500 focus:border-primary-500"
+            class="block w-36 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-input focus:ring-primary-500 focus:border-primary-500"
           >
             <option value="">Toutes</option>
             <option value="created">Création</option>
@@ -39,7 +39,7 @@
             id="activitylog-from"
             v-model="filters.from"
             type="date"
-            class="block w-40 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-primary-500 focus:border-primary-500"
+            class="block w-40 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-input focus:ring-primary-500 focus:border-primary-500"
           />
         </div>
         <div>
@@ -48,7 +48,7 @@
             id="activitylog-to"
             v-model="filters.to"
             type="date"
-            class="block w-40 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-primary-500 focus:border-primary-500"
+            class="block w-40 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-input focus:ring-primary-500 focus:border-primary-500"
           />
         </div>
         <BaseButton variant="primary" @click="fetchLogs(1)">Filtrer</BaseButton>

@@ -128,7 +128,7 @@
             v-model="search"
             type="text"
             :placeholder="$t('products.search')"
-            class="w-full pl-9 pr-3.5 py-2.5 text-sm rounded-[10px] border border-[#E1E3E9] dark:border-gray-600 bg-[#FAFBFC] dark:bg-gray-700 text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
+            class="w-full pl-9 pr-3.5 py-2.5 text-input rounded-[10px] border border-[#E1E3E9] dark:border-gray-600 bg-[#FAFBFC] dark:bg-gray-700 text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
           />
         </div>
         <div class="flex flex-wrap gap-2">
@@ -527,7 +527,7 @@
                 type="text"
                 required
                 :placeholder="$t('products.titlePlaceholder')"
-                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
+                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
                 @input="generateSlugFromTitle"
               />
             </div>
@@ -540,7 +540,7 @@
                 v-model="form.p_code"
                 type="text"
                 :placeholder="$t('products.codePlaceholder')"
-                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
+                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-input font-mono focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
               />
             </div>
 
@@ -552,7 +552,7 @@
                 v-model="form.p_sku"
                 type="text"
                 :placeholder="$t('products.skuPlaceholder')"
-                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
+                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-input font-mono focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
               />
               <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{ $t('products.skuAuto') ?? 'Auto-generated if empty' }}</p>
             </div>
@@ -565,7 +565,7 @@
                 v-model="form.p_ean13"
                 type="text"
                 :placeholder="$t('products.eanPlaceholder')"
-                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
+                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-input font-mono focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
               />
             </div>
 
@@ -577,7 +577,7 @@
                 v-model="form.p_imei"
                 type="text"
                 placeholder="Device IMEI..."
-                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
+                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-input font-mono focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
               />
             </div>
           </div>
@@ -591,7 +591,7 @@
                 v-model="form.p_description"
                 rows="3"
                 placeholder="…"
-                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
+                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-input resize-none focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
               />
             </div>
 
@@ -603,7 +603,7 @@
                 v-model="form.p_long_description"
                 rows="3"
                 placeholder="E-commerce description…"
-                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
+                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-input resize-none focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
               />
             </div>
           </div>
@@ -616,7 +616,7 @@
               v-model="form.p_notes"
               rows="2"
               placeholder="Internal notes…"
-              class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
+              class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-input resize-none focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
             />
           </div>
 
@@ -629,7 +629,7 @@
                 <select
                   id="products-category-id"
                   v-model="form.category_id"
-                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
+                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
                 >
                   <option :value="null">—</option>
                   <option v-for="cat in categories" :key="cat.id" :value="cat.id">
@@ -644,7 +644,7 @@
                 <select
                   id="products-brand-id"
                   v-model="form.brand_id"
-                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
+                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
                 >
                   <option :value="null">—</option>
                   <option v-for="br in brands" :key="br.id" :value="br.id">
@@ -661,7 +661,7 @@
                   v-model="form.p_slug"
                   type="text"
                   :placeholder="$t('products.slugPlaceholder') ?? 'Auto-généré depuis le titre'"
-                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
+                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-input font-mono focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
                 />
                 <p class="mt-1 text-[11px] text-gray-400">URL de la fiche produit dans la boutique en ligne.</p>
               </div>
@@ -721,7 +721,7 @@
                   step="0.01"
                   required
                   placeholder="0.00"
-                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
+                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
                 />
               </div>
 
@@ -738,7 +738,7 @@
                   step="0.01"
                   required
                   placeholder="0.00"
-                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
+                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
                 />
               </div>
 
@@ -752,7 +752,7 @@
                   min="0"
                   step="0.01"
                   placeholder="0.00"
-                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
+                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
                 />
               </div>
 
@@ -767,7 +767,7 @@
                   max="100"
                   step="0.01"
                   placeholder="20"
-                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
+                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
                 />
               </div>
 
@@ -779,7 +779,7 @@
                   v-model="form.p_unit"
                   type="text"
                   :placeholder="$t('products.unitPlaceholder')"
-                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
+                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
                 />
               </div>
             </div>
@@ -821,7 +821,7 @@
                 <select
                   id="products-newtier-price-list-id"
                   v-model.number="newTier.price_list_id"
-                  class="w-full px-2 py-1 rounded-md border border-gray-300 dark:border-gray-600 text-sm bg-white dark:bg-gray-800"
+                  class="w-full px-2 py-1 rounded-md border border-gray-300 dark:border-gray-600 text-input bg-white dark:bg-gray-800"
                 >
                   <option :value="null" disabled>— Choisir —</option>
                   <option
@@ -841,7 +841,7 @@
                   v-model.number="newTier.min_qty"
                   type="number"
                   min="1"
-                  class="w-full px-2 py-1 rounded-md border border-gray-300 dark:border-gray-600 text-sm font-mono bg-white dark:bg-gray-800"
+                  class="w-full px-2 py-1 rounded-md border border-gray-300 dark:border-gray-600 text-input font-mono bg-white dark:bg-gray-800"
                 />
               </div>
               <div>
@@ -852,7 +852,7 @@
                   type="number"
                   min="0"
                   step="0.01"
-                  class="w-full px-2 py-1 rounded-md border border-gray-300 dark:border-gray-600 text-sm font-mono bg-white dark:bg-gray-800"
+                  class="w-full px-2 py-1 rounded-md border border-gray-300 dark:border-gray-600 text-input font-mono bg-white dark:bg-gray-800"
                 />
               </div>
               <div class="sm:col-span-4 flex items-center justify-between pt-0.5">
@@ -1268,13 +1268,13 @@
                   v-model="newVideoTitle" :aria-label="$t('products.videoTitlePlaceholder') ?? 'Title (optional)'"
                   type="text"
                   :placeholder="$t('products.videoTitlePlaceholder') ?? 'Title (optional)'"
-                  class="flex-1 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:text-white"
+                  class="flex-1 px-3 py-1.5 text-input border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:text-white"
                 />
                 <input
                   v-model="newVideoUrl" :aria-label="$t('products.videoUrlPlaceholder') ?? 'Video URL'"
                   type="url"
                   :placeholder="$t('products.videoUrlPlaceholder') ?? 'https://youtube.com/watch?v=...'"
-                  class="flex-[2] px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:text-white"
+                  class="flex-[2] px-3 py-1.5 text-input border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:text-white"
                   @keyup.enter="handleAddVideo"
                 />
                 <button

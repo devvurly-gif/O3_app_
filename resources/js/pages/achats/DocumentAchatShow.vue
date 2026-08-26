@@ -630,7 +630,7 @@ const paymentProgress = computed(() => {
           <select
             id="documentachatshow-invoicepaymentmethod"
             v-model="invoicePaymentMethod"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+            class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
           >
             <option value="credit">En compte (Crédit)</option>
             <option value="cash">Espèces</option>

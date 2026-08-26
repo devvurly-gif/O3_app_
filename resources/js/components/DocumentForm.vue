@@ -656,7 +656,7 @@ function getStockClass(stock: number): string {
             id="documentform-document-type"
             v-model="form.document_type"
             :disabled="editMode"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition disabled:opacity-60 disabled:cursor-not-allowed"
+            class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <option v-for="dt in documentTypes" :key="dt.value" :value="dt.value">{{ dt.label }}</option>
           </select>
@@ -670,7 +670,7 @@ function getStockClass(stock: number): string {
             v-model="partnerSearch"
             data-anchor
             :placeholder="`Rechercher ${partnerLabel.toLowerCase()}...`"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition"
+            class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition"
             @focus="openPartnerDropdown"
             @blur="delayedClosePartner"
           />
@@ -715,7 +715,7 @@ function getStockClass(stock: number): string {
           <select
             id="documentform-warehouse-id"
             v-model="form.warehouse_id"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition"
+            class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition"
           >
             <option :value="null">— Aucun —</option>
             <option v-for="w in warehouses" :key="w.id" :value="w.id">{{ w.wh_title }}</option>
@@ -729,7 +729,7 @@ function getStockClass(stock: number): string {
             id="documentform-issued-at"
             v-model="form.issued_at"
             type="date"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition"
+            class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition"
           />
         </div>
 
@@ -740,7 +740,7 @@ function getStockClass(stock: number): string {
             id="documentform-due-at"
             v-model="form.due_at"
             type="date"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition"
+            class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition"
           />
         </div>
 
@@ -752,7 +752,7 @@ function getStockClass(stock: number): string {
             v-model="form.notes"
             type="text"
             placeholder="Notes internes..."
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition"
+            class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition"
           />
         </div>
 
@@ -762,7 +762,7 @@ function getStockClass(stock: number): string {
           <select
             id="documentform-payment-method"
             v-model="form.payment_method"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition"
+            class="w-full px-3.5 py-2.5 text-input rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition"
           >
             <option value="credit">En compte (Crédit)</option>
             <option value="cash">Espèces</option>
@@ -793,7 +793,7 @@ function getStockClass(stock: number): string {
                 id="documentform-pendingsearch"
                 v-model="pendingSearch"
                 placeholder="Chercher un produit..."
-                class="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition"
+                class="flex-1 px-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition"
                 @input="openPendingDropdown($event); queueProductSearch(pendingSearch)"
                 @focus="openPendingDropdown($event)"
                 @blur="delayedClosePending"
@@ -858,7 +858,7 @@ function getStockClass(stock: number): string {
               type="number"
               min="0.01"
               step="0.01"
-              class="w-full px-3 py-2 text-sm text-right rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition"
+              class="w-full px-3 py-2 text-input text-right rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition"
               @keydown.enter.prevent="addArticle()"
             />
           </div>
@@ -909,7 +909,7 @@ function getStockClass(stock: number): string {
                     :aria-label="`Chercher un produit pour cette ligne`"
                     v-model="productSearches[line.key]"
                     :placeholder="line.designation || 'Chercher un produit...'"
-                    class="flex-1 px-2.5 py-1.5 text-sm rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
+                    class="flex-1 px-2.5 py-1.5 text-input rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
                     @input="openProductDropdown($event, line.key); queueProductSearch(productSearches[line.key] ?? '')"
                     @focus="openProductDropdown($event, line.key)"
                     @blur="delayedCloseProduct(line.key)"
@@ -979,7 +979,7 @@ function getStockClass(stock: number): string {
                   type="number"
                   min="0.01"
                   step="0.01"
-                  class="w-full px-2 py-1.5 text-sm text-right rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  class="w-full px-2 py-1.5 text-input text-right rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-400"
                 />
               </td>
 
@@ -988,7 +988,7 @@ function getStockClass(stock: number): string {
                   :aria-label="`Unité de ${line.designation || 'la ligne'}`"
                   v-model="line.unit"
                   type="text"
-                  class="w-full px-2 py-1.5 text-sm rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  class="w-full px-2 py-1.5 text-input rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-400"
                 />
               </td>
 
@@ -999,7 +999,7 @@ function getStockClass(stock: number): string {
                   type="number"
                   min="0"
                   step="0.01"
-                  class="w-full px-2 py-1.5 text-sm text-right rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  class="w-full px-2 py-1.5 text-input text-right rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-400"
                 />
               </td>
 
@@ -1011,7 +1011,7 @@ function getStockClass(stock: number): string {
                   min="0"
                   max="100"
                   step="0.1"
-                  class="w-full px-2 py-1.5 text-sm text-right rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  class="w-full px-2 py-1.5 text-input text-right rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-400"
                 />
               </td>
 
@@ -1022,7 +1022,7 @@ function getStockClass(stock: number): string {
                   type="number"
                   min="0"
                   step="0.1"
-                  class="w-full px-2 py-1.5 text-sm text-right rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  class="w-full px-2 py-1.5 text-input text-right rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-400"
                 />
               </td>
 

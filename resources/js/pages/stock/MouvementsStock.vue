@@ -126,14 +126,14 @@ onMounted(() => loadPage())
           v-model="productSearch"
           type="text"
           placeholder="Produit : nom, SKU, EAN…"
-          class="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
+          class="w-full pl-9 pr-3 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
         />
       </div>
       <div class="flex gap-2">
         <select
           aria-label="Filtrer par sens du mouvement"
           v-model="dirFilter"
-          class="flex-1 sm:flex-none px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
+          class="flex-1 sm:flex-none px-3.5 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
         >
           <option value="">Toutes directions</option>
           <option value="in">Entrée</option>
@@ -142,7 +142,7 @@ onMounted(() => loadPage())
         <select
           aria-label="Filtrer par motif"
           v-model="reasonFilter"
-          class="flex-1 sm:flex-none px-3.5 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
+          class="flex-1 sm:flex-none px-3.5 py-2 text-input rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
         >
           <option value="">Tous motifs</option>
           <option v-for="[key, label] in reasonOptions" :key="key" :value="key">{{ label }}</option>
