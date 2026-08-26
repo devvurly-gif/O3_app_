@@ -31,3 +31,30 @@ cookies.txt
 *.vue.fresh
 *.vue.bad
 *.vue.current
+
+# ── Fichiers de travail laisses a la racine ────────────────────────────
+# Sorties de scripts ad hoc, exports et archives : rien de tout cela ne
+# decrit l'application, et un `git add .` les verserait au depot.
+/O3-js.zip
+/bash.exe.stackdump
+/detail_*.html
+/fotmob.json
+/out.json
+/scratch_map.json
+/pharma_packs.dbml
+/test_limits.py
+/marchespublics_scraper.py
+/mp_eclairage_public_*.json
+/resultats_*.json
+/devis_converter/
+/teliphoni-shop/
+
+# Sessions et fichiers temporaires de Claude Code
+/.claude/projects/
+/.claude/tmp_vps/
+
+# Fichiers televerses par les tenants : ils appartiennent au client, pas au
+# code. storage/ n'etait ignore que pour ses cles et ses caches. Les 22 images
+# de demo deja suivies (PRD-000xx.png) restent versionnees : les deloger est
+# une decision a part.
+/storage/tenant*/
