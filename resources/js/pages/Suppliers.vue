@@ -489,7 +489,13 @@
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-                <tr v-for="inv in supplierDocuments" :key="inv.id" class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                <tr
+                  v-for="inv in supplierDocuments"
+                  :key="inv.id"
+                  class="hover:bg-gray-50 dark:hover:bg-gray-700"
+                  :class="isBilledReceipt(inv) ? 'opacity-50' : ''"
+                  :title="isBilledReceipt(inv) ? 'Bon déjà facturé : son montant est porté par la facture, et ne compte pas une seconde fois.' : ''"
+                >
                   <td class="py-2.5 px-3 font-mono text-xs">{{ inv.reference }}</td>
                   <td class="py-2.5 px-3 text-gray-600 dark:text-gray-400">{{ formatDate(inv.issued_at) }}</td>
                   <td class="py-2.5 px-3">
@@ -899,7 +905,13 @@
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-                <tr v-for="inv in showDocuments" :key="inv.id" class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                <tr
+                  v-for="inv in showDocuments"
+                  :key="inv.id"
+                  class="hover:bg-gray-50 dark:hover:bg-gray-700"
+                  :class="isBilledReceipt(inv) ? 'opacity-50' : ''"
+                  :title="isBilledReceipt(inv) ? 'Bon déjà facturé : son montant est porté par la facture, et ne compte pas une seconde fois.' : ''"
+                >
                   <td class="py-2.5 px-3 font-mono text-xs">{{ inv.reference }}</td>
                   <td class="py-2.5 px-3 text-gray-600 dark:text-gray-400">{{ formatDate(inv.issued_at) }}</td>
                   <td class="py-2.5 px-3">
@@ -1466,21 +1478,62 @@ const supplierPayments = computed(() => {
 // footer. Purchase quotes (QuotePurchase) are non-commitments; cancelled/draft
 // documents never posted — all three are excluded from the sum while remaining
 // visible in the history.
+/**
+ * Un document qui pese sur la dette fournisseur.
+ *
+ * Seule la facture d'achat compte, jamais le bon de reception : recevoir la
+ * marchandise ne cree pas la dette, c'est la facture qui la cree. Compter les
+ * deux doublait le total des que les bons etaient factures — 103 455 de bons
+ * plus 103 455 de facture groupee affichaient 206 910 dus a un fournisseur qui
+ * n'en reclamait que 103 455.
+ *
+ * C'est la regle qu'applique deja ThirdPartner::recalculateEncours() : l'ecran
+ * doit montrer le meme perimetre que le chiffre qu'il place a cote.
+ */
+function isCountablePurchase(doc: any): boolean {
+  return (
+    doc.document_type === 'InvoicePurchase' &&
+    doc.status !== 'cancelled' &&
+    doc.status !== 'draft'
+  )
+}
+
+/** Un retour fournisseur vient en deduction, comme dans le calcul d'encours. */
+function isCountableReturn(doc: any): boolean {
+  return (
+    doc.document_type === 'ReturnPurchase' &&
+    doc.status !== 'cancelled' &&
+    doc.status !== 'draft'
+  )
+}
+
+/** Ce bon est-il deja porte par une facture ? Sert a le griser dans la liste. */
+function isBilledReceipt(doc: any): boolean {
+  if (doc.document_type !== 'ReceiptNotePurchase') return false
+  if (doc.status === 'converted') return true
+  return (doc.children ?? []).some((c: any) => c.document_type === 'InvoicePurchase')
+}
+
+function sumTtc(docs: any[]): number {
+  return docs.reduce((sum: number, inv: any) => sum + Number(inv.footer?.total_ttc ?? 0), 0)
+}
+
+function sumDue(docs: any[]): number {
+  return docs.reduce((sum: number, inv: any) => sum + Number(inv.footer?.amount_due ?? 0), 0)
+}
+
 const countableSupplierDocuments = computed(() =>
-  supplierDocuments.value.filter(
-    (inv: any) =>
-      inv.document_type !== 'QuotePurchase' &&
-      inv.status !== 'cancelled' &&
-      inv.status !== 'draft',
-  ),
+  supplierDocuments.value.filter(isCountablePurchase),
 )
 
-const totalDocsTTC = computed(() =>
-  countableSupplierDocuments.value.reduce((sum: number, inv: any) => sum + Number(inv.footer?.total_ttc ?? 0), 0),
+const supplierReturns = computed(() => supplierDocuments.value.filter(isCountableReturn))
+
+const totalDocsTTC = computed(
+  () => sumTtc(countableSupplierDocuments.value) - sumTtc(supplierReturns.value),
 )
 
-const totalDocsDue = computed(() =>
-  countableSupplierDocuments.value.reduce((sum: number, inv: any) => sum + Number(inv.footer?.amount_due ?? 0), 0),
+const totalDocsDue = computed(
+  () => sumDue(countableSupplierDocuments.value) - sumDue(supplierReturns.value),
 )
 
 const totalPaymentsAmount = computed(() =>
@@ -1544,19 +1597,16 @@ const showPayments = computed(() => {
 
 // Same exclusion logic as the edit modal: ignore purchase quotes, cancelled
 // and drafts.
-const countableShowDocuments = computed(() =>
-  showDocuments.value.filter(
-    (inv: any) =>
-      inv.document_type !== 'QuotePurchase' &&
-      inv.status !== 'cancelled' &&
-      inv.status !== 'draft',
-  ),
+const countableShowDocuments = computed(() => showDocuments.value.filter(isCountablePurchase))
+
+const showReturns = computed(() => showDocuments.value.filter(isCountableReturn))
+
+const showTotalTTC = computed(
+  () => sumTtc(countableShowDocuments.value) - sumTtc(showReturns.value),
 )
-const showTotalTTC = computed(() =>
-  countableShowDocuments.value.reduce((sum: number, inv: any) => sum + Number(inv.footer?.total_ttc ?? 0), 0),
-)
-const showTotalDue = computed(() =>
-  countableShowDocuments.value.reduce((sum: number, inv: any) => sum + Number(inv.footer?.amount_due ?? 0), 0),
+
+const showTotalDue = computed(
+  () => sumDue(countableShowDocuments.value) - sumDue(showReturns.value),
 )
 const showTotalPayments = computed(() =>
   showPayments.value.reduce((sum: number, p: any) => sum + Number(p.amount ?? 0), 0),
