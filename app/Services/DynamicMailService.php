@@ -6,6 +6,7 @@ use App\Models\Setting;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
 
 class DynamicMailService
 {
@@ -15,6 +16,15 @@ class DynamicMailService
      */
     public static function applySettings(): void
     {
+        // A freshly created tenant DB has no `settings` table until its migrations
+        // have run. This method is wired to TenancyInitialized, which fires during
+        // `tenants:migrate` and inside the TenantCreated pipeline - i.e. before the
+        // table exists. Without this guard the query throws and takes the whole
+        // tenant provisioning down with it.
+        if (!Schema::hasTable('settings')) {
+            return;
+        }
+
         $host       = Setting::get('email', 'mail_host');
         $port       = Setting::get('email', 'mail_port');
         $username   = Setting::get('email', 'mail_username');
@@ -51,6 +61,10 @@ class DynamicMailService
      */
     public static function isEnabled(): bool
     {
+        if (!Schema::hasTable('settings')) {
+            return false;
+        }
+
         return Setting::get('email', 'mail_enabled', 'true') !== 'false';
     }
 
