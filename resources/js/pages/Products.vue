@@ -1618,6 +1618,7 @@ const {
   addRow: addVariantRow,
   remove: removeVariant,
   applyGenerated,
+  reset: resetVariants,
 } = useProductVariants(() => variantsEnabled.value)
 
 // Resolve warehouse stocks regardless of JSON casing (snake_case by default,
@@ -1751,6 +1752,7 @@ watch([search, statusFilter, stockFilter, ecomFilter, promoFilter], () => {
 function openCreate() {
   editTarget.value = null
   resetMedia()
+  resetVariants()
   currentTab.value = 0
   Object.assign(form, emptyForm())
   showModal.value = true
@@ -1759,6 +1761,10 @@ function openCreate() {
 async function openEdit(row) {
   editTarget.value = row
   resetMedia(row)
+  resetVariants(row)
+  // Les declinaisons deja enregistrees doivent etre a l ecran avant toute
+  // sauvegarde : `variants/sync` supprime ce qu on ne lui renvoie pas.
+  loadVariants(row.id)
   currentTab.value = 0
   Object.assign(form, {
     p_title: row.p_title,

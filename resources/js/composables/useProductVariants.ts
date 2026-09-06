@@ -20,18 +20,42 @@ export function useProductVariants(enabled: () => boolean) {
   const variants: Ref<any[]> = ref([])
   const dirty = ref(false)
 
+  /**
+   * A-t-on vraiment lu l'etat du serveur ?
+   *
+   * `variants/sync` supprime cote serveur tout ce que la requete ne contient
+   * pas. Synchroniser une liste qu'on n'a pas chargee revient donc a effacer
+   * les declinaisons existantes. Ce drapeau interdit ce cas.
+   */
+  const loaded = ref(false)
+
+  /** Ouverture de la fiche. Sans produit, c'est une creation : rien a lire. */
+  function reset(product?: any): void {
+    variants.value = []
+    dirty.value = false
+    loaded.value = !product
+  }
+
   async function load(productId: number | null | undefined): Promise<void> {
     if (!enabled() || !productId) return
     try {
       const { data } = await http.get('/products/' + productId + '/variants')
-      variants.value = data
+      variants.value = Array.isArray(data) ? data : (data?.data ?? [])
+      loaded.value = true
     } catch {
       variants.value = []
+      loaded.value = false
     }
   }
 
   async function save(productId: number | null | undefined): Promise<void> {
     if (!enabled() || !dirty.value) return
+    if (!loaded.value) {
+      // Le chargement a echoue : on ne sait pas ce que le produit porte deja,
+      // et `sync` effacerait tout ce qu'on ne lui renvoie pas.
+      console.warn('[variantes] synchronisation ignoree : etat serveur non charge')
+      return
+    }
     await http.post('/products/' + productId + '/variants/sync', { variants: variants.value })
     dirty.value = false
   }
@@ -66,5 +90,5 @@ export function useProductVariants(enabled: () => boolean) {
     dirty.value = true
   }
 
-  return { variants, dirty, load, save, addRow, remove, applyGenerated }
+  return { variants, dirty, loaded, reset, load, save, addRow, remove, applyGenerated }
 }
