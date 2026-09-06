@@ -911,193 +911,14 @@
 
         <!-- Tab: Stock -->
         <div v-if="currentTab === 2" class="space-y-3 py-2" :style="{ minHeight: tabMinHeight }">
-          <div v-if="editTarget" class="space-y-3">
-            <!-- Summary Cards -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              <div class="bg-[#F1ECFC] dark:bg-[#7C5CFC]/20 px-3 py-2.5 rounded-lg border border-[#E4D9FE] dark:border-[#4C3999]">
-                <p class="text-xs text-[#7C5CFC] dark:text-[#A78BFA] font-medium">Total Stock</p>
-                <p class="text-lg font-bold text-blue-900 dark:text-blue-200 leading-tight">{{ editTarget.total_stock ?? 0 }}</p>
-              </div>
-              <div class="bg-green-50 dark:bg-green-900/20 px-3 py-2.5 rounded-lg border border-green-200 dark:border-green-800">
-                <p class="text-xs text-green-600 dark:text-green-400 font-medium">Stock Value</p>
-                <p class="text-lg font-bold text-green-900 dark:text-green-200 leading-tight">{{ (Number(editTarget.total_stock ?? 0) * Number(form.p_cost || 0)).toFixed(2) }} MAD</p>
-              </div>
-            </div>
-
-            <!-- Warehouse Breakdown -->
-            <div class="space-y-1.5">
-              <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                {{ variantsEnabled && productVariants.length ? 'Stock par Variante' : 'Warehouse Breakdown' }}
-              </h3>
-
-              <!-- WITH VARIANTS -->
-              <div v-if="variantsEnabled && productVariants.length" class="overflow-x-auto">
-                <table class="w-full text-sm">
-                  <thead class="bg-gray-50 dark:bg-gray-700">
-                    <tr>
-                      <th class="px-2.5 py-1.5 text-left text-gray-600 dark:text-gray-300 font-medium">Variante</th>
-                      <th class="px-2.5 py-1.5 text-left text-gray-600 dark:text-gray-300 font-medium">SKU</th>
-                      <th class="px-2.5 py-1.5 text-right text-gray-600 dark:text-gray-300 font-medium">Stock</th>
-                      <th class="px-2.5 py-1.5 text-center text-gray-600 dark:text-gray-300 font-medium">Statut</th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                    <tr v-for="v in productVariants" :key="v.id ?? v.label" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                      <td class="px-2.5 py-1.5 text-gray-800 dark:text-gray-200 font-medium">{{ v.label }}</td>
-                      <td class="px-2.5 py-1.5 text-gray-500 dark:text-gray-400 font-mono text-xs">{{ v.sku || '—' }}</td>
-                      <td class="px-2.5 py-1.5 text-right font-mono">{{ Number(v.stock ?? 0).toFixed(2) }} {{ editTarget.p_unit ?? 'pcs' }}</td>
-                      <td class="px-2.5 py-1.5 text-center">
-                        <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
-                          :class="Number(v.stock ?? 0) > 0 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'">
-                          {{ Number(v.stock ?? 0) > 0 ? 'En stock' : 'Epuise' }}
-                        </span>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-                <p class="mt-2 text-xs text-gray-400 dark:text-gray-500 italic">
-                  Stock lu depuis warehouse_has_stock. Saisie via documents de stock.
-                </p>
-              </div>
-
-              <!-- WITHOUT VARIANTS -->
-              <div v-else-if="warehouseStocksList.length" class="overflow-x-auto">
-                <table class="w-full text-sm">
-                  <thead class="bg-gray-50 dark:bg-gray-700">
-                    <tr>
-                      <th class="px-2.5 py-1.5 text-left text-gray-600 dark:text-gray-300 font-medium">Warehouse</th>
-                      <th class="px-2.5 py-1.5 text-right text-gray-600 dark:text-gray-300 font-medium">Stock</th>
-                      <th class="px-2.5 py-1.5 text-center text-gray-600 dark:text-gray-300 font-medium">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                    <tr v-for="ws in warehouseStocksList" :key="ws.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                      <td class="px-2.5 py-1.5 text-gray-800 dark:text-gray-200">{{ ws.warehouse?.wh_title ?? ws.warehouse?.wh_name ?? '—' }}</td>
-                      <td class="px-2.5 py-1.5 text-right font-mono">{{ Number(ws.stockLevel ?? ws.stock_level ?? 0).toFixed(2) }} {{ editTarget.p_unit ?? 'pcs' }}</td>
-                      <td class="px-2.5 py-1.5 text-center">
-                        <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
-                          :class="Number(ws.stockLevel ?? ws.stock_level ?? 0) > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'">
-                          {{ Number(ws.stockLevel ?? ws.stock_level ?? 0) > 0 ? 'In Stock' : 'Out' }}
-                        </span>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <div v-else class="text-sm text-gray-500 dark:text-gray-400">
-                {{ $t('products.noStock') ?? 'No stock records yet' }}
-              </div>
-            </div>
-
-            <!-- Recent Movements -->
-            <div class="space-y-1.5 pt-3 border-t border-gray-200 dark:border-gray-700">
-              <div class="flex items-center justify-between">
-                <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Recent Movements</h3>
-                <span v-if="stockMouvements.length" class="text-[11px] text-gray-500 dark:text-gray-400">
-                  {{ stockMouvements.length }} mouvement(s)
-                </span>
-              </div>
-              <div v-if="stockMouvements.length" class="overflow-x-auto rounded border border-gray-200 dark:border-gray-700">
-                <table class="w-full text-[11px] border-collapse">
-                  <thead class="bg-gray-100 dark:bg-gray-700/70 text-gray-600 dark:text-gray-300 uppercase">
-                    <tr>
-                      <th class="px-2 py-1.5 text-left font-semibold whitespace-nowrap">Date</th>
-                      <th class="px-2 py-1.5 text-center font-semibold">Sens</th>
-                      <th class="px-2 py-1.5 text-right font-semibold">Qté</th>
-                      <th class="px-2 py-1.5 text-left font-semibold">Motif</th>
-                      <th class="px-2 py-1.5 text-left font-semibold">Document</th>
-                      <th class="px-2 py-1.5 text-left font-semibold">Dépôt</th>
-                      <th class="px-2 py-1.5 text-left font-semibold">Utilisateur</th>
-                      <th class="px-2 py-1.5 text-center font-semibold whitespace-nowrap">Solde (avant → après)</th>
-                      <th class="px-2 py-1.5 text-right font-semibold">PU</th>
-                      <th class="px-2 py-1.5 text-right font-semibold">Total</th>
-                      <th class="px-2 py-1.5 text-left font-semibold">Notes</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr
-                      v-for="mov in stockMouvements"
-                      :key="mov.id"
-                      class="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors"
-                      :class="mov.direction === 'in'
-                        ? 'border-l-2 border-l-green-500 dark:border-l-green-400'
-                        : 'border-l-2 border-l-red-500 dark:border-l-red-400'"
-                    >
-                      <td class="px-2 py-1.5 whitespace-nowrap text-gray-600 dark:text-gray-400 font-mono text-[10px]">
-                        <div>{{ fmtDate(mov.created_at) }}</div>
-                        <div class="text-gray-400">{{ new Date(mov.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }}</div>
-                      </td>
-                      <td class="px-2 py-1.5 text-center">
-                        <span
-                          class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase"
-                          :class="mov.direction === 'in'
-                            ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300'
-                            : 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'"
-                        >
-                          {{ mov.direction === 'in' ? '↑ IN' : '↓ OUT' }}
-                        </span>
-                      </td>
-                      <td class="px-2 py-1.5 text-right font-mono font-semibold whitespace-nowrap"
-                          :class="mov.direction === 'in' ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'">
-                        {{ mov.direction === 'in' ? '+' : '−' }}{{ Number(mov.quantity).toFixed(2) }}
-                        <span class="text-gray-400 font-normal">{{ editTarget?.p_unit ?? 'pcs' }}</span>
-                      </td>
-                      <td class="px-2 py-1.5">
-                        <div class="flex flex-col gap-0.5">
-                          <span v-if="mov.reason" class="px-1.5 py-0.5 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 rounded text-[10px] font-medium self-start">
-                            {{ mov.reason }}
-                          </span>
-                          <span
-                            v-if="mov.status && mov.status !== 'applied'"
-                            class="px-1.5 py-0.5 rounded text-[10px] font-medium self-start"
-                            :class="mov.status === 'pending'
-                              ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'
-                              : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'"
-                          >
-                            {{ mov.status }}
-                          </span>
-                        </div>
-                      </td>
-                      <td class="px-2 py-1.5 font-mono text-gray-700 dark:text-gray-300 whitespace-nowrap">
-                        {{ mov.document_reference || mov.document_type || '—' }}
-                      </td>
-                      <td class="px-2 py-1.5 text-gray-700 dark:text-gray-300 whitespace-nowrap">
-                        {{ mov.warehouse?.wh_title ?? mov.warehouse?.wh_code ?? '—' }}
-                      </td>
-                      <td class="px-2 py-1.5 text-gray-700 dark:text-gray-300 whitespace-nowrap">
-                        {{ mov.user?.name ?? '—' }}
-                      </td>
-                      <td class="px-2 py-1.5 text-center font-mono whitespace-nowrap">
-                        <template v-if="mov.stock_before !== null && mov.stock_after !== null">
-                          <span class="text-gray-500">{{ Number(mov.stock_before).toFixed(2) }}</span>
-                          <span class="text-gray-400 mx-1">→</span>
-                          <span class="font-semibold text-gray-900 dark:text-gray-100">{{ Number(mov.stock_after).toFixed(2) }}</span>
-                        </template>
-                        <span v-else class="text-gray-400">—</span>
-                      </td>
-                      <td class="px-2 py-1.5 text-right font-mono whitespace-nowrap text-gray-700 dark:text-gray-300">
-                        <template v-if="mov.unit_cost && Number(mov.unit_cost) > 0">{{ Number(mov.unit_cost).toFixed(2) }}</template>
-                        <span v-else class="text-gray-400">—</span>
-                      </td>
-                      <td class="px-2 py-1.5 text-right font-mono whitespace-nowrap text-gray-900 dark:text-gray-100">
-                        <template v-if="mov.unit_cost && Number(mov.unit_cost) > 0">
-                          {{ (Number(mov.unit_cost) * Number(mov.quantity)).toFixed(2) }}
-                        </template>
-                        <span v-else class="text-gray-400">—</span>
-                      </td>
-                      <td class="px-2 py-1.5 text-gray-500 dark:text-gray-400 italic max-w-[200px] truncate" :title="mov.notes">
-                        {{ mov.notes || '—' }}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <div v-else class="text-xs text-gray-500 dark:text-gray-400">No movements yet</div>
-            </div>
-          </div>
-          <div v-else class="text-sm text-gray-500 dark:text-gray-400">
-            {{ $t('products.stockAfterSave') ?? 'Stock information available after saving the product.' }}
-          </div>
+          <ProductStockTab
+            :product="editTarget"
+            :warehouse-stocks="warehouseStocksList"
+            :movements="stockMouvements"
+            :variants="productVariants"
+            :cost="form.p_cost"
+            :variants-enabled="variantsEnabled"
+          />
         </div>
 
         <!-- Tab: Statistics -->
@@ -1107,196 +928,24 @@
 
         <!-- Tab: Gallery -->
         <div v-if="currentTab === 4" class="space-y-3 py-2" :style="{ minHeight: tabMinHeight }">
-          <div v-if="editTarget">
-            <!-- Unified grid: images + upload tile -->
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
-              <div
-                v-for="img in editImages"
-                :key="img.id"
-                class="relative group rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 aspect-square bg-gray-50 dark:bg-gray-900"
-              >
-                <img :src="img.url" :alt="img.title" class="w-full h-full object-cover" />
-                <span
-                  v-if="img.isPrimary"
-                  class="absolute top-1 left-1 text-[10px] font-bold bg-[#7C5CFC] text-white px-1.5 py-0.5 rounded"
-                >
-                  {{ $t('products.primary') }}
-                </span>
-                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2">
-                  <button
-                    v-if="!img.isPrimary"
-                    type="button"
-                    class="p-1.5 bg-white dark:bg-gray-800 rounded-lg text-[#7C5CFC] hover:bg-[#F1ECFC] transition"
-                    :title="$t('products.setPrimary')"
-                    @click="doSetPrimary(img)"
-                  >
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
-                      />
-                    </svg>
-                  </button>
-                  <button
-                    type="button"
-                    class="p-1.5 bg-white dark:bg-gray-800 rounded-lg text-red-500 hover:bg-red-50 transition"
-                    :title="$t('common.delete')"
-                    @click="doDeleteImage(img)"
-                  >
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-
-              <!-- Upload tile -->
-              <label
-                class="aspect-square rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-blue-400 bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center cursor-pointer transition text-gray-400 dark:text-gray-500 hover:text-[#7C5CFC]"
-              >
-                <svg v-if="!uploadingImage" class="w-7 h-7 mb-1" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-                </svg>
-                <svg v-else class="w-6 h-6 animate-spin mb-1" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                </svg>
-                <span class="text-xs font-medium text-center px-2">
-                  {{ uploadingImage ? $t('products.uploadingImage') : $t('products.addImage') }}
-                </span>
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  class="hidden"
-                  :disabled="uploadingImage"
-                  @change="handleImageUpload"
-                />
-              </label>
-            </div>
-
-            <p v-if="!editImages.length" class="text-xs text-gray-400 dark:text-gray-500 text-center mt-2">
-              {{ $t('products.noImages') }}
-            </p>
-
-            <!-- Videos section -->
-            <div class="mt-5">
-              <h4 class="font-semibold text-gray-900 dark:text-white text-sm mb-2">{{ $t('products.videos') ?? 'Videos' }}</h4>
-              <div class="space-y-2">
-                <div
-                  v-for="video in editVideos"
-                  :key="video.id"
-                  class="flex items-center gap-2.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900"
-                >
-                  <svg class="w-5 h-5 flex-shrink-0 text-[#7C5CFC]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" />
-                  </svg>
-                  <a :href="video.url" target="_blank" rel="noopener" class="flex-1 min-w-0 truncate text-sm text-gray-700 dark:text-gray-200 hover:underline">
-                    {{ video.title || video.url }}
-                  </a>
-                  <button
-                    type="button"
-                    class="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition flex-shrink-0"
-                    :title="$t('common.delete')"
-                    @click="doDeleteVideo(video)"
-                  >
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-              <p v-if="!editVideos.length" class="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                {{ $t('products.noVideos') ?? 'No videos.' }}
-              </p>
-              <div class="flex flex-col sm:flex-row gap-2 mt-2.5">
-                <input
-                  v-model="newVideoTitle" :aria-label="$t('products.videoTitlePlaceholder') ?? 'Title (optional)'"
-                  type="text"
-                  :placeholder="$t('products.videoTitlePlaceholder') ?? 'Title (optional)'"
-                  class="flex-1 px-3 py-1.5 text-input border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:text-white"
-                />
-                <input
-                  v-model="newVideoUrl" :aria-label="$t('products.videoUrlPlaceholder') ?? 'Video URL'"
-                  type="url"
-                  :placeholder="$t('products.videoUrlPlaceholder') ?? 'https://youtube.com/watch?v=...'"
-                  class="flex-[2] px-3 py-1.5 text-input border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:text-white"
-                  @keyup.enter="handleAddVideo"
-                />
-                <button
-                  type="button"
-                  class="px-3 py-1.5 text-xs font-medium bg-[#7C5CFC] text-white rounded-lg hover:bg-[#6D4CE0] transition disabled:opacity-50"
-                  :disabled="addingVideo || !newVideoUrl.trim()"
-                  @click="handleAddVideo"
-                >
-                  {{ addingVideo ? $t('products.uploadingImage') : ($t('products.addVideo') ?? 'Add') }}
-                </button>
-              </div>
-            </div>
-
-            <!-- Documents section -->
-            <div class="mt-5">
-              <h4 class="font-semibold text-gray-900 dark:text-white text-sm mb-2">{{ $t('products.documents') ?? 'Documents' }}</h4>
-              <div class="space-y-2">
-                <div
-                  v-for="doc in editDocuments"
-                  :key="doc.id"
-                  class="flex items-center gap-2.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900"
-                >
-                  <svg class="w-5 h-5 flex-shrink-0 text-[#7C5CFC]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-                  </svg>
-                  <a :href="doc.url" target="_blank" rel="noopener" download class="flex-1 min-w-0 truncate text-sm text-gray-700 dark:text-gray-200 hover:underline">
-                    {{ doc.title || doc.file_name }}
-                  </a>
-                  <span v-if="doc.size" class="text-[10px] text-gray-400 flex-shrink-0">{{ (doc.size / 1024).toFixed(0) }} KB</span>
-                  <button
-                    type="button"
-                    class="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition flex-shrink-0"
-                    :title="$t('common.delete')"
-                    @click="doDeleteDocument(doc)"
-                  >
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-              <p v-if="!editDocuments.length" class="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                {{ $t('products.noDocuments') ?? 'No documents.' }}
-              </p>
-              <label
-                class="mt-2.5 flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-blue-400 bg-gray-50 dark:bg-gray-900 cursor-pointer transition text-gray-400 dark:text-gray-500 hover:text-[#7C5CFC] w-fit"
-              >
-                <svg v-if="!uploadingDocument" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-                </svg>
-                <svg v-else class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                </svg>
-                <span class="text-xs font-medium">
-                  {{ uploadingDocument ? $t('products.uploadingDocument') : ($t('products.addDocument') ?? 'Add document') }}
-                </span>
-                <input
-                  type="file"
-                  multiple
-                  accept=".doc,.docx,.xls,.xlsx,.pdf"
-                  class="hidden"
-                  :disabled="uploadingDocument"
-                  @change="handleDocumentUpload"
-                />
-              </label>
-            </div>
-          </div>
-          <div v-else class="text-sm text-gray-500 dark:text-gray-400 text-center py-8">
-            {{ $t('products.stockAfterSave') ?? 'Media available after saving the product.' }}
-          </div>
+          <ProductMediaTab
+            v-model:new-video-title="newVideoTitle"
+            v-model:new-video-url="newVideoUrl"
+            :has-product="!!editTarget"
+            :images="editImages"
+            :videos="editVideos"
+            :documents="editDocuments"
+            :uploading-image="uploadingImage"
+            :uploading-document="uploadingDocument"
+            :adding-video="addingVideo"
+            @upload-image="handleImageUpload"
+            @set-primary="doSetPrimary"
+            @delete-image="doDeleteImage"
+            @add-video="handleAddVideo"
+            @delete-video="doDeleteVideo"
+            @upload-document="handleDocumentUpload"
+            @delete-document="doDeleteDocument"
+          />
         </div>
         <!-- Tab: Variantes -->
         <div v-if="currentTab === 5 && variantsEnabled" class="space-y-3 py-2">
@@ -1376,7 +1025,9 @@ import BaseTable from '@/components/BaseTable.vue'
 import BasePagination from '@/components/BasePagination.vue'
 import BaseModal from '@/components/BaseModal.vue'
 import BaseNotification from '@/components/BaseNotification.vue'
+import ProductMediaTab from '@/components/products/ProductMediaTab.vue'
 import ProductStatsTab from '@/components/products/ProductStatsTab.vue'
+import ProductStockTab from '@/components/products/ProductStockTab.vue'
 import ProductVariantsTab from '@/components/products/ProductVariantsTab.vue'
 import { useFormat } from '@/composables/useFormat'
 
