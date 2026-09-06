@@ -3,6 +3,16 @@ import { ref, computed, watch } from 'vue'
 import BaseModal from '@/components/BaseModal.vue'
 import http from '@/services/http'
 import { useFormat } from '@/composables/useFormat'
+// Cette modale sert les deux fiches, client et fournisseur : elle emploie donc
+// les memes libelles et pastilles qu'elles, sous les noms que son template
+// utilise deja.
+import {
+  partnerDocTypeLabel as docTypeLabel,
+  partnerDocTypeBadgeClass as docTypeClass,
+  partnerStatusBadgeClass as statusClass,
+  partnerStatusLabel as statusLabel,
+  paymentMethodLabel as methodLabel,
+} from '@/composables/useDocumentLabels'
 import { useSettingStore } from '@/stores/setting'
 
 interface Props {
@@ -162,56 +172,6 @@ function toggleDocumentExpand(docId: number) {
 // Helper functions
 function formatDate(date: string) {
   return fmtDate(date)
-}
-
-function docTypeLabel(type: string) {
-  const labels: Record<string, string> = {
-    InvoiceSale: 'Facture',
-    InvoicePurchase: 'Facture Fournisseur',
-    DeliveryNote: 'BL',
-    PurchaseOrder: 'Commande',
-    Quote: 'Devis',
-  }
-  return labels[type] || type
-}
-
-function docTypeClass(type: string) {
-  const classes: Record<string, string> = {
-    InvoiceSale: 'bg-emerald-100 text-emerald-700',
-    InvoicePurchase: 'bg-purple-100 text-purple-700',
-    DeliveryNote: 'bg-orange-100 text-orange-600',
-    PurchaseOrder: 'bg-blue-100 text-blue-700',
-    Quote: 'bg-amber-100 text-amber-700',
-  }
-  return classes[type] || 'bg-gray-100 text-gray-700'
-}
-
-function statusLabel(status: string, docType: string) {
-  if (status === 'paid') return 'Payé'
-  if (status === 'delivered') return 'Livré'
-  if (status === 'cancelled') return 'Annulé'
-  if (status === 'draft') return 'Brouillon'
-  return 'Ouvert'
-}
-
-function statusClass(status: string) {
-  const classes: Record<string, string> = {
-    paid: 'bg-emerald-100 text-emerald-700',
-    delivered: 'bg-orange-100 text-orange-700',
-    cancelled: 'bg-gray-100 text-gray-600',
-    draft: 'bg-blue-100 text-blue-700',
-  }
-  return classes[status] || 'bg-gray-100 text-gray-700'
-}
-
-function methodLabel(method: string) {
-  const labels: Record<string, string> = {
-    cash: 'Espèces',
-    bank_transfer: 'Virement',
-    cheque: 'Chèque',
-    effet: 'Effet',
-  }
-  return labels[method] || method
 }
 
 // Watch for modal open/close and customer ID changes
