@@ -198,7 +198,7 @@
 import BaseModal from '@/components/BaseModal.vue'
 import PartnerPaymentFields from '@/components/partners/PartnerPaymentFields.vue'
 import { docTypeShortLabel } from '@/composables/useDocumentLabels'
-import { useFormat } from '@/composables/useFormat'
+import { formatAmount as formatNumber, useFormat } from '@/composables/useFormat'
 
 withDefaults(
   defineProps<{
@@ -237,8 +237,4 @@ const notes = defineModel<string>('notes', { required: true })
 const selectedDocId = defineModel<number | null>('selectedDocId', { default: null })
 
 const { date: formatDate } = useFormat()
-
-function formatNumber(n: number): string {
-  return n.toLocaleString('fr-MA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-}
 </script>

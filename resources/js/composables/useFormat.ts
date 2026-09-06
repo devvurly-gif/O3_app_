@@ -5,6 +5,24 @@
  */
 import { useSettingStore } from '@/stores/setting'
 
+/**
+ * Un montant tel que l'affichent les tableaux : deux decimales, groupees a la
+ * marocaine, sans symbole — le « DH » est pose par le gabarit.
+ *
+ * La conversion en nombre n'est pas cosmetique. Les colonnes monetaires sont
+ * castees `decimal:2` cote Laravel, et Eloquent serialise un decimal en chaine
+ * JSON. Or `"103455.00".toLocaleString('fr-MA', ...)` appelle la methode de
+ * String, qui ignore les options et rend la chaine telle quelle : l'historique
+ * des documents affichait 103455.00 la ou son propre pied, calcule en memoire,
+ * affichait 103.455,00.
+ *
+ * Hors du composable, donc sans dependance au store : ce formatage-la est
+ * fixe et n'a pas a lire la configuration du tenant.
+ */
+export function formatAmount(value: number | string | null | undefined): string {
+  return Number(value ?? 0).toLocaleString('fr-MA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
 export function useFormat() {
   const settingStore = useSettingStore()
 

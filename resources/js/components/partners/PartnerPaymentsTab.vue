@@ -72,7 +72,7 @@
  */
 import PartnerTabSpinner from '@/components/partners/PartnerTabSpinner.vue'
 import { paymentMethodLabel } from '@/composables/useDocumentLabels'
-import { useFormat } from '@/composables/useFormat'
+import { formatAmount as formatNumber, useFormat } from '@/composables/useFormat'
 
 defineProps<{
   loading: boolean
@@ -81,8 +81,4 @@ defineProps<{
 }>()
 
 const { date: formatDate } = useFormat()
-
-function formatNumber(n: number): string {
-  return n.toLocaleString('fr-MA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-}
 </script>

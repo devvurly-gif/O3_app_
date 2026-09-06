@@ -59,10 +59,18 @@ describe('partnerStatusLabel', () => {
     expect(partnerStatusLabel('paid', 'DeliveryNote')).toBe('Payé')
   })
 
+  it('couvre tout l enum, pas seulement les etats courants', () => {
+    // La table n'en connaissait que six sur dix : un bon converti s'affichait
+    // « converted », un document envoye « sent ».
+    expect(partnerStatusLabel('converted')).toBe('Converti')
+    expect(partnerStatusLabel('delivered')).toBe('Livré')
+    expect(partnerStatusLabel('received')).toBe('Reçu')
+    expect(partnerStatusLabel('sent')).toBe('Envoyé')
+  })
+
   it('rend l etat brut plutot qu un libelle fourre-tout', () => {
     // La modale de consultation repliait autrefois tout le reste sur
     // « Ouvert », ce qui masquait notamment « Partiel ».
-    expect(partnerStatusLabel('converted')).toBe('converted')
     expect(partnerStatusLabel('inconnu')).toBe('inconnu')
   })
 })

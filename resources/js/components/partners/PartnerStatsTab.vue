@@ -58,6 +58,7 @@
  * fournisseur, « CA total » chez le client.
  */
 import PartnerTabSpinner from '@/components/partners/PartnerTabSpinner.vue'
+import { formatAmount as formatNumber } from '@/composables/useFormat'
 
 defineProps<{
   loading: boolean
@@ -70,8 +71,4 @@ defineProps<{
   /** « Total achats » cote fournisseur, « CA total » cote client. */
   totalLabel: string
 }>()
-
-function formatNumber(n: number): string {
-  return n.toLocaleString('fr-MA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-}
 </script>

@@ -810,7 +810,7 @@ import PartnerDocumentsTab from '@/components/partners/PartnerDocumentsTab.vue'
 import PartnerPaymentModal from '@/components/partners/PartnerPaymentModal.vue'
 import PartnerPaymentsTab from '@/components/partners/PartnerPaymentsTab.vue'
 import PartnerStatsTab from '@/components/partners/PartnerStatsTab.vue'
-import { useFormat } from '@/composables/useFormat'
+import { formatAmount as formatNumber, useFormat } from '@/composables/useFormat'
 import { IconCredit, IconFiscal, IconInfo, IconInvoice, IconPayment, IconStats } from '@/components/icons/tabIcons'
 // Les libelles et pastilles de l'historique sont partages avec la fiche
 // fournisseur/client d'en face : ils sont aliases ici sous les noms que le
@@ -1064,10 +1064,6 @@ const columns = computed(() => [
   { key: 'credit_available', label: t('suppliers.creditAvailable') ?? 'Crédit disponible' },
   { key: 'tp_status', label: t('common.status') },
 ])
-
-function formatNumber(n: number): string {
-  return n.toLocaleString('fr-MA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-}
 
 function formatDate(d: string): string {
   return fmtDate(d)

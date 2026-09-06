@@ -68,6 +68,8 @@
  * Les champs remontent par `defineModel` plutot que par mutation d'un objet
  * passe en prop : l'ecran hote reste seul proprietaire de son formulaire.
  */
+import { formatAmount as formatNumber } from '@/composables/useFormat'
+
 withDefaults(
   defineProps<{
     /** Prefixe des identifiants, pour que `label for` reste unique dans la page. */
@@ -85,8 +87,4 @@ const amount = defineModel<number>('amount', { required: true })
 const method = defineModel<string>('method', { required: true })
 const reference = defineModel<string>('reference', { required: true })
 const notes = defineModel<string>('notes', { required: true })
-
-function formatNumber(n: number): string {
-  return n.toLocaleString('fr-MA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-}
 </script>

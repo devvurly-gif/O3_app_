@@ -958,7 +958,7 @@ import BaseModal from '@/components/BaseModal.vue'
 import BaseNotification from '@/components/BaseNotification.vue'
 import CustomerDetailModalFull from '@/components/CustomerDetailModalFull.vue'
 import PartnerPaymentModal from '@/components/partners/PartnerPaymentModal.vue'
-import { useFormat } from '@/composables/useFormat'
+import { formatAmount as formatNumber, useFormat } from '@/composables/useFormat'
 import { IconCredit, IconFiscal, IconInfo, IconInvoice, IconPayment, IconStats } from '@/components/icons/tabIcons'
 // Les libelles et pastilles de l'historique sont partages avec la fiche
 // fournisseur/client d'en face : ils sont aliases ici sous les noms que le
@@ -1249,10 +1249,6 @@ function isBilledBl(doc: any): boolean {
 function billedToReference(doc: any): string | null {
   const invoice = (doc.children ?? []).find((c: any) => c.document_type === 'InvoiceSale')
   return invoice?.reference ?? null
-}
-
-function formatNumber(n: number): string {
-  return n.toLocaleString('fr-MA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 function formatDate(d: string): string {

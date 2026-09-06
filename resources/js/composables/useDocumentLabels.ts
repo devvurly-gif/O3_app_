@@ -209,13 +209,17 @@ export function partnerStatusBadgeClass(status: string): string {
   return partnerStatusBadgeClasses[status] ?? 'bg-gray-100 text-gray-500'
 }
 
+/**
+ * Tout l'enum `document_headers.status`, pas seulement la moitie courante.
+ *
+ * La table n'en connaissait que six sur dix, et le repli rendait le code brut :
+ * un bon converti s'affichait « converted », un document envoye « sent ».
+ * `allStatusLabels` couvre tout sauf `sent`, avec les memes mots — on part de
+ * lui pour que les deux tables ne puissent plus diverger.
+ */
 export const partnerStatusLabels: Record<string, string> = {
-  paid: 'Payé',
-  partial: 'Partiel',
-  pending: 'En attente',
-  confirmed: 'Confirmé',
-  draft: 'Brouillon',
-  cancelled: 'Annulé',
+  ...allStatusLabels,
+  sent: 'Envoyé',
 }
 
 /**
