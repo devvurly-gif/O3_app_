@@ -9,7 +9,8 @@
         "format": "prettier --write \"resources/js/**/*.{ts,vue}\"",
         "type-check": "vue-tsc --noEmit",
         "test": "vitest run",
-        "test:watch": "vitest"
+        "test:watch": "vitest",
+        "harness": "vite --config dev-harness/vite.config.ts"
     },
     "devDependencies": {
         "@eslint/js": "^10.0.1",

@@ -1,0 +1,26 @@
+@import '../resources/css/app.css';
+
+/*
+ * Vite a pour racine `dev-harness/`, si bien que la detection automatique de
+ * Tailwind ne balaie que ce dossier : sans ces deux lignes, aucune classe des
+ * ecrans montes n'est generee et la page s'affiche nue.
+ */
+@source "../resources/js";
+@source ".";
+
+/*
+ * Le banc fige les transitions.
+ *
+ * Sans cela, une modale en cours de fermeture reste dans le DOM a opacite
+ * nulle tant que l'onglet n'est pas au premier plan : le navigateur n'y fait
+ * pas tourner les transitions CSS, `transitionend` n'arrive jamais, et Vue
+ * ne demonte pas l'element. On croit alors a une modale qui refuse de se
+ * fermer. Les captures ont besoin d'etats qui se posent tout de suite.
+ */
+*,
+*::before,
+*::after {
+  transition-duration: 0s !important;
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+}
