@@ -1204,6 +1204,7 @@ import { usePriceListStore } from '@/stores/priceList'
 import { useSettingStore } from '@/stores/setting'
 import { useExcelExport } from '@/composables/useExcelExport'
 import { useBulkPayment } from '@/composables/useBulkPayment'
+import { usePartnerLedger, useCreditGauge } from '@/composables/usePartnerLedger'
 import http from '@/services/http'
 import BaseTable from '@/components/BaseTable.vue'
 import BasePagination from '@/components/BasePagination.vue'
@@ -1274,75 +1275,37 @@ const availableTabs = computed<TabDef[]>(() => {
   return tabs
 })
 
-// ── Customer detail data ─────────────────────────────────────────────────
-const customerDocuments = computed(() => {
-  if (!customerDetail.value?.document_headers) return []
-  return customerDetail.value.document_headers.sort(
-    (a: any, b: any) => new Date(b.issued_at).getTime() - new Date(a.issued_at).getTime(),
+// ── Compte client ────────────────────────────────────────────────────────
+/**
+ * Un document qui pese sur le solde client.
+ *
+ * La facture compte toujours. Le bon de livraison ne compte que si le tenant
+ * a active « paiement sur BL » — et jamais s'il a deja ete facture, sans quoi
+ * le BL et sa facture compteraient deux fois. Devis, commandes, annules et
+ * brouillons restent visibles dans l'historique mais hors du cumul.
+ */
+function isCountableSale(doc: any): boolean {
+  const countableTypes = paiementSurBl.value ? ['InvoiceSale', 'DeliveryNote'] : ['InvoiceSale']
+  return (
+    countableTypes.includes(doc.document_type) &&
+    doc.status !== 'cancelled' &&
+    doc.status !== 'draft' &&
+    !isBilledBl(doc)
   )
-})
+}
 
-const customerPayments = computed(() => {
-  if (!customerDetail.value?.document_headers) return []
-  const payments: any[] = []
-  for (const doc of customerDetail.value.document_headers) {
-    if (doc.payments?.length) {
-      for (const p of doc.payments) {
-        payments.push({ ...p, _doc_code: doc.reference })
-      }
-    }
-  }
-  return payments.sort((a, b) => new Date(b.paid_at).getTime() - new Date(a.paid_at).getTime())
-})
+const {
+  documents: customerDocuments,
+  payments: customerPayments,
+  countableDocuments,
+  totalTtc: totalInvoicesTTC,
+  totalDue: totalInvoicesDue,
+  totalPayments,
+  unpaidCount: unpaidInvoices,
+  paymentRate,
+} = usePartnerLedger(customerDetail, { isCountable: isCountableSale })
 
-// Documents that should weigh in on the cumulative totals shown in the modal
-// footer. Only Factures (InvoiceSale) are always counted. BLs (DeliveryNote)
-// are counted only when "paiement sur BL" is active. Billed BLs (converted
-// to invoice) are always excluded to prevent double-counting.
-// Quotes, customer orders, and cancelled/draft documents are excluded.
-const countableDocTypes = computed(() => {
-  const types = ['InvoiceSale']
-  if (paiementSurBl.value) types.push('DeliveryNote')
-  return types
-})
-
-const countableDocuments = computed(() =>
-  customerDocuments.value.filter(
-    (inv: any) =>
-      countableDocTypes.value.includes(inv.document_type) &&
-      inv.status !== 'cancelled' &&
-      inv.status !== 'draft' &&
-      !isBilledBl(inv),
-  ),
-)
-
-const totalInvoicesTTC = computed(() =>
-  countableDocuments.value.reduce((sum: number, inv: any) => sum + Number(inv.footer?.total_ttc ?? 0), 0),
-)
-
-const totalInvoicesDue = computed(() =>
-  countableDocuments.value.reduce((sum: number, inv: any) => sum + Number(inv.footer?.amount_due ?? 0), 0),
-)
-
-const totalPayments = computed(() =>
-  customerPayments.value.reduce((sum: number, p: any) => sum + Number(p.amount ?? 0), 0),
-)
-
-const unpaidInvoices = computed(
-  () => customerDocuments.value.filter((inv: any) => Number(inv.footer?.amount_due ?? 0) > 0).length,
-)
-
-const paymentRate = computed(() =>
-  totalInvoicesTTC.value > 0 ? (totalPayments.value / totalInvoicesTTC.value) * 100 : 0,
-)
-
-const creditPercent = computed(() => {
-  const limit = form.seuil_credit ?? 0
-  if (limit <= 0) return 0
-  return ((form.encours_actuel ?? 0) / limit) * 100
-})
-
-const creditAvailableForm = computed(() => (form.seuil_credit ?? 0) - (form.encours_actuel ?? 0))
+const { percent: creditPercent, available: creditAvailableForm } = useCreditGauge(() => form)
 
 async function loadCustomerDetail(id: number) {
   loadingDetail.value = true

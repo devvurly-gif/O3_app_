@@ -1359,6 +1359,7 @@ import { useI18n } from 'vue-i18n'
 import { useThirdPartnerStore } from '@/stores/thirdPartner'
 import { useExcelExport } from '@/composables/useExcelExport'
 import { useBulkPayment } from '@/composables/useBulkPayment'
+import { usePartnerLedger, useCreditGauge } from '@/composables/usePartnerLedger'
 import http from '@/services/http'
 import BaseTable from '@/components/BaseTable.vue'
 import BasePagination from '@/components/BasePagination.vue'
@@ -1417,31 +1418,7 @@ const availableTabs = computed<TabDef[]>(() => {
   return tabs
 })
 
-// ── Supplier detail data ─────────────────────────────────────────────────
-const supplierDocuments = computed(() => {
-  if (!supplierDetail.value?.document_headers) return []
-  return supplierDetail.value.document_headers.sort(
-    (a: any, b: any) => new Date(b.issued_at).getTime() - new Date(a.issued_at).getTime(),
-  )
-})
-
-const supplierPayments = computed(() => {
-  if (!supplierDetail.value?.document_headers) return []
-  const payments: any[] = []
-  for (const doc of supplierDetail.value.document_headers) {
-    if (doc.payments?.length) {
-      for (const p of doc.payments) {
-        payments.push({ ...p, _doc_code: doc.reference })
-      }
-    }
-  }
-  return payments.sort((a, b) => new Date(b.paid_at).getTime() - new Date(a.paid_at).getTime())
-})
-
-// Documents that should weigh in on the cumulative totals shown in the modal
-// footer. Purchase quotes (QuotePurchase) are non-commitments; cancelled/draft
-// documents never posted — all three are excluded from the sum while remaining
-// visible in the history.
+// ── Compte fournisseur ───────────────────────────────────────────────────
 /**
  * Un document qui pese sur la dette fournisseur.
  *
@@ -1477,48 +1454,24 @@ function isBilledReceipt(doc: any): boolean {
   if (doc.status === 'converted') return true
   return (doc.children ?? []).some((c: any) => c.document_type === 'InvoicePurchase')
 }
+/**
+ * Le meme perimetre sert les deux modales : celle qui edite la fiche et celle
+ * qui la consulte. Elles ne different que par la fiche qu'elles regardent.
+ */
+const supplierScope = { isCountable: isCountablePurchase, isDeductible: isCountableReturn }
 
-function sumTtc(docs: any[]): number {
-  return docs.reduce((sum: number, inv: any) => sum + Number(inv.footer?.total_ttc ?? 0), 0)
-}
+const {
+  documents: supplierDocuments,
+  payments: supplierPayments,
+  countableDocuments: countableSupplierDocuments,
+  totalTtc: totalDocsTTC,
+  totalDue: totalDocsDue,
+  totalPayments: totalPaymentsAmount,
+  unpaidCount: unpaidDocs,
+  paymentRate,
+} = usePartnerLedger(supplierDetail, supplierScope)
 
-function sumDue(docs: any[]): number {
-  return docs.reduce((sum: number, inv: any) => sum + Number(inv.footer?.amount_due ?? 0), 0)
-}
-
-const countableSupplierDocuments = computed(() =>
-  supplierDocuments.value.filter(isCountablePurchase),
-)
-
-const supplierReturns = computed(() => supplierDocuments.value.filter(isCountableReturn))
-
-const totalDocsTTC = computed(
-  () => sumTtc(countableSupplierDocuments.value) - sumTtc(supplierReturns.value),
-)
-
-const totalDocsDue = computed(
-  () => sumDue(countableSupplierDocuments.value) - sumDue(supplierReturns.value),
-)
-
-const totalPaymentsAmount = computed(() =>
-  supplierPayments.value.reduce((sum: number, p: any) => sum + Number(p.amount ?? 0), 0),
-)
-
-const unpaidDocs = computed(
-  () => supplierDocuments.value.filter((inv: any) => Number(inv.footer?.amount_due ?? 0) > 0).length,
-)
-
-const paymentRate = computed(() =>
-  totalDocsTTC.value > 0 ? (totalPaymentsAmount.value / totalDocsTTC.value) * 100 : 0,
-)
-
-const creditPercent = computed(() => {
-  const limit = form.seuil_credit ?? 0
-  if (limit <= 0) return 0
-  return ((form.encours_actuel ?? 0) / limit) * 100
-})
-
-const creditAvailableForm = computed(() => (form.seuil_credit ?? 0) - (form.encours_actuel ?? 0))
+const { percent: creditPercent, available: creditAvailableForm } = useCreditGauge(() => form)
 
 async function loadSupplierDetail(id: number) {
   loadingDetail.value = true
@@ -1539,56 +1492,18 @@ const showActiveTab = ref<'info' | 'fiscal' | 'credit' | 'factures' | 'paiements
 const showLoadingDetail = ref(false)
 const showDetail = ref<any>(null)
 
-const showDocuments = computed(() => {
-  if (!showDetail.value?.document_headers) return []
-  return showDetail.value.document_headers.sort(
-    (a: any, b: any) => new Date(b.issued_at).getTime() - new Date(a.issued_at).getTime(),
-  )
-})
+const {
+  documents: showDocuments,
+  payments: showPayments,
+  countableDocuments: countableShowDocuments,
+  totalTtc: showTotalTTC,
+  totalDue: showTotalDue,
+  totalPayments: showTotalPayments,
+  unpaidCount: showUnpaidCount,
+  paymentRate: showPaymentRate,
+} = usePartnerLedger(showDetail, supplierScope)
 
-const showPayments = computed(() => {
-  if (!showDetail.value?.document_headers) return []
-  const payments: any[] = []
-  for (const doc of showDetail.value.document_headers) {
-    if (doc.payments?.length) {
-      for (const p of doc.payments) {
-        payments.push({ ...p, _doc_code: doc.reference })
-      }
-    }
-  }
-  return payments.sort((a, b) => new Date(b.paid_at).getTime() - new Date(a.paid_at).getTime())
-})
-
-// Same exclusion logic as the edit modal: ignore purchase quotes, cancelled
-// and drafts.
-const countableShowDocuments = computed(() => showDocuments.value.filter(isCountablePurchase))
-
-const showReturns = computed(() => showDocuments.value.filter(isCountableReturn))
-
-const showTotalTTC = computed(
-  () => sumTtc(countableShowDocuments.value) - sumTtc(showReturns.value),
-)
-
-const showTotalDue = computed(
-  () => sumDue(countableShowDocuments.value) - sumDue(showReturns.value),
-)
-const showTotalPayments = computed(() =>
-  showPayments.value.reduce((sum: number, p: any) => sum + Number(p.amount ?? 0), 0),
-)
-const showUnpaidCount = computed(
-  () => showDocuments.value.filter((inv: any) => Number(inv.footer?.amount_due ?? 0) > 0).length,
-)
-const showPaymentRate = computed(() =>
-  showTotalTTC.value > 0 ? (showTotalPayments.value / showTotalTTC.value) * 100 : 0,
-)
-const showCreditPercent = computed(() => {
-  const limit = showTarget.value?.seuil_credit ?? 0
-  if (limit <= 0) return 0
-  return ((showTarget.value?.encours_actuel ?? 0) / limit) * 100
-})
-const showCreditAvailable = computed(
-  () => (showTarget.value?.seuil_credit ?? 0) - (showTarget.value?.encours_actuel ?? 0),
-)
+const { percent: showCreditPercent, available: showCreditAvailable } = useCreditGauge(showTarget)
 
 // ── Reglement groupe ─────────────────────────────────────────────────────
 // Cote achat, seules les factures se soldent : il n'y a pas de « paiement sur
