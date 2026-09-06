@@ -175,6 +175,26 @@ export const customerRows = [
     frequence_facturation: null,
     price_list_id: null,
   },
+  {
+    id: 13,
+    tp_code: 'CLI-0013',
+    tp_title: 'Nouveau compte — sans historique',
+    tp_Role: 'customer',
+    tp_status: true,
+    tp_phone: null,
+    tp_email: null,
+    tp_city: 'Tanger',
+    tp_address: null,
+    tp_Ice_Number: null,
+    tp_Rc_Number: null,
+    tp_patente_Number: null,
+    tp_IdenFiscal: null,
+    encours_actuel: 0,
+    seuil_credit: 0,
+    type_compte: 'normal',
+    frequence_facturation: null,
+    price_list_id: null,
+  },
 ]
 
 const customerDocuments = [
@@ -243,11 +263,30 @@ export const settings = {
   ventes: { paiement_sur_bl: 'true' },
 }
 
-/** La fiche detaillee que renvoie `/third-partners/{id}`. */
+/**
+ * La fiche detaillee que renvoie `/third-partners/{id}`.
+ *
+ * Chaque tiers porte volontairement un cas different : le reglement groupe
+ * n'affiche pas la meme chose selon qu'il reste quelque chose a solder, que
+ * tout est solde, ou qu'il n'y a aucun document — et c'est precisement la que
+ * les fiches client et fournisseur divergent.
+ */
+const soldes = (docs: typeof customerDocuments) =>
+  docs.map((d) => ({ ...d, footer: { ...d.footer, amount_due: 0 }, status: 'paid' }))
+
+const detailById: Record<number, unknown[]> = {
+  1: supplierDocuments,
+  2: supplierDocuments,
+  3: [], // aucun document : etat vide
+  11: customerDocuments,
+  12: soldes(customerDocuments), // tout solde : repli sur le reglement a l'unite
+  13: [], // aucun document
+}
+
 export function partnerDetail(id: number) {
   const row = [...supplierRows, ...customerRows].find((r) => r.id === id)
   if (!row) return null
-  const document_headers = row.tp_Role === 'supplier' ? supplierDocuments : customerDocuments
+  const document_headers = (detailById[id] ?? []) as Record<string, unknown>[]
   return { ...row, document_headers: document_headers.map((d) => ({ ...d })) }
 }
 

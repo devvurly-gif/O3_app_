@@ -3,6 +3,7 @@ import { createPinia } from 'pinia'
 import i18n from '@/i18n/index'
 import { useAuthStore } from '@/stores/authStore'
 import Harness from './Harness.vue'
+import { installSnapshotTools } from './snapshot'
 import './harness.css'
 
 /*
@@ -38,3 +39,6 @@ const auth = useAuthStore(pinia)
 ;(auth as any).user = { id: 1, name: 'Banc', email: 'banc@example.test', role: 'admin' }
 
 app.mount('#app')
+
+// $captureAll / $captureCustomers / $diff, depuis la console du banc.
+installSnapshotTools()
