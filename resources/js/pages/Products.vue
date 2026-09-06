@@ -515,398 +515,31 @@
 
         <!-- Tab: Info -->
         <div v-if="currentTab === 0" ref="infoTabRef" class="space-y-3 py-2">
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            <!-- Title (full row) -->
-            <div class="sm:col-span-2 lg:col-span-3">
-              <label for="products-p-title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >{{ $t('common.name') }} <span class="text-red-500">*</span></label
-              >
-              <input
-                id="products-p-title"
-                v-model="form.p_title"
-                type="text"
-                required
-                :placeholder="$t('products.titlePlaceholder')"
-                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
-                @input="generateSlugFromTitle"
-              />
-            </div>
-
-            <!-- Code -->
-            <div>
-              <label for="products-p-code" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('common.code') }}</label>
-              <input
-                id="products-p-code"
-                v-model="form.p_code"
-                type="text"
-                :placeholder="$t('products.codePlaceholder')"
-                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-input font-mono focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
-              />
-            </div>
-
-            <!-- SKU -->
-            <div>
-              <label for="products-p-sku" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.sku') }}</label>
-              <input
-                id="products-p-sku"
-                v-model="form.p_sku"
-                type="text"
-                :placeholder="$t('products.skuPlaceholder')"
-                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-input font-mono focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
-              />
-              <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{ $t('products.skuAuto') ?? 'Auto-generated if empty' }}</p>
-            </div>
-
-            <!-- EAN13 -->
-            <div>
-              <label for="products-p-ean13" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.ean') }}</label>
-              <input
-                id="products-p-ean13"
-                v-model="form.p_ean13"
-                type="text"
-                :placeholder="$t('products.eanPlaceholder')"
-                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-input font-mono focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
-              />
-            </div>
-
-            <!-- IMEI — only for tenants tracking serial numbers -->
-            <div v-if="imeiEnabled" class="sm:col-span-2 lg:col-span-3">
-              <label for="products-p-imei" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">IMEI</label>
-              <input
-                id="products-p-imei"
-                v-model="form.p_imei"
-                type="text"
-                placeholder="Device IMEI..."
-                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-input font-mono focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
-              />
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <!-- Description -->
-            <div>
-              <label for="products-p-description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.description') }}</label>
-              <textarea
-                id="products-p-description"
-                v-model="form.p_description"
-                rows="3"
-                placeholder="…"
-                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-input resize-none focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
-              />
-            </div>
-
-            <!-- Long Description (E-commerce) -->
-            <div>
-              <label for="products-p-long-description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.longDescription') ?? 'Long Description' }}</label>
-              <textarea
-                id="products-p-long-description"
-                v-model="form.p_long_description"
-                rows="3"
-                placeholder="E-commerce description…"
-                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-input resize-none focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
-              />
-            </div>
-          </div>
-
-          <!-- Notes -->
-          <div>
-            <label for="products-p-notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
-            <textarea
-              id="products-p-notes"
-              v-model="form.p_notes"
-              rows="2"
-              placeholder="Internal notes…"
-              class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-input resize-none focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
-            />
-          </div>
-
-          <!-- Category / Brand / Slug -->
-          <div class="pt-3 border-t border-gray-200 dark:border-gray-700 space-y-3">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              <!-- Category -->
-              <div>
-                <label for="products-category-id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.category') }}</label>
-                <select
-                  id="products-category-id"
-                  v-model="form.category_id"
-                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
-                >
-                  <option :value="null">—</option>
-                  <option v-for="cat in categories" :key="cat.id" :value="cat.id">
-                    {{ cat.ctg_title }}
-                  </option>
-                </select>
-              </div>
-
-              <!-- Brand -->
-              <div>
-                <label for="products-brand-id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.brand') }}</label>
-                <select
-                  id="products-brand-id"
-                  v-model="form.brand_id"
-                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
-                >
-                  <option :value="null">—</option>
-                  <option v-for="br in brands" :key="br.id" :value="br.id">
-                    {{ br.br_title }}
-                  </option>
-                </select>
-              </div>
-
-              <!-- E-commerce Slug — only when ecom module is enabled AND product is flagged for the store -->
-              <div v-if="ecomEnabled && form.is_ecom">
-                <label for="products-p-slug" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.slug') ?? 'Slug' }}</label>
-                <input
-                  id="products-p-slug"
-                  v-model="form.p_slug"
-                  type="text"
-                  :placeholder="$t('products.slugPlaceholder') ?? 'Auto-généré depuis le titre'"
-                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-input font-mono focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
-                />
-                <p class="mt-1 text-[11px] text-gray-400">URL de la fiche produit dans la boutique en ligne.</p>
-              </div>
-            </div>
-
-            <!-- Publish to Online Store — only visible when the tenant has the ecom module enabled -->
-            <div v-if="ecomEnabled" class="flex items-start gap-2 pt-1 p-3 rounded-lg bg-indigo-50/50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800">
-              <input
-                id="product-ecom"
-                v-model="form.is_ecom"
-                type="checkbox"
-                class="mt-0.5 w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500"
-              />
-              <label for="product-ecom" class="flex-1 cursor-pointer">
-                <span class="text-sm font-medium text-indigo-900 dark:text-indigo-200 flex items-center gap-1.5">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.016A3.001 3.001 0 0021 9.349m-18 0h18" />
-                  </svg>
-                  Publier dans la boutique en ligne
-                </span>
-                <p class="text-[11px] text-indigo-700/70 dark:text-indigo-300/70 mt-0.5">
-                  Le produit sera visible et achetable sur shop.{{ tenantDomain || '[domaine]' }}.
-                </p>
-              </label>
-            </div>
-          </div>
-
-          <!-- Status -->
-          <div class="flex items-center gap-2 pt-1">
-            <input
-              id="product-status"
-              v-model="form.p_status"
-              type="checkbox"
-              class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-[#7C5CFC] focus:ring-[#7C5CFC]"
-            />
-            <label for="product-status" class="text-sm text-gray-700 dark:text-gray-300">{{ $t('common.active') }}</label>
-          </div>
+          <ProductInfoTab
+            :categories="categories"
+            :brands="brands"
+            :ecom-enabled="ecomEnabled"
+            :imei-enabled="imeiEnabled"
+            @slug-from-title="generateSlugFromTitle"
+          />
         </div>
 
         <!-- Tab: Tarifs (Pricing) -->
         <div v-if="currentTab === 1" class="space-y-4 py-2" :style="{ minHeight: tabMinHeight }">
-          <!-- Master Prices Section -->
-          <div class="bg-gray-50 dark:bg-gray-800/60 p-3 rounded-lg space-y-3">
-            <h4 class="font-semibold text-gray-900 dark:text-white text-sm">Master Prices</h4>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              <!-- Purchase Price -->
-              <div>
-                <label for="products-p-purchaseprice" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                  >{{ $t('products.purchasePrice') }} <span class="text-red-500">*</span></label
-                >
-                <input
-                  id="products-p-purchaseprice"
-                  v-model.number="form.p_purchasePrice"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  required
-                  placeholder="0.00"
-                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
-                />
-              </div>
-
-              <!-- Sale Price -->
-              <div>
-                <label for="products-p-saleprice" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                  >{{ $t('products.salePrice') }} <span class="text-red-500">*</span></label
-                >
-                <input
-                  id="products-p-saleprice"
-                  v-model.number="form.p_salePrice"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  required
-                  placeholder="0.00"
-                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
-                />
-              </div>
-
-              <!-- Cost Price -->
-              <div>
-                <label for="products-p-cost" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.costPrice') ?? 'Cost Price' }}</label>
-                <input
-                  id="products-p-cost"
-                  v-model.number="form.p_cost"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="0.00"
-                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
-                />
-              </div>
-
-              <!-- Tax Rate -->
-              <div>
-                <label for="products-p-taxrate" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.taxRate') }}</label>
-                <input
-                  id="products-p-taxrate"
-                  v-model.number="form.p_taxRate"
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.01"
-                  placeholder="20"
-                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
-                />
-              </div>
-
-              <!-- Unit -->
-              <div class="sm:col-span-2 lg:col-span-1">
-                <label for="products-p-unit" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.unit') }}</label>
-                <input
-                  id="products-p-unit"
-                  v-model="form.p_unit"
-                  type="text"
-                  :placeholder="$t('products.unitPlaceholder')"
-                  class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
-                />
-              </div>
-            </div>
-
-            <!-- Margin Indicator -->
-            <div v-if="form.p_salePrice > 0 && form.p_purchasePrice > 0" class="px-3 py-2 bg-[#F1ECFC] dark:bg-[#7C5CFC]/20 border border-[#E4D9FE] dark:border-[#4C3999] rounded text-sm">
-              <p class="text-blue-800 dark:text-blue-200">
-                <span class="font-semibold">Margin:</span>
-                {{ marginPercent }}%
-                <span :class="marginPercent >= 20 ? 'text-green-600 dark:text-green-400' : 'text-[#6D4CE0] dark:text-[#A78BFA]'">
-                  ({{ marginPercent >= 20 ? 'Healthy' : 'Low' }})
-                </span>
-              </p>
-            </div>
-          </div>
-
-          <!-- Price List Tiers Section -->
-          <div class="space-y-2">
-            <div class="flex items-center justify-between">
-              <h4 class="font-semibold text-gray-900 dark:text-white text-sm">Tarifs par grille</h4>
-              <button
-                v-if="editTarget"
-                type="button"
-                :disabled="tierAdding"
-                class="text-xs px-2.5 py-1 rounded-md bg-[#7C5CFC] hover:bg-[#6D4CE0] text-white font-medium transition disabled:opacity-50"
-                @click="tierAdding = !tierAdding"
-              >
-                {{ tierAdding ? 'Annuler' : '+ Ajouter un tarif' }}
-              </button>
-            </div>
-
-            <!-- Inline add-tier form -->
-            <div
-              v-if="editTarget && tierAdding"
-              class="p-2.5 bg-[#F1ECFC] dark:bg-[#7C5CFC]/20 border border-[#E4D9FE] dark:border-[#4C3999] rounded-lg grid grid-cols-1 sm:grid-cols-4 gap-2"
-            >
-              <div class="sm:col-span-2">
-                <label for="products-newtier-price-list-id" class="block text-[11px] font-medium text-gray-600 dark:text-gray-400 mb-1">Grille</label>
-                <select
-                  id="products-newtier-price-list-id"
-                  v-model.number="newTier.price_list_id"
-                  class="w-full px-2 py-1 rounded-md border border-gray-300 dark:border-gray-600 text-input bg-white dark:bg-gray-800"
-                >
-                  <option :value="null" disabled>— Choisir —</option>
-                  <option
-                    v-for="pl in priceListsOptions"
-                    :key="pl.id"
-                    :value="pl.id"
-                    :disabled="isListAlreadyUsed(pl.id, newTier.min_qty)"
-                  >
-                    {{ pl.name }}{{ pl.is_default ? ' (défaut)' : '' }}
-                  </option>
-                </select>
-              </div>
-              <div>
-                <label for="products-newtier-min-qty" class="block text-[11px] font-medium text-gray-600 dark:text-gray-400 mb-1">Qté min</label>
-                <input
-                  id="products-newtier-min-qty"
-                  v-model.number="newTier.min_qty"
-                  type="number"
-                  min="1"
-                  class="w-full px-2 py-1 rounded-md border border-gray-300 dark:border-gray-600 text-input font-mono bg-white dark:bg-gray-800"
-                />
-              </div>
-              <div>
-                <label for="products-newtier-price-ht" class="block text-[11px] font-medium text-gray-600 dark:text-gray-400 mb-1">Prix HT</label>
-                <input
-                  id="products-newtier-price-ht"
-                  v-model.number="newTier.price_ht"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  class="w-full px-2 py-1 rounded-md border border-gray-300 dark:border-gray-600 text-input font-mono bg-white dark:bg-gray-800"
-                />
-              </div>
-              <div class="sm:col-span-4 flex items-center justify-between pt-0.5">
-                <p class="text-xs text-gray-600 dark:text-gray-400">
-                  Prix TTC estimé :
-                  <span class="font-mono font-semibold">{{ newTierTtc }} MAD</span>
-                </p>
-                <button
-                  type="button"
-                  :disabled="!canAddTier || tierSaving"
-                  class="text-xs px-2.5 py-1 rounded-md bg-green-600 hover:bg-green-700 text-white font-semibold disabled:opacity-50"
-                  @click="addTier"
-                >
-                  {{ tierSaving ? 'Enregistrement…' : 'Enregistrer' }}
-                </button>
-              </div>
-            </div>
-
-            <div v-if="editTarget && priceListItems.length" class="overflow-x-auto">
-              <table class="w-full text-sm">
-                <thead class="bg-gray-50 dark:bg-gray-700">
-                  <tr>
-                    <th class="px-2.5 py-1.5 text-left text-gray-600 dark:text-gray-300 font-medium">Grille</th>
-                    <th class="px-2.5 py-1.5 text-right text-gray-600 dark:text-gray-300 font-medium">Qté min</th>
-                    <th class="px-2.5 py-1.5 text-right text-gray-600 dark:text-gray-300 font-medium">Prix HT</th>
-                    <th class="px-2.5 py-1.5 text-right text-gray-600 dark:text-gray-300 font-medium">Prix TTC</th>
-                    <th class="px-2.5 py-1.5 w-8"></th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                  <tr v-for="item in priceListItems" :key="item.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                    <td class="px-2.5 py-1.5 text-gray-800 dark:text-gray-200">{{ item.price_list?.name ?? item.priceList?.name ?? '—' }}</td>
-                    <td class="px-2.5 py-1.5 text-right font-mono">{{ item.min_qty }}</td>
-                    <td class="px-2.5 py-1.5 text-right font-mono">{{ Number(item.price_ht).toFixed(2) }} MAD</td>
-                    <td class="px-2.5 py-1.5 text-right font-mono">{{ Number(item.price_ttc).toFixed(2) }} MAD</td>
-                    <td class="px-2.5 py-1.5 text-right">
-                      <button
-                        type="button"
-                        class="text-red-600 hover:text-red-800 dark:text-red-400 text-xs"
-                        :disabled="tierDeletingId === item.id"
-                        @click="removeTier(item)"
-                      >
-                        ×
-                      </button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <div v-else class="text-sm text-gray-500 dark:text-gray-400">
-              {{ editTarget ? 'Aucun tarif spécifique — le prix de vente principal est utilisé.' : 'Enregistrez d\'abord le produit pour ajouter des tarifs par grille.' }}
-            </div>
-          </div>
-
+          <ProductPricingTab
+            v-model:tier-adding="tierAdding"
+            :has-product="!!editTarget"
+            :price-lists="priceListsOptions"
+            :tiers="priceListItems"
+            :tier-saving="tierSaving"
+            :tier-deleting-id="tierDeletingId"
+            :new-tier-ttc="newTierTtc"
+            :can-add-tier="canAddTier"
+            :is-list-already-used="isListAlreadyUsed"
+            :margin-percent="marginPercent"
+            @add="addTier"
+            @remove="removeTier"
+          />
         </div>
 
         <!-- Tab: Stock -->
@@ -1017,6 +650,7 @@ import http from '@/services/http'
 import { useVariantOptionsStore } from '@/stores/useVariantOptionsStore'
 import { useExcelExport } from '@/composables/useExcelExport'
 import { useTaxSettings } from '@/composables/useTaxSettings'
+import { provideProductEdit } from '@/composables/useProductEditContext'
 import { useProductColumns } from '@/composables/useProductColumns'
 import { useProductMedia } from '@/composables/useProductMedia'
 import { useProductPriceTiers } from '@/composables/useProductPriceTiers'
@@ -1025,7 +659,9 @@ import BaseTable from '@/components/BaseTable.vue'
 import BasePagination from '@/components/BasePagination.vue'
 import BaseModal from '@/components/BaseModal.vue'
 import BaseNotification from '@/components/BaseNotification.vue'
+import ProductInfoTab from '@/components/products/ProductInfoTab.vue'
 import ProductMediaTab from '@/components/products/ProductMediaTab.vue'
+import ProductPricingTab from '@/components/products/ProductPricingTab.vue'
 import ProductStatsTab from '@/components/products/ProductStatsTab.vue'
 import ProductStockTab from '@/components/products/ProductStockTab.vue'
 import ProductVariantsTab from '@/components/products/ProductVariantsTab.vue'
@@ -1217,6 +853,10 @@ const emptyForm = () => ({
 })
 
 const form = reactive(emptyForm())
+
+// Les onglets Infos et Tarifs ecrivent dans ce formulaire : il leur est
+// fourni par injection plutot que par prop. Voir useProductEditContext.
+provideProductEdit({ form, newTier })
 
 // ── Colonnes de la liste ─────────────────────────────────────────────────
 // Catalogue des colonnes, filtrage par droits/modules et selection de
