@@ -1,4 +1,16 @@
 import { partnerDetail, partnerPage, priceLists, settings } from '../fixtures'
+import {
+  brands,
+  categories,
+  productDetail,
+  productPage,
+  productPriceTiers,
+  productStatistics,
+  productVariants,
+  stockMovements,
+  taxSettings,
+  variantOptions,
+} from '../fixtures-products'
 
 /**
  * Remplace `@/services/http` sur le banc, par alias Vite.
@@ -52,6 +64,26 @@ const http = {
 
     const partner = path.match(/^\/third-partners\/(\d+)$/)
     if (partner) return respond(partnerDetail(Number(partner[1])))
+
+    // ── Produits ──────────────────────────────────────────────────────────
+    if (path === '/categories') return respond(categories)
+    if (path === '/brands') return respond(brands)
+    if (path === '/variant-options') return respond(variantOptions)
+    if (path === '/tax-settings') return respond(taxSettings)
+    if (path === '/products') return respond(productPage(query))
+
+    const productSub = path.match(/^\/products\/(\d+)\/(.+)$/)
+    if (productSub) {
+      const [, , sub] = productSub
+      if (sub === 'statistics') return respond(productStatistics)
+      if (sub === 'stock-history') return respond({ data: stockMovements })
+      if (sub === 'price-lists') return respond(productPriceTiers)
+      if (sub === 'variants') return respond(productVariants)
+      return respond([])
+    }
+
+    const product = path.match(/^\/products\/(\d+)$/)
+    if (product) return respond(productDetail(Number(product[1])))
 
     const document = path.match(/^\/documents\/(\d+)$/)
     if (document) {

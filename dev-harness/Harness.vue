@@ -28,11 +28,13 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import Customers from '@/pages/Customers.vue'
+import Products from '@/pages/Products.vue'
 import Suppliers from '@/pages/Suppliers.vue'
 
 const screens = [
   { key: 'suppliers', label: 'Fournisseurs', component: Suppliers },
   { key: 'customers', label: 'Clients', component: Customers },
+  { key: 'products', label: 'Produits', component: Products },
 ]
 
 const current = ref('suppliers')

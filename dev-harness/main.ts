@@ -34,9 +34,23 @@ const pinia = createPinia()
 app.use(pinia)
 app.use(i18n)
 
-// Un role qui debloque le bouton d'export, garde par useExcelExport.
+/*
+ * Un utilisateur qui ouvre tout ce que les ecrans savent masquer :
+ * - `role: admin` debloque le bouton d'export (useExcelExport) et rend
+ *   `hasPermission()` toujours vrai, donc les colonnes prix d'achat / cout ;
+ * - `active_modules` allume les onglets et colonnes que Produits reserve aux
+ *   modules ecom / variantes / IMEI.
+ * Le banc montre ainsi la surface maximale — c'est celle qu'on veut comparer.
+ */
 const auth = useAuthStore(pinia)
-;(auth as any).user = { id: 1, name: 'Banc', email: 'banc@example.test', role: 'admin' }
+;(auth as any).user = {
+  id: 1,
+  name: 'Banc',
+  email: 'banc@example.test',
+  role: 'admin',
+  permissions: ['products.view_cost'],
+  active_modules: ['ecom', 'variants', 'imei'],
+}
 
 app.mount('#app')
 

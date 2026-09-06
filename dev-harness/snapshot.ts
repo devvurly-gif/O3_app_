@@ -180,6 +180,73 @@ async function captureCustomers(slot: string): Promise<string[]> {
   return log
 }
 
+/**
+ * Capture la page elle-meme, hors modale : la liste, ses filtres, le menu des
+ * colonnes. Produits porte beaucoup d'etat visible avant qu'une modale s'ouvre.
+ */
+function snapMain(name: string, slot: string): string {
+  const main = document.querySelector('main')
+  const html = main ? normalise(main.innerHTML) : '(pas de main)'
+  const store = JSON.parse(localStorage.getItem(slot) ?? '{}')
+  store[name] = html
+  localStorage.setItem(slot, JSON.stringify(store))
+  return `${name} (${html.length})`
+}
+
+const PRODUCT_TABS = ['Infos', 'Tarifs', 'Stock', 'Statistiques', 'Médias', 'Variantes']
+
+async function snapProductTabs(prefix: string, slot: string): Promise<string[]> {
+  const out: string[] = []
+  for (const label of PRODUCT_TABS) {
+    const r = await tab(label)
+    out.push(r.startsWith('onglet absent') ? r : snap(`${prefix}:${label}`, slot))
+  }
+  return out
+}
+
+const clickTitle = async (title: string) => {
+  document.querySelector<HTMLButtonElement>(`button[title="${title}"]`)?.click()
+  await settle()
+}
+
+/** L'ecran Produits : vues, colonnes, et les six onglets de la fiche. */
+async function captureProducts(slot: string): Promise<string[]> {
+  const log: string[] = []
+  log.push(await clickText('Produits'))
+  await settle()
+
+  log.push(snapMain('prod.grille', slot))
+  await clickTitle('Vue liste')
+  log.push(snapMain('prod.liste', slot))
+
+  await clickTitle('Afficher / masquer des colonnes')
+  log.push(snapMain('prod.colonnes', slot))
+  await clickTitle('Afficher / masquer des colonnes')
+
+  // Fiche riche (produit 1) : les six onglets
+  log.push(await rowAction('Modifier', 0))
+  log.push(...(await snapProductTabs('prod.edit', slot)), labelsResolve())
+  log.push(await close())
+
+  // Fiche depouillee (produit 3) : ni image, ni marque, inactif
+  log.push(await rowAction('Modifier', 2))
+  await tab('Médias')
+  log.push(snap('prod.edit3.medias', slot))
+  await tab('Statistiques')
+  log.push(snap('prod.edit3.stats', slot))
+  log.push(await close())
+
+  log.push(await clickText('Ajouter un produit'))
+  log.push(snap('prod.create', slot), labelsResolve())
+  log.push(await close())
+
+  log.push(await rowAction('Supprimer', 0))
+  log.push(snap('prod.delete', slot))
+  log.push(await close())
+
+  return log
+}
+
 /** Ne rapporte que ce qui a bouge, avec le premier ecart en clair. */
 function diff(before = '__before', after = '__after') {
   const a = JSON.parse(localStorage.getItem(before) ?? '{}')
@@ -212,8 +279,10 @@ declare global {
   interface Window {
     $captureAll: typeof captureAll
     $captureCustomers: typeof captureCustomers
+    $captureProducts: typeof captureProducts
     $diff: typeof diff
     $snap: typeof snap
+    $snapMain: typeof snapMain
     $close: typeof close
     $labelsResolve: typeof labelsResolve
   }
@@ -222,8 +291,10 @@ declare global {
 export function installSnapshotTools(): void {
   window.$captureAll = captureAll
   window.$captureCustomers = captureCustomers
+  window.$captureProducts = captureProducts
   window.$diff = diff
   window.$snap = snap
+  window.$snapMain = snapMain
   window.$close = close
   window.$labelsResolve = labelsResolve
 }
