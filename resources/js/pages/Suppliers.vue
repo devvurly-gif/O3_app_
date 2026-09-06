@@ -1352,14 +1352,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import type { Component } from 'vue'
-import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
-import { useThirdPartnerStore } from '@/stores/thirdPartner'
 import { useExcelExport } from '@/composables/useExcelExport'
 import { useBulkPayment } from '@/composables/useBulkPayment'
 import { usePartnerLedger, useCreditGauge } from '@/composables/usePartnerLedger'
+import { useThirdPartnerList, useThirdPartnerForm } from '@/composables/useThirdPartnerCrud'
 import http from '@/services/http'
 import BaseTable from '@/components/BaseTable.vue'
 import BasePagination from '@/components/BasePagination.vue'
@@ -1381,8 +1380,6 @@ import {
 
 const { t } = useI18n()
 const { date: fmtDate } = useFormat()
-const store = useThirdPartnerStore()
-const { items } = storeToRefs(store)
 
 const { exporting, exportExcel, canExport } = useExcelExport()
 
@@ -1555,18 +1552,21 @@ async function openShow(row: any) {
 }
 
 // ── UI state ──────────────────────────────────────────────────────────────
-const search = ref('')
-const statusFilter = ref('')
 const toast = ref(null)
 
-let searchTimer: ReturnType<typeof setTimeout> | null = null
-
-const showModal = ref(false)
-const showDelete = ref(false)
-const saving = ref(false)
-const deleting = ref(false)
-const editTarget = ref<any>(null)
-const deleteTarget = ref<any>(null)
+const {
+  store,
+  items,
+  search,
+  statusFilter,
+  buildParams,
+  loadPage,
+  onPageChange,
+  creditAvailable,
+  statActive,
+  statOverLimit,
+  statEncours,
+} = useThirdPartnerList('supplier')
 
 const emptyForm = () => ({
   tp_title: '',
@@ -1583,7 +1583,31 @@ const emptyForm = () => ({
   encours_actuel: 0,
   seuil_credit: 0,
 })
-const form = reactive(emptyForm())
+
+const {
+  form,
+  showModal,
+  showDelete,
+  saving,
+  deleting,
+  editTarget,
+  deleteTarget,
+  openCreate,
+  openEdit,
+  submit,
+  confirmDelete,
+  doDelete,
+} = useThirdPartnerForm({
+  scope: 'suppliers',
+  blank: emptyForm,
+  notify: (message, level) => (toast.value as any)?.notify(message, level),
+  onOpen: (row) => {
+    activeTab.value = 'info'
+    supplierDetail.value = null
+    // Documents et reglements arrivent en arriere-plan.
+    if (row) loadSupplierDetail(row.id)
+  },
+})
 
 const columns = computed(() => [
   { key: 'tp_code', label: t('common.code') },
@@ -1595,117 +1619,12 @@ const columns = computed(() => [
   { key: 'tp_status', label: t('common.status') },
 ])
 
-function creditAvailable(row: any): number {
-  return (row.seuil_credit ?? 0) - (row.encours_actuel ?? 0)
-}
-
-// ── Stat cards (best-effort — derived from the currently loaded page of
-// items, since no dedicated aggregate endpoint is available here) ─────────
-const statActive = computed(() => items.value.filter((r: any) => r.tp_status).length)
-const statOverLimit = computed(() => items.value.filter((r: any) => (r.seuil_credit ?? 0) > 0 && creditAvailable(r) < 0).length)
-const statEncours = computed(() => items.value.reduce((sum: number, r: any) => sum + Number(r.encours_actuel ?? 0), 0))
-
 function formatNumber(n: number): string {
   return n.toLocaleString('fr-MA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 function formatDate(d: string): string {
   return fmtDate(d)
-}
-
-// ── Server-side filter + pagination ─────────────────────────────────────
-function buildParams(): Record<string, string> {
-  const p: Record<string, string> = { role: 'supplier' }
-  if (search.value.trim()) p.search = search.value.trim()
-  if (statusFilter.value !== '') p.status = statusFilter.value
-  return p
-}
-
-function loadPage(page = 1) {
-  Object.assign(store.params, buildParams())
-  store.fetchPage(page)
-}
-
-function onPageChange(page: number) {
-  loadPage(page)
-}
-
-watch([search, statusFilter], () => {
-  if (searchTimer) clearTimeout(searchTimer)
-  searchTimer = setTimeout(() => loadPage(1), 350)
-})
-
-// ── CRUD ─────────────────────────────────────────────────────────────────
-function openCreate() {
-  editTarget.value = null
-  supplierDetail.value = null
-  activeTab.value = 'info'
-  Object.assign(form, emptyForm())
-  showModal.value = true
-}
-
-function openEdit(row: any) {
-  editTarget.value = row
-  activeTab.value = 'info'
-  supplierDetail.value = null
-  Object.assign(form, {
-    tp_title: row.tp_title,
-    tp_Role: row.tp_Role,
-    tp_status: row.tp_status,
-    tp_phone: row.tp_phone ?? '',
-    tp_email: row.tp_email ?? '',
-    tp_city: row.tp_city ?? '',
-    tp_address: row.tp_address ?? '',
-    tp_Ice_Number: row.tp_Ice_Number ?? '',
-    tp_Rc_Number: row.tp_Rc_Number ?? '',
-    tp_patente_Number: row.tp_patente_Number ?? '',
-    tp_IdenFiscal: row.tp_IdenFiscal ?? '',
-    encours_actuel: row.encours_actuel ?? 0,
-    seuil_credit: row.seuil_credit ?? 0,
-  })
-  showModal.value = true
-  // Load detail data (documents, payments) in background
-  loadSupplierDetail(row.id)
-}
-
-async function submit() {
-  if (!form.tp_title.trim()) return
-  saving.value = true
-  try {
-    if (editTarget.value) {
-      const { encours_actuel, ...updateData } = form
-      await store.update(editTarget.value.id, updateData)
-      ;(toast.value as any)?.notify(t('suppliers.updated'), 'success')
-    } else {
-      const { encours_actuel, ...createData } = form
-      await store.create(createData)
-      ;(toast.value as any)?.notify(t('suppliers.created'), 'success')
-    }
-    showModal.value = false
-  } catch (err: unknown) {
-    const e = err as { response?: { data?: { message?: string } } }
-    ;(toast.value as any)?.notify(e.response?.data?.message ?? t('common.failedSave'), 'error')
-  } finally {
-    saving.value = false
-  }
-}
-
-function confirmDelete(row: any) {
-  deleteTarget.value = row
-  showDelete.value = true
-}
-
-async function doDelete() {
-  deleting.value = true
-  try {
-    await store.remove(deleteTarget.value.id)
-    ;(toast.value as any)?.notify(t('suppliers.deleted'), 'success')
-    showDelete.value = false
-  } catch {
-    ;(toast.value as any)?.notify(t('common.failedDelete'), 'error')
-  } finally {
-    deleting.value = false
-  }
 }
 
 onMounted(() => loadPage())

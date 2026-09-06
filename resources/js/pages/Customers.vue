@@ -1194,17 +1194,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import type { Component } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
-import { useThirdPartnerStore } from '@/stores/thirdPartner'
 import type { FrequenceFacturation } from '@/types'
 import { usePriceListStore } from '@/stores/priceList'
 import { useSettingStore } from '@/stores/setting'
 import { useExcelExport } from '@/composables/useExcelExport'
 import { useBulkPayment } from '@/composables/useBulkPayment'
 import { usePartnerLedger, useCreditGauge } from '@/composables/usePartnerLedger'
+import { useThirdPartnerList, useThirdPartnerForm } from '@/composables/useThirdPartnerCrud'
 import http from '@/services/http'
 import BaseTable from '@/components/BaseTable.vue'
 import BasePagination from '@/components/BasePagination.vue'
@@ -1226,8 +1226,6 @@ import {
 } from '@/composables/useDocumentLabels'
 
 const { t } = useI18n()
-const store = useThirdPartnerStore()
-const { items } = storeToRefs(store)
 const priceListStore = usePriceListStore()
 const { items: priceLists } = storeToRefs(priceListStore)
 const { date: fmtDate } = useFormat()
@@ -1320,18 +1318,65 @@ async function loadCustomerDetail(id: number) {
 }
 
 // ── UI state ──────────────────────────────────────────────────────────────
-const search = ref('')
-const statusFilter = ref('')
 const toast = ref(null)
 
-let searchTimer: ReturnType<typeof setTimeout> | null = null
+const {
+  store,
+  items,
+  search,
+  statusFilter,
+  buildParams,
+  loadPage,
+  onPageChange,
+  creditAvailable,
+  statActive,
+  statOverLimit,
+  statEncours,
+} = useThirdPartnerList('customer')
 
-const showModal = ref(false)
-const showDelete = ref(false)
-const saving = ref(false)
-const deleting = ref(false)
-const editTarget = ref<any>(null)
-const deleteTarget = ref<any>(null)
+const emptyForm = () => ({
+  tp_title: '',
+  tp_Role: 'customer' as const,
+  tp_status: true,
+  tp_phone: '',
+  tp_email: '',
+  tp_city: '',
+  tp_address: '',
+  tp_Ice_Number: '',
+  tp_Rc_Number: '',
+  tp_patente_Number: '',
+  tp_IdenFiscal: '',
+  encours_actuel: 0,
+  seuil_credit: 0,
+  type_compte: 'normal' as 'normal' | 'en_compte',
+  frequence_facturation: null as FrequenceFacturation | null,
+  price_list_id: null as number | null,
+})
+
+const {
+  form,
+  showModal,
+  showDelete,
+  saving,
+  deleting,
+  editTarget,
+  deleteTarget,
+  openCreate,
+  openEdit,
+  submit,
+  confirmDelete,
+  doDelete,
+} = useThirdPartnerForm({
+  scope: 'customers',
+  blank: emptyForm,
+  notify: (message, level) => (toast.value as any)?.notify(message, level),
+  onOpen: (row) => {
+    activeTab.value = 'info'
+    customerDetail.value = null
+    // Factures et reglements arrivent en arriere-plan.
+    if (row) loadCustomerDetail(row.id)
+  },
+})
 
 // ── WebSocket listener for encours updates ───────────────────────────────
 let currentPartnerChannel: any = null
@@ -1430,26 +1475,6 @@ function openShow(row: any) {
   showShowModal.value = true
 }
 
-const emptyForm = () => ({
-  tp_title: '',
-  tp_Role: 'customer' as const,
-  tp_status: true,
-  tp_phone: '',
-  tp_email: '',
-  tp_city: '',
-  tp_address: '',
-  tp_Ice_Number: '',
-  tp_Rc_Number: '',
-  tp_patente_Number: '',
-  tp_IdenFiscal: '',
-  encours_actuel: 0,
-  seuil_credit: 0,
-  type_compte: 'normal' as 'normal' | 'en_compte',
-  frequence_facturation: null as FrequenceFacturation | null,
-  price_list_id: null as number | null,
-})
-const form = reactive(emptyForm())
-
 const columns = computed(() => [
   { key: 'tp_code', label: t('common.code') },
   { key: 'tp_title', label: t('common.name') },
@@ -1459,16 +1484,6 @@ const columns = computed(() => [
   { key: 'credit_available', label: t('customers.creditAvailable') },
   { key: 'tp_status', label: t('common.status') },
 ])
-
-function creditAvailable(row: any): number {
-  return (row.seuil_credit ?? 0) - (row.encours_actuel ?? 0)
-}
-
-// ── Stat cards (best-effort — derived from the currently loaded page of
-// items, since no dedicated aggregate endpoint is available here) ─────────
-const statActive = computed(() => items.value.filter((r: any) => r.tp_status).length)
-const statOverLimit = computed(() => items.value.filter((r: any) => (r.seuil_credit ?? 0) > 0 && creditAvailable(r) < 0).length)
-const statEncours = computed(() => items.value.reduce((sum: number, r: any) => sum + Number(r.encours_actuel ?? 0), 0))
 
 /**
  * Whether a document is a BL that has already been converted to an invoice.
@@ -1495,104 +1510,6 @@ function formatNumber(n: number): string {
 
 function formatDate(d: string): string {
   return fmtDate(d)
-}
-
-// ── Server-side filter + pagination ─────────────────────────────────────
-function buildParams(): Record<string, string> {
-  const p: Record<string, string> = { role: 'customer' }
-  if (search.value.trim()) p.search = search.value.trim()
-  if (statusFilter.value !== '') p.status = statusFilter.value
-  return p
-}
-
-function loadPage(page = 1) {
-  Object.assign(store.params, buildParams())
-  store.fetchPage(page)
-}
-
-function onPageChange(page: number) {
-  loadPage(page)
-}
-
-watch([search, statusFilter], () => {
-  if (searchTimer) clearTimeout(searchTimer)
-  searchTimer = setTimeout(() => loadPage(1), 350)
-})
-
-// ── CRUD ─────────────────────────────────────────────────────────────────
-function openCreate() {
-  editTarget.value = null
-  customerDetail.value = null
-  activeTab.value = 'info'
-  Object.assign(form, emptyForm())
-  showModal.value = true
-}
-
-function openEdit(row: any) {
-  editTarget.value = row
-  activeTab.value = 'info'
-  customerDetail.value = null
-  Object.assign(form, {
-    tp_title: row.tp_title,
-    tp_Role: row.tp_Role,
-    tp_status: row.tp_status,
-    tp_phone: row.tp_phone ?? '',
-    tp_email: row.tp_email ?? '',
-    tp_city: row.tp_city ?? '',
-    tp_address: row.tp_address ?? '',
-    tp_Ice_Number: row.tp_Ice_Number ?? '',
-    tp_Rc_Number: row.tp_Rc_Number ?? '',
-    tp_patente_Number: row.tp_patente_Number ?? '',
-    tp_IdenFiscal: row.tp_IdenFiscal ?? '',
-    encours_actuel: row.encours_actuel ?? 0,
-    seuil_credit: row.seuil_credit ?? 0,
-    type_compte: row.type_compte ?? 'normal',
-    frequence_facturation: row.frequence_facturation ?? null,
-    price_list_id: row.price_list_id ?? null,
-  })
-  showModal.value = true
-  // Load detail data (invoices, payments) in background
-  loadCustomerDetail(row.id)
-}
-
-async function submit() {
-  if (!form.tp_title.trim()) return
-  saving.value = true
-  try {
-    if (editTarget.value) {
-      const { encours_actuel, ...updateData } = form
-      await store.update(editTarget.value.id, updateData)
-      ;(toast.value as any)?.notify(t('customers.updated'), 'success')
-    } else {
-      const { encours_actuel, ...createData } = form
-      await store.create(createData)
-      ;(toast.value as any)?.notify(t('customers.created'), 'success')
-    }
-    showModal.value = false
-  } catch (err: unknown) {
-    const e = err as { response?: { data?: { message?: string } } }
-    ;(toast.value as any)?.notify(e.response?.data?.message ?? t('common.failedSave'), 'error')
-  } finally {
-    saving.value = false
-  }
-}
-
-function confirmDelete(row: any) {
-  deleteTarget.value = row
-  showDelete.value = true
-}
-
-async function doDelete() {
-  deleting.value = true
-  try {
-    await store.remove(deleteTarget.value.id)
-    ;(toast.value as any)?.notify(t('customers.deleted'), 'success')
-    showDelete.value = false
-  } catch {
-    ;(toast.value as any)?.notify(t('common.failedDelete'), 'error')
-  } finally {
-    deleting.value = false
-  }
 }
 
 onMounted(() => {
