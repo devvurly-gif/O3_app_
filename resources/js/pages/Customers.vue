@@ -1203,6 +1203,7 @@ import type { FrequenceFacturation } from '@/types'
 import { usePriceListStore } from '@/stores/priceList'
 import { useSettingStore } from '@/stores/setting'
 import { useExcelExport } from '@/composables/useExcelExport'
+import { useBulkPayment } from '@/composables/useBulkPayment'
 import http from '@/services/http'
 import BaseTable from '@/components/BaseTable.vue'
 import BasePagination from '@/components/BasePagination.vue'
@@ -1408,71 +1409,39 @@ const showDocumentDetailModal = ref(false)
 const documentDetail = ref<any>(null)
 const documentDetailLoading = ref(false)
 
-// ── Bulk Payment state ──────────────────────────────────────────────────
-const showPaymentModal = ref(false)
-const paymentTarget = ref<any>(null)
-const paymentLoading = ref(false)
-const paymentSaving = ref(false)
-const paymentDetail = ref<any>(null)
-const paymentResult = ref<any>(null)
-
-const paymentForm = reactive({
-  amount: 0 as number,
-  method: 'cash',
-  reference: '',
-  notes: '',
+// ── Reglement groupe ─────────────────────────────────────────────────────
+// Cote vente, le bon de livraison devient soldable des que le tenant a active
+// « paiement sur BL » — d'ou `payableDocTypes`, calcule plus haut.
+const {
+  show: showPaymentModal,
+  target: paymentTarget,
+  loading: paymentLoading,
+  saving: paymentSaving,
+  result: paymentResult,
+  form: paymentForm,
+  unpaidDocs: paymentUnpaidDocs,
+  payableDocs: paymentPayableDocs,
+  selectedIds: paymentSelectedIds,
+  selectedDocId: paymentSelectedDocId,
+  selectedTotalDue: paymentSelectedTotalDue,
+  allSelected: paymentAllSelected,
+  toggleDoc: togglePaymentDoc,
+  toggleSelectAll: togglePaymentSelectAll,
+  open: openBulkPayment,
+  submit: submitBulkPayment,
+  submitSingleDoc: submitSingleDocPayment,
+} = useBulkPayment({
+  payableDocTypes,
+  notify: (message, level) => (toast.value as any)?.notify(message, level),
+  onSettled: (partner) => {
+    loadPage(store.meta.current_page)
+    // Les deux panneaux de consultation, s'ils sont ouverts sur ce client-la,
+    // doivent montrer le solde qui vient de bouger. Reaffecter `showTarget`
+    // relance la requete propre a CustomerDetailModalFull.
+    if (showModal.value && editTarget.value?.id === partner.id) customerDetail.value = partner
+    if (showShowModal.value && showTarget.value?.id === partner.id) showTarget.value = partner
+  },
 })
-
-const paymentUnpaidDocs = computed(() => {
-  if (!paymentDetail.value?.document_headers) return []
-  return paymentDetail.value.document_headers
-    .filter(
-      (d: any) => payableDocTypes.value.includes(d.document_type) && Number(d.footer?.amount_due ?? 0) > 0,
-    )
-    .sort((a: any, b: any) => new Date(a.issued_at).getTime() - new Date(b.issued_at).getTime())
-})
-
-// All payable documents (any amount_due) — used as fallback when no unpaid docs
-const paymentPayableDocs = computed(() => {
-  if (!paymentDetail.value?.document_headers) return []
-  return paymentDetail.value.document_headers
-    .filter((d: any) => payableDocTypes.value.includes(d.document_type))
-    .sort((a: any, b: any) => new Date(b.issued_at).getTime() - new Date(a.issued_at).getTime())
-})
-
-const paymentSelectedDocId = ref<number | null>(null)
-
-// Which unpaid docs the user has ticked (BL + Factures). Pre-filled with all
-// when the modal opens.
-const paymentSelectedIds = ref<number[]>([])
-
-const paymentTotalDue = computed(() =>
-  paymentUnpaidDocs.value.reduce((sum: number, d: any) => sum + Number(d.footer?.amount_due ?? 0), 0),
-)
-
-const paymentSelectedTotalDue = computed(() =>
-  paymentUnpaidDocs.value
-    .filter((d: any) => paymentSelectedIds.value.includes(d.id))
-    .reduce((sum: number, d: any) => sum + Number(d.footer?.amount_due ?? 0), 0),
-)
-
-const paymentAllSelected = computed(
-  () => paymentUnpaidDocs.value.length > 0 && paymentSelectedIds.value.length === paymentUnpaidDocs.value.length,
-)
-
-function togglePaymentDoc(id: number) {
-  const idx = paymentSelectedIds.value.indexOf(id)
-  if (idx >= 0) paymentSelectedIds.value.splice(idx, 1)
-  else paymentSelectedIds.value.push(id)
-}
-
-function togglePaymentSelectAll() {
-  if (paymentAllSelected.value) {
-    paymentSelectedIds.value = []
-  } else {
-    paymentSelectedIds.value = paymentUnpaidDocs.value.map((d: any) => d.id)
-  }
-}
 
 async function openDocumentDetail(doc: any) {
   documentDetail.value = doc
@@ -1490,103 +1459,6 @@ async function openDocumentDetail(doc: any) {
     }
   } else {
     documentDetailLoading.value = false
-  }
-}
-
-async function openBulkPayment(row: any) {
-  paymentTarget.value = row
-  paymentResult.value = null
-  Object.assign(paymentForm, { amount: 0, method: 'cash', reference: '', notes: '' })
-  paymentDetail.value = null
-  paymentSelectedDocId.value = null
-  paymentSelectedIds.value = []
-  showPaymentModal.value = true
-  paymentLoading.value = true
-  try {
-    const { data } = await http.get(`/third-partners/${row.id}`)
-    paymentDetail.value = data
-    // Tick every unpaid doc by default and pre-fill the amount with the total due
-    paymentSelectedIds.value = paymentUnpaidDocs.value.map((d: any) => d.id)
-    paymentForm.amount = Number(paymentSelectedTotalDue.value.toFixed(2))
-  } catch {
-    paymentDetail.value = null
-  } finally {
-    paymentLoading.value = false
-  }
-}
-
-async function submitSingleDocPayment() {
-  if (!paymentSelectedDocId.value || !paymentForm.amount || paymentForm.amount <= 0) return
-  paymentSaving.value = true
-  paymentResult.value = null
-  try {
-    await http.post('/payments', {
-      document_header_id: paymentSelectedDocId.value,
-      amount: paymentForm.amount,
-      method: paymentForm.method,
-      paid_at: new Date().toISOString().slice(0, 10),
-      reference: paymentForm.reference || null,
-      notes: paymentForm.notes || null,
-    })
-    ;(toast.value as any)?.notify('Paiement enregistré.', 'success')
-    // Reload detail for the current modal context
-    const { data: refreshed } = await http.get(`/third-partners/${paymentTarget.value.id}`)
-    paymentDetail.value = refreshed
-    if (showModal.value && editTarget.value?.id === paymentTarget.value.id) {
-      customerDetail.value = refreshed
-    }
-    if (showShowModal.value && showTarget.value?.id === paymentTarget.value.id) {
-      // Re-assigning the prop re-triggers CustomerDetailModalFull's own fetch.
-      showTarget.value = refreshed
-    }
-    loadPage(store.meta.current_page)
-    // Reset form
-    paymentForm.amount = 0
-    paymentForm.reference = ''
-    paymentForm.notes = ''
-    paymentSelectedDocId.value = null
-  } catch (err: unknown) {
-    const e = err as { response?: { data?: { message?: string } } }
-    ;(toast.value as any)?.notify(e.response?.data?.message ?? 'Erreur lors du paiement', 'error')
-  } finally {
-    paymentSaving.value = false
-  }
-}
-
-async function submitBulkPayment() {
-  if (!paymentTarget.value || !paymentForm.amount || paymentForm.amount <= 0) return
-  paymentSaving.value = true
-  paymentResult.value = null
-  try {
-    const { data } = await http.post(`/third-partners/${paymentTarget.value.id}/bulk-payment`, {
-      amount: paymentForm.amount,
-      method: paymentForm.method,
-      reference: paymentForm.reference || null,
-      notes: paymentForm.notes || null,
-      document_ids: paymentSelectedIds.value.length > 0 ? paymentSelectedIds.value : undefined,
-    })
-    paymentResult.value = data
-    ;(toast.value as any)?.notify(data.message, 'success')
-    // Reload unpaid list
-    const { data: refreshed } = await http.get(`/third-partners/${paymentTarget.value.id}`)
-    paymentDetail.value = refreshed
-    // Reset amount
-    paymentForm.amount = 0
-    // Refresh main list
-    loadPage(store.meta.current_page)
-    // Refresh detail panels if their modals are open for the same customer
-    if (showModal.value && editTarget.value?.id === paymentTarget.value.id) {
-      customerDetail.value = refreshed
-    }
-    if (showShowModal.value && showTarget.value?.id === paymentTarget.value.id) {
-      // Re-assigning the prop re-triggers CustomerDetailModalFull's own fetch.
-      showTarget.value = refreshed
-    }
-  } catch (err: unknown) {
-    const e = err as { response?: { data?: { message?: string } } }
-    ;(toast.value as any)?.notify(e.response?.data?.message ?? 'Erreur lors du paiement', 'error')
-  } finally {
-    paymentSaving.value = false
   }
 }
 

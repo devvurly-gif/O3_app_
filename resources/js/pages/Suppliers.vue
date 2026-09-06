@@ -1358,6 +1358,7 @@ import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useThirdPartnerStore } from '@/stores/thirdPartner'
 import { useExcelExport } from '@/composables/useExcelExport'
+import { useBulkPayment } from '@/composables/useBulkPayment'
 import http from '@/services/http'
 import BaseTable from '@/components/BaseTable.vue'
 import BasePagination from '@/components/BasePagination.vue'
@@ -1589,110 +1590,29 @@ const showCreditAvailable = computed(
   () => (showTarget.value?.seuil_credit ?? 0) - (showTarget.value?.encours_actuel ?? 0),
 )
 
-// ── Bulk Payment state ──────────────────────────────────────────────────
-const showBulkPaymentModal = ref(false)
-const bulkPaymentTarget = ref<any>(null)
-const bulkPaymentLoading = ref(false)
-const bulkPaymentSaving = ref(false)
-const bulkPaymentDetail = ref<any>(null)
-const bulkPaymentResult = ref<any>(null)
-
-const bulkPaymentForm = reactive({
-  amount: 0 as number,
-  method: 'cash',
-  reference: '',
-  notes: '',
+// ── Reglement groupe ─────────────────────────────────────────────────────
+// Cote achat, seules les factures se soldent : il n'y a pas de « paiement sur
+// bon de reception » comme il y a un « paiement sur BL » cote vente.
+const {
+  show: showBulkPaymentModal,
+  target: bulkPaymentTarget,
+  loading: bulkPaymentLoading,
+  saving: bulkPaymentSaving,
+  result: bulkPaymentResult,
+  form: bulkPaymentForm,
+  unpaidDocs: bulkPaymentUnpaidDocs,
+  selectedIds: bulkPaymentSelectedIds,
+  selectedTotalDue: bulkPaymentSelectedTotalDue,
+  allSelected: bulkPaymentAllSelected,
+  toggleDoc: toggleBulkPaymentDoc,
+  toggleSelectAll: toggleBulkPaymentSelectAll,
+  open: openBulkPayment,
+  submit: submitBulkPayment,
+} = useBulkPayment({
+  payableDocTypes: ['InvoiceSale', 'InvoicePurchase'],
+  notify: (message, level) => (toast.value as any)?.notify(message, level),
+  onSettled: () => loadPage(store.meta.current_page),
 })
-
-const bulkPaymentUnpaidDocs = computed(() => {
-  if (!bulkPaymentDetail.value?.document_headers) return []
-  return bulkPaymentDetail.value.document_headers
-    .filter(
-      (d: any) => ['InvoiceSale', 'InvoicePurchase'].includes(d.document_type) && Number(d.footer?.amount_due ?? 0) > 0,
-    )
-    .sort((a: any, b: any) => new Date(a.issued_at).getTime() - new Date(b.issued_at).getTime())
-})
-
-const bulkPaymentTotalDue = computed(() =>
-  bulkPaymentUnpaidDocs.value.reduce((sum: number, d: any) => sum + Number(d.footer?.amount_due ?? 0), 0),
-)
-
-const bulkPaymentSelectedIds = ref<number[]>([])
-
-const bulkPaymentSelectedTotalDue = computed(() =>
-  bulkPaymentUnpaidDocs.value
-    .filter((d: any) => bulkPaymentSelectedIds.value.includes(d.id))
-    .reduce((sum: number, d: any) => sum + Number(d.footer?.amount_due ?? 0), 0),
-)
-
-const bulkPaymentAllSelected = computed(
-  () =>
-    bulkPaymentUnpaidDocs.value.length > 0 &&
-    bulkPaymentSelectedIds.value.length === bulkPaymentUnpaidDocs.value.length,
-)
-
-function toggleBulkPaymentDoc(id: number) {
-  const idx = bulkPaymentSelectedIds.value.indexOf(id)
-  if (idx >= 0) bulkPaymentSelectedIds.value.splice(idx, 1)
-  else bulkPaymentSelectedIds.value.push(id)
-}
-
-function toggleBulkPaymentSelectAll() {
-  if (bulkPaymentAllSelected.value) {
-    bulkPaymentSelectedIds.value = []
-  } else {
-    bulkPaymentSelectedIds.value = bulkPaymentUnpaidDocs.value.map((d: any) => d.id)
-  }
-}
-
-async function openBulkPayment(row: any) {
-  bulkPaymentTarget.value = row
-  bulkPaymentResult.value = null
-  Object.assign(bulkPaymentForm, { amount: 0, method: 'cash', reference: '', notes: '' })
-  bulkPaymentDetail.value = null
-  bulkPaymentSelectedIds.value = []
-  showBulkPaymentModal.value = true
-  bulkPaymentLoading.value = true
-  try {
-    const { data } = await http.get(`/third-partners/${row.id}`)
-    bulkPaymentDetail.value = data
-    bulkPaymentSelectedIds.value = bulkPaymentUnpaidDocs.value.map((d: any) => d.id)
-    bulkPaymentForm.amount = Number(bulkPaymentSelectedTotalDue.value.toFixed(2))
-  } catch {
-    bulkPaymentDetail.value = null
-  } finally {
-    bulkPaymentLoading.value = false
-  }
-}
-
-async function submitBulkPayment() {
-  if (!bulkPaymentTarget.value || !bulkPaymentForm.amount || bulkPaymentForm.amount <= 0) return
-  bulkPaymentSaving.value = true
-  bulkPaymentResult.value = null
-  try {
-    const { data } = await http.post(`/third-partners/${bulkPaymentTarget.value.id}/bulk-payment`, {
-      amount: bulkPaymentForm.amount,
-      method: bulkPaymentForm.method,
-      reference: bulkPaymentForm.reference || null,
-      notes: bulkPaymentForm.notes || null,
-      document_ids: bulkPaymentSelectedIds.value.length > 0 ? bulkPaymentSelectedIds.value : undefined,
-    })
-    bulkPaymentResult.value = data
-    ;(toast.value as any)?.notify(data.message, 'success')
-    // Reload unpaid list
-    const { data: refreshed } = await http.get(`/third-partners/${bulkPaymentTarget.value.id}`)
-    bulkPaymentDetail.value = refreshed
-    // Reset amount
-    bulkPaymentForm.amount = 0
-    // Refresh main list
-    loadPage(store.meta.current_page)
-  } catch (err: unknown) {
-    const e = err as { response?: { data?: { message?: string } } }
-    ;(toast.value as any)?.notify(e.response?.data?.message ?? 'Erreur lors du paiement', 'error')
-  } finally {
-    bulkPaymentSaving.value = false
-  }
-}
 
 const showTabs = computed<TabDef[]>(() => [
   { key: 'info', label: 'Info', icon: IconInfo },
