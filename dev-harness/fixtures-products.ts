@@ -124,13 +124,17 @@ export const productRows = [
   }),
 ]
 
+/**
+ * Forme reelle de `/products/{id}/statistics` : deux blocs, ventes et achats.
+ * Le bloc `purchases` est absent du payload sans le droit
+ * `products.view_cost` — l'onglet le teste, donc il doit exister ici.
+ *
+ * Ce sont des nombres et non des chaines : l'onglet leur applique
+ * `.toFixed(2)` directement, ce qu'une chaine ne supporte pas.
+ */
 export const productStatistics = {
-  total_sold: 148,
-  total_revenue: decimal(102120),
-  total_purchased: 180,
-  avg_sale_price: decimal(690),
-  last_sale_at: '2026-09-02',
-  last_purchase_at: '2026-08-11',
+  sales: { total_units: 148, total_revenue: 102120, avg_price: 690, count: 37 },
+  purchases: { total_units: 180, total_cost: 75600, avg_price: 420, count: 12 },
 }
 
 export const stockMovements = [

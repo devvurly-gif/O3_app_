@@ -1102,56 +1102,7 @@
 
         <!-- Tab: Statistics -->
         <div v-if="currentTab === 3" class="space-y-3 py-2" :style="{ minHeight: tabMinHeight }">
-          <div v-if="editTarget" class="space-y-3">
-            <!-- Sales Metrics -->
-            <div class="space-y-1.5">
-              <h4 class="font-semibold text-gray-900 dark:text-white text-sm">Sales Metrics</h4>
-              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
-                <div class="bg-purple-50 dark:bg-purple-900/20 px-3 py-2 rounded border border-purple-200 dark:border-purple-800">
-                  <p class="text-xs text-purple-600 dark:text-purple-400 font-medium">Total Units Sold</p>
-                  <p class="text-lg font-bold text-purple-900 dark:text-purple-200 leading-tight">{{ statistics?.sales?.total_units ?? 0 }}</p>
-                </div>
-                <div class="bg-[#F1ECFC] dark:bg-[#7C5CFC]/20 px-3 py-2 rounded border border-[#E4D9FE] dark:border-[#4C3999]">
-                  <p class="text-xs text-[#7C5CFC] dark:text-[#A78BFA] font-medium">Total Revenue</p>
-                  <p class="text-lg font-bold text-blue-900 dark:text-blue-200 leading-tight">{{ (statistics?.sales?.total_revenue ?? 0).toFixed(2) }} MAD</p>
-                </div>
-                <div class="bg-indigo-50 dark:bg-indigo-900/20 px-3 py-2 rounded border border-indigo-200 dark:border-indigo-800">
-                  <p class="text-xs text-indigo-600 dark:text-indigo-400 font-medium">Avg Sale Price</p>
-                  <p class="text-lg font-bold text-indigo-900 dark:text-indigo-200 leading-tight">{{ (statistics?.sales?.avg_price ?? 0).toFixed(2) }} MAD</p>
-                </div>
-                <div class="bg-pink-50 dark:bg-pink-900/20 px-3 py-2 rounded border border-pink-200 dark:border-pink-800">
-                  <p class="text-xs text-pink-600 dark:text-pink-400 font-medium">Sale Transactions</p>
-                  <p class="text-lg font-bold text-pink-900 dark:text-pink-200 leading-tight">{{ statistics?.sales?.count ?? 0 }}</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Purchase Metrics — absentes du payload sans products.view_cost -->
-            <div v-if="statistics?.purchases" class="space-y-1.5 pt-3 border-t border-gray-200 dark:border-gray-700">
-              <h4 class="font-semibold text-gray-900 dark:text-white text-sm">Purchase Metrics</h4>
-              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
-                <div class="bg-emerald-50 dark:bg-emerald-900/20 px-3 py-2 rounded border border-emerald-200 dark:border-emerald-800">
-                  <p class="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Total Units Purchased</p>
-                  <p class="text-lg font-bold text-emerald-900 dark:text-emerald-200 leading-tight">{{ statistics?.purchases?.total_units ?? 0 }}</p>
-                </div>
-                <div class="bg-teal-50 dark:bg-teal-900/20 px-3 py-2 rounded border border-teal-200 dark:border-teal-800">
-                  <p class="text-xs text-teal-600 dark:text-teal-400 font-medium">Total Cost</p>
-                  <p class="text-lg font-bold text-teal-900 dark:text-teal-200 leading-tight">{{ (statistics?.purchases?.total_cost ?? 0).toFixed(2) }} MAD</p>
-                </div>
-                <div class="bg-cyan-50 dark:bg-cyan-900/20 px-3 py-2 rounded border border-cyan-200 dark:border-cyan-800">
-                  <p class="text-xs text-cyan-600 dark:text-cyan-400 font-medium">Avg Purchase Price</p>
-                  <p class="text-lg font-bold text-cyan-900 dark:text-cyan-200 leading-tight">{{ (statistics?.purchases?.avg_price ?? 0).toFixed(2) }} MAD</p>
-                </div>
-                <div class="bg-[#F1ECFC] dark:bg-[#7C5CFC]/20 px-3 py-2 rounded border border-[#E4D9FE] dark:border-[#4C3999]">
-                  <p class="text-xs text-[#6D4CE0] dark:text-[#A78BFA] font-medium">Purchase Transactions</p>
-                  <p class="text-lg font-bold text-[#3D2E85] dark:text-[#E4D9FE] leading-tight">{{ statistics?.purchases?.count ?? 0 }}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div v-else class="text-sm text-gray-500 dark:text-gray-400">
-            Statistics available after saving the product.
-          </div>
+          <ProductStatsTab :statistics="statistics" :has-product="!!editTarget" />
         </div>
 
         <!-- Tab: Gallery -->
@@ -1349,61 +1300,13 @@
         </div>
         <!-- Tab: Variantes -->
         <div v-if="currentTab === 5 && variantsEnabled" class="space-y-3 py-2">
-          <div class="flex items-center justify-between mb-2">
-            <p class="text-xs text-gray-500 dark:text-gray-400">Configurez les variantes pour ce produit.</p>
-            <div class="flex gap-2">
-              <button type="button"
-                class="px-3 py-1.5 text-xs font-medium border border-indigo-300 text-indigo-600 rounded-lg hover:bg-indigo-50 dark:border-indigo-700 dark:text-indigo-400 transition"
-                @click="applyGenerated">Generer combinaisons</button>
-              <button type="button"
-                class="px-3 py-1.5 text-xs font-medium bg-[#7C5CFC] text-white rounded-lg hover:bg-[#6D4CE0] transition"
-                @click="addVariantRow">+ Ajouter</button>
-            </div>
-          </div>
-          <div v-if="!productVariants.length" class="text-sm text-gray-400 dark:text-gray-500 text-center py-8 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg">
-            Aucune variante. Cliquez sur Generer ou Ajouter.
-          </div>
-          <div v-else class="overflow-x-auto">
-            <table class="w-full text-xs">
-              <thead>
-                <tr class="text-left text-gray-500 border-b border-gray-200 dark:border-gray-700">
-                  <th class="py-2 pr-2">Label</th>
-                  <th class="py-2 pr-2">SKU</th>
-                  <th class="py-2 pr-2 w-24">Prix</th>
-                  <th class="py-2 pr-2 w-20">Stock</th>
-                  <th class="py-2 pr-2 w-16 text-center">Actif</th>
-                  <th class="py-2 w-8"></th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="(v, idx) in productVariants" :key="idx" class="border-b border-gray-100 dark:border-gray-800">
-                  <td class="py-1.5 pr-2">
-                    <input v-model="v.label" :aria-label="`Libellé de la variante ${idx + 1}`" @input="variantsDirty = true" type="text" placeholder="Rouge / XL"
-                      class="w-full px-2 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-xs text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-[#7C5CFC]" />
-                  </td>
-                  <td class="py-1.5 pr-2">
-                    <input v-model="v.sku" :aria-label="`SKU de la variante ${idx + 1}`" @input="variantsDirty = true" type="text" placeholder="SKU"
-                      class="w-full px-2 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-xs text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-[#7C5CFC]" />
-                  </td>
-                  <td class="py-1.5 pr-2">
-                    <input v-model.number="v.price" :aria-label="`Prix de la variante ${idx + 1}`" @input="variantsDirty = true" type="number" step="0.01" placeholder="—"
-                      class="w-full px-2 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-xs text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-[#7C5CFC]" />
-                  </td>
-
-                  <td class="py-1.5 pr-2 text-center">
-                    <input type="checkbox" v-model="v.is_active" :aria-label="`Variante ${idx + 1} active`" @change="variantsDirty = true" class="w-4 h-4 text-[#7C5CFC] rounded" />
-                  </td>
-                  <td class="py-1.5">
-                    <button type="button" @click="removeVariant(idx)" class="p-1 text-red-400 hover:text-red-600 rounded transition">
-                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+          <ProductVariantsTab
+            :variants="productVariants"
+            @generate="applyGenerated"
+            @add="addVariantRow"
+            @remove="removeVariant"
+            @touch="variantsDirty = true"
+          />
         </div>
       </form>
 
@@ -1473,6 +1376,8 @@ import BaseTable from '@/components/BaseTable.vue'
 import BasePagination from '@/components/BasePagination.vue'
 import BaseModal from '@/components/BaseModal.vue'
 import BaseNotification from '@/components/BaseNotification.vue'
+import ProductStatsTab from '@/components/products/ProductStatsTab.vue'
+import ProductVariantsTab from '@/components/products/ProductVariantsTab.vue'
 import { useFormat } from '@/composables/useFormat'
 
 const { t } = useI18n()
