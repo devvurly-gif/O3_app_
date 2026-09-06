@@ -454,229 +454,38 @@
 
         <!-- TAB: Documents -->
         <div v-show="activeTab === 'factures'">
-          <div v-if="loadingDetail" class="flex items-center justify-center py-12">
-            <svg class="w-6 h-6 animate-spin text-[#7C5CFC]" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-            </svg>
-          </div>
-          <div v-else-if="supplierDocuments.length === 0" class="text-center py-12 text-gray-400 dark:text-gray-500">
-            <svg
-              class="w-12 h-12 mx-auto mb-3 text-gray-300"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.5"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
-              />
-            </svg>
-            <p class="text-sm">Aucun document</p>
-          </div>
-          <div v-else class="overflow-x-auto">
-            <table class="w-full text-sm">
-              <thead>
-                <tr class="border-b border-gray-200 dark:border-gray-700 text-left">
-                  <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase">Code</th>
-                  <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase">Date</th>
-                  <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase">Type</th>
-                  <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase text-right">Total TTC</th>
-                  <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase text-right">Reste dû</th>
-                  <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase text-center">Statut</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-                <tr
-                  v-for="inv in supplierDocuments"
-                  :key="inv.id"
-                  class="hover:bg-gray-50 dark:hover:bg-gray-700"
-                  :class="isBilledReceipt(inv) ? 'opacity-50' : ''"
-                  :title="isBilledReceipt(inv) ? 'Bon déjà facturé : son montant est porté par la facture, et ne compte pas une seconde fois.' : ''"
-                >
-                  <td class="py-2.5 px-3 font-mono text-xs">{{ inv.reference }}</td>
-                  <td class="py-2.5 px-3 text-gray-600 dark:text-gray-400">{{ formatDate(inv.issued_at) }}</td>
-                  <td class="py-2.5 px-3">
-                    <span
-                      class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
-                      :class="docTypeClass(inv.document_type)"
-                    >
-                      {{ docTypeLabel(inv.document_type) }}
-                    </span>
-                  </td>
-                  <td class="py-2.5 px-3 text-right font-mono font-medium">
-                    {{ formatNumber(inv.footer?.total_ttc ?? 0) }} <span class="text-gray-400 dark:text-gray-500 text-xs">DH</span>
-                  </td>
-                  <td
-                    class="py-2.5 px-3 text-right font-mono font-medium"
-                    :class="(inv.footer?.amount_due ?? 0) > 0 ? 'text-red-600' : 'text-emerald-600'"
-                  >
-                    {{ formatNumber(inv.footer?.amount_due ?? 0) }} <span class="text-gray-400 dark:text-gray-500 text-xs">DH</span>
-                  </td>
-                  <td class="py-2.5 px-3 text-center">
-                    <span
-                      class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-                      :class="statusClass(inv.status)"
-                    >
-                      {{ statusLabel(inv.status, inv.document_type) }}
-                    </span>
-                  </td>
-                </tr>
-              </tbody>
-              <tfoot>
-                <tr class="border-t-2 border-gray-200 dark:border-gray-700 font-semibold bg-gray-50 dark:bg-gray-900">
-                  <td colspan="3" class="py-2.5 px-3 text-sm text-gray-600 dark:text-gray-400">
-                    {{ countableSupplierDocuments.length }} document(s) comptabilisé(s)
-                    <span
-                      v-if="supplierDocuments.length !== countableSupplierDocuments.length"
-                      class="text-xs font-normal text-gray-400 dark:text-gray-500 ml-1"
-                    >
-                      (sur {{ supplierDocuments.length }} — devis et annulés exclus)
-                    </span>
-                  </td>
-                  <td class="py-2.5 px-3 text-right font-mono">
-                    {{ formatNumber(totalDocsTTC) }} <span class="text-gray-400 dark:text-gray-500 text-xs">DH</span>
-                  </td>
-                  <td
-                    class="py-2.5 px-3 text-right font-mono"
-                    :class="totalDocsDue > 0 ? 'text-red-600' : 'text-emerald-600'"
-                  >
-                    {{ formatNumber(totalDocsDue) }} <span class="text-gray-400 dark:text-gray-500 text-xs">DH</span>
-                  </td>
-                  <td></td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
+          <PartnerDocumentsTab
+            :loading="loadingDetail"
+            :documents="supplierDocuments"
+            :countable-documents="countableSupplierDocuments"
+            :total-ttc="totalDocsTTC"
+            :total-due="totalDocsDue"
+            :is-billed="isBilledReceipt"
+            billed-title="Bon déjà facturé : son montant est porté par la facture, et ne compte pas une seconde fois."
+          />
         </div>
 
         <!-- TAB: Paiements -->
         <div v-show="activeTab === 'paiements'">
-          <div v-if="loadingDetail" class="flex items-center justify-center py-12">
-            <svg class="w-6 h-6 animate-spin text-[#7C5CFC]" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-            </svg>
-          </div>
-          <div v-else-if="supplierPayments.length === 0" class="text-center py-12 text-gray-400 dark:text-gray-500">
-            <svg
-              class="w-12 h-12 mx-auto mb-3 text-gray-300"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.5"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z"
-              />
-            </svg>
-            <p class="text-sm">Aucun paiement</p>
-          </div>
-          <div v-else class="overflow-x-auto">
-            <table class="w-full text-sm">
-              <thead>
-                <tr class="border-b border-gray-200 dark:border-gray-700 text-left">
-                  <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase">Code</th>
-                  <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase">Facture</th>
-                  <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase">Date</th>
-                  <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase">Méthode</th>
-                  <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase text-right">Montant</th>
-                  <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase">Référence</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-                <tr v-for="pay in supplierPayments" :key="pay.id" class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                  <td class="py-2.5 px-3 font-mono text-xs">{{ pay.payment_code }}</td>
-                  <td class="py-2.5 px-3 font-mono text-xs text-[#7C5CFC]">{{ pay._doc_code }}</td>
-                  <td class="py-2.5 px-3 text-gray-600 dark:text-gray-400">{{ formatDate(pay.paid_at) }}</td>
-                  <td class="py-2.5 px-3">
-                    <span
-                      class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300"
-                    >
-                      {{ methodLabel(pay.method) }}
-                    </span>
-                  </td>
-                  <td class="py-2.5 px-3 text-right font-mono font-medium text-emerald-600">
-                    {{ formatNumber(Number(pay.amount)) }} <span class="text-gray-400 dark:text-gray-500 text-xs">DH</span>
-                  </td>
-                  <td class="py-2.5 px-3 text-gray-500 dark:text-gray-400 text-xs">{{ pay.reference || '—' }}</td>
-                </tr>
-              </tbody>
-              <tfoot>
-                <tr class="border-t-2 border-gray-200 dark:border-gray-700 font-semibold bg-gray-50 dark:bg-gray-900">
-                  <td colspan="4" class="py-2.5 px-3 text-sm text-gray-600 dark:text-gray-400">
-                    {{ supplierPayments.length }} paiement(s)
-                  </td>
-                  <td class="py-2.5 px-3 text-right font-mono text-emerald-600">
-                    {{ formatNumber(totalPaymentsAmount) }} <span class="text-gray-400 dark:text-gray-500 text-xs">DH</span>
-                  </td>
-                  <td></td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
+          <PartnerPaymentsTab
+            :loading="loadingDetail"
+            :payments="supplierPayments"
+            :total-payments="totalPaymentsAmount"
+          />
         </div>
 
         <!-- TAB: Statistiques -->
         <div v-show="activeTab === 'statistiques'">
-          <div v-if="loadingDetail" class="flex items-center justify-center py-12">
-            <svg class="w-6 h-6 animate-spin text-[#7C5CFC]" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-            </svg>
-          </div>
-          <div v-else class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            <div class="bg-[#F1ECFC] rounded-xl p-4 border border-blue-100">
-              <p class="text-xs text-[#7C5CFC] font-medium mb-1">Total documents</p>
-              <p class="text-2xl font-bold text-blue-900">{{ supplierDocuments.length }}</p>
-            </div>
-            <div class="bg-red-50 rounded-xl p-4 border border-red-100">
-              <p class="text-xs text-red-600 font-medium mb-1">Documents impayés</p>
-              <p class="text-2xl font-bold text-red-900">{{ unpaidDocs }}</p>
-            </div>
-            <div class="bg-emerald-50 rounded-xl p-4 border border-emerald-100">
-              <p class="text-xs text-emerald-600 font-medium mb-1">Total achats</p>
-              <p class="text-xl font-bold text-emerald-900 font-mono">
-                {{ formatNumber(totalDocsTTC) }} <span class="text-sm font-normal text-emerald-600">DH</span>
-              </p>
-            </div>
-            <div class="bg-teal-50 rounded-xl p-4 border border-teal-100">
-              <p class="text-xs text-teal-600 font-medium mb-1">Total payé</p>
-              <p class="text-xl font-bold text-teal-900 font-mono">
-                {{ formatNumber(totalPaymentsAmount) }} <span class="text-sm font-normal text-teal-600">DH</span>
-              </p>
-            </div>
-            <div class="bg-amber-50 rounded-xl p-4 border border-amber-100">
-              <p class="text-xs text-amber-600 font-medium mb-1">Reste à payer</p>
-              <p class="text-xl font-bold font-mono" :class="totalDocsDue > 0 ? 'text-amber-900' : 'text-emerald-700'">
-                {{ formatNumber(totalDocsDue) }} <span class="text-sm font-normal text-amber-600">DH</span>
-              </p>
-            </div>
-            <div class="sm:col-span-3 bg-gray-50 dark:bg-gray-900 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-              <div class="flex items-center justify-between mb-2">
-                <p class="text-xs text-gray-600 dark:text-gray-400 font-medium">Taux de recouvrement</p>
-                <span
-                  class="text-sm font-bold"
-                  :class="
-                    paymentRate >= 80 ? 'text-emerald-600' : paymentRate >= 50 ? 'text-amber-600' : 'text-red-600'
-                  "
-                >
-                  {{ paymentRate.toFixed(1) }}%
-                </span>
-              </div>
-              <div class="w-full bg-gray-200 rounded-full h-2.5">
-                <div
-                  class="h-2.5 rounded-full transition-all duration-500"
-                  :class="paymentRate >= 80 ? 'bg-emerald-500' : paymentRate >= 50 ? 'bg-amber-500' : 'bg-red-500'"
-                  :style="{ width: Math.min(paymentRate, 100) + '%' }"
-                ></div>
-              </div>
-            </div>
-          </div>
+          <PartnerStatsTab
+            :loading="loadingDetail"
+            :documents-count="supplierDocuments.length"
+            :unpaid-count="unpaidDocs"
+            :total-ttc="totalDocsTTC"
+            :total-payments="totalPaymentsAmount"
+            :total-due="totalDocsDue"
+            :payment-rate="paymentRate"
+            total-label="Total achats"
+          />
         </div>
       </div>
       <!-- /min-h wrapper -->
@@ -870,233 +679,38 @@
 
         <!-- TAB: Documents -->
         <div v-show="showActiveTab === 'factures'">
-          <div v-if="showLoadingDetail" class="flex items-center justify-center py-12">
-            <svg class="w-6 h-6 animate-spin text-[#7C5CFC]" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-            </svg>
-          </div>
-          <div v-else-if="showDocuments.length === 0" class="text-center py-12 text-gray-400 dark:text-gray-500">
-            <svg
-              class="w-12 h-12 mx-auto mb-3 text-gray-300"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.5"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
-              />
-            </svg>
-            <p class="text-sm">Aucun document</p>
-          </div>
-          <div v-else class="overflow-x-auto">
-            <table class="w-full text-sm">
-              <thead>
-                <tr class="border-b border-gray-200 dark:border-gray-700 text-left">
-                  <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase">Code</th>
-                  <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase">Date</th>
-                  <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase">Type</th>
-                  <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase text-right">Total TTC</th>
-                  <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase text-right">Reste dû</th>
-                  <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase text-center">Statut</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-                <tr
-                  v-for="inv in showDocuments"
-                  :key="inv.id"
-                  class="hover:bg-gray-50 dark:hover:bg-gray-700"
-                  :class="isBilledReceipt(inv) ? 'opacity-50' : ''"
-                  :title="isBilledReceipt(inv) ? 'Bon déjà facturé : son montant est porté par la facture, et ne compte pas une seconde fois.' : ''"
-                >
-                  <td class="py-2.5 px-3 font-mono text-xs">{{ inv.reference }}</td>
-                  <td class="py-2.5 px-3 text-gray-600 dark:text-gray-400">{{ formatDate(inv.issued_at) }}</td>
-                  <td class="py-2.5 px-3">
-                    <span
-                      class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
-                      :class="docTypeClass(inv.document_type)"
-                    >
-                      {{ docTypeLabel(inv.document_type) }}
-                    </span>
-                  </td>
-                  <td class="py-2.5 px-3 text-right font-mono font-medium">
-                    {{ formatNumber(inv.footer?.total_ttc ?? 0) }} <span class="text-gray-400 dark:text-gray-500 text-xs">DH</span>
-                  </td>
-                  <td
-                    class="py-2.5 px-3 text-right font-mono font-medium"
-                    :class="(inv.footer?.amount_due ?? 0) > 0 ? 'text-red-600' : 'text-emerald-600'"
-                  >
-                    {{ formatNumber(inv.footer?.amount_due ?? 0) }} <span class="text-gray-400 dark:text-gray-500 text-xs">DH</span>
-                  </td>
-                  <td class="py-2.5 px-3 text-center">
-                    <span
-                      class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-                      :class="statusClass(inv.status)"
-                    >
-                      {{ statusLabel(inv.status, inv.document_type) }}
-                    </span>
-                  </td>
-                </tr>
-              </tbody>
-              <tfoot>
-                <tr class="border-t-2 border-gray-200 dark:border-gray-700 font-semibold bg-gray-50 dark:bg-gray-900">
-                  <td colspan="3" class="py-2.5 px-3 text-sm text-gray-600 dark:text-gray-400">
-                    {{ countableShowDocuments.length }} document(s) comptabilisé(s)
-                    <span
-                      v-if="showDocuments.length !== countableShowDocuments.length"
-                      class="text-xs font-normal text-gray-400 dark:text-gray-500 ml-1"
-                    >
-                      (sur {{ showDocuments.length }} — devis et annulés exclus)
-                    </span>
-                  </td>
-                  <td class="py-2.5 px-3 text-right font-mono">
-                    {{ formatNumber(showTotalTTC) }} <span class="text-gray-400 dark:text-gray-500 text-xs">DH</span>
-                  </td>
-                  <td
-                    class="py-2.5 px-3 text-right font-mono"
-                    :class="showTotalDue > 0 ? 'text-red-600' : 'text-emerald-600'"
-                  >
-                    {{ formatNumber(showTotalDue) }} <span class="text-gray-400 dark:text-gray-500 text-xs">DH</span>
-                  </td>
-                  <td></td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
+          <PartnerDocumentsTab
+            :loading="showLoadingDetail"
+            :documents="showDocuments"
+            :countable-documents="countableShowDocuments"
+            :total-ttc="showTotalTTC"
+            :total-due="showTotalDue"
+            :is-billed="isBilledReceipt"
+            billed-title="Bon déjà facturé : son montant est porté par la facture, et ne compte pas une seconde fois."
+          />
         </div>
 
         <!-- TAB: Paiements -->
         <div v-show="showActiveTab === 'paiements'">
-          <div v-if="showLoadingDetail" class="flex items-center justify-center py-12">
-            <svg class="w-6 h-6 animate-spin text-[#7C5CFC]" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-            </svg>
-          </div>
-          <div v-else-if="showPayments.length === 0" class="text-center py-12 text-gray-400 dark:text-gray-500">
-            <svg
-              class="w-12 h-12 mx-auto mb-3 text-gray-300"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.5"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z"
-              />
-            </svg>
-            <p class="text-sm">Aucun paiement</p>
-          </div>
-          <div v-else class="overflow-x-auto">
-            <table class="w-full text-sm">
-              <thead>
-                <tr class="border-b border-gray-200 dark:border-gray-700 text-left">
-                  <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase">Code</th>
-                  <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase">Facture</th>
-                  <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase">Date</th>
-                  <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase">Méthode</th>
-                  <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase text-right">Montant</th>
-                  <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase">Référence</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-                <tr v-for="pay in showPayments" :key="pay.id" class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                  <td class="py-2.5 px-3 font-mono text-xs">{{ pay.payment_code }}</td>
-                  <td class="py-2.5 px-3 font-mono text-xs text-[#7C5CFC]">{{ pay._doc_code }}</td>
-                  <td class="py-2.5 px-3 text-gray-600 dark:text-gray-400">{{ formatDate(pay.paid_at) }}</td>
-                  <td class="py-2.5 px-3">
-                    <span
-                      class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300"
-                    >
-                      {{ methodLabel(pay.method) }}
-                    </span>
-                  </td>
-                  <td class="py-2.5 px-3 text-right font-mono font-medium text-emerald-600">
-                    {{ formatNumber(Number(pay.amount)) }} <span class="text-gray-400 dark:text-gray-500 text-xs">DH</span>
-                  </td>
-                  <td class="py-2.5 px-3 text-gray-500 dark:text-gray-400 text-xs">{{ pay.reference || '—' }}</td>
-                </tr>
-              </tbody>
-              <tfoot>
-                <tr class="border-t-2 border-gray-200 dark:border-gray-700 font-semibold bg-gray-50 dark:bg-gray-900">
-                  <td colspan="4" class="py-2.5 px-3 text-sm text-gray-600 dark:text-gray-400">{{ showPayments.length }} paiement(s)</td>
-                  <td class="py-2.5 px-3 text-right font-mono text-emerald-600">
-                    {{ formatNumber(showTotalPayments) }} <span class="text-gray-400 dark:text-gray-500 text-xs">DH</span>
-                  </td>
-                  <td></td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
+          <PartnerPaymentsTab
+            :loading="showLoadingDetail"
+            :payments="showPayments"
+            :total-payments="showTotalPayments"
+          />
         </div>
 
         <!-- TAB: Statistiques -->
         <div v-show="showActiveTab === 'statistiques'">
-          <div v-if="showLoadingDetail" class="flex items-center justify-center py-12">
-            <svg class="w-6 h-6 animate-spin text-[#7C5CFC]" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-            </svg>
-          </div>
-          <div v-else class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            <div class="bg-[#F1ECFC] rounded-xl p-4 border border-blue-100">
-              <p class="text-xs text-[#7C5CFC] font-medium mb-1">Total documents</p>
-              <p class="text-2xl font-bold text-blue-900">{{ showDocuments.length }}</p>
-            </div>
-            <div class="bg-red-50 rounded-xl p-4 border border-red-100">
-              <p class="text-xs text-red-600 font-medium mb-1">Documents impayés</p>
-              <p class="text-2xl font-bold text-red-900">{{ showUnpaidCount }}</p>
-            </div>
-            <div class="bg-emerald-50 rounded-xl p-4 border border-emerald-100">
-              <p class="text-xs text-emerald-600 font-medium mb-1">Total achats</p>
-              <p class="text-xl font-bold text-emerald-900 font-mono">
-                {{ formatNumber(showTotalTTC) }} <span class="text-sm font-normal text-emerald-600">DH</span>
-              </p>
-            </div>
-            <div class="bg-teal-50 rounded-xl p-4 border border-teal-100">
-              <p class="text-xs text-teal-600 font-medium mb-1">Total payé</p>
-              <p class="text-xl font-bold text-teal-900 font-mono">
-                {{ formatNumber(showTotalPayments) }} <span class="text-sm font-normal text-teal-600">DH</span>
-              </p>
-            </div>
-            <div class="bg-amber-50 rounded-xl p-4 border border-amber-100">
-              <p class="text-xs text-amber-600 font-medium mb-1">Reste à payer</p>
-              <p class="text-xl font-bold font-mono" :class="showTotalDue > 0 ? 'text-amber-900' : 'text-emerald-700'">
-                {{ formatNumber(showTotalDue) }} <span class="text-sm font-normal text-amber-600">DH</span>
-              </p>
-            </div>
-            <div class="sm:col-span-3 bg-gray-50 dark:bg-gray-900 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-              <div class="flex items-center justify-between mb-2">
-                <p class="text-xs text-gray-600 dark:text-gray-400 font-medium">Taux de recouvrement</p>
-                <span
-                  class="text-sm font-bold"
-                  :class="
-                    showPaymentRate >= 80
-                      ? 'text-emerald-600'
-                      : showPaymentRate >= 50
-                        ? 'text-amber-600'
-                        : 'text-red-600'
-                  "
-                >
-                  {{ showPaymentRate.toFixed(1) }}%
-                </span>
-              </div>
-              <div class="w-full bg-gray-200 rounded-full h-2.5">
-                <div
-                  class="h-2.5 rounded-full transition-all duration-500"
-                  :class="
-                    showPaymentRate >= 80 ? 'bg-emerald-500' : showPaymentRate >= 50 ? 'bg-amber-500' : 'bg-red-500'
-                  "
-                  :style="{ width: Math.min(showPaymentRate, 100) + '%' }"
-                ></div>
-              </div>
-            </div>
-          </div>
+          <PartnerStatsTab
+            :loading="showLoadingDetail"
+            :documents-count="showDocuments.length"
+            :unpaid-count="showUnpaidCount"
+            :total-ttc="showTotalTTC"
+            :total-payments="showTotalPayments"
+            :total-due="showTotalDue"
+            :payment-rate="showPaymentRate"
+            total-label="Total achats"
+          />
         </div>
       </div>
       <!-- /min-h wrapper -->
@@ -1192,7 +806,10 @@ import BaseTable from '@/components/BaseTable.vue'
 import BasePagination from '@/components/BasePagination.vue'
 import BaseModal from '@/components/BaseModal.vue'
 import BaseNotification from '@/components/BaseNotification.vue'
+import PartnerDocumentsTab from '@/components/partners/PartnerDocumentsTab.vue'
 import PartnerPaymentModal from '@/components/partners/PartnerPaymentModal.vue'
+import PartnerPaymentsTab from '@/components/partners/PartnerPaymentsTab.vue'
+import PartnerStatsTab from '@/components/partners/PartnerStatsTab.vue'
 import { useFormat } from '@/composables/useFormat'
 import { IconCredit, IconFiscal, IconInfo, IconInvoice, IconPayment, IconStats } from '@/components/icons/tabIcons'
 // Les libelles et pastilles de l'historique sont partages avec la fiche

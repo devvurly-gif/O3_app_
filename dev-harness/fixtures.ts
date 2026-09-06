@@ -4,11 +4,21 @@
  * plusieurs modes, un BL deja facture, un depassement de plafond.
  */
 
+/**
+ * Les montants partent en chaine, pas en nombre.
+ *
+ * DocumentFooter et Payment castent leurs colonnes en `decimal:2`, et Eloquent
+ * serialise un decimal en chaine JSON — « 103455.00 ». Un banc qui renverrait
+ * des nombres montrerait un ecran que la production ne produit jamais.
+ */
+const decimal = (n: number) => n.toFixed(2)
+
 let paymentSeq = 900
 
 const payment = (amount: number, paid_at: string, method: string, reference: string | null = null) => ({
   id: ++paymentSeq,
-  amount,
+  payment_code: `REG-${paymentSeq}`,
+  amount: decimal(amount),
   paid_at,
   method,
   reference,
@@ -16,10 +26,10 @@ const payment = (amount: number, paid_at: string, method: string, reference: str
 })
 
 const footer = (total_ht: number, total_ttc: number, amount_due: number) => ({
-  total_ht,
-  total_tva: Number((total_ttc - total_ht).toFixed(2)),
-  total_ttc,
-  amount_due,
+  total_ht: decimal(total_ht),
+  total_tva: decimal(Number((total_ttc - total_ht).toFixed(2))),
+  total_ttc: decimal(total_ttc),
+  amount_due: decimal(amount_due),
 })
 
 // ── Fournisseur ────────────────────────────────────────────────────────────
