@@ -798,284 +798,30 @@
     />
 
     <!-- Bulk Payment Modal -->
-    <BaseModal
+    <PartnerPaymentModal
       v-model="showPaymentModal"
-      :title="'Enregistrer un paiement — ' + (paymentTarget?.tp_title ?? '')"
-      size="md"
-    >
-      <div class="space-y-5">
-        <!-- Unpaid docs with checkboxes (BL + Factures) -->
-        <div v-if="paymentUnpaidDocs.length > 0" class="bg-amber-50 border border-amber-200 rounded-xl p-4">
-          <div class="flex items-center justify-between mb-2">
-            <p class="text-sm font-semibold text-amber-800">Documents impayés (BL + Factures)</p>
-            <button
-              type="button"
-              class="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 hover:bg-amber-200"
-              @click="togglePaymentSelectAll"
-            >
-              {{ paymentAllSelected ? 'Tout décocher' : 'Tout cocher' }}
-            </button>
-          </div>
-          <div class="max-h-48 overflow-y-auto space-y-1">
-            <label
-              v-for="doc in paymentUnpaidDocs"
-              :key="doc.id"
-              class="flex items-center justify-between gap-2 text-sm py-1.5 px-2 rounded hover:bg-amber-100/50 cursor-pointer"
-            >
-              <div class="flex items-center gap-2 min-w-0">
-                <input
-                  :checked="paymentSelectedIds.includes(doc.id)"
-                  type="checkbox"
-                  class="w-4 h-4 rounded border-amber-300 text-emerald-600 focus:ring-emerald-500"
-                  @change="togglePaymentDoc(doc.id)"
-                />
-                <span
-                  class="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase"
-                  :class="doc.document_type === 'DeliveryNote'
-                    ? 'bg-[#F1ECFC] text-[#6D4CE0]'
-                    : doc.document_type === 'InvoicePurchase'
-                      ? 'bg-purple-100 text-purple-700'
-                      : 'bg-emerald-100 text-emerald-700'"
-                >
-                  {{ docTypeShort(doc.document_type) }}
-                </span>
-                <span class="font-mono text-xs text-gray-700 dark:text-gray-400">{{ doc.reference }}</span>
-                <span class="text-xs text-gray-400 dark:text-gray-500">{{ formatDate(doc.issued_at) }}</span>
-              </div>
-              <span class="font-mono text-sm font-medium text-red-600 whitespace-nowrap"
-                >{{ formatNumber(Number(doc.footer?.amount_due ?? 0)) }}
-                <span class="text-xs text-gray-400 dark:text-gray-500">DH</span></span
-              >
-            </label>
-          </div>
-          <div class="mt-2 pt-2 border-t border-amber-200 flex items-center justify-between">
-            <span class="text-sm font-semibold text-amber-800">
-              {{ paymentSelectedIds.length }} sélectionné(s) / Total dû
-            </span>
-            <span class="font-mono text-base font-bold text-red-600"
-              >{{ formatNumber(paymentSelectedTotalDue) }} <span class="text-xs text-gray-400 dark:text-gray-500">DH</span></span
-            >
-          </div>
-        </div>
-        <div v-else-if="!paymentLoading && paymentPayableDocs.length === 0" class="text-center py-8 text-gray-400 dark:text-gray-500">
-          <svg
-            class="w-10 h-10 mx-auto mb-2 text-gray-300"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.5"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <p class="text-sm">Ce client n'a aucune facture.</p>
-        </div>
-
-        <!-- Fallback: no unpaid docs but payable docs exist → single-invoice payment -->
-        <div v-else-if="!paymentLoading && paymentUnpaidDocs.length === 0" class="space-y-4">
-          <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-800">
-            Toutes les factures sont soldées. Vous pouvez enregistrer un paiement sur une facture spécifique (ex. correction, avoir).
-          </div>
-          <div>
-            <label for="customers-paymentselecteddocid" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Facture <span class="text-red-500">*</span>
-            </label>
-            <select
-              id="customers-paymentselecteddocid"
-              v-model="paymentSelectedDocId"
-              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-            >
-              <option :value="null" disabled>-- Choisir une facture --</option>
-              <option v-for="doc in paymentPayableDocs" :key="doc.id" :value="doc.id">
-                {{ doc.reference }} — {{ formatDate(doc.issued_at) }} — {{ formatNumber(Number(doc.footer?.total_ttc ?? 0)) }} DH
-              </option>
-            </select>
-          </div>
-          <div>
-            <label for="customers-amount" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Montant <span class="text-red-500">*</span>
-            </label>
-            <div class="relative">
-              <input
-                id="customers-amount"
-                v-model.number="paymentForm.amount"
-                type="number"
-                min="0.01"
-                step="0.01"
-                placeholder="0.00"
-                class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-input font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent pr-12"
-              />
-              <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 dark:text-gray-500 font-medium">DH</span>
-            </div>
-          </div>
-          <div>
-            <label for="customers-paymentform-method" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Méthode de paiement <span class="text-red-500">*</span>
-            </label>
-            <select
-              id="customers-paymentform-method"
-              v-model="paymentForm.method"
-              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-            >
-              <option value="cash">Espèces</option>
-              <option value="bank_transfer">Virement bancaire</option>
-              <option value="cheque">Chèque</option>
-              <option value="effet">Effet</option>
-            </select>
-          </div>
-          <div>
-            <label for="customers-paymentform-reference" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Référence</label>
-            <input
-              id="customers-paymentform-reference"
-              v-model="paymentForm.reference"
-              type="text"
-              placeholder="N° chèque, virement..."
-              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-            />
-          </div>
-          <div>
-            <label for="customers-paymentform-notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
-            <textarea
-              id="customers-paymentform-notes"
-              v-model="paymentForm.notes"
-              rows="2"
-              placeholder="Remarques..."
-              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none"
-            ></textarea>
-          </div>
-        </div>
-        <div v-if="paymentLoading" class="flex items-center justify-center py-8">
-          <svg class="w-6 h-6 animate-spin text-[#7C5CFC]" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-          </svg>
-        </div>
-
-        <!-- Payment form -->
-        <div v-if="paymentUnpaidDocs.length > 0 && !paymentLoading" class="space-y-4">
-          <div>
-            <label for="customers-amount-2" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-              >Montant <span class="text-red-500">*</span></label
-            >
-            <div class="relative">
-              <input
-                id="customers-amount-2"
-                v-model.number="paymentForm.amount"
-                type="number"
-                min="0.01"
-                step="0.01"
-                placeholder="0.00"
-                class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-input font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent pr-12"
-              />
-              <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 dark:text-gray-500 font-medium">DH</span>
-            </div>
-            <p v-if="paymentForm.amount > paymentSelectedTotalDue && paymentSelectedTotalDue > 0" class="text-xs text-amber-600 mt-1">
-              Le montant dépasse le total dû des documents cochés. L'excédent de
-              {{ formatNumber(paymentForm.amount - paymentSelectedTotalDue) }} DH ne sera pas affecté.
-            </p>
-          </div>
-          <div>
-            <label for="customers-paymentform-method-2" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-              >Méthode de paiement <span class="text-red-500">*</span></label
-            >
-            <select
-              id="customers-paymentform-method-2"
-              v-model="paymentForm.method"
-              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-            >
-              <option value="cash">Espèces</option>
-              <option value="bank_transfer">Virement bancaire</option>
-              <option value="cheque">Chèque</option>
-              <option value="effet">Effet</option>
-            </select>
-          </div>
-          <div>
-            <label for="customers-paymentform-reference-2" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Référence</label>
-            <input
-              id="customers-paymentform-reference-2"
-              v-model="paymentForm.reference"
-              type="text"
-              placeholder="N° chèque, virement..."
-              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-            />
-          </div>
-          <div>
-            <label for="customers-paymentform-notes-2" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
-            <textarea
-              id="customers-paymentform-notes-2"
-              v-model="paymentForm.notes"
-              rows="2"
-              placeholder="Remarques..."
-              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none"
-            ></textarea>
-          </div>
-
-          <!-- Payment result -->
-          <div
-            v-if="paymentResult"
-            class="rounded-lg border p-3 text-sm"
-            :class="
-              paymentResult.remaining > 0
-                ? 'bg-amber-50 border-amber-200 text-amber-800'
-                : 'bg-emerald-50 border-emerald-200 text-emerald-800'
-            "
-          >
-            <p class="font-semibold">{{ paymentResult.message }}</p>
-            <p class="text-xs mt-1">Montant affecté : {{ formatNumber(paymentResult.total_applied) }} DH</p>
-            <p v-if="paymentResult.remaining > 0" class="text-xs">
-              Excédent non affecté : {{ formatNumber(paymentResult.remaining) }} DH
-            </p>
-          </div>
-        </div>
-      </div>
-      <template #footer>
-        <button
-          class="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition"
-          @click="showPaymentModal = false"
-        >
-          Fermer
-        </button>
-        <button
-          v-if="paymentUnpaidDocs.length > 0 && !paymentLoading"
-          class="px-4 py-2 text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition disabled:opacity-60"
-          :disabled="paymentSaving || !paymentForm.amount || paymentForm.amount <= 0 || paymentSelectedIds.length === 0"
-          @click="submitBulkPayment"
-        >
-          <svg
-            class="w-4 h-4 inline -mt-0.5 mr-1"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          {{ paymentSaving ? 'Enregistrement...' : 'Enregistrer le paiement' }}
-        </button>
-        <button
-          v-else-if="!paymentLoading && paymentPayableDocs.length > 0"
-          class="px-4 py-2 text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition disabled:opacity-60"
-          :disabled="paymentSaving || !paymentSelectedDocId || !paymentForm.amount || paymentForm.amount <= 0"
-          @click="submitSingleDocPayment"
-        >
-          <svg class="w-4 h-4 inline -mt-0.5 mr-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          {{ paymentSaving ? 'Enregistrement...' : 'Enregistrer le paiement' }}
-        </button>
-      </template>
-    </BaseModal>
+      v-model:amount="paymentForm.amount"
+      v-model:method="paymentForm.method"
+      v-model:reference="paymentForm.reference"
+      v-model:notes="paymentForm.notes"
+      v-model:selected-doc-id="paymentSelectedDocId"
+      :partner-name="paymentTarget?.tp_title"
+      :loading="paymentLoading"
+      :saving="paymentSaving"
+      :result="paymentResult"
+      :unpaid-docs="paymentUnpaidDocs"
+      :payable-docs="paymentPayableDocs"
+      :selected-ids="paymentSelectedIds"
+      :selected-total-due="paymentSelectedTotalDue"
+      :all-selected="paymentAllSelected"
+      empty-message="Ce client n'a aucune facture."
+      id-prefix="customers-payment"
+      allow-single-doc
+      @toggle-doc="togglePaymentDoc"
+      @toggle-all="togglePaymentSelectAll"
+      @submit="submitBulkPayment"
+      @submit-single="submitSingleDocPayment"
+    />
 
     <!-- Document Detail Modal -->
     <BaseModal v-model="showDocumentDetailModal" :title="documentDetail?.reference ?? 'Document'" size="lg">
@@ -1211,6 +957,7 @@ import BasePagination from '@/components/BasePagination.vue'
 import BaseModal from '@/components/BaseModal.vue'
 import BaseNotification from '@/components/BaseNotification.vue'
 import CustomerDetailModalFull from '@/components/CustomerDetailModalFull.vue'
+import PartnerPaymentModal from '@/components/partners/PartnerPaymentModal.vue'
 import { useFormat } from '@/composables/useFormat'
 import { IconCredit, IconFiscal, IconInfo, IconInvoice, IconPayment, IconStats } from '@/components/icons/tabIcons'
 // Les libelles et pastilles de l'historique sont partages avec la fiche
