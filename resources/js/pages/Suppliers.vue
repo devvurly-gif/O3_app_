@@ -1352,7 +1352,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch, onMounted, h } from 'vue'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
+import type { Component } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useThirdPartnerStore } from '@/stores/thirdPartner'
@@ -1363,6 +1364,7 @@ import BasePagination from '@/components/BasePagination.vue'
 import BaseModal from '@/components/BaseModal.vue'
 import BaseNotification from '@/components/BaseNotification.vue'
 import { useFormat } from '@/composables/useFormat'
+import { IconCredit, IconFiscal, IconInfo, IconInvoice, IconPayment, IconStats } from '@/components/icons/tabIcons'
 
 const { t } = useI18n()
 const { date: fmtDate } = useFormat()
@@ -1375,56 +1377,6 @@ function onExport() {
   exportExcel('/export/third-partners', { ...buildParams(), tp_Role: 'supplier' })
 }
 
-// ── Tab icons (render functions) ─────────────────────────────────────────
-const IconInfo = () =>
-  h('svg', { class: 'w-4 h-4', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', viewBox: '0 0 24 24' }, [
-    h('path', {
-      'stroke-linecap': 'round',
-      'stroke-linejoin': 'round',
-      d: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
-    }),
-  ])
-const IconCredit = () =>
-  h('svg', { class: 'w-4 h-4', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', viewBox: '0 0 24 24' }, [
-    h('path', {
-      'stroke-linecap': 'round',
-      'stroke-linejoin': 'round',
-      d: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z',
-    }),
-  ])
-const IconInvoice = () =>
-  h('svg', { class: 'w-4 h-4', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', viewBox: '0 0 24 24' }, [
-    h('path', {
-      'stroke-linecap': 'round',
-      'stroke-linejoin': 'round',
-      d: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
-    }),
-  ])
-const IconPayment = () =>
-  h('svg', { class: 'w-4 h-4', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', viewBox: '0 0 24 24' }, [
-    h('path', {
-      'stroke-linecap': 'round',
-      'stroke-linejoin': 'round',
-      d: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
-    }),
-  ])
-const IconFiscal = () =>
-  h('svg', { class: 'w-4 h-4', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', viewBox: '0 0 24 24' }, [
-    h('path', {
-      'stroke-linecap': 'round',
-      'stroke-linejoin': 'round',
-      d: 'M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z',
-    }),
-  ])
-const IconStats = () =>
-  h('svg', { class: 'w-4 h-4', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', viewBox: '0 0 24 24' }, [
-    h('path', {
-      'stroke-linecap': 'round',
-      'stroke-linejoin': 'round',
-      d: 'M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z',
-    }),
-  ])
-
 // ── Tab state ────────────────────────────────────────────────────────────
 const activeTab = ref<'info' | 'fiscal' | 'credit' | 'factures' | 'paiements' | 'statistiques'>('info')
 const loadingDetail = ref(false)
@@ -1433,7 +1385,7 @@ const supplierDetail = ref<any>(null)
 interface TabDef {
   key: 'info' | 'fiscal' | 'credit' | 'factures' | 'paiements' | 'statistiques'
   label: string
-  icon: () => any
+  icon: Component
   badge?: number
 }
 
