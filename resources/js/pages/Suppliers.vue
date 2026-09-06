@@ -1365,6 +1365,17 @@ import BaseModal from '@/components/BaseModal.vue'
 import BaseNotification from '@/components/BaseNotification.vue'
 import { useFormat } from '@/composables/useFormat'
 import { IconCredit, IconFiscal, IconInfo, IconInvoice, IconPayment, IconStats } from '@/components/icons/tabIcons'
+// Les libelles et pastilles de l'historique sont partages avec la fiche
+// fournisseur/client d'en face : ils sont aliases ici sous les noms que le
+// template emploie deja.
+import {
+  partnerDocTypeLabel as docTypeLabel,
+  partnerDocTypeBadgeClass as docTypeClass,
+  partnerStatusBadgeClass as statusClass,
+  partnerStatusLabel as statusLabel,
+  paymentMethodLabel as methodLabel,
+  docTypeShortLabel as bulkDocTypeShort,
+} from '@/composables/useDocumentLabels'
 
 const { t } = useI18n()
 const { date: fmtDate } = useFormat()
@@ -1634,15 +1645,6 @@ function toggleBulkPaymentSelectAll() {
   }
 }
 
-function bulkDocTypeShort(type: string): string {
-  const map: Record<string, string> = {
-    DeliveryNote: 'BL',
-    InvoiceSale: 'FAC',
-    InvoicePurchase: 'FACA',
-  }
-  return map[type] ?? type
-}
-
 async function openBulkPayment(row: any) {
   bulkPaymentTarget.value = row
   bulkPaymentResult.value = null
@@ -1774,77 +1776,6 @@ function formatNumber(n: number): string {
 
 function formatDate(d: string): string {
   return fmtDate(d)
-}
-
-function docTypeLabel(type: string): string {
-  const map: Record<string, string> = {
-    QuoteSale: 'Devis',
-    CustomerOrder: 'Commande',
-    DeliveryNote: 'BL',
-    InvoiceSale: 'Facture',
-    CreditNoteSale: 'Avoir',
-    ReturnSale: 'Retour',
-    PurchaseOrder: 'Commande',
-    ReceiptNotePurchase: 'BR',
-    InvoicePurchase: 'Facture achat',
-    CreditNotePurchase: 'Avoir achat',
-    ReturnPurchase: 'Retour achat',
-  }
-  return map[type] ?? type
-}
-
-function docTypeClass(type: string): string {
-  const map: Record<string, string> = {
-    InvoiceSale: 'bg-[#F1ECFC] text-[#6D4CE0]',
-    CreditNoteSale: 'bg-[#F1ECFC] text-[#5B3FD1]',
-    InvoicePurchase: 'bg-violet-100 text-violet-700',
-    DeliveryNote: 'bg-emerald-100 text-emerald-700',
-    QuoteSale: 'bg-gray-100 text-gray-600',
-    CustomerOrder: 'bg-cyan-100 text-cyan-700',
-    ReceiptNotePurchase: 'bg-teal-100 text-teal-700',
-    PurchaseOrder: 'bg-indigo-100 text-indigo-700',
-    ReturnSale: 'bg-red-100 text-red-700',
-    ReturnPurchase: 'bg-red-100 text-red-700',
-  }
-  return map[type] ?? 'bg-gray-100 text-gray-600'
-}
-
-function statusClass(status: string): string {
-  const map: Record<string, string> = {
-    paid: 'bg-emerald-100 text-emerald-700',
-    partial: 'bg-amber-100 text-amber-700',
-    confirmed: 'bg-[#F1ECFC] text-[#6D4CE0]',
-    draft: 'bg-gray-100 text-gray-500',
-    cancelled: 'bg-red-100 text-red-600',
-  }
-  return map[status] ?? 'bg-gray-100 text-gray-500'
-}
-
-function statusLabel(status: string, documentType?: string): string {
-  // BL (DeliveryNote) — "confirmed" means the goods were delivered, not paid.
-  if (documentType === 'DeliveryNote' && status === 'confirmed') {
-    return 'Livré'
-  }
-  const map: Record<string, string> = {
-    paid: 'Payé',
-    partial: 'Partiel',
-    pending: 'En attente',
-    confirmed: 'Confirmé',
-    draft: 'Brouillon',
-    cancelled: 'Annulé',
-  }
-  return map[status] ?? status
-}
-
-function methodLabel(method: string): string {
-  const map: Record<string, string> = {
-    cash: 'Espèces',
-    bank_transfer: 'Virement',
-    cheque: 'Chèque',
-    effet: 'Effet',
-    credit: 'Crédit',
-  }
-  return map[method] ?? method
 }
 
 // ── Server-side filter + pagination ─────────────────────────────────────

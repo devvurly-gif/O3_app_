@@ -149,3 +149,101 @@ export const paymentMethodLabels: Record<string, string> = {
   effet: 'Effet',
   credit: 'Crédit',
 }
+
+// ── Fiches tiers : badges compacts de l'historique ──────────────────────────
+/**
+ * Les fiches client et fournisseur listent l'historique des documents dans une
+ * colonne etroite. Elles emploient donc des libelles courts — « BL », « Facture
+ * achat » — la ou le reste de l'application ecrit le nom complet porte par
+ * `allTypeLabels`. Ce sont deux jeux de libelles voulus, pas une divergence.
+ *
+ * De meme, ces badges-ci sont plats (clair uniquement) quand `statusConfig`
+ * porte un theme sombre : ils vivent a l'interieur d'une modale deja teintee.
+ *
+ * Clients.vue et Fournisseurs.vue en portaient chacun une copie identique.
+ */
+export const partnerDocTypeLabels: Record<string, string> = {
+  QuoteSale: 'Devis',
+  CustomerOrder: 'Commande',
+  DeliveryNote: 'BL',
+  InvoiceSale: 'Facture',
+  CreditNoteSale: 'Avoir',
+  ReturnSale: 'Retour',
+  PurchaseOrder: 'Commande',
+  ReceiptNotePurchase: 'BR',
+  InvoicePurchase: 'Facture achat',
+  CreditNotePurchase: 'Avoir achat',
+  ReturnPurchase: 'Retour achat',
+}
+
+export function partnerDocTypeLabel(type: string): string {
+  return partnerDocTypeLabels[type] ?? type
+}
+
+export const partnerDocTypeBadgeClasses: Record<string, string> = {
+  InvoiceSale: 'bg-[#F1ECFC] text-[#6D4CE0]',
+  CreditNoteSale: 'bg-[#F1ECFC] text-[#5B3FD1]',
+  InvoicePurchase: 'bg-violet-100 text-violet-700',
+  DeliveryNote: 'bg-emerald-100 text-emerald-700',
+  QuoteSale: 'bg-gray-100 text-gray-600',
+  CustomerOrder: 'bg-cyan-100 text-cyan-700',
+  ReceiptNotePurchase: 'bg-teal-100 text-teal-700',
+  PurchaseOrder: 'bg-indigo-100 text-indigo-700',
+  ReturnSale: 'bg-red-100 text-red-700',
+  ReturnPurchase: 'bg-red-100 text-red-700',
+}
+
+export function partnerDocTypeBadgeClass(type: string): string {
+  return partnerDocTypeBadgeClasses[type] ?? 'bg-gray-100 text-gray-600'
+}
+
+export const partnerStatusBadgeClasses: Record<string, string> = {
+  paid: 'bg-emerald-100 text-emerald-700',
+  partial: 'bg-amber-100 text-amber-700',
+  confirmed: 'bg-[#F1ECFC] text-[#6D4CE0]',
+  draft: 'bg-gray-100 text-gray-500',
+  cancelled: 'bg-red-100 text-red-600',
+}
+
+export function partnerStatusBadgeClass(status: string): string {
+  return partnerStatusBadgeClasses[status] ?? 'bg-gray-100 text-gray-500'
+}
+
+export const partnerStatusLabels: Record<string, string> = {
+  paid: 'Payé',
+  partial: 'Partiel',
+  pending: 'En attente',
+  confirmed: 'Confirmé',
+  draft: 'Brouillon',
+  cancelled: 'Annulé',
+}
+
+/**
+ * Libelle d'etat pour l'historique d'une fiche tiers.
+ *
+ * Le bon de livraison fait exception : « confirmed » y signifie que la
+ * marchandise est partie, pas qu'elle est payee — d'ou « Livré ».
+ */
+export function partnerStatusLabel(status: string, documentType?: string): string {
+  if (documentType === 'DeliveryNote' && status === 'confirmed') {
+    return 'Livré'
+  }
+  return partnerStatusLabels[status] ?? status
+}
+
+// ── Sigles ──────────────────────────────────────────────────────────────────
+/** Sigles employes dans les listes de reglement, ou la place manque encore. */
+export const docTypeShortLabels: Record<string, string> = {
+  DeliveryNote: 'BL',
+  InvoiceSale: 'FAC',
+  InvoicePurchase: 'FACA',
+}
+
+export function docTypeShortLabel(type: string): string {
+  return docTypeShortLabels[type] ?? type
+}
+
+/** Libelle d'un mode de reglement, avec repli sur le code brut. */
+export function paymentMethodLabel(method: string): string {
+  return paymentMethodLabels[method] ?? method
+}
