@@ -641,17 +641,16 @@
 import { ref, reactive, computed, watch, onMounted, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
-import { useProductStore } from '@/stores/product'
 import { useCategoryStore } from '@/stores/category'
 import { useBrandStore } from '@/stores/brand'
 import { usePriceListStore } from '@/stores/priceList'
 import { useAuthStore } from '@/stores/authStore'
 import http from '@/services/http'
-import { useVariantOptionsStore } from '@/stores/useVariantOptionsStore'
 import { useExcelExport } from '@/composables/useExcelExport'
 import { useTaxSettings } from '@/composables/useTaxSettings'
 import { provideProductEdit } from '@/composables/useProductEditContext'
 import { useProductColumns } from '@/composables/useProductColumns'
+import { useProductList } from '@/composables/useProductList'
 import { useProductMedia } from '@/composables/useProductMedia'
 import { useProductPriceTiers } from '@/composables/useProductPriceTiers'
 import { useProductVariants } from '@/composables/useProductVariants'
@@ -669,12 +668,10 @@ import { useFormat } from '@/composables/useFormat'
 
 const { t } = useI18n()
 const { date: fmtDate } = useFormat()
-const store = useProductStore()
 const categoryStore = useCategoryStore()
 const brandStore = useBrandStore()
 const priceListStore = usePriceListStore()
 const auth = useAuthStore()
-const variantStore = useVariantOptionsStore()
 
 // E-commerce module gating: the "Publier dans la boutique" toggle and slug
 // field only appear when the tenant has the ecom feature enabled (driven
@@ -682,15 +679,7 @@ const variantStore = useVariantOptionsStore()
 const ecomEnabled = computed(() => auth.hasModule('ecom'))
 const variantsEnabled = computed(() => auth.hasModule('variants'))
 const imeiEnabled = computed(() => auth.hasModule('imei'))
-// Best-effort hint for the storefront URL shown beside the toggle.
-const tenantDomain = computed(() => {
-  if (typeof window === 'undefined') return ''
-  // Strip a leading "shop." if we're already on the storefront, then drop
-  // any "www." for cleanliness — yields e.g. "teliphoni.o3app.ma".
-  return window.location.hostname.replace(/^shop\./, '').replace(/^www\./, '')
-})
 
-const { items } = storeToRefs(store)
 const { items: categories } = storeToRefs(categoryStore)
 const { items: brands } = storeToRefs(brandStore)
 const { items: priceListsOptions } = storeToRefs(priceListStore)
@@ -708,11 +697,23 @@ function onExport(withImages = false) {
 }
 
 // ── UI state ───────────────────────────────────────────────────────────────
-const search = ref('')
-const statusFilter = ref('')
-const stockFilter = ref('')
-const ecomFilter = ref('')
-const promoFilter = ref('')
+// Recherche, filtres, pagination et cartes de tete : useProductList.
+const {
+  store,
+  items,
+  search,
+  statusFilter,
+  stockFilter,
+  ecomFilter,
+  promoFilter,
+  buildParams,
+  loadPage,
+  onPageChange,
+  statTotal,
+  statOutOfStock,
+  statStockValue,
+  statActivePercent,
+} = useProductList()
 const viewMode = ref<'grid' | 'list'>('grid')
 const toast = ref(null)
 const currentTab = ref(0)
@@ -729,7 +730,6 @@ async function measureInfoTab() {
   }
 }
 
-let searchTimer = null
 
 const showModal = ref(false)
 
@@ -792,7 +792,6 @@ const {
   newTierTtc,
   canAdd: canAddTier,
   isListAlreadyUsed,
-  reload: reloadPriceListItems,
   add: addTier,
   remove: removeTier,
 } = useProductPriceTiers({
@@ -883,23 +882,6 @@ const marginPercent = computed(() => {
   return Math.round(((form.p_salePrice - form.p_purchasePrice) / form.p_salePrice) * 100)
 })
 
-// ── Stat cards (best-effort — derived from the currently loaded page of
-// items, since no dedicated aggregate endpoint is available here) ─────────
-const statTotal = computed(() => store.meta?.total ?? items.value.length)
-const statOutOfStock = computed(() => items.value.filter((p: any) => Number(p.total_stock ?? 0) <= 0).length)
-const statStockValue = computed(() => {
-  const total = items.value.reduce(
-    (sum: number, p: any) => sum + Number(p.p_salePrice ?? 0) * Math.max(Number(p.total_stock ?? 0), 0),
-    0,
-  )
-  return `${new Intl.NumberFormat('fr-MA').format(Math.round(total))} MAD`
-})
-const statActivePercent = computed(() => {
-  if (!items.value.length) return 0
-  const active = items.value.filter((p: any) => p.p_status).length
-  return Math.round((active / items.value.length) * 100)
-})
-
 function statusBadgeLabel(row: any) {
   if (!row.p_status) return t('common.inactive')
   if (Number(row.total_stock ?? 0) <= 0) return t('products.outOfStock') ?? 'Rupture'
@@ -910,40 +892,6 @@ function statusBadgeClass(row: any) {
   if (Number(row.total_stock ?? 0) <= 0) return 'bg-[#FDECEC] text-[#C6383E]'
   return 'bg-[#E5F7ED] text-[#1F8A50]'
 }
-
-function buildParams(): Record<string, string> {
-  const p: Record<string, string> = {}
-  if (search.value.trim()) p.search = search.value.trim()
-  if (statusFilter.value !== '') p.status = statusFilter.value
-  if (stockFilter.value !== '') p.in_stock = stockFilter.value
-  if (ecomFilter.value !== '') p.is_ecom = ecomFilter.value
-  if (promoFilter.value !== '') p.on_promo = promoFilter.value
-  return p
-}
-
-function loadPage(page = 1) {
-  const p = buildParams()
-  store.params.page = page
-  // Assign every filter explicitly (not just the ones present in `p`) so a
-  // cleared field actually clears the stored param instead of leaving a
-  // stale value behind — usePaginatedApi drops null/'' before the request.
-  store.params.search = p.search ?? null
-  store.params.status = p.status ?? null
-  store.params.in_stock = p.in_stock ?? null
-  store.params.is_ecom = p.is_ecom ?? null
-  store.params.on_promo = p.on_promo ?? null
-  store.fetchPage(page)
-}
-
-function onPageChange(page) {
-  loadPage(page)
-}
-
-watch([search, statusFilter, stockFilter, ecomFilter, promoFilter], () => {
-  clearTimeout(searchTimer)
-  searchTimer = setTimeout(() => loadPage(1), 350)
-})
-
 // ── CRUD ───────────────────────────────────────────────────────────────────
 function openCreate() {
   editTarget.value = null
