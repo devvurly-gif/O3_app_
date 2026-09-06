@@ -1467,6 +1467,8 @@ import { useExcelExport } from '@/composables/useExcelExport'
 import { useTaxSettings } from '@/composables/useTaxSettings'
 import { useProductColumns } from '@/composables/useProductColumns'
 import { useProductMedia } from '@/composables/useProductMedia'
+import { useProductPriceTiers } from '@/composables/useProductPriceTiers'
+import { useProductVariants } from '@/composables/useProductVariants'
 import BaseTable from '@/components/BaseTable.vue'
 import BasePagination from '@/components/BasePagination.vue'
 import BaseModal from '@/components/BaseModal.vue'
@@ -1585,7 +1587,38 @@ const {
 // Statistics, movements, and price lists for the currently-edited product
 const statistics = ref(null)
 const stockMouvements = ref([])
-const priceListItems = ref([])
+
+// Paliers tarifaires du produit ouvert. Le taux de TVA passe par un getter :
+// `form` est declare plus bas, et le TTC affiche doit suivre ce que
+// l'utilisateur tape dans l'onglet Infos.
+const {
+  items: priceListItems,
+  adding: tierAdding,
+  saving: tierSaving,
+  deletingId: tierDeletingId,
+  newTier,
+  newTierTtc,
+  canAdd: canAddTier,
+  isListAlreadyUsed,
+  reload: reloadPriceListItems,
+  add: addTier,
+  remove: removeTier,
+} = useProductPriceTiers({
+  product: () => editTarget.value,
+  taxRate: () => form.p_taxRate,
+  notify: (message, level) => (toast.value as any)?.notify(message, level),
+})
+
+// Declinaisons du produit, inertes tant que le module n'est pas actif.
+const {
+  variants: productVariants,
+  dirty: variantsDirty,
+  load: loadVariants,
+  save: saveVariants,
+  addRow: addVariantRow,
+  remove: removeVariant,
+  applyGenerated,
+} = useProductVariants(() => variantsEnabled.value)
 
 // Resolve warehouse stocks regardless of JSON casing (snake_case by default,
 // but left camelCase tolerant in case the serializer changes).
@@ -1594,57 +1627,6 @@ const warehouseStocksList = computed(() => {
   if (!t) return []
   return t.warehouse_stocks ?? t.warehouseStocks ?? []
 })
-
-// Add-tier inline form state
-const tierAdding = ref(false)
-const tierSaving = ref(false)
-const tierDeletingId = ref<number | null>(null)
-const newTier = reactive({
-  price_list_id: null as number | null,
-  min_qty: 1,
-  price_ht: 0,
-})
-
-// variants
-const productVariants = ref([])
-const variantsDirty = ref(false)
-
-async function loadVariants(productId) {
-  if (!variantsEnabled.value || !productId) return
-  try {
-    const { data } = await http.get('/products/' + productId + '/variants')
-    productVariants.value = data
-  } catch { productVariants.value = [] }
-}
-
-async function saveVariants(productId) {
-  if (!variantsEnabled.value || !variantsDirty.value) return
-  await http.post('/products/' + productId + '/variants/sync', { variants: productVariants.value })
-  variantsDirty.value = false
-}
-
-function addVariantRow() {
-  productVariants.value.push({ label: '', sku: '', price: null, is_active: true })
-  variantsDirty.value = true
-}
-
-function removeVariant(idx) {
-  productVariants.value.splice(idx, 1)
-  variantsDirty.value = true
-}
-
-function applyGenerated() {
-  if (!variantStore.items.length) return
-  const combos = variantStore.items.reduce((acc, type) => {
-    if (!type.values || !type.values.length) return acc
-    if (!acc.length) return type.values.map(v => v.key)
-    return acc.flatMap(a => type.values.map(v => a + ' / ' + v.key))
-  }, [])
-  const existing = new Set(productVariants.value.map(v => v.label))
-  const newOnes = combos.filter(c => !existing.has(c)).map(label => ({ label, sku: '', price: null, is_active: true }))
-  productVariants.value = [...productVariants.value, ...newOnes]
-  variantsDirty.value = true
-}
 
 const tabs = computed(() => [
   { label: t('products.tabInfo') ?? 'Info' },
@@ -1732,79 +1714,6 @@ function statusBadgeClass(row: any) {
   return 'bg-[#E5F7ED] text-[#1F8A50]'
 }
 
-// ── Price-list tier helpers ──────────────────────────────────────────────
-const newTierTtc = computed(() => {
-  const ht = Number(newTier.price_ht) || 0
-  const rate = Number(form.p_taxRate) || 0
-  return (ht * (1 + rate / 100)).toFixed(2)
-})
-
-const canAddTier = computed(() =>
-  !!newTier.price_list_id &&
-  Number(newTier.min_qty) >= 1 &&
-  Number(newTier.price_ht) > 0,
-)
-
-function isListAlreadyUsed(listId: number, minQty: number): boolean {
-  return priceListItems.value.some(
-    (i: any) => Number(i.price_list_id) === listId && Number(i.min_qty) === Number(minQty),
-  )
-}
-
-async function reloadPriceListItems() {
-  if (!editTarget.value) return
-  try {
-    const { data } = await http.get(`/products/${editTarget.value.id}/price-lists`)
-    priceListItems.value = Array.isArray(data) ? data : data.data ?? []
-  } catch (e) {
-    console.error('Failed to reload price tiers', e)
-  }
-}
-
-async function addTier() {
-  if (!canAddTier.value || !editTarget.value) return
-  tierSaving.value = true
-  try {
-    await http.post(`/price-lists/${newTier.price_list_id}/items`, {
-      items: [
-        {
-          product_id: editTarget.value.id,
-          price_ht: Number(newTier.price_ht),
-          min_qty: Number(newTier.min_qty) || 1,
-        },
-      ],
-    })
-    await reloadPriceListItems()
-    // Reset form
-    newTier.price_list_id = null
-    newTier.min_qty = 1
-    newTier.price_ht = 0
-    tierAdding.value = false
-    toast.value?.notify('Tarif ajouté', 'success')
-  } catch (e: any) {
-    const msg = e?.response?.data?.message ?? 'Échec de l\'ajout du tarif'
-    toast.value?.notify(msg, 'error')
-  } finally {
-    tierSaving.value = false
-  }
-}
-
-async function removeTier(item: any) {
-  if (!confirm('Supprimer ce tarif ?')) return
-  tierDeletingId.value = item.id
-  try {
-    await http.delete(`/price-lists/${item.price_list_id}/items/${item.id}`)
-    priceListItems.value = priceListItems.value.filter((i: any) => i.id !== item.id)
-    toast.value?.notify('Tarif supprimé', 'success')
-  } catch (e: any) {
-    const msg = e?.response?.data?.message ?? 'Échec de la suppression'
-    toast.value?.notify(msg, 'error')
-  } finally {
-    tierDeletingId.value = null
-  }
-}
-
-// ── Server-side filters + pagination ─────────────────────────────────────
 function buildParams(): Record<string, string> {
   const p: Record<string, string> = {}
   if (search.value.trim()) p.search = search.value.trim()
