@@ -1466,6 +1466,7 @@ import { useVariantOptionsStore } from '@/stores/useVariantOptionsStore'
 import { useExcelExport } from '@/composables/useExcelExport'
 import { useTaxSettings } from '@/composables/useTaxSettings'
 import { useProductColumns } from '@/composables/useProductColumns'
+import { useProductMedia } from '@/composables/useProductMedia'
 import BaseTable from '@/components/BaseTable.vue'
 import BasePagination from '@/components/BasePagination.vue'
 import BaseModal from '@/components/BaseModal.vue'
@@ -1553,19 +1554,33 @@ watch(showModal, (val) => {
 const showDelete = ref(false)
 const saving = ref(false)
 const deleting = ref(false)
-const uploadingImage = ref(false)
-const uploadingDocument = ref(false)
-const addingVideo = ref(false)
 const editTarget = ref(null)
 const deleteTarget = ref(null)
 const duplicatingId = ref(null)
 
-// Images/videos/documents for the currently-edited product (reactive copies)
-const editImages = ref([])
-const editVideos = ref([])
-const editDocuments = ref([])
-const newVideoTitle = ref('')
-const newVideoUrl = ref('')
+// Images, videos et documents du produit ouvert. Les noms exposes au gabarit
+// gardent leur prefixe `edit*` : le composable est neuf, pas le vocabulaire.
+const {
+  images: editImages,
+  videos: editVideos,
+  documents: editDocuments,
+  uploadingImage,
+  uploadingDocument,
+  addingVideo,
+  newVideoTitle,
+  newVideoUrl,
+  reset: resetMedia,
+  handleImageUpload,
+  setPrimary: doSetPrimary,
+  deleteImage: doDeleteImage,
+  addVideo: handleAddVideo,
+  deleteVideo: doDeleteVideo,
+  handleDocumentUpload,
+  deleteDocument: doDeleteDocument,
+} = useProductMedia({
+  product: () => editTarget.value,
+  notify: (message, level) => (toast.value as any)?.notify(message, level),
+})
 
 // Statistics, movements, and price lists for the currently-edited product
 const statistics = ref(null)
@@ -1826,9 +1841,7 @@ watch([search, statusFilter, stockFilter, ecomFilter, promoFilter], () => {
 // ── CRUD ───────────────────────────────────────────────────────────────────
 function openCreate() {
   editTarget.value = null
-  editImages.value = []
-  editVideos.value = []
-  editDocuments.value = []
+  resetMedia()
   currentTab.value = 0
   Object.assign(form, emptyForm())
   showModal.value = true
@@ -1836,9 +1849,7 @@ function openCreate() {
 
 async function openEdit(row) {
   editTarget.value = row
-  editImages.value = [...(row.images ?? [])]
-  editVideos.value = [...(row.videos ?? [])]
-  editDocuments.value = [...(row.documents ?? [])]
+  resetMedia(row)
   currentTab.value = 0
   Object.assign(form, {
     p_title: row.p_title,
@@ -1959,123 +1970,6 @@ async function doDelete() {
     toast.value?.notify(t('common.failedDelete'), 'error')
   } finally {
     deleting.value = false
-  }
-}
-
-// ── Image upload ───────────────────────────────────────────────────────────
-async function handleImageUpload(e) {
-  const files = e.target.files
-  if (!files || !editTarget.value) return
-  e.target.value = '' // reset input
-
-  uploadingImage.value = true
-  try {
-    // Support multiple files
-    for (let i = 0; i < files.length; i++) {
-      const fd = new FormData()
-      fd.append('image', files[i])
-      fd.append('isPrimary', editImages.value.length === 0 && i === 0 ? '1' : '0')
-      const img = await store.uploadImage(editTarget.value.id, fd)
-      editImages.value.push(img)
-      if (img.isPrimary) {
-        editImages.value.forEach((im) => {
-          if (im.id !== img.id) im.isPrimary = false
-        })
-      }
-    }
-    toast.value?.notify(`${files.length} image(s) uploaded`, 'success')
-    await store.fetchPage()
-  } catch {
-    toast.value?.notify(t('products.imageFailed'), 'error')
-  } finally {
-    uploadingImage.value = false
-  }
-}
-
-async function doSetPrimary(img) {
-  try {
-    await store.setPrimaryImage(editTarget.value.id, img.id)
-    editImages.value.forEach((i) => {
-      i.isPrimary = i.id === img.id
-    })
-    await store.fetchPage()
-  } catch {
-    toast.value?.notify(t('common.failedSave'), 'error')
-  }
-}
-
-async function doDeleteImage(img) {
-  try {
-    await store.deleteImage(editTarget.value.id, img.id)
-    editImages.value = editImages.value.filter((i) => i.id !== img.id)
-    toast.value?.notify(t('products.imageDeleted'), 'success')
-    await store.fetchPage()
-  } catch {
-    toast.value?.notify(t('common.failedDelete'), 'error')
-  }
-}
-
-// ── Video links ────────────────────────────────────────────────────────────
-async function handleAddVideo() {
-  const url = newVideoUrl.value.trim()
-  if (!url || !editTarget.value) return
-
-  addingVideo.value = true
-  try {
-    const video = await store.addVideo(editTarget.value.id, {
-      title: newVideoTitle.value.trim() || undefined,
-      url,
-    })
-    editVideos.value.push(video)
-    newVideoTitle.value = ''
-    newVideoUrl.value = ''
-    toast.value?.notify(t('products.videoAdded'), 'success')
-  } catch {
-    toast.value?.notify(t('products.videoFailed'), 'error')
-  } finally {
-    addingVideo.value = false
-  }
-}
-
-async function doDeleteVideo(video) {
-  try {
-    await store.deleteVideo(editTarget.value.id, video.id)
-    editVideos.value = editVideos.value.filter((v) => v.id !== video.id)
-    toast.value?.notify(t('products.videoDeleted'), 'success')
-  } catch {
-    toast.value?.notify(t('common.failedDelete'), 'error')
-  }
-}
-
-// ── Document upload ──────────────────────────────────────────────────────
-async function handleDocumentUpload(e) {
-  const files = e.target.files
-  if (!files || !editTarget.value) return
-  e.target.value = ''
-
-  uploadingDocument.value = true
-  try {
-    for (let i = 0; i < files.length; i++) {
-      const fd = new FormData()
-      fd.append('file', files[i])
-      const doc = await store.uploadDocument(editTarget.value.id, fd)
-      editDocuments.value.push(doc)
-    }
-    toast.value?.notify(t('products.documentUploaded'), 'success')
-  } catch {
-    toast.value?.notify(t('products.documentFailed'), 'error')
-  } finally {
-    uploadingDocument.value = false
-  }
-}
-
-async function doDeleteDocument(doc) {
-  try {
-    await store.deleteDocument(editTarget.value.id, doc.id)
-    editDocuments.value = editDocuments.value.filter((d) => d.id !== doc.id)
-    toast.value?.notify(t('products.documentDeleted'), 'success')
-  } catch {
-    toast.value?.notify(t('common.failedDelete'), 'error')
   }
 }
 
