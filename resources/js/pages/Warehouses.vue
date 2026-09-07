@@ -7,6 +7,7 @@
         <p class="text-sm text-[#8A8F9C] dark:text-gray-400 mt-1">{{ $t('warehouses.subtitle') }}</p>
       </div>
       <button
+        v-if="canCreate"
         class="flex items-center gap-2 px-4 sm:px-5 py-2.5 bg-[#7C5CFC] hover:bg-[#6D4CE0] text-white text-sm font-bold rounded-[11px] shadow-[0_8px_20px_-8px_rgba(124,92,252,0.6)] transition"
         @click="openCreate"
       >
@@ -100,6 +101,7 @@
             </svg>
           </button>
           <button
+            v-if="canUpdate"
             class="p-1.5 rounded-lg text-[#7C5CFC] hover:bg-[#F1ECFC] transition"
             :title="$t('common.update')"
             @click="openEdit(row)"
@@ -113,6 +115,7 @@
             </svg>
           </button>
           <button
+            v-if="canDelete"
             class="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition"
             :title="$t('common.delete')"
             @click="confirmDelete(row)"
@@ -362,6 +365,7 @@ import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useWarehouseStore } from '@/stores/warehouse'
+import { useAuthStore } from '@/stores/authStore'
 import http from '@/services/http'
 import BaseTable from '@/components/BaseTable.vue'
 import BasePagination from '@/components/BasePagination.vue'
@@ -370,6 +374,14 @@ import BaseNotification from '@/components/BaseNotification.vue'
 import { useFormat } from '@/composables/useFormat'
 
 const { t } = useI18n()
+
+// Les routes d'ecriture sont gardees par `permission:warehouses.*` : les
+// boutons suivent la meme permission, sinon l'ecran proposerait une action que
+// l'API refuse.
+const auth = useAuthStore()
+const canCreate = computed(() => auth.hasPermission('warehouses.create'))
+const canUpdate = computed(() => auth.hasPermission('warehouses.update'))
+const canDelete = computed(() => auth.hasPermission('warehouses.delete'))
 const { date: fmtDate } = useFormat()
 const store = useWarehouseStore()
 const { items } = storeToRefs(store)

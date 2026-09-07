@@ -28,10 +28,11 @@ use Stancl\Tenancy\Contracts\Tenant as TenantContract;
  *      switching the connection out from under RefreshDatabase.
  *
  *   2. POS routes are also gated on fine-grained permissions (pos.access,
- *      pos.open_session, …) which only exist once RolePermissionSeeder has
- *      run. Tests don't seed, so grantPermissions() creates just the rows a
- *      given test needs. Admins bypass CheckPermission entirely, so only
- *      cashier/manager tests need it.
+ *      pos.open_session, …). UserFactory gives each system role the grants
+ *      RolePermissionSeeder gives it in production, so grantPermissions() is
+ *      for the extras a given test needs on top, and revokePermissions() for
+ *      proving a guard refuses. Admins bypass CheckPermission entirely, so
+ *      only cashier/manager tests need either.
  */
 trait InteractsWithPos
 {
@@ -78,6 +79,23 @@ trait InteractsWithPos
         });
 
         $user->role->permissions()->syncWithoutDetaching($ids->all());
+        $user->unsetRelation('role');
+
+        return $user;
+    }
+
+    /**
+     * Drop permissions from a user's role.
+     *
+     * UserFactory now gives each system role the grants the seeder gives it in
+     * production, so a test that wants to prove a guard refuses has to take
+     * the permission away rather than count on an empty pivot.
+     */
+    protected function revokePermissions(User $user, string ...$names): User
+    {
+        $ids = Permission::whereIn('name', $names)->pluck('id');
+
+        $user->role->permissions()->detach($ids->all());
         $user->unsetRelation('role');
 
         return $user;

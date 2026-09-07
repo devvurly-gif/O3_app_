@@ -62,7 +62,10 @@ class PosAccessTest extends TestCase
 
     public function test_cashier_without_pos_access_is_refused(): void
     {
+        // Le seeder donne pos.access au Caissier ; on le retire pour prouver
+        // que c'est bien la permission, et non le role, qui ouvre la caisse.
         $cashier = User::factory()->cashier()->create();
+        $this->revokePermissions($cashier, 'pos.access');
 
         $this->actingAs($cashier, 'sanctum')
             ->getJson('/api/pos/sessions/current')
@@ -93,6 +96,7 @@ class PosAccessTest extends TestCase
     {
         $cashier = User::factory()->cashier()->create();
         $this->grantPermissions($cashier, 'pos.access');
+        $this->revokePermissions($cashier, 'pos.open_session');
 
         $this->actingAs($cashier, 'sanctum')
             ->postJson('/api/pos/sessions/open', [

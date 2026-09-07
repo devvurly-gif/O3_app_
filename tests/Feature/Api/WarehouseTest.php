@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Api;
 
+use App\Models\Permission;
+use App\Models\Role;
 use App\Models\User;
 use App\Models\Warehouse;
 use Tests\Concerns\RefreshTenantDatabase;
@@ -153,6 +155,48 @@ class WarehouseTest extends TestCase
 
         $this->actingAs($cashier, 'sanctum')
              ->deleteJson("/api/warehouses/{$wh->id}")
+             ->assertForbidden();
+    }
+
+    /**
+     * Le garde lit la permission, pas une liste de roles : un role hors des
+     * quatre roles systeme qui detient `warehouses.create` doit passer. C'est
+     * le cas de `manager_remises` chez les trois tenants, que l'ancien garde
+     * `role:admin,manager,warehouse` excluait.
+     */
+    public function test_custom_role_holding_the_permission_can_create_warehouse(): void
+    {
+        $role = Role::create([
+            'name'         => 'manager_remises',
+            'display_name' => 'Gestionnaire remises',
+            'is_system'    => false,
+        ]);
+        $role->permissions()->sync([
+            Permission::firstOrCreate(
+                ['name' => 'warehouses.create'],
+                ['module' => 'warehouses', 'action' => 'create', 'display_name' => 'Entrepôts — Créer']
+            )->id,
+        ]);
+
+        $user = User::factory()->create(['role_id' => $role->id]);
+
+        $this->actingAs($user, 'sanctum')
+             ->postJson('/api/warehouses', ['wh_title' => 'Depot Remises'])
+             ->assertCreated();
+    }
+
+    /**
+     * Corollaire : retirer la permission depuis l'ecran Roles retire l'action.
+     */
+    public function test_revoking_the_permission_denies_the_warehouse_role(): void
+    {
+        $magasinier = User::factory()->warehouse()->create();
+        $magasinier->role->permissions()->detach(
+            Permission::where('name', 'warehouses.create')->value('id')
+        );
+
+        $this->actingAs($magasinier, 'sanctum')
+             ->postJson('/api/warehouses', ['wh_title' => 'Refuse'])
              ->assertForbidden();
     }
 }

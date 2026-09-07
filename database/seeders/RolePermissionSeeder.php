@@ -75,12 +75,90 @@ class RolePermissionSeeder extends Seeder
             . ' — ' . (static::actionLabels()[$action] ?? ucfirst($action));
     }
 
+    /**
+     * Every permission name in the catalogue, e.g. "warehouses.create".
+     *
+     * @return string[]
+     */
+    public static function permissionNames(): array
+    {
+        $names = [];
+
+        foreach (static::modules() as $module => $actions) {
+            foreach ($actions as $action) {
+                $names[] = "{$module}.{$action}";
+            }
+        }
+
+        return $names;
+    }
+
+    /** @return array<string, array{display_name: string, description: string}> */
+    public static function systemRoles(): array
+    {
+        return [
+            'admin'     => ['display_name' => 'Administrateur', 'description' => 'Accès complet'],
+            'manager'   => ['display_name' => 'Gestionnaire',   'description' => 'Gestion catalogue, documents, stock'],
+            'cashier'   => ['display_name' => 'Caissier',       'description' => 'Gestion documents et paiements'],
+            'warehouse' => ['display_name' => 'Magasinier',     'description' => 'Gestion stock et entrepôts'],
+        ];
+    }
+
+    /**
+     * Default grants of a system role, as permission names.
+     *
+     * Routes are guarded by permission, so this mapping is what actually
+     * decides who may act — UserFactory reads it too, otherwise a test role
+     * would carry no grant at all and every permission guard would deny it.
+     *
+     * @return string[]
+     */
+    public static function permissionNamesFor(string $role): array
+    {
+        $all = static::permissionNames();
+
+        $keep = match ($role) {
+            'admin' => static fn (string $name): bool => true,
+
+            // Manager: everything except users.*, roles.*, settings.manage
+            'manager' => static fn (string $name): bool => !str_starts_with($name, 'users.')
+                && !str_starts_with($name, 'roles.')
+                && $name !== 'settings.manage',
+
+            // Cashier: *.view + documents.* + payments.* + third_partners.create/update
+            'cashier' => static function (string $name): bool {
+                if (str_ends_with($name, '.view')) return true;
+                if (str_starts_with($name, 'documents.')) return true;
+                if (str_starts_with($name, 'payments.')) return true;
+                if (in_array($name, ['third_partners.create', 'third_partners.update'])) return true;
+                // Le caissier saisit les dépenses courantes de la journée, mais ne
+                // touche pas au plan de comptes (treasury.manage/delete).
+                if (in_array($name, ['treasury.create', 'treasury.update'])) return true;
+                if (in_array($name, ['pos.access', 'pos.open_session', 'pos.close_session'])) return true;
+                return false;
+            },
+
+            // Warehouse: *.view + stock.* + warehouses.*
+            'warehouse' => static function (string $name): bool {
+                if (str_ends_with($name, '.view')) return true;
+                if (str_starts_with($name, 'stock.')) return true;
+                if (str_starts_with($name, 'warehouses.')) return true;
+                // Stock/purchase document forms prefill unit_price from
+                // p_purchasePrice, so this role needs the cost fields.
+                if ($name === 'products.view_cost') return true;
+                return false;
+            },
+
+            default => static fn (string $name): bool => false,
+        };
+
+        return array_values(array_filter($all, $keep));
+    }
+
     public function run(): void
     {
         // ── Seed all permissions ─────────────────────────────────────
-        $modules = static::modules();
-
-        foreach ($modules as $module => $actions) {
+        foreach (static::modules() as $module => $actions) {
             foreach ($actions as $action) {
                 Permission::firstOrCreate(
                     ['name' => "{$module}.{$action}"],
@@ -94,59 +172,14 @@ class RolePermissionSeeder extends Seeder
         }
 
         // ── Seed default role-permission mappings ────────────────────
-        $allPermissions = Permission::all()->pluck('id', 'name');
+        $permissionIds = Permission::all()->pluck('id', 'name');
 
-        // Admin: ALL permissions
-        $admin = Role::firstOrCreate(
-            ['name' => 'admin'],
-            ['display_name' => 'Administrateur', 'description' => 'Accès complet', 'is_system' => true]
-        );
-        $admin->permissions()->sync($allPermissions->values()->toArray());
+        foreach (static::systemRoles() as $name => $attributes) {
+            $role = Role::firstOrCreate(['name' => $name], $attributes + ['is_system' => true]);
 
-        // Manager: everything except users.*, roles.*, settings.manage
-        $manager = Role::firstOrCreate(
-            ['name' => 'manager'],
-            ['display_name' => 'Gestionnaire', 'description' => 'Gestion catalogue, documents, stock', 'is_system' => true]
-        );
-        $managerPerms = $allPermissions->filter(function ($id, $name) {
-            return !str_starts_with($name, 'users.')
-                && !str_starts_with($name, 'roles.')
-                && $name !== 'settings.manage';
-        });
-        $manager->permissions()->sync($managerPerms->values()->toArray());
-
-        // Cashier: *.view + documents.* + payments.* + third_partners.create/update
-        $cashier = Role::firstOrCreate(
-            ['name' => 'cashier'],
-            ['display_name' => 'Caissier', 'description' => 'Gestion documents et paiements', 'is_system' => true]
-        );
-        $cashierPerms = $allPermissions->filter(function ($id, $name) {
-            if (str_ends_with($name, '.view')) return true;
-            if (str_starts_with($name, 'documents.')) return true;
-            if (str_starts_with($name, 'payments.')) return true;
-            if (in_array($name, ['third_partners.create', 'third_partners.update'])) return true;
-            // Le caissier saisit les dépenses courantes de la journée, mais ne
-            // touche pas au plan de comptes (treasury.manage/delete).
-            if (in_array($name, ['treasury.create', 'treasury.update'])) return true;
-            if (in_array($name, ['pos.access', 'pos.open_session', 'pos.close_session'])) return true;
-            return false;
-        });
-        $cashier->permissions()->sync($cashierPerms->values()->toArray());
-
-        // Warehouse: *.view + stock.* + warehouses.*
-        $warehouse = Role::firstOrCreate(
-            ['name' => 'warehouse'],
-            ['display_name' => 'Magasinier', 'description' => 'Gestion stock et entrepôts', 'is_system' => true]
-        );
-        $warehousePerms = $allPermissions->filter(function ($id, $name) {
-            if (str_ends_with($name, '.view')) return true;
-            if (str_starts_with($name, 'stock.')) return true;
-            if (str_starts_with($name, 'warehouses.')) return true;
-            // Stock/purchase document forms prefill unit_price from
-            // p_purchasePrice, so this role needs the cost fields.
-            if ($name === 'products.view_cost') return true;
-            return false;
-        });
-        $warehouse->permissions()->sync($warehousePerms->values()->toArray());
+            $role->permissions()->sync(
+                $permissionIds->only(static::permissionNamesFor($name))->values()->all()
+            );
+        }
     }
 }

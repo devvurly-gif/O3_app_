@@ -261,26 +261,32 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('import/template/{entity}', [ImportController::class, 'template']);
     });
 
-    // ── Entrepots : ecriture ouverte au Magasinier ────────────────────────
+    // ── Entrepots : ecriture pilotee par la permission ────────────────────
     //
     // Ces quatre routes vivaient dans le groupe `role:admin,manager`, alors que
     // RolePermissionSeeder accorde `warehouses.create/update/delete` au role
     // Magasinier. Le droit existait, la route ne le regardait pas : un
     // magasinier voyait l'ecran des depots et se faisait refuser l'action.
     //
-    // Le garde reste par role, comme partout ailleurs dans ce fichier, et non
-    // par permission. Un garde `permission:warehouses.create` dependrait des
-    // lignes de permission presentes dans chaque base tenant — celles-la
-    // memes que `tenants:sync-permissions` doit rattraper a chaque
-    // deploiement. Sur un tenant desynchronise, les gestionnaires perdraient
-    // l'ecriture du jour au lendemain, sans que rien ne l'annonce.
+    // Le garde lit maintenant la permission, pas le role, pour deux raisons :
+    // l'ecran Roles devient la commande reelle de ce droit (le cocher le
+    // donne, le decocher le retire), et un role personnalise qui detient la
+    // permission n'est plus exclu par une liste de roles figee — c'etait deja
+    // le cas de `manager_remises` chez les trois tenants.
     //
-    // Meme perimetre que le bloc d'ecriture du stock, juste en dessous : c'est
-    // le meme metier.
-    Route::middleware('role:admin,manager,warehouse')->group(function () {
+    // Contrepartie : le droit depend des lignes presentes dans chaque base
+    // tenant. `tenants:sync-permissions` cree les permissions manquantes ; les
+    // attributions, elles, sont verifiees avant chaque deploiement.
+    Route::middleware('permission:warehouses.create')->group(function () {
         Route::post('warehouses',                    [WarehouseController::class, 'store']);
+    });
+
+    Route::middleware('permission:warehouses.update')->group(function () {
         Route::put('warehouses/{warehouse}',         [WarehouseController::class, 'update']);
         Route::patch('warehouses/{warehouse}',       [WarehouseController::class, 'update']);
+    });
+
+    Route::middleware('permission:warehouses.delete')->group(function () {
         Route::delete('warehouses/{warehouse}',      [WarehouseController::class, 'destroy']);
     });
 

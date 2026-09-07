@@ -290,6 +290,8 @@ const moduleLabels: Record<string, string> = {
   users: 'Utilisateurs',
   roles: 'Rôles',
   settings: 'Paramètres',
+  treasury: 'Trésorerie',
+  pos: 'Point de Vente',
 }
 
 const permissionsByModule = computed(() => {
