@@ -251,11 +251,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('third-partners/{thirdPartner}',     [ThirdPartnerController::class, 'update']);
         Route::delete('third-partners/{thirdPartner}',    [ThirdPartnerController::class, 'destroy']);
 
-        Route::post('warehouses',                    [WarehouseController::class, 'store']);
-        Route::put('warehouses/{warehouse}',         [WarehouseController::class, 'update']);
-        Route::patch('warehouses/{warehouse}',       [WarehouseController::class, 'update']);
-        Route::delete('warehouses/{warehouse}',      [WarehouseController::class, 'destroy']);
-
         // ── Imports ─────────────────────────────────────────────────────
         Route::post('import/products',       [ImportController::class, 'products']);
         Route::post('import/third-partners', [ImportController::class, 'thirdPartners']);
@@ -264,6 +259,29 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('import/preview',        [ImportController::class, 'preview']);
         Route::post('import/run',            [ImportController::class, 'import']);
         Route::get('import/template/{entity}', [ImportController::class, 'template']);
+    });
+
+    // ── Entrepots : ecriture ouverte au Magasinier ────────────────────────
+    //
+    // Ces quatre routes vivaient dans le groupe `role:admin,manager`, alors que
+    // RolePermissionSeeder accorde `warehouses.create/update/delete` au role
+    // Magasinier. Le droit existait, la route ne le regardait pas : un
+    // magasinier voyait l'ecran des depots et se faisait refuser l'action.
+    //
+    // Le garde reste par role, comme partout ailleurs dans ce fichier, et non
+    // par permission. Un garde `permission:warehouses.create` dependrait des
+    // lignes de permission presentes dans chaque base tenant — celles-la
+    // memes que `tenants:sync-permissions` doit rattraper a chaque
+    // deploiement. Sur un tenant desynchronise, les gestionnaires perdraient
+    // l'ecriture du jour au lendemain, sans que rien ne l'annonce.
+    //
+    // Meme perimetre que le bloc d'ecriture du stock, juste en dessous : c'est
+    // le meme metier.
+    Route::middleware('role:admin,manager,warehouse')->group(function () {
+        Route::post('warehouses',                    [WarehouseController::class, 'store']);
+        Route::put('warehouses/{warehouse}',         [WarehouseController::class, 'update']);
+        Route::patch('warehouses/{warehouse}',       [WarehouseController::class, 'update']);
+        Route::delete('warehouses/{warehouse}',      [WarehouseController::class, 'destroy']);
     });
 
     // ── Document write (admin, manager, cashier) ──────────────────────────
