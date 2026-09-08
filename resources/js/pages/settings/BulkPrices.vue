@@ -548,10 +548,9 @@ const rule = reactive({
   mode: 'percent' as Mode,
   value: 0,
   basis: 'sale' as Basis,
-  // Un tarif s'affiche en dirhams entiers : une regle en pourcentage sort
-  // sinon des 2571,43 que personne ne met en rayon. L'arrondi reste
-  // modifiable, y compris pour revenir au centime.
-  rounding: '1',
+  // Meme defaut que l'API (BulkSalePriceUpdater::DEFAULT_ROUNDING) : un tarif
+  // se lit en dizaines de dirhams. Reste modifiable, jusqu'au centime.
+  rounding: '10',
 })
 
 const modes = [
@@ -754,7 +753,7 @@ function resetAll() {
   rule.mode = 'percent'
   rule.value = 0
   rule.basis = 'sale'
-  rule.rounding = '1'
+  rule.rounding = '10'
   preview.value = null
   result.value = null
 }

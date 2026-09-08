@@ -50,6 +50,16 @@ class BulkSalePriceUpdater
     public const ROUNDINGS = ['none', '0.05', '0.10', '0.50', '1', '5', '10', 'end_90', 'end_99'];
 
     /**
+     * Arrondi retenu quand l'appel n'en precise pas.
+     *
+     * Un tarif se lit en dizaines de dirhams : sans arrondi, une regle en
+     * pourcentage sort des 2571,43 que personne ne met en rayon. Le defaut
+     * vaut pour l'API comme pour l'ecran — les deux le lisent ici, ils ne
+     * peuvent donc pas diverger.
+     */
+    public const DEFAULT_ROUNDING = '10';
+
+    /**
      * Le perimetre : les produits en stock, avec leur quantite.
      *
      * Le stock positif n'est pas une option — une revision de tarif porte sur

@@ -150,7 +150,7 @@ class ProductBulkPriceController extends Controller
             'mode'     => $validated['mode'],
             'value'    => $validated['value'],
             'basis'    => $validated['basis']    ?? null,
-            'rounding' => $validated['rounding'] ?? 'none',
+            'rounding' => $validated['rounding'] ?? BulkSalePriceUpdater::DEFAULT_ROUNDING,
         ];
 
         return [$filters, $rule];

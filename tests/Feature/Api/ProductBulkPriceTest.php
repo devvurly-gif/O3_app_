@@ -62,18 +62,28 @@ class ProductBulkPriceTest extends TestCase
         return array_map(fn () => $this->stocked($attributes), range(1, $count));
     }
 
-    /** @param array<string, mixed> $payload */
+    /**
+     * Ces deux helpers desactivent l'arrondi sauf mention contraire.
+     *
+     * L'API arrondit aux 10 DH par defaut, ce qui est le bon reglage pour un
+     * tarif mais masquerait les calculs qu'on veut verifier ici : 110 et 114,29
+     * deviendraient tous les deux 110. Les tests d'arrondi, eux, passent leur
+     * valeur — `+` sur les tableaux laisse une cle deja posee intacte — et un
+     * test dedie couvre le defaut lui-meme.
+     *
+     * @param array<string, mixed> $payload
+     */
     private function preview(array $payload)
     {
         return $this->actingAs($this->admin, 'sanctum')
-                    ->postJson('/api/products/bulk-price/preview', $payload);
+                    ->postJson('/api/products/bulk-price/preview', $payload + ['rounding' => 'none']);
     }
 
     /** @param array<string, mixed> $payload */
     private function apply(array $payload)
     {
         return $this->actingAs($this->admin, 'sanctum')
-                    ->postJson('/api/products/bulk-price/apply', $payload);
+                    ->postJson('/api/products/bulk-price/apply', $payload + ['rounding' => 'none']);
     }
 
     // ── Chiffrage ────────────────────────────────────────────────
@@ -768,5 +778,42 @@ class ProductBulkPriceTest extends TestCase
              ->assertJsonPath('updated', 1);
 
         $this->assertEquals(114.29, (float) $product->fresh()->p_salePrice);
+    }
+    // ── Arrondi par defaut ───────────────────────────────────────
+
+    public function test_the_api_rounds_to_the_nearest_ten_when_nothing_is_asked(): void
+    {
+        $this->stocked(['p_salePrice' => 100, 'p_purchasePrice' => 80]);
+
+        // 100 + 7 % = 107, arrondi aux 10 DH : 110.
+        $this->actingAs($this->admin, 'sanctum')
+             ->postJson('/api/products/bulk-price/preview', ['mode' => 'percent', 'value' => 7])
+             ->assertOk()
+             ->assertJsonPath('sample.0.new', 110);
+    }
+
+    public function test_the_default_rounding_also_applies_when_writing(): void
+    {
+        $product = $this->stocked(['p_salePrice' => 100, 'p_purchasePrice' => 80]);
+
+        $this->actingAs($this->admin, 'sanctum')
+             ->postJson('/api/products/bulk-price/apply', [
+                 'mode' => 'percent', 'value' => 7, 'expected_count' => 1,
+             ])
+             ->assertOk();
+
+        $this->assertEquals(110, (float) $product->fresh()->p_salePrice);
+    }
+
+    public function test_the_default_can_be_turned_off(): void
+    {
+        $this->stocked(['p_salePrice' => 100, 'p_purchasePrice' => 80]);
+
+        $this->actingAs($this->admin, 'sanctum')
+             ->postJson('/api/products/bulk-price/preview', [
+                 'mode' => 'percent', 'value' => 7, 'rounding' => 'none',
+             ])
+             ->assertOk()
+             ->assertJsonPath('sample.0.new', 107);
     }
 }
