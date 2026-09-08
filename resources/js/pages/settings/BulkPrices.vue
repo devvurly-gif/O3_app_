@@ -124,7 +124,7 @@
           </button>
         </div>
 
-        <p class="text-xs text-gray-500 dark:text-gray-400">{{ currentMode.hint }}</p>
+        <p class="text-xs text-gray-500 dark:text-gray-400">{{ hint }}</p>
 
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
@@ -140,15 +140,17 @@
             />
           </div>
 
-          <div v-if="rule.mode === 'margin'">
-            <label for="bp-basis" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Base</label>
+          <div v-if="basisApplies">
+            <label for="bp-basis" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              Appliqué sur
+            </label>
             <select
               id="bp-basis"
               v-model="rule.basis"
               class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 text-sm"
+              @change="preview = null"
             >
-              <option value="purchase">Prix d'achat</option>
-              <option value="cost">Coût de revient</option>
+              <option v-for="b in bases" :key="b.key" :value="b.key">{{ b.label }}</option>
             </select>
           </div>
 
@@ -394,7 +396,8 @@ import { useBrandStore } from '@/stores/brand'
 import { formatAmount } from '@/composables/useFormat'
 import { storeToRefs } from 'pinia'
 
-type Mode = 'percent' | 'amount' | 'margin' | 'set'
+type Mode = 'percent' | 'amount' | 'set'
+type Basis = 'sale' | 'purchase' | 'cost'
 
 interface PreviewRow {
   id: number
@@ -439,38 +442,40 @@ const filters = reactive({
 const rule = reactive({
   mode: 'percent' as Mode,
   value: 0,
-  basis: 'purchase' as 'purchase' | 'cost',
+  basis: 'sale' as Basis,
   rounding: 'none',
 })
 
 const modes = [
-  {
-    key: 'percent' as Mode,
-    label: 'Pourcentage',
-    valueLabel: 'Variation (%)',
-    hint: 'Applique un pourcentage au prix de vente actuel. −10 pour une baisse de 10 %.',
-  },
-  {
-    key: 'amount' as Mode,
-    label: 'Montant fixe',
-    valueLabel: 'Variation (DH)',
-    hint: 'Ajoute ou retire un montant au prix de vente actuel. −25 pour retirer 25 DH.',
-  },
-  {
-    key: 'margin' as Mode,
-    label: 'Marge sur achat',
-    valueLabel: 'Marge (%)',
-    hint: "Recalcule le prix depuis le prix d'achat : base × (1 + marge). Les produits dont la base est à zéro sont ignorés.",
-  },
-  {
-    key: 'set' as Mode,
-    label: 'Prix fixe',
-    valueLabel: 'Prix (DH)',
-    hint: 'Impose le même prix de vente à tout le périmètre.',
-  },
+  { key: 'percent' as Mode, label: 'Pourcentage', valueLabel: 'Variation (%)' },
+  { key: 'amount' as Mode, label: 'Montant fixe', valueLabel: 'Variation (DH)' },
+  { key: 'set' as Mode, label: 'Prix fixe', valueLabel: 'Prix (DH)' },
+]
+
+const bases = [
+  { key: 'sale' as Basis, label: 'Prix de vente actuel' },
+  { key: 'purchase' as Basis, label: "Prix d'achat" },
+  { key: 'cost' as Basis, label: 'Coût de revient' },
 ]
 
 const currentMode = computed(() => modes.find((m) => m.key === rule.mode) ?? modes[0])
+const currentBasis = computed(() => bases.find((b) => b.key === rule.basis) ?? bases[0])
+// `set` impose un prix : il n'y a pas de base de depart a choisir.
+const basisApplies = computed(() => rule.mode !== 'set')
+
+const hint = computed(() => {
+  if (rule.mode === 'set') return 'Impose le même prix de vente à tout le périmètre.'
+
+  const on = currentBasis.value.label.toLowerCase()
+  const skipped =
+    rule.basis === 'sale'
+      ? ''
+      : ' Les produits dont cette base est à zéro sont ignorés — ils ne tomberaient pas à zéro par accident.'
+
+  return rule.mode === 'percent'
+    ? `Applique un pourcentage au ${on}. −10 pour une baisse de 10 %.${skipped}`
+    : `Ajoute ou retire un montant au ${on}. −25 pour retirer 25 DH.${skipped}`
+})
 
 const previewing = ref(false)
 const applying = ref(false)
@@ -489,13 +494,13 @@ const canApply = computed(
 const ruleSummary = computed(() => {
   const v = rule.value
   const round = rule.rounding === 'none' ? '' : `, arrondi « ${rule.rounding} »`
+  const on = currentBasis.value.label.toLowerCase()
+
   switch (rule.mode) {
     case 'percent':
-      return `${v > 0 ? '+' : ''}${v} % sur le prix actuel${round}.`
+      return `${v > 0 ? '+' : ''}${v} % appliqué au ${on}${round}.`
     case 'amount':
-      return `${v > 0 ? '+' : ''}${v} DH sur le prix actuel${round}.`
-    case 'margin':
-      return `Marge de ${v} % sur ${rule.basis === 'cost' ? 'le coût de revient' : "le prix d'achat"}${round}.`
+      return `${v > 0 ? '+' : ''}${v} DH appliqué au ${on}${round}.`
     default:
       return `Prix fixé à ${v} DH${round}.`
   }
@@ -566,7 +571,7 @@ function resetAll() {
   filters.search = ''
   rule.mode = 'percent'
   rule.value = 0
-  rule.basis = 'purchase'
+  rule.basis = 'sale'
   rule.rounding = 'none'
   preview.value = null
   result.value = null

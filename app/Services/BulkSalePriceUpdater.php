@@ -30,7 +30,16 @@ class BulkSalePriceUpdater
     /** Nombre de lignes renvoyees en exemple par le chiffrage. */
     public const SAMPLE_SIZE = 50;
 
+    /**
+     * `margin` est l'ancien nom de « pourcentage applique au prix d'achat ».
+     * Depuis que la base est un choix a part entiere, c'est un alias : il reste
+     * accepte pour ne pas casser un appel deja ecrit, mais l'ecran ne le propose
+     * plus — deux chemins vers le meme calcul se contredisent tot ou tard.
+     */
     public const MODES = ['percent', 'amount', 'margin', 'set'];
+
+    /** Sur quoi le pourcentage ou le montant s'applique. */
+    public const BASES = ['sale', 'purchase', 'cost'];
 
     public const ROUNDINGS = ['none', '0.05', '0.10', '0.50', '1', '5', '10', 'end_90', 'end_99'];
 
@@ -68,31 +77,51 @@ class BulkSalePriceUpdater
     }
 
     /**
-     * Nouveau prix pour un produit, ou null quand la regle ne s'applique pas
-     * (marge demandee sur une base a zero : il n'y a rien a majorer).
+     * Valeur de depart du calcul : le prix de vente actuel, le prix d'achat ou
+     * le cout de revient.
+     */
+    private function basisValue(Product $product, string $basis): float
+    {
+        return (float) match ($basis) {
+            'purchase' => $product->p_purchasePrice,
+            'cost'     => $product->p_cost,
+            default    => $product->p_salePrice,
+        };
+    }
+
+    /**
+     * Nouveau prix pour un produit, ou null quand la regle ne s'applique pas :
+     * une base achat ou cout a zero n'a rien a majorer, et un produit dont on
+     * ignore le cout ne doit pas se retrouver a zero par accident.
      *
      * @param array<string, mixed> $rule
      */
     public function newPriceFor(Product $product, array $rule): ?float
     {
-        $value   = (float) $rule['value'];
-        $current = (float) $product->p_salePrice;
+        $value = (float) $rule['value'];
 
-        $raw = match ($rule['mode']) {
-            'percent' => $current * (1 + $value / 100),
-            'amount'  => $current + $value,
-            'set'     => $value,
-            'margin'  => (function () use ($product, $rule, $value): ?float {
-                $basis = (float) (($rule['basis'] ?? 'purchase') === 'cost'
-                    ? $product->p_cost
-                    : $product->p_purchasePrice);
+        // `margin` valait « pourcentage sur le prix d'achat » avant que la base
+        // devienne un choix ; on le ramene a sa forme actuelle.
+        $mode  = $rule['mode'] === 'margin' ? 'percent' : $rule['mode'];
+        $basis = $rule['basis'] ?? ($rule['mode'] === 'margin' ? 'purchase' : 'sale');
 
-                return $basis > 0 ? $basis * (1 + $value / 100) : null;
-            })(),
-            default   => null,
-        };
+        if ($mode === 'set') {
+            return $this->applyRounding($value, $rule['rounding'] ?? 'none');
+        }
 
-        return $raw === null ? null : $this->applyRounding($raw, $rule['rounding'] ?? 'none');
+        $base = $this->basisValue($product, $basis);
+
+        // Le prix de vente fait exception : partir de zero y est un cas normal
+        // (un produit non tarife reste a zero), pas une base manquante.
+        if ($basis !== 'sale' && $base <= 0) {
+            return null;
+        }
+
+        $raw = $mode === 'percent'
+            ? $base * (1 + $value / 100)
+            : $base + $value;
+
+        return $this->applyRounding($raw, $rule['rounding'] ?? 'none');
     }
 
     /**

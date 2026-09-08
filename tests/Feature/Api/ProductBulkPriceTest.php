@@ -343,4 +343,97 @@ class ProductBulkPriceTest extends TestCase
         $this->assertArrayNotHasKey('cost', $response->json('sample.0'));
         $this->assertArrayNotHasKey('margin', $response->json('sample.0'));
     }
+
+    // ── Base de calcul ───────────────────────────────────────────
+
+    public function test_a_percentage_can_be_applied_to_the_purchase_price(): void
+    {
+        Product::factory()->create(['p_salePrice' => 500, 'p_purchasePrice' => 80]);
+
+        $this->preview(['mode' => 'percent', 'value' => 25, 'basis' => 'purchase'])
+             ->assertOk()
+             ->assertJsonPath('sample.0.new', 100);
+    }
+
+    public function test_a_percentage_can_be_applied_to_the_cost_price(): void
+    {
+        Product::factory()->create(['p_salePrice' => 500, 'p_purchasePrice' => 80, 'p_cost' => 90]);
+
+        $this->preview(['mode' => 'percent', 'value' => 20, 'basis' => 'cost'])
+             ->assertOk()
+             ->assertJsonPath('sample.0.new', 108);
+    }
+
+    public function test_a_fixed_amount_can_be_applied_to_the_purchase_price(): void
+    {
+        Product::factory()->create(['p_salePrice' => 500, 'p_purchasePrice' => 80]);
+
+        $this->preview(['mode' => 'amount', 'value' => 30, 'basis' => 'purchase'])
+             ->assertOk()
+             ->assertJsonPath('sample.0.new', 110);
+    }
+
+    public function test_the_sale_price_stays_the_default_basis(): void
+    {
+        Product::factory()->create(['p_salePrice' => 200, 'p_purchasePrice' => 80]);
+
+        // Sans `basis`, on part du prix de vente : 200 + 10 % = 220.
+        $this->preview(['mode' => 'percent', 'value' => 10])
+             ->assertOk()
+             ->assertJsonPath('sample.0.new', 220);
+    }
+
+    public function test_a_cost_basis_at_zero_is_skipped_not_zeroed(): void
+    {
+        Product::factory()->create(['p_salePrice' => 300, 'p_purchasePrice' => 0]);
+
+        // Sans prix d'achat, appliquer une marge donnerait 0 : on ignore le
+        // produit plutot que de brader un article dont on ignore le cout.
+        $this->preview(['mode' => 'percent', 'value' => 25, 'basis' => 'purchase'])
+             ->assertOk()
+             ->assertJsonPath('matched', 1)
+             ->assertJsonPath('changed', 0)
+             ->assertJsonPath('skipped_no_basis', 1);
+    }
+
+    public function test_a_sale_basis_at_zero_is_not_skipped(): void
+    {
+        Product::factory()->create(['p_salePrice' => 0, 'p_purchasePrice' => 50]);
+
+        // Un produit non tarife reste a zero : c'est un cas normal, pas une
+        // base manquante.
+        $this->preview(['mode' => 'percent', 'value' => 25])
+             ->assertOk()
+             ->assertJsonPath('skipped_no_basis', 0)
+             ->assertJsonPath('unchanged', 1);
+    }
+
+    public function test_the_legacy_margin_mode_still_maps_to_a_purchase_percentage(): void
+    {
+        Product::factory()->create(['p_salePrice' => 500, 'p_purchasePrice' => 80]);
+
+        // `margin` n'est plus propose par l'ecran mais reste accepte : il doit
+        // rendre exactement ce que rend `percent` sur le prix d'achat.
+        $this->preview(['mode' => 'margin', 'value' => 25])
+             ->assertOk()
+             ->assertJsonPath('sample.0.new', 100);
+    }
+
+    public function test_an_unknown_basis_is_rejected(): void
+    {
+        $this->preview(['mode' => 'percent', 'value' => 10, 'basis' => 'prix_du_voisin'])
+             ->assertUnprocessable()
+             ->assertJsonValidationErrors(['basis']);
+    }
+
+    public function test_applying_on_the_purchase_price_writes_the_new_prices(): void
+    {
+        $product = Product::factory()->create(['p_salePrice' => 500, 'p_purchasePrice' => 80]);
+
+        $this->apply([
+            'mode' => 'percent', 'value' => 25, 'basis' => 'purchase', 'expected_count' => 1,
+        ])->assertOk()->assertJsonPath('updated', 1);
+
+        $this->assertEquals(100, (float) $product->fresh()->p_salePrice);
+    }
 }

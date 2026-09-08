@@ -62,7 +62,7 @@ interface BulkPriceRequest {
   search?: string | null
   mode: 'percent' | 'amount' | 'margin' | 'set'
   value: number
-  basis?: 'purchase' | 'cost'
+  basis?: 'sale' | 'purchase' | 'cost'
   rounding?: string
   expected_count?: number
 }
@@ -95,22 +95,17 @@ function bulkPriceResponse(url: string, body: BulkPriceRequest) {
 
   for (const p of rows) {
     const current = Math.round(Number(p.p_salePrice) * 100) / 100
-    const basis = Number(body.basis === 'cost' ? p.p_cost : p.p_purchasePrice)
+
+    // Meme resolution que BulkSalePriceUpdater : `margin` est l'alias de
+    // « pourcentage applique au prix d'achat ».
+    const mode = body.mode === 'margin' ? 'percent' : body.mode
+    const basisKey = body.basis ?? (body.mode === 'margin' ? 'purchase' : 'sale')
+    const base = Number(basisKey === 'purchase' ? p.p_purchasePrice : basisKey === 'cost' ? p.p_cost : p.p_salePrice)
 
     let raw: number | null
-    switch (body.mode) {
-      case 'percent':
-        raw = current * (1 + body.value / 100)
-        break
-      case 'amount':
-        raw = current + body.value
-        break
-      case 'set':
-        raw = body.value
-        break
-      default:
-        raw = basis > 0 ? basis * (1 + body.value / 100) : null
-    }
+    if (mode === 'set') raw = body.value
+    else if (basisKey !== 'sale' && base <= 0) raw = null
+    else raw = mode === 'percent' ? base * (1 + body.value / 100) : base + body.value
 
     if (raw === null) {
       skipped++

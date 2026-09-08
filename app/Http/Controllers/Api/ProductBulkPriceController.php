@@ -91,9 +91,9 @@ class ProductBulkPriceController extends Controller
 
             'mode'           => ['required', Rule::in(BulkSalePriceUpdater::MODES)],
             'value'          => ['required', 'numeric'],
-            // La marge se calcule sur le prix d'achat par defaut ; `cost` vise
-            // le cout de revient quand le tenant le renseigne.
-            'basis'          => ['nullable', Rule::in(['purchase', 'cost'])],
+            // Sur quoi le pourcentage ou le montant s'applique : le prix de
+            // vente actuel par defaut, sinon le prix d'achat ou le cout.
+            'basis'          => ['nullable', Rule::in(BulkSalePriceUpdater::BASES)],
             'rounding'       => ['nullable', Rule::in(BulkSalePriceUpdater::ROUNDINGS)],
         ]);
 
@@ -108,7 +108,7 @@ class ProductBulkPriceController extends Controller
         $rule = [
             'mode'     => $validated['mode'],
             'value'    => $validated['value'],
-            'basis'    => $validated['basis']    ?? 'purchase',
+            'basis'    => $validated['basis']    ?? null,
             'rounding' => $validated['rounding'] ?? 'none',
         ];
 
