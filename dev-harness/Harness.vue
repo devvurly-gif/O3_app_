@@ -1,6 +1,8 @@
 <template>
   <div class="min-h-screen bg-[#F6F7F9] dark:bg-gray-900">
-    <header class="sticky top-0 z-50 flex items-center gap-2 border-b border-[#E1E3E9] bg-white px-4 py-2.5 dark:border-gray-700 dark:bg-gray-800">
+    <header
+      class="sticky top-0 z-50 flex items-center gap-2 border-b border-[#E1E3E9] bg-white px-4 py-2.5 dark:border-gray-700 dark:bg-gray-800"
+    >
       <span class="mr-2 text-xs font-bold uppercase tracking-wider text-[#8A8F9C]">Banc</span>
       <button
         v-for="screen in screens"
@@ -30,11 +32,13 @@ import { ref } from 'vue'
 import Customers from '@/pages/Customers.vue'
 import Products from '@/pages/Products.vue'
 import Suppliers from '@/pages/Suppliers.vue'
+import BulkPrices from '@/pages/settings/BulkPrices.vue'
 
 const screens = [
   { key: 'suppliers', label: 'Fournisseurs', component: Suppliers },
   { key: 'customers', label: 'Clients', component: Customers },
   { key: 'products', label: 'Produits', component: Products },
+  { key: 'bulk-prices', label: 'Révision prix', component: BulkPrices },
 ]
 
 const current = ref('suppliers')

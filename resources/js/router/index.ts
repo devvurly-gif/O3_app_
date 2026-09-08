@@ -19,9 +19,17 @@ const routes: RouteRecordRaw[] = [
   { path: '/login', component: () => import('../pages/auth/Login.vue'), meta: { guest: true } },
 
   // ── Public registration funnel (central domain) ──────────────────
-  { path: '/register',          component: () => import('../pages/auth/Register.vue'),         meta: { guest: true, layout: 'none' } },
-  { path: '/register/sent',     component: () => import('../pages/auth/RegisterSent.vue'),     meta: { guest: true, layout: 'none' } },
-  { path: '/register/verified', component: () => import('../pages/auth/RegisterVerified.vue'), meta: { guest: true, layout: 'none' } },
+  { path: '/register', component: () => import('../pages/auth/Register.vue'), meta: { guest: true, layout: 'none' } },
+  {
+    path: '/register/sent',
+    component: () => import('../pages/auth/RegisterSent.vue'),
+    meta: { guest: true, layout: 'none' },
+  },
+  {
+    path: '/register/verified',
+    component: () => import('../pages/auth/RegisterVerified.vue'),
+    meta: { guest: true, layout: 'none' },
+  },
 
   {
     path: '/dashboard',
@@ -245,6 +253,13 @@ const routes: RouteRecordRaw[] = [
     // Plus adminOnly : valider une caisse est un geste de responsable, et le
     // serveur ouvre deja la route a admin comme a manager.
     meta: { layout: 'app', title: 'Sessions POS', breadcrumb: 'Sessions POS' },
+  },
+  {
+    path: '/settings/bulk-prices',
+    component: () => import('../pages/settings/BulkPrices.vue'),
+    // Pas adminOnly : reviser un tarif est un geste de gestionnaire, et la
+    // route API comme l'ecran sont gardes par `products.update`.
+    meta: { layout: 'app', title: 'Révision des prix', breadcrumb: 'Révision des prix' },
   },
   {
     path: '/settings/imports',

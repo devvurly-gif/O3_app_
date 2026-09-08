@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\DocumentLigneController;
 use App\Http\Controllers\Api\LabelPrintController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PriceListController;
+use App\Http\Controllers\Api\ProductBulkPriceController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ProductImageController;
 use App\Http\Controllers\Api\ProductVideoController;
@@ -259,6 +260,17 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('import/preview',        [ImportController::class, 'preview']);
         Route::post('import/run',            [ImportController::class, 'import']);
         Route::get('import/template/{entity}', [ImportController::class, 'template']);
+    });
+
+    // ── Prix de vente : revision en masse ─────────────────────────────────
+    //
+    // Garde par `products.update`, la permission que l'operation exerce : elle
+    // couvre l'admin et le gestionnaire comme l'edition unitaire, et l'ecran
+    // Roles reste la commande du droit. L'ecriture passe par un chiffrage que
+    // l'utilisateur voit avant d'appliquer.
+    Route::middleware('permission:products.update')->group(function () {
+        Route::post('products/bulk-price/preview', [ProductBulkPriceController::class, 'preview']);
+        Route::post('products/bulk-price/apply',   [ProductBulkPriceController::class, 'apply']);
     });
 
     // ── Entrepots : ecriture pilotee par la permission ────────────────────

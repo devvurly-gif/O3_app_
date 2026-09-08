@@ -212,6 +212,7 @@ export default {
     roles: 'Rôles & permissions',
     posTerminals: 'Terminaux POS',
     posSessions: 'Sessions POS',
+    bulkPrices: 'Révision des prix',
     audit: "Piste d'audit",
     central: 'Administration',
     tenants: 'Gestion clients',

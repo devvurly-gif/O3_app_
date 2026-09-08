@@ -18,9 +18,11 @@ export const categories = [
   { id: 3, ctg_title: 'Outillage', ctg_status: true },
 ]
 
+// Le front lit `br_title` / `br_status` (cf. Brands.vue, Products.vue) :
+// la fixture portait `brd_`, et la marque s'affichait vide sur le banc.
 export const brands = [
-  { id: 1, brd_title: 'Grohe', brd_status: true },
-  { id: 2, brd_title: 'Legrand', brd_status: true },
+  { id: 1, br_title: 'Grohe', br_status: true },
+  { id: 2, br_title: 'Legrand', br_status: true },
 ]
 
 export const priceLists = [
@@ -182,8 +184,12 @@ export function productPage(params: Record<string, string>) {
     rows = rows.filter(
       (p) =>
         String(p.p_title).toLowerCase().includes(needle) ||
-        String(p.p_code ?? '').toLowerCase().includes(needle) ||
-        String(p.p_sku ?? '').toLowerCase().includes(needle),
+        String(p.p_code ?? '')
+          .toLowerCase()
+          .includes(needle) ||
+        String(p.p_sku ?? '')
+          .toLowerCase()
+          .includes(needle),
     )
   }
   if (params.status !== undefined && params.status !== '') {

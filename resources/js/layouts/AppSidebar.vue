@@ -8,7 +8,12 @@
     leave-from-class="opacity-100"
     leave-to-class="opacity-0"
   >
-    <div aria-hidden="true" v-if="mobileOpen" class="fixed inset-0 z-40 bg-black/50 lg:hidden" @click="emit('closeMobile')" />
+    <div
+      v-if="mobileOpen"
+      aria-hidden="true"
+      class="fixed inset-0 z-40 bg-black/50 lg:hidden"
+      @click="emit('closeMobile')"
+    />
   </Transition>
 
   <aside
@@ -22,7 +27,13 @@
       class="h-16 shrink-0 flex items-center gap-2.5 px-3 border-b border-slate-200 dark:border-slate-800 overflow-hidden"
     >
       <div class="w-[34px] h-[34px] rounded-xl bg-[#7C5CFC] flex items-center justify-center shrink-0">
-        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+        <svg
+          class="w-[18px] h-[18px] text-white"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.4"
+          viewBox="0 0 24 24"
+        >
           <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
         </svg>
       </div>
@@ -60,11 +71,15 @@
             stroke-width="1.8"
             viewBox="0 0 24 24"
           >
-            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"
+            />
           </svg>
           <input
-            :aria-label="$t('nav.searchPlaceholder')"
             v-model="query"
+            :aria-label="$t('nav.searchPlaceholder')"
             type="search"
             :placeholder="$t('nav.searchPlaceholder')"
             class="flex-1 min-w-0 bg-transparent border-0 p-0 text-input text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-0"
@@ -86,7 +101,9 @@
       <div class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-2 pb-3">
         <!-- Search results -->
         <template v-if="query">
-          <p class="px-2 pt-1.5 pb-1 text-[10px] font-bold uppercase tracking-[0.13em] text-slate-400 dark:text-slate-500">
+          <p
+            class="px-2 pt-1.5 pb-1 text-[10px] font-bold uppercase tracking-[0.13em] text-slate-400 dark:text-slate-500"
+          >
             {{ $t('nav.results') }}
           </p>
           <router-link
@@ -109,7 +126,9 @@
         <!-- Favorites + groups -->
         <template v-else>
           <template v-if="favoriteLinks.length">
-            <p class="px-2 pt-2 pb-1 text-[10px] font-bold uppercase tracking-[0.13em] text-slate-400 dark:text-slate-500">
+            <p
+              class="px-2 pt-2 pb-1 text-[10px] font-bold uppercase tracking-[0.13em] text-slate-400 dark:text-slate-500"
+            >
               {{ $t('nav.favorites') }}
             </p>
             <div v-for="link in favoriteLinks" :key="'fav-' + link.to" class="relative flex items-center">
@@ -136,7 +155,9 @@
             <hr class="border-slate-200 dark:border-slate-800 mx-2 mt-2" />
           </template>
 
-          <p class="px-2 pt-2 pb-1 text-[10px] font-bold uppercase tracking-[0.13em] text-slate-400 dark:text-slate-500">
+          <p
+            class="px-2 pt-2 pb-1 text-[10px] font-bold uppercase tracking-[0.13em] text-slate-400 dark:text-slate-500"
+          >
             {{ $t('nav.sections') }}
           </p>
 
@@ -145,9 +166,7 @@
               type="button"
               class="w-full flex items-center gap-2.5 h-[34px] px-2.5 rounded-lg text-xs font-semibold transition-colors hover:bg-slate-100 dark:hover:bg-slate-800/70"
               :class="
-                groupHasActive(group)
-                  ? 'text-slate-900 dark:text-slate-100'
-                  : 'text-slate-500 dark:text-slate-400'
+                groupHasActive(group) ? 'text-slate-900 dark:text-slate-100' : 'text-slate-500 dark:text-slate-400'
               "
               :aria-expanded="isGroupOpen(group.id)"
               @click="toggleGroup(group.id)"
@@ -206,7 +225,10 @@
                     stroke-width="1.6"
                     viewBox="0 0 24 24"
                   >
-                    <path stroke-linejoin="round" d="M12 3l2.6 5.5 6 .8-4.4 4.2 1.1 6-5.3-3-5.3 3 1.1-6L3.4 9.3l6-.8z" />
+                    <path
+                      stroke-linejoin="round"
+                      d="M12 3l2.6 5.5 6 .8-4.4 4.2 1.1 6-5.3-3-5.3 3 1.1-6L3.4 9.3l6-.8z"
+                    />
                   </svg>
                 </button>
               </div>
@@ -225,7 +247,11 @@
         @click="openPalette"
       >
         <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"
+          />
         </svg>
       </button>
 
@@ -352,12 +378,16 @@
             stroke-width="1.8"
             viewBox="0 0 24 24"
           >
-            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"
+            />
           </svg>
           <input
-            :aria-label="$t('nav.searchPlaceholder')"
             ref="paletteInput"
             v-model="paletteQuery"
+            :aria-label="$t('nav.searchPlaceholder')"
             type="text"
             :placeholder="$t('nav.searchPlaceholder')"
             class="flex-1 bg-transparent border-0 p-0 text-input text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-0"
@@ -521,10 +551,7 @@ function loadState(): void {
 }
 function saveState(): void {
   try {
-    localStorage.setItem(
-      storageKey.value,
-      JSON.stringify({ openGroups: openGroups.value, favorites: favorites.value }),
-    )
+    localStorage.setItem(storageKey.value, JSON.stringify({ openGroups: openGroups.value, favorites: favorites.value }))
   } catch {
     // storage may be unavailable (private mode, quota)
   }
@@ -596,8 +623,8 @@ function goTo(to: string): void {
 // ── Flyout ───────────────────────────────────────────────────────────
 const flyout = ref<string | null>(null)
 const flyoutTop = ref(80)
-const flyoutGroup = computed<SidebarGroup | null>(
-  () => (flyout.value ? visibleGroups.value.find((g) => g.id === flyout.value) ?? null : null),
+const flyoutGroup = computed<SidebarGroup | null>(() =>
+  flyout.value ? (visibleGroups.value.find((g) => g.id === flyout.value) ?? null) : null,
 )
 
 function openFlyout(id: string, event: MouseEvent): void {
@@ -648,7 +675,10 @@ watch(paletteQuery, () => (paletteIndex.value = 0))
 // ── Search ───────────────────────────────────────────────────────────
 const query = ref('')
 const normalize = (s: string): string =>
-  s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  s
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
 
 function filterLinks(q: string): FlatLink[] {
   const needle = normalize(q.trim())
@@ -874,9 +904,7 @@ const tenantGroups: SidebarGroup[] = [
     id: 'marketing',
     labelKey: 'nav.marketing',
     icon: groupIcons.marketing,
-    links: [
-      { to: '/marketing/promotions', labelKey: 'nav.promotions', icon: icons.promo },
-    ],
+    links: [{ to: '/marketing/promotions', labelKey: 'nav.promotions', icon: icons.promo }],
   },
   {
     id: 'settings',
@@ -899,6 +927,14 @@ const tenantGroups: SidebarGroup[] = [
       },
       { to: '/settings/app', labelKey: 'appSettings.title', icon: icons.appsettings, permission: 'settings.manage' },
       { to: '/settings/imports', labelKey: 'imports.title', icon: icons.stock, permission: 'settings.manage' },
+      {
+        to: '/settings/bulk-prices',
+        labelKey: 'nav.bulkPrices',
+        icon: icons.pricelists,
+        // products.update plutot que settings.manage : c'est une operation sur
+        // le catalogue, posee dans Parametres pour la commodite.
+        permission: 'products.update',
+      },
       {
         to: '/settings/pos-terminals',
         labelKey: 'nav.posTerminals',

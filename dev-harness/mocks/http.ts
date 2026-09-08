@@ -30,7 +30,7 @@ const delay = () => Promise.resolve()
 
 async function respond<T>(data: T): Promise<{ data: T }> {
   await delay()
-  // eslint-disable-next-line no-console
+
   console.debug('[banc] ->', data)
   return { data }
 }
@@ -49,11 +49,110 @@ function queryOf(url: string, params: Params): Record<string, string> {
   return out
 }
 
+/**
+ * Chiffrage de la revision des prix, rejoue cote banc.
+ *
+ * Le calcul reprend celui de BulkSalePriceUpdater sur les produits de la
+ * fixture : l'ecran montre un tableau credible plutot qu'une reponse figee.
+ */
+interface BulkPriceRequest {
+  category_ids?: number[]
+  brand_ids?: number[]
+  status?: string
+  search?: string | null
+  mode: 'percent' | 'amount' | 'margin' | 'set'
+  value: number
+  basis?: 'purchase' | 'cost'
+  rounding?: string
+  expected_count?: number
+}
+
+function bulkPriceRound(price: number, rounding: string): number {
+  const step: Record<string, number> = { '0.05': 0.05, '0.10': 0.1, '0.50': 0.5, '1': 1, '5': 5, '10': 10 }
+  let out = price
+  if (step[rounding]) out = Math.round(price / step[rounding]) * step[rounding]
+  else if (rounding === 'end_90') out = Math.round(price) - 0.1
+  else if (rounding === 'end_99') out = Math.round(price) - 0.01
+  if (price >= 0 && out < 0) out = 0
+  return Math.round(out * 100) / 100
+}
+
+function bulkPriceResponse(url: string, body: BulkPriceRequest) {
+  const rows = (productPage.data as Array<Record<string, unknown>>).filter((p) => {
+    if (body.category_ids?.length && !body.category_ids.includes(Number(p.category_id))) return false
+    if (body.brand_ids?.length && !body.brand_ids.includes(Number(p.brand_id))) return false
+    if (body.status === 'active' && !p.p_status) return false
+    if (body.status === 'inactive' && p.p_status) return false
+    if (body.search && !String(p.p_title).toLowerCase().includes(body.search.toLowerCase())) return false
+    return true
+  })
+
+  let changed = 0
+  let skipped = 0
+  let negative = 0
+  const sample: Array<Record<string, unknown>> = []
+
+  for (const p of rows) {
+    const current = Math.round(Number(p.p_salePrice) * 100) / 100
+    const basis = Number(body.basis === 'cost' ? p.p_cost : p.p_purchasePrice)
+
+    let raw: number | null
+    switch (body.mode) {
+      case 'percent':
+        raw = current * (1 + body.value / 100)
+        break
+      case 'amount':
+        raw = current + body.value
+        break
+      case 'set':
+        raw = body.value
+        break
+      default:
+        raw = basis > 0 ? basis * (1 + body.value / 100) : null
+    }
+
+    if (raw === null) {
+      skipped++
+      continue
+    }
+
+    const next = bulkPriceRound(raw, body.rounding ?? 'none')
+    if (next < 0) negative++
+    if (next === current) continue
+
+    changed++
+    if (sample.length < 50) {
+      sample.push({
+        id: p.id,
+        p_code: p.p_code,
+        p_title: p.p_title,
+        current,
+        new: next,
+        delta: Math.round((next - current) * 100) / 100,
+      })
+    }
+  }
+
+  if (url.endsWith('/apply')) {
+    return { message: changed + ' prix de vente mis a jour (banc).', updated: changed, matched: rows.length }
+  }
+
+  return {
+    matched: rows.length,
+    changed,
+    unchanged: rows.length - changed - skipped,
+    skipped_no_basis: skipped,
+    negative,
+    sample,
+    max_products: 5000,
+  }
+}
+
 const http = {
   async get(url: string, config?: { params?: Params }) {
     const path = pathOf(url)
     const query = queryOf(url, config?.params)
-    // eslint-disable-next-line no-console
+
     console.debug('[banc] GET', path, query)
 
     if (path === '/settings') return respond(settings)
@@ -97,8 +196,10 @@ const http = {
   },
 
   async post(url: string, body?: unknown) {
-    // eslint-disable-next-line no-console
     console.debug('[banc] POST', url, body)
+    if (url === '/products/bulk-price/preview' || url === '/products/bulk-price/apply') {
+      return respond(bulkPriceResponse(url, body as BulkPriceRequest))
+    }
     if (url.endsWith('/bulk-payment')) {
       return respond({ message: 'Reglement enregistre (banc).', allocated: [], remaining: 0 })
     }
@@ -106,13 +207,11 @@ const http = {
   },
 
   async put(url: string, body?: unknown) {
-    // eslint-disable-next-line no-console
     console.debug('[banc] PUT', url, body)
     return respond({ ...(body as object) })
   },
 
   async delete(url: string) {
-    // eslint-disable-next-line no-console
     console.debug('[banc] DELETE', url)
     return respond({})
   },
