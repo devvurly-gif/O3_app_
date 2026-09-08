@@ -548,7 +548,10 @@ const rule = reactive({
   mode: 'percent' as Mode,
   value: 0,
   basis: 'sale' as Basis,
-  rounding: 'none',
+  // Un tarif s'affiche en dirhams entiers : une regle en pourcentage sort
+  // sinon des 2571,43 que personne ne met en rayon. L'arrondi reste
+  // modifiable, y compris pour revenir au centime.
+  rounding: '1',
 })
 
 const modes = [
@@ -751,7 +754,7 @@ function resetAll() {
   rule.mode = 'percent'
   rule.value = 0
   rule.basis = 'sale'
-  rule.rounding = 'none'
+  rule.rounding = '1'
   preview.value = null
   result.value = null
 }
