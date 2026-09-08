@@ -60,6 +60,7 @@ interface BulkPriceRequest {
   brand_ids?: number[]
   status?: string
   search?: string | null
+  in_stock?: boolean
   mode: 'percent' | 'amount' | 'margin' | 'set'
   value: number
   basis?: 'sale' | 'purchase' | 'cost'
@@ -84,6 +85,9 @@ function bulkPriceResponse(url: string, body: BulkPriceRequest) {
     if (body.status === 'active' && !p.p_status) return false
     if (body.status === 'inactive' && p.p_status) return false
     if (body.search && !String(p.p_title).toLowerCase().includes(body.search.toLowerCase())) return false
+    // Le banc n'a pas de lignes de stock : `total_stock` de la fixture tient
+    // lieu de somme tous depots.
+    if (body.in_stock && Number(p.total_stock ?? 0) <= 0) return false
     return true
   })
 

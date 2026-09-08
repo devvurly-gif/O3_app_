@@ -8,6 +8,7 @@ use App\Models\Permission;
 use App\Models\Product;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\WarehouseHasStock;
 use App\Services\BulkSalePriceUpdater;
 use Tests\Concerns\RefreshTenantDatabase;
 use Tests\TestCase;
@@ -435,5 +436,116 @@ class ProductBulkPriceTest extends TestCase
         ])->assertOk()->assertJsonPath('updated', 1);
 
         $this->assertEquals(100, (float) $product->fresh()->p_salePrice);
+    }
+
+    // ── Filtre stock ─────────────────────────────────────────────
+
+    public function test_the_stock_filter_keeps_only_products_with_stock_left(): void
+    {
+        $enStock   = Product::factory()->create(['p_salePrice' => 100]);
+        $epuise    = Product::factory()->create(['p_salePrice' => 100]);
+        $sansLigne = Product::factory()->create(['p_salePrice' => 100]);
+
+        WarehouseHasStock::factory()->create(['product_id' => $enStock->id, 'stockLevel' => 4]);
+        WarehouseHasStock::factory()->create(['product_id' => $epuise->id,  'stockLevel' => 0]);
+
+        $this->preview(['mode' => 'percent', 'value' => 10, 'in_stock' => true])
+             ->assertOk()
+             ->assertJsonPath('matched', 1)
+             ->assertJsonPath('sample.0.id', $enStock->id);
+
+        // Sans le filtre, les trois reviennent — dont celui qui n'a aucune
+        // ligne de stock.
+        $this->preview(['mode' => 'percent', 'value' => 10])
+             ->assertOk()
+             ->assertJsonPath('matched', 3);
+
+        $this->assertNotNull($sansLigne->id);
+    }
+
+    public function test_stock_is_summed_across_warehouses(): void
+    {
+        $product = Product::factory()->create(['p_salePrice' => 100]);
+
+        // Un depot en negatif, un autre qui compense : le total decide.
+        WarehouseHasStock::factory()->create(['product_id' => $product->id, 'stockLevel' => -2]);
+        WarehouseHasStock::factory()->create(['product_id' => $product->id, 'stockLevel' => 5]);
+
+        $this->preview(['mode' => 'percent', 'value' => 10, 'in_stock' => true])
+             ->assertOk()
+             ->assertJsonPath('matched', 1);
+    }
+
+    public function test_a_product_in_negative_stock_overall_is_left_out(): void
+    {
+        $product = Product::factory()->create(['p_salePrice' => 100]);
+        WarehouseHasStock::factory()->create(['product_id' => $product->id, 'stockLevel' => -3]);
+
+        $this->preview(['mode' => 'percent', 'value' => 10, 'in_stock' => true])
+             ->assertOk()
+             ->assertJsonPath('matched', 0);
+    }
+
+    public function test_applying_respects_the_stock_filter(): void
+    {
+        $enStock = Product::factory()->create(['p_salePrice' => 100]);
+        $epuise  = Product::factory()->create(['p_salePrice' => 100]);
+
+        WarehouseHasStock::factory()->create(['product_id' => $enStock->id, 'stockLevel' => 7]);
+        WarehouseHasStock::factory()->create(['product_id' => $epuise->id,  'stockLevel' => 0]);
+
+        $this->apply(['mode' => 'percent', 'value' => 10, 'in_stock' => true, 'expected_count' => 1])
+             ->assertOk()
+             ->assertJsonPath('updated', 1);
+
+        $this->assertEquals(110, (float) $enStock->fresh()->p_salePrice);
+        $this->assertEquals(100, (float) $epuise->fresh()->p_salePrice);
+    }
+
+    // ── Export ───────────────────────────────────────────────────
+
+    public function test_the_preview_can_be_downloaded_as_a_spreadsheet(): void
+    {
+        Product::factory()->count(3)->create(['p_salePrice' => 100, 'p_purchasePrice' => 80]);
+
+        $response = $this->actingAs($this->admin, 'sanctum')
+                         ->post('/api/products/bulk-price/export', ['mode' => 'percent', 'value' => 10]);
+
+        $response->assertOk();
+        $this->assertStringContainsString(
+            'spreadsheetml',
+            $response->headers->get('content-type') ?? ''
+        );
+        $this->assertStringContainsString(
+            'revision_prix_',
+            $response->headers->get('content-disposition') ?? ''
+        );
+    }
+
+    public function test_the_export_covers_the_whole_batch_not_just_the_sample(): void
+    {
+        // Le chiffrage plafonne l'echantillon a SAMPLE_SIZE ; la feuille, non.
+        Product::factory()->count(BulkSalePriceUpdater::SAMPLE_SIZE + 5)
+               ->create(['p_salePrice' => 100, 'p_purchasePrice' => 80]);
+
+        $rows = iterator_to_array(
+            app(BulkSalePriceUpdater::class)->rows(['status' => 'all'], ['mode' => 'percent', 'value' => 10], true)
+        );
+
+        $this->assertCount(BulkSalePriceUpdater::SAMPLE_SIZE + 5, $rows);
+
+        $this->preview(['mode' => 'percent', 'value' => 10])
+             ->assertOk()
+             ->assertJsonCount(BulkSalePriceUpdater::SAMPLE_SIZE, 'sample');
+    }
+
+    public function test_the_export_obeys_the_same_permission_as_the_rest(): void
+    {
+        Product::factory()->create(['p_salePrice' => 100]);
+        $cashier = User::factory()->cashier()->create();
+
+        $this->actingAs($cashier, 'sanctum')
+             ->post('/api/products/bulk-price/export', ['mode' => 'percent', 'value' => 10])
+             ->assertForbidden();
     }
 }

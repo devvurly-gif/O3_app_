@@ -82,6 +82,16 @@
             </select>
           </div>
 
+          <div class="md:col-span-2">
+            <label class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
+              <input v-model="filters.in_stock" type="checkbox" class="rounded" @change="preview = null" />
+              Seulement les articles dont le stock est positif
+            </label>
+            <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 ml-6">
+              Stock cumulé sur tous les dépôts. Décochez pour retarifer aussi ce qui n'est pas en stock.
+            </p>
+          </div>
+
           <div>
             <label for="bp-search" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
               Recherche <span class="text-gray-400 font-normal">(titre, SKU, code)</span>
@@ -331,7 +341,7 @@
           </p>
         </div>
 
-        <div class="pt-1">
+        <div class="flex flex-wrap items-center gap-3 pt-1">
           <button
             class="px-4 py-2 text-sm font-semibold rounded-lg bg-red-600 hover:bg-red-700 text-white transition disabled:opacity-60"
             :disabled="!canApply || applying"
@@ -339,6 +349,16 @@
           >
             Appliquer aux {{ preview.changed }} produit(s)
           </button>
+          <button
+            class="px-4 py-2 text-sm font-semibold rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-60"
+            :disabled="exporting"
+            @click="runExport"
+          >
+            {{ exporting ? 'Export…' : 'Exporter en Excel' }}
+          </button>
+          <span class="text-xs text-gray-400 dark:text-gray-500">
+            Le fichier porte les {{ preview.matched }} lignes du périmètre, pas seulement celles affichées.
+          </span>
         </div>
       </section>
 
@@ -394,6 +414,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { useCategoryStore } from '@/stores/category'
 import { useBrandStore } from '@/stores/brand'
 import { formatAmount } from '@/composables/useFormat'
+import { useExcelExport } from '@/composables/useExcelExport'
 import { storeToRefs } from 'pinia'
 
 type Mode = 'percent' | 'amount' | 'set'
@@ -437,6 +458,8 @@ const filters = reactive({
   brand_ids: [] as number[],
   status: 'all',
   search: '',
+  // Coche par defaut : retarifer porte d'abord sur ce qu'on a en rayon.
+  in_stock: true,
 })
 
 const rule = reactive({
@@ -477,6 +500,8 @@ const hint = computed(() => {
     : `Ajoute ou retire un montant au ${on}. −25 pour retirer 25 DH.${skipped}`
 })
 
+const { exporting, exportExcelPost } = useExcelExport()
+
 const previewing = ref(false)
 const applying = ref(false)
 const preview = ref<PreviewResponse | null>(null)
@@ -512,6 +537,7 @@ function payload() {
     brand_ids: filters.brand_ids,
     status: filters.status,
     search: filters.search || null,
+    in_stock: filters.in_stock,
     mode: rule.mode,
     value: rule.value,
     basis: rule.basis,
@@ -538,6 +564,10 @@ async function runPreview() {
   } finally {
     previewing.value = false
   }
+}
+
+async function runExport() {
+  await exportExcelPost('/products/bulk-price/export', payload())
 }
 
 async function runApply() {
@@ -569,6 +599,7 @@ function resetAll() {
   filters.brand_ids = []
   filters.status = 'all'
   filters.search = ''
+  filters.in_stock = true
   rule.mode = 'percent'
   rule.value = 0
   rule.basis = 'sale'

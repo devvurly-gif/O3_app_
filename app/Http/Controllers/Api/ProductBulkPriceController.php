@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exports\BulkPriceExport;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Services\BulkSalePriceUpdater;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
  * Revision en masse du prix de vente.
@@ -29,6 +32,28 @@ class ProductBulkPriceController extends Controller
 
         return response()->json(
             $this->updater->preview($filters, $rule, Product::costsVisibleTo($request->user()))
+        );
+    }
+
+    /**
+     * Le chiffrage complet en tableur.
+     *
+     * L'ecran plafonne a cinquante lignes ; la feuille porte tout le lot, y
+     * compris les produits ignores et les inchanges, avec une colonne Statut
+     * pour les isoler d'un tri.
+     */
+    public function export(Request $request): BinaryFileResponse
+    {
+        [$filters, $rule] = $this->parse($request);
+
+        return Excel::download(
+            new BulkPriceExport(
+                $this->updater,
+                $filters,
+                $rule,
+                Product::costsVisibleTo($request->user()),
+            ),
+            'revision_prix_' . now()->format('Ymd_His') . '.xlsx'
         );
     }
 
@@ -88,6 +113,7 @@ class ProductBulkPriceController extends Controller
             'brand_ids.*'    => ['integer'],
             'status'         => ['nullable', Rule::in(['all', 'active', 'inactive'])],
             'search'         => ['nullable', 'string', 'max:120'],
+            'in_stock'       => ['nullable', 'boolean'],
 
             'mode'           => ['required', Rule::in(BulkSalePriceUpdater::MODES)],
             'value'          => ['required', 'numeric'],
@@ -103,6 +129,7 @@ class ProductBulkPriceController extends Controller
             'brand_ids'    => $validated['brand_ids']    ?? [],
             'status'       => $validated['status']       ?? 'all',
             'search'       => $validated['search']       ?? null,
+            'in_stock'     => $request->boolean('in_stock'),
         ];
 
         $rule = [

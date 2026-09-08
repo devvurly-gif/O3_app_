@@ -29,26 +29,49 @@ export function useExcelExport() {
       const url = params ? `${endpoint}?${params}` : endpoint
       const res = await http.get(url, { responseType: 'blob' })
 
-      const disposition = (res.headers['content-disposition'] as string) || ''
-      const match = disposition.match(/filename="?([^"]+)"?/)
-      const filename = match ? match[1] : 'export.xlsx'
-
-      const blob = new Blob([res.data], {
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      })
-      const link = Object.assign(document.createElement('a'), {
-        href: window.URL.createObjectURL(blob),
-        download: filename,
-      })
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-      window.URL.revokeObjectURL(link.href)
+      saveBlob(res)
     } catch {
       /* silently fail */
     }
     exporting.value = false
   }
 
-  return { exporting, exportExcel, canExport }
+  /**
+   * Meme chose, en POST.
+   *
+   * Un export dont le perimetre tient dans une query string passe par
+   * exportExcel ; celui de la revision des prix porte des listes d'identifiants
+   * et une regle de calcul, qui n'ont rien a faire dans une URL.
+   */
+  async function exportExcelPost(endpoint: string, payload: Record<string, unknown> = {}): Promise<void> {
+    exporting.value = true
+    try {
+      const res = await http.post(endpoint, payload, { responseType: 'blob' })
+      saveBlob(res)
+    } catch {
+      /* silently fail */
+    }
+    exporting.value = false
+  }
+
+  /** Declenche le telechargement a partir de la reponse binaire. */
+  function saveBlob(res: { data: BlobPart; headers: Record<string, unknown> }): void {
+    const disposition = (res.headers['content-disposition'] as string) || ''
+    const match = disposition.match(/filename="?([^"]+)"?/)
+    const filename = match ? match[1] : 'export.xlsx'
+
+    const blob = new Blob([res.data], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    })
+    const link = Object.assign(document.createElement('a'), {
+      href: window.URL.createObjectURL(blob),
+      download: filename,
+    })
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(link.href)
+  }
+
+  return { exporting, exportExcel, exportExcelPost, canExport }
 }

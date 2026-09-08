@@ -271,6 +271,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('permission:products.update')->group(function () {
         Route::post('products/bulk-price/preview', [ProductBulkPriceController::class, 'preview']);
         Route::post('products/bulk-price/apply',   [ProductBulkPriceController::class, 'apply']);
+        Route::post('products/bulk-price/export',  [ProductBulkPriceController::class, 'export']);
     });
 
     // ── Entrepots : ecriture pilotee par la permission ────────────────────

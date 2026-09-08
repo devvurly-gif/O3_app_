@@ -73,6 +73,20 @@ class BulkSalePriceUpdater
             });
         }
 
+        // Stock positif : somme des lignes de stock du produit, tous depots
+        // confondus. Le total passe par une sous-requete plutot que par
+        // l'accesseur `total_stock`, qui interroge la base produit par produit
+        // et ne sait pas filtrer. Les lignes de variantes portent aussi leur
+        // `product_id`, elles entrent donc dans la meme somme.
+        if (!empty($filters['in_stock'])) {
+            $query->whereIn('id', function ($q) {
+                $q->select('product_id')
+                  ->from('warehouse_has_stock')
+                  ->groupBy('product_id')
+                  ->havingRaw('SUM(stockLevel) > 0');
+            });
+        }
+
         return $query->orderBy('id');
     }
 
@@ -125,6 +139,63 @@ class BulkSalePriceUpdater
     }
 
     /**
+     * Une ligne de chiffrage pour un produit : ce que l'ecran affiche et ce que
+     * l'export ecrit sortent d'ici, pour qu'un chiffre vu a l'ecran et le meme
+     * chiffre dans le tableur ne puissent pas diverger.
+     *
+     * @param array<string, mixed> $rule
+     * @return array<string, mixed>
+     */
+    public function describe(Product $product, array $rule, bool $withCosts = false): array
+    {
+        $new      = $this->newPriceFor($product, $rule);
+        $current  = round((float) $product->p_salePrice, 2);
+        $purchase = round((float) $product->p_purchasePrice, 2);
+        $new      = $new === null ? null : round($new, 2);
+
+        $row = [
+            'id'      => $product->id,
+            'p_code'  => $product->p_code,
+            'p_title' => $product->p_title,
+            'current' => $current,
+            'new'     => $new,
+            'delta'   => $new === null ? null : round($new - $current, 2),
+            // Une base achat ou cout a zero : le produit sort du lot.
+            'skipped' => $new === null,
+            'changed' => $new !== null && $new !== $current,
+            // Vendre sous le prix d'achat est le vrai risque d'une baisse en
+            // masse : marque sur chaque ligne, compte sur tout le lot.
+            'below_purchase' => $new !== null && $purchase > 0 && $new < $purchase,
+        ];
+
+        if ($withCosts) {
+            $row['purchase']      = $purchase;
+            $row['cost']          = round((float) $product->p_cost, 2);
+            $row['margin']        = $purchase > 0 && $new !== null ? round(($new - $purchase) / $purchase * 100, 1) : null;
+            $row['margin_before'] = $purchase > 0 ? round(($current - $purchase) / $purchase * 100, 1) : null;
+        }
+
+        return $row;
+    }
+
+    /**
+     * Toutes les lignes du perimetre, en flux.
+     *
+     * `cursor()` plutot qu'un `get()` : l'export peut porter des milliers de
+     * lignes et n'a aucune raison de les tenir toutes en memoire.
+     *
+     * @param array<string, mixed> $filters
+     * @param array<string, mixed> $rule
+     * @return \Generator<array<string, mixed>>
+     */
+    public function rows(array $filters, array $rule, bool $withCosts = false): \Generator
+    {
+        foreach ($this->query($filters)->cursor() as $product) {
+            yield $this->describe($product, $rule, $withCosts);
+        }
+    }
+
+    /**
      * Chiffre l'operation sans rien ecrire.
      *
      * $withCosts porte le prix d'achat, le cout de revient et la marge qui en
@@ -141,60 +212,33 @@ class BulkSalePriceUpdater
         $matched = $changed = $skipped = $negative = $belowPurchase = 0;
         $sample  = [];
 
-        $this->query($filters)->chunkById(500, function ($products) use (
-            $rule, $withCosts, &$matched, &$changed, &$skipped, &$negative, &$belowPurchase, &$sample
-        ) {
-            foreach ($products as $product) {
-                $matched++;
+        foreach ($this->rows($filters, $rule, $withCosts) as $row) {
+            $matched++;
 
-                $new = $this->newPriceFor($product, $rule);
-
-                if ($new === null) {
-                    $skipped++;
-                    continue;
-                }
-
-                if ($new < 0) {
-                    $negative++;
-                }
-
-                $current  = round((float) $product->p_salePrice, 2);
-                $purchase = round((float) $product->p_purchasePrice, 2);
-                $new      = round($new, 2);
-
-                // Vendre sous le prix d'achat est le vrai risque d'une baisse
-                // en masse : compte sur tout le lot, pas seulement l'echantillon.
-                if ($purchase > 0 && $new < $purchase) {
-                    $belowPurchase++;
-                }
-
-                if ($new === $current) {
-                    continue;
-                }
-
-                $changed++;
-
-                if (count($sample) < self::SAMPLE_SIZE) {
-                    $row = [
-                        'id'      => $product->id,
-                        'p_code'  => $product->p_code,
-                        'p_title' => $product->p_title,
-                        'current' => $current,
-                        'new'     => $new,
-                        'delta'   => round($new - $current, 2),
-                    ];
-
-                    if ($withCosts) {
-                        $row['purchase']     = $purchase;
-                        $row['cost']         = round((float) $product->p_cost, 2);
-                        $row['margin']       = $purchase > 0 ? round(($new - $purchase) / $purchase * 100, 1) : null;
-                        $row['margin_before'] = $purchase > 0 ? round(($current - $purchase) / $purchase * 100, 1) : null;
-                    }
-
-                    $sample[] = $row;
-                }
+            if ($row['skipped']) {
+                $skipped++;
+                continue;
             }
-        });
+
+            if ($row['new'] < 0) {
+                $negative++;
+            }
+
+            if ($row['below_purchase']) {
+                $belowPurchase++;
+            }
+
+            if (!$row['changed']) {
+                continue;
+            }
+
+            $changed++;
+
+            if (count($sample) < self::SAMPLE_SIZE) {
+                unset($row['skipped'], $row['changed'], $row['below_purchase']);
+                $sample[] = $row;
+            }
+        }
 
         return [
             'matched'          => $matched,
