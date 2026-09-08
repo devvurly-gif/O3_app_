@@ -207,22 +207,32 @@
         </div>
 
         <div class="flex flex-wrap gap-2">
-          <span class="chip bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+          <span
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+          >
             {{ preview.matched }} produit(s) dans le périmètre
           </span>
-          <span class="chip bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+          <span
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+          >
             {{ preview.changed }} à modifier
           </span>
-          <span v-if="preview.unchanged" class="chip bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
+          <span
+            v-if="preview.unchanged"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
+          >
             {{ preview.unchanged }} inchangé(s)
           </span>
           <span
             v-if="preview.skipped_no_basis"
-            class="chip bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
           >
             {{ preview.skipped_no_basis }} ignoré(s) — base à zéro
           </span>
-          <span v-if="preview.negative" class="chip bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
+          <span
+            v-if="preview.negative"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+          >
             {{ preview.negative }} prix négatif(s)
           </span>
         </div>
@@ -519,9 +529,3 @@ onMounted(() => {
   brandStore.fetchAll()
 })
 </script>
-
-<style scoped>
-.chip {
-  @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium;
-}
-</style>
