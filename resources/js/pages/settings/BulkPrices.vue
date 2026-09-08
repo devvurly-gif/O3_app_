@@ -214,17 +214,16 @@
               v-model="rule.rounding"
               class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 text-sm"
             >
-              <option value="none">Aucun (au centime)</option>
-              <option value="0.05">5 centimes</option>
-              <option value="0.10">10 centimes</option>
-              <option value="0.50">50 centimes</option>
-              <option value="1">1 DH</option>
-              <option value="5">5 DH</option>
-              <option value="10">10 DH</option>
-              <option value="end_90">Se termine par ,90</option>
-              <option value="end_99">Se termine par ,99</option>
+              <option v-for="r in bulkRoundings" :key="r.key" :value="r.key">{{ r.label }}</option>
             </select>
           </div>
+        </div>
+
+        <!-- Dire la formule appliquee, plutot que de la laisser deviner -->
+        <div
+          class="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 px-3 py-2 font-mono text-xs text-gray-700 dark:text-gray-300 overflow-x-auto"
+        >
+          {{ formula }}
         </div>
 
         <div class="flex flex-wrap items-center gap-3 pt-1">
@@ -559,6 +558,18 @@ const modes = [
   { key: 'set' as Mode, label: 'Prix fixe', valueLabel: 'Prix (DH)' },
 ]
 
+const bulkRoundings = [
+  { key: 'none', label: 'Aucun (au centime)', suffix: '' },
+  { key: '0.05', label: '5 centimes', suffix: 'au 5 centimes' },
+  { key: '0.10', label: '10 centimes', suffix: 'au 10 centimes' },
+  { key: '0.50', label: '50 centimes', suffix: 'au 50 centimes' },
+  { key: '1', label: '1 DH', suffix: 'au dirham' },
+  { key: '5', label: '5 DH', suffix: 'aux 5 DH' },
+  { key: '10', label: '10 DH', suffix: 'aux 10 DH' },
+  { key: 'end_90', label: 'Se termine par ,90', suffix: 'en ,90' },
+  { key: 'end_99', label: 'Se termine par ,99', suffix: 'en ,99' },
+]
+
 const bases = [
   { key: 'sale' as Basis, label: 'Prix de vente actuel' },
   { key: 'purchase' as Basis, label: "Prix d'achat" },
@@ -598,6 +609,36 @@ const hint = computed(() => {
 })
 
 const { exporting, exportExcelPost } = useExcelExport()
+
+/**
+ * La regle telle qu'elle sera appliquee, ecrite noir sur blanc.
+ *
+ * « +40 % sur le prix d'achat » et « viser 40 % de marge » se ressemblent a la
+ * lecture et donnent deux prix differents. La formule affichee tranche.
+ */
+const formula = computed(() => {
+  const v = Number(rule.value) || 0
+  const base = currentBasis.value.label.toLowerCase()
+  const round =
+    rule.rounding === 'none'
+      ? ''
+      : `, puis arrondi ${bulkRoundings.find((r) => r.key === rule.rounding)?.suffix ?? rule.rounding}`
+
+  switch (rule.mode) {
+    case 'percent': {
+      const coef = (1 + v / 100).toFixed(4).replace(/0+$/, '').replace(/.$/, '')
+      return `Nouveau prix = ${base} × (1 + ${v} %) = ${base} × ${coef}${round}`
+    }
+    case 'amount':
+      return `Nouveau prix = ${base} ${v < 0 ? '−' : '+'} ${Math.abs(v)} DH${round}`
+    case 'target_margin': {
+      const coef = v < 100 ? (1 / (1 - v / 100)).toFixed(4).replace(/0+$/, '').replace(/.$/, '') : '∞'
+      return `Nouveau prix = ${base} ÷ (1 − ${v} %) = ${base} × ${coef}${round}`
+    }
+    default:
+      return `Nouveau prix = ${v} DH pour tout le périmètre${round}`
+  }
+})
 
 const previewing = ref(false)
 const applying = ref(false)
