@@ -235,6 +235,12 @@
           >
             {{ preview.negative }} prix négatif(s)
           </span>
+          <span
+            v-if="preview.below_purchase"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+          >
+            {{ preview.below_purchase }} sous le prix d'achat
+          </span>
         </div>
 
         <p v-if="preview.negative" class="text-sm text-red-600 dark:text-red-400">
@@ -247,6 +253,10 @@
         <p v-else-if="!preview.changed" class="text-sm text-gray-500 dark:text-gray-400">
           Cette règle ne change aucun prix.
         </p>
+        <p v-if="preview.below_purchase" class="text-sm text-red-600 dark:text-red-400">
+          {{ preview.below_purchase }} produit(s) passeraient sous leur prix d'achat — vente à perte. L'opération reste
+          possible, à vous de juger.
+        </p>
 
         <!-- Echantillon -->
         <div v-if="preview.sample.length" class="overflow-x-auto">
@@ -257,15 +267,30 @@
               >
                 <th class="py-2 pr-3 font-semibold">Code</th>
                 <th class="py-2 pr-3 font-semibold">Produit</th>
+                <th v-if="preview.costs_visible" class="py-2 pr-3 font-semibold text-right">Achat</th>
+                <th v-if="preview.costs_visible" class="py-2 pr-3 font-semibold text-right">Coût</th>
                 <th class="py-2 pr-3 font-semibold text-right">Avant</th>
                 <th class="py-2 pr-3 font-semibold text-right">Après</th>
-                <th class="py-2 font-semibold text-right">Écart</th>
+                <th class="py-2 pr-3 font-semibold text-right">Écart</th>
+                <th v-if="preview.costs_visible" class="py-2 font-semibold text-right">Marge / achat</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
               <tr v-for="row in preview.sample" :key="row.id">
                 <td class="py-1.5 pr-3 font-mono text-xs text-gray-500 dark:text-gray-400">{{ row.p_code }}</td>
                 <td class="py-1.5 pr-3 text-gray-800 dark:text-gray-200">{{ row.p_title }}</td>
+                <td
+                  v-if="preview.costs_visible"
+                  class="py-1.5 pr-3 text-right tabular-nums text-gray-500 dark:text-gray-400"
+                >
+                  {{ formatAmount(row.purchase ?? 0) }}
+                </td>
+                <td
+                  v-if="preview.costs_visible"
+                  class="py-1.5 pr-3 text-right tabular-nums text-gray-500 dark:text-gray-400"
+                >
+                  {{ formatAmount(row.cost ?? 0) }}
+                </td>
                 <td class="py-1.5 pr-3 text-right tabular-nums text-gray-500 dark:text-gray-400">
                   {{ formatAmount(row.current) }}
                 </td>
@@ -273,10 +298,28 @@
                   {{ formatAmount(row.new) }}
                 </td>
                 <td
-                  class="py-1.5 text-right tabular-nums font-medium"
+                  class="py-1.5 pr-3 text-right tabular-nums font-medium"
                   :class="row.delta >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'"
                 >
                   {{ row.delta >= 0 ? '+' : '' }}{{ formatAmount(row.delta) }}
+                </td>
+                <td v-if="preview.costs_visible" class="py-1.5 text-right tabular-nums">
+                  <span v-if="row.margin === null || row.margin === undefined" class="text-gray-300 dark:text-gray-600"
+                    >—</span
+                  >
+                  <span
+                    v-else
+                    :class="
+                      row.margin < 0 ? 'font-bold text-red-600 dark:text-red-400' : 'text-gray-700 dark:text-gray-300'
+                    "
+                  >
+                    {{ row.margin.toFixed(1) }} %
+                    <span
+                      v-if="row.margin_before !== null && row.margin_before !== undefined"
+                      class="text-xs text-gray-400 dark:text-gray-500"
+                      >(av. {{ row.margin_before.toFixed(1) }} %)</span
+                    >
+                  </span>
                 </td>
               </tr>
             </tbody>
@@ -360,6 +403,10 @@ interface PreviewRow {
   current: number
   new: number
   delta: number
+  purchase?: number
+  cost?: number
+  margin?: number | null
+  margin_before?: number | null
 }
 
 interface PreviewResponse {
@@ -368,6 +415,8 @@ interface PreviewResponse {
   unchanged: number
   skipped_no_basis: number
   negative: number
+  below_purchase: number | null
+  costs_visible: boolean
   sample: PreviewRow[]
   max_products: number
 }

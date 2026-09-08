@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Product;
 use App\Services\BulkSalePriceUpdater;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -26,7 +27,9 @@ class ProductBulkPriceController extends Controller
     {
         [$filters, $rule] = $this->parse($request);
 
-        return response()->json($this->updater->preview($filters, $rule));
+        return response()->json(
+            $this->updater->preview($filters, $rule, Product::costsVisibleTo($request->user()))
+        );
     }
 
     public function apply(Request $request): JsonResponse
@@ -37,7 +40,7 @@ class ProductBulkPriceController extends Controller
             'expected_count' => ['required', 'integer', 'min:0'],
         ])['expected_count'];
 
-        $preview = $this->updater->preview($filters, $rule);
+        $preview = $this->updater->preview($filters, $rule, Product::costsVisibleTo($request->user()));
 
         if ($preview['matched'] > BulkSalePriceUpdater::MAX_PRODUCTS) {
             return response()->json([

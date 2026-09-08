@@ -98,17 +98,22 @@ class BulkSalePriceUpdater
     /**
      * Chiffre l'operation sans rien ecrire.
      *
+     * $withCosts porte le prix d'achat, le cout de revient et la marge qui en
+     * resulte dans chaque ligne : sans eux, une baisse en masse se juge a
+     * l'aveugle. Ces champs sont derriere `products.view_cost` (cf.
+     * Product::COST_FIELDS), c'est au controleur de decider qui les voit.
+     *
      * @param array<string, mixed> $filters
      * @param array<string, mixed> $rule
      * @return array<string, mixed>
      */
-    public function preview(array $filters, array $rule): array
+    public function preview(array $filters, array $rule, bool $withCosts = false): array
     {
-        $matched = $changed = $skipped = $negative = 0;
+        $matched = $changed = $skipped = $negative = $belowPurchase = 0;
         $sample  = [];
 
         $this->query($filters)->chunkById(500, function ($products) use (
-            $rule, &$matched, &$changed, &$skipped, &$negative, &$sample
+            $rule, $withCosts, &$matched, &$changed, &$skipped, &$negative, &$belowPurchase, &$sample
         ) {
             foreach ($products as $product) {
                 $matched++;
@@ -124,8 +129,15 @@ class BulkSalePriceUpdater
                     $negative++;
                 }
 
-                $current = round((float) $product->p_salePrice, 2);
-                $new     = round($new, 2);
+                $current  = round((float) $product->p_salePrice, 2);
+                $purchase = round((float) $product->p_purchasePrice, 2);
+                $new      = round($new, 2);
+
+                // Vendre sous le prix d'achat est le vrai risque d'une baisse
+                // en masse : compte sur tout le lot, pas seulement l'echantillon.
+                if ($purchase > 0 && $new < $purchase) {
+                    $belowPurchase++;
+                }
 
                 if ($new === $current) {
                     continue;
@@ -134,7 +146,7 @@ class BulkSalePriceUpdater
                 $changed++;
 
                 if (count($sample) < self::SAMPLE_SIZE) {
-                    $sample[] = [
+                    $row = [
                         'id'      => $product->id,
                         'p_code'  => $product->p_code,
                         'p_title' => $product->p_title,
@@ -142,6 +154,15 @@ class BulkSalePriceUpdater
                         'new'     => $new,
                         'delta'   => round($new - $current, 2),
                     ];
+
+                    if ($withCosts) {
+                        $row['purchase']     = $purchase;
+                        $row['cost']         = round((float) $product->p_cost, 2);
+                        $row['margin']       = $purchase > 0 ? round(($new - $purchase) / $purchase * 100, 1) : null;
+                        $row['margin_before'] = $purchase > 0 ? round(($current - $purchase) / $purchase * 100, 1) : null;
+                    }
+
+                    $sample[] = $row;
                 }
             }
         });
@@ -152,6 +173,8 @@ class BulkSalePriceUpdater
             'unchanged'        => $matched - $changed - $skipped,
             'skipped_no_basis' => $skipped,
             'negative'         => $negative,
+            'below_purchase'   => $withCosts ? $belowPurchase : null,
+            'costs_visible'    => $withCosts,
             'sample'           => $sample,
             'max_products'     => self::MAX_PRODUCTS,
         ];

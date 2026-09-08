@@ -4,7 +4,9 @@ namespace Tests\Feature\Api;
 
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\Permission;
 use App\Models\Product;
+use App\Models\Role;
 use App\Models\User;
 use App\Services\BulkSalePriceUpdater;
 use Tests\Concerns\RefreshTenantDatabase;
@@ -260,5 +262,85 @@ class ProductBulkPriceTest extends TestCase
         $this->preview(['mode' => 'percent', 'value' => 10])
              ->assertOk()
              ->assertJsonPath('max_products', BulkSalePriceUpdater::MAX_PRODUCTS);
+    }
+
+    // ── Prix d'achat, cout et marge ──────────────────────────────
+
+    public function test_the_preview_carries_the_cost_side_so_the_admin_can_judge(): void
+    {
+        Product::factory()->create([
+            'p_salePrice'     => 100,
+            'p_purchasePrice' => 80,
+            'p_cost'          => 85,
+        ]);
+
+        $this->preview(['mode' => 'percent', 'value' => 10])
+             ->assertOk()
+             ->assertJsonPath('costs_visible', true)
+             ->assertJsonPath('sample.0.purchase', 80)
+             ->assertJsonPath('sample.0.cost', 85)
+             // 110 sur un achat a 80 : +37,5 %, contre +25 % avant.
+             ->assertJsonPath('sample.0.margin', 37.5)
+             ->assertJsonPath('sample.0.margin_before', 25);
+    }
+
+    public function test_products_falling_under_their_purchase_price_are_counted(): void
+    {
+        Product::factory()->create(['p_salePrice' => 100, 'p_purchasePrice' => 90]);
+        Product::factory()->create(['p_salePrice' => 100, 'p_purchasePrice' => 50]);
+
+        // −15 % ramene le premier a 85, sous son achat a 90 ; pas le second.
+        $this->preview(['mode' => 'percent', 'value' => -15])
+             ->assertOk()
+             ->assertJsonPath('below_purchase', 1);
+    }
+
+    public function test_selling_under_purchase_price_is_a_warning_not_a_refusal(): void
+    {
+        $product = Product::factory()->create(['p_salePrice' => 100, 'p_purchasePrice' => 90]);
+
+        // La vente a perte se decide, elle ne se bloque pas : c'est le prix
+        // negatif qui est refuse, pas la marge negative.
+        $this->apply(['mode' => 'percent', 'value' => -15, 'expected_count' => 1])
+             ->assertOk();
+
+        $this->assertEquals(85, (float) $product->fresh()->p_salePrice);
+    }
+
+    public function test_a_product_without_a_purchase_price_has_no_margin(): void
+    {
+        Product::factory()->create(['p_salePrice' => 100, 'p_purchasePrice' => 0]);
+
+        $this->preview(['mode' => 'percent', 'value' => 10])
+             ->assertOk()
+             ->assertJsonPath('sample.0.margin', null)
+             ->assertJsonPath('below_purchase', 0);
+    }
+
+    public function test_the_cost_side_is_hidden_from_a_role_without_view_cost(): void
+    {
+        Product::factory()->create(['p_salePrice' => 100, 'p_purchasePrice' => 80]);
+
+        // Un role qui peut modifier les produits sans voir les couts : les
+        // colonnes d'achat ne doivent pas voyager dans le JSON.
+        $role = Role::create(['name' => 'tarificateur', 'display_name' => 'Tarificateur', 'is_system' => false]);
+        $role->permissions()->sync([
+            Permission::firstOrCreate(
+                ['name' => 'products.update'],
+                ['module' => 'products', 'action' => 'update', 'display_name' => 'Produits — Modifier']
+            )->id,
+        ]);
+
+        $user = User::factory()->create(['role_id' => $role->id]);
+
+        $response = $this->actingAs($user, 'sanctum')
+                         ->postJson('/api/products/bulk-price/preview', ['mode' => 'percent', 'value' => 10])
+                         ->assertOk()
+                         ->assertJsonPath('costs_visible', false)
+                         ->assertJsonPath('below_purchase', null);
+
+        $this->assertArrayNotHasKey('purchase', $response->json('sample.0'));
+        $this->assertArrayNotHasKey('cost', $response->json('sample.0'));
+        $this->assertArrayNotHasKey('margin', $response->json('sample.0'));
     }
 }

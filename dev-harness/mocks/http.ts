@@ -90,6 +90,7 @@ function bulkPriceResponse(url: string, body: BulkPriceRequest) {
   let changed = 0
   let skipped = 0
   let negative = 0
+  let belowPurchase = 0
   const sample: Array<Record<string, unknown>> = []
 
   for (const p of rows) {
@@ -116,8 +117,10 @@ function bulkPriceResponse(url: string, body: BulkPriceRequest) {
       continue
     }
 
+    const purchase = Math.round(Number(p.p_purchasePrice) * 100) / 100
     const next = bulkPriceRound(raw, body.rounding ?? 'none')
     if (next < 0) negative++
+    if (purchase > 0 && next < purchase) belowPurchase++
     if (next === current) continue
 
     changed++
@@ -129,6 +132,10 @@ function bulkPriceResponse(url: string, body: BulkPriceRequest) {
         current,
         new: next,
         delta: Math.round((next - current) * 100) / 100,
+        purchase,
+        cost: Math.round(Number(p.p_cost) * 100) / 100,
+        margin: purchase > 0 ? Math.round(((next - purchase) / purchase) * 1000) / 10 : null,
+        margin_before: purchase > 0 ? Math.round(((current - purchase) / purchase) * 1000) / 10 : null,
       })
     }
   }
@@ -143,6 +150,8 @@ function bulkPriceResponse(url: string, body: BulkPriceRequest) {
     unchanged: rows.length - changed - skipped,
     skipped_no_basis: skipped,
     negative,
+    below_purchase: belowPurchase,
+    costs_visible: true,
     sample,
     max_products: 5000,
   }
