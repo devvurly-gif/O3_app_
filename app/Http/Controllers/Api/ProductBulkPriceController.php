@@ -9,6 +9,7 @@ use App\Services\BulkSalePriceUpdater;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
@@ -113,6 +114,9 @@ class ProductBulkPriceController extends Controller
             'brand_ids.*'    => ['integer'],
             'status'         => ['nullable', Rule::in(['all', 'active', 'inactive'])],
             'search'         => ['nullable', 'string', 'max:120'],
+            // Bornes sur la marge actuelle, rapportee au prix de vente.
+            'margin_min'     => ['nullable', 'numeric', 'max:100'],
+            'margin_max'     => ['nullable', 'numeric', 'max:100'],
 
             'mode'           => ['required', Rule::in(BulkSalePriceUpdater::MODES)],
             'value'          => ['required', 'numeric'],
@@ -128,7 +132,19 @@ class ProductBulkPriceController extends Controller
             'brand_ids'    => $validated['brand_ids']    ?? [],
             'status'       => $validated['status']       ?? 'all',
             'search'       => $validated['search']       ?? null,
+            'margin_min'   => $validated['margin_min']   ?? null,
+            'margin_max'   => $validated['margin_max']   ?? null,
         ];
+
+        // Une marge visee de 100 % demanderait un prix infini : on le dit,
+        // plutot que de rendre un lot vide sans explication.
+        if ($validated['mode'] === 'target_margin'
+            && (float) $validated['value'] >= BulkSalePriceUpdater::MAX_TARGET_MARGIN) {
+            throw ValidationException::withMessages([
+                'value' => 'Une marge visée doit rester sous '
+                    . BulkSalePriceUpdater::MAX_TARGET_MARGIN . ' % : à 100 %, le prix serait infini.',
+            ]);
+        }
 
         $rule = [
             'mode'     => $validated['mode'],

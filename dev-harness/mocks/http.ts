@@ -60,7 +60,9 @@ interface BulkPriceRequest {
   brand_ids?: number[]
   status?: string
   search?: string | null
-  mode: 'percent' | 'amount' | 'margin' | 'set'
+  margin_min?: number | null
+  margin_max?: number | null
+  mode: 'percent' | 'amount' | 'margin' | 'target_margin' | 'set'
   value: number
   basis?: 'sale' | 'purchase' | 'cost'
   rounding?: string
@@ -93,6 +95,17 @@ function bulkPriceResponse(url: string, body: BulkPriceRequest) {
     // Le stock positif n'est pas negociable, comme cote serveur. Le banc n'a
     // pas de lignes de depot : `total_stock` de la fixture tient lieu de somme.
     if (Number(p.total_stock ?? 0) <= 0) return false
+
+    // Marge actuelle sur vente, bornee comme cote serveur.
+    if (body.margin_min != null || body.margin_max != null) {
+      const pv = Number(p.p_salePrice)
+      const pa = Number(p.p_purchasePrice)
+      if (pv <= 0 || pa <= 0) return false
+      const m = ((pv - pa) / pv) * 100
+      if (body.margin_min != null && m < body.margin_min) return false
+      if (body.margin_max != null && m > body.margin_max) return false
+    }
+
     return true
   })
 
@@ -112,9 +125,16 @@ function bulkPriceResponse(url: string, body: BulkPriceRequest) {
     const base = Number(basisKey === 'purchase' ? p.p_purchasePrice : basisKey === 'cost' ? p.p_cost : p.p_salePrice)
 
     let raw: number | null
-    if (mode === 'set') raw = body.value
-    else if (basisKey !== 'sale' && base <= 0) raw = null
-    else raw = mode === 'percent' ? base * (1 + body.value / 100) : base + body.value
+    if (mode === 'set') {
+      raw = body.value
+    } else if (mode === 'target_margin') {
+      const costBase = Number(basisKey === 'cost' ? p.p_cost : p.p_purchasePrice)
+      raw = costBase > 0 && body.value < 99.9 ? costBase / (1 - body.value / 100) : null
+    } else if (basisKey !== 'sale' && base <= 0) {
+      raw = null
+    } else {
+      raw = mode === 'percent' ? base * (1 + body.value / 100) : base + body.value
+    }
 
     if (raw === null) {
       skipped++

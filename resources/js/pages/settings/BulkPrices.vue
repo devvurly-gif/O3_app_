@@ -105,6 +105,35 @@
           </div>
 
           <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              Marge actuelle sur vente <span class="text-gray-400 font-normal">(%)</span>
+            </label>
+            <div class="flex items-center gap-2">
+              <input
+                v-model.number="filters.margin_min"
+                type="number"
+                step="0.1"
+                placeholder="min"
+                class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 text-sm"
+                @change="preview = null"
+              />
+              <span class="text-gray-400 text-sm">à</span>
+              <input
+                v-model.number="filters.margin_max"
+                type="number"
+                step="0.1"
+                placeholder="max"
+                class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 text-sm"
+                @change="preview = null"
+              />
+            </div>
+            <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
+              (vente − achat) ÷ vente. Laissez vide pour ne pas borner. Un article sans prix d'achat sort du périmètre
+              dès qu'une borne est posée — sa marge est inconnue.
+            </p>
+          </div>
+
+          <div>
             <label for="bp-search" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
               Recherche <span class="text-gray-400 font-normal">(titre, SKU, code)</span>
             </label>
@@ -172,7 +201,7 @@
               class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 text-sm"
               @change="preview = null"
             >
-              <option v-for="b in bases" :key="b.key" :value="b.key">{{ b.label }}</option>
+              <option v-for="b in availableBases" :key="b.key" :value="b.key">{{ b.label }}</option>
             </select>
           </div>
 
@@ -468,7 +497,7 @@ import { formatAmount } from '@/composables/useFormat'
 import { useExcelExport } from '@/composables/useExcelExport'
 import { storeToRefs } from 'pinia'
 
-type Mode = 'percent' | 'amount' | 'set'
+type Mode = 'percent' | 'amount' | 'target_margin' | 'set'
 type Basis = 'sale' | 'purchase' | 'cost'
 
 interface PreviewRow {
@@ -512,6 +541,8 @@ const filters = reactive({
   brand_ids: [] as number[],
   status: 'all',
   search: '',
+  margin_min: null as number | null,
+  margin_max: null as number | null,
 })
 
 const rule = reactive({
@@ -524,6 +555,7 @@ const rule = reactive({
 const modes = [
   { key: 'percent' as Mode, label: 'Pourcentage', valueLabel: 'Variation (%)' },
   { key: 'amount' as Mode, label: 'Montant fixe', valueLabel: 'Variation (DH)' },
+  { key: 'target_margin' as Mode, label: 'Marge cible', valueLabel: 'Marge visée (%)' },
   { key: 'set' as Mode, label: 'Prix fixe', valueLabel: 'Prix (DH)' },
 ]
 
@@ -533,13 +565,26 @@ const bases = [
   { key: 'cost' as Basis, label: 'Coût de revient' },
 ]
 
+// Viser une marge se fait forcement depuis un cout : partir du prix de vente
+// ferait tourner le calcul en rond.
+const availableBases = computed(() => (rule.mode === 'target_margin' ? bases.filter((b) => b.key !== 'sale') : bases))
+
 const currentMode = computed(() => modes.find((m) => m.key === rule.mode) ?? modes[0])
-const currentBasis = computed(() => bases.find((b) => b.key === rule.basis) ?? bases[0])
+const currentBasis = computed(() => availableBases.value.find((b) => b.key === rule.basis) ?? availableBases.value[0])
 // `set` impose un prix : il n'y a pas de base de depart a choisir.
 const basisApplies = computed(() => rule.mode !== 'set')
 
 const hint = computed(() => {
   if (rule.mode === 'set') return 'Impose le même prix de vente à tout le périmètre.'
+
+  if (rule.mode === 'target_margin') {
+    const on = currentBasis.value.label.toLowerCase()
+    return (
+      `Recalcule le prix depuis le ${on} pour laisser exactement cette marge sur la vente : ` +
+      `base ÷ (1 − marge). Viser 30 % sur un achat à 80 donne 114,29 — et non 104, qui ne ferait que 23 %. ` +
+      'Les produits dont cette base est à zéro sont ignorés.'
+    )
+  }
 
   const on = currentBasis.value.label.toLowerCase()
   const skipped =
@@ -574,6 +619,8 @@ const ruleSummary = computed(() => {
   const on = currentBasis.value.label.toLowerCase()
 
   switch (rule.mode) {
+    case 'target_margin':
+      return `Marge de ${v} % sur la vente, calculée depuis le ${on}${round}.`
     case 'percent':
       return `${v > 0 ? '+' : ''}${v} % appliqué au ${on}${round}.`
     case 'amount':
@@ -594,6 +641,8 @@ function payload() {
     brand_ids: filters.brand_ids,
     status: filters.status,
     search: filters.search || null,
+    margin_min: filters.margin_min,
+    margin_max: filters.margin_max,
     mode: rule.mode,
     value: rule.value,
     basis: rule.basis,
@@ -603,6 +652,7 @@ function payload() {
 
 function selectMode(mode: Mode) {
   rule.mode = mode
+  if (mode === 'target_margin' && rule.basis === 'sale') rule.basis = 'purchase'
   // Le chiffrage affiche a l'ecran ne vaut plus pour la nouvelle regle.
   preview.value = null
 }
@@ -655,6 +705,8 @@ function resetAll() {
   filters.brand_ids = []
   filters.status = 'all'
   filters.search = ''
+  filters.margin_min = null
+  filters.margin_max = null
   rule.mode = 'percent'
   rule.value = 0
   rule.basis = 'sale'

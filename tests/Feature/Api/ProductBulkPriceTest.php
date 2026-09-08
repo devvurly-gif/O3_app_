@@ -639,4 +639,134 @@ class ProductBulkPriceTest extends TestCase
         $this->assertArrayNotHasKey('margin_sale', $response->json('sample.0'));
         $this->assertArrayNotHasKey('margin_sale_before', $response->json('sample.0'));
     }
+
+    // ── Filtre sur la marge actuelle ─────────────────────────────
+
+    public function test_a_minimum_margin_narrows_the_batch(): void
+    {
+        // 100 achete 80 : 20 % sur vente. 100 achete 50 : 50 %.
+        $faible = $this->stocked(['p_salePrice' => 100, 'p_purchasePrice' => 80]);
+        $forte  = $this->stocked(['p_salePrice' => 100, 'p_purchasePrice' => 50]);
+
+        $this->preview(['mode' => 'percent', 'value' => 5, 'margin_min' => 30])
+             ->assertOk()
+             ->assertJsonPath('matched', 1)
+             ->assertJsonPath('sample.0.id', $forte->id);
+
+        $this->assertNotNull($faible->id);
+    }
+
+    public function test_a_maximum_margin_isolates_the_products_to_lift(): void
+    {
+        $faible = $this->stocked(['p_salePrice' => 100, 'p_purchasePrice' => 80]);
+        $this->stocked(['p_salePrice' => 100, 'p_purchasePrice' => 50]);
+
+        // Le cas utile : trouver ce qui passe sous un taux cible.
+        $this->preview(['mode' => 'percent', 'value' => 5, 'margin_max' => 30])
+             ->assertOk()
+             ->assertJsonPath('matched', 1)
+             ->assertJsonPath('sample.0.id', $faible->id);
+    }
+
+    public function test_both_bounds_can_frame_a_band(): void
+    {
+        $this->stocked(['p_salePrice' => 100, 'p_purchasePrice' => 90]); // 10 %
+        $dansLaBande = $this->stocked(['p_salePrice' => 100, 'p_purchasePrice' => 75]); // 25 %
+        $this->stocked(['p_salePrice' => 100, 'p_purchasePrice' => 50]); // 50 %
+
+        $this->preview(['mode' => 'percent', 'value' => 5, 'margin_min' => 20, 'margin_max' => 40])
+             ->assertOk()
+             ->assertJsonPath('matched', 1)
+             ->assertJsonPath('sample.0.id', $dansLaBande->id);
+    }
+
+    public function test_a_product_without_a_known_margin_leaves_the_batch_when_bounded(): void
+    {
+        $this->stocked(['p_salePrice' => 100, 'p_purchasePrice' => 0]);
+
+        // Sans borne il est la ; des qu'on borne, sa marge est inconnue et il
+        // ne peut pas etre juge.
+        $this->preview(['mode' => 'percent', 'value' => 5])
+             ->assertOk()
+             ->assertJsonPath('matched', 1);
+
+        $this->preview(['mode' => 'percent', 'value' => 5, 'margin_min' => -1000])
+             ->assertOk()
+             ->assertJsonPath('matched', 0);
+    }
+
+    // ── Marge cible depuis le prix d'achat ───────────────────────
+
+    public function test_a_target_margin_prices_from_the_purchase_price(): void
+    {
+        $this->stocked(['p_salePrice' => 100, 'p_purchasePrice' => 80]);
+
+        // 80 / (1 - 0,30) = 114,29 — et la marge obtenue vaut bien 30 %.
+        $this->preview(['mode' => 'target_margin', 'value' => 30])
+             ->assertOk()
+             ->assertJsonPath('sample.0.new', 114.29)
+             ->assertJsonPath('sample.0.margin_sale', 30);
+    }
+
+    public function test_a_target_margin_is_not_a_markup_on_the_purchase_price(): void
+    {
+        $this->stocked(['p_salePrice' => 100, 'p_purchasePrice' => 80]);
+
+        // Le piege que ce mode existe pour eviter : +30 % sur l'achat donne
+        // 104, qui ne laisse que 23,1 % de marge sur la vente.
+        $this->preview(['mode' => 'percent', 'value' => 30, 'basis' => 'purchase'])
+             ->assertOk()
+             ->assertJsonPath('sample.0.new', 104)
+             ->assertJsonPath('sample.0.margin_sale', 23.1);
+    }
+
+    public function test_a_target_margin_can_start_from_the_cost_price(): void
+    {
+        $this->stocked(['p_salePrice' => 200, 'p_purchasePrice' => 80, 'p_cost' => 90]);
+
+        // 90 / (1 - 0,25) = 120.
+        $this->preview(['mode' => 'target_margin', 'value' => 25, 'basis' => 'cost'])
+             ->assertOk()
+             ->assertJsonPath('sample.0.new', 120);
+    }
+
+    public function test_a_target_margin_falls_back_to_the_purchase_price(): void
+    {
+        $this->stocked(['p_salePrice' => 100, 'p_purchasePrice' => 80]);
+
+        // `sale` n'a pas de sens ici : le calcul se mordrait la queue.
+        $this->preview(['mode' => 'target_margin', 'value' => 30, 'basis' => 'sale'])
+             ->assertOk()
+             ->assertJsonPath('sample.0.new', 114.29);
+    }
+
+    public function test_a_target_margin_of_one_hundred_percent_is_refused(): void
+    {
+        $this->stocked(['p_salePrice' => 100, 'p_purchasePrice' => 80]);
+
+        $this->preview(['mode' => 'target_margin', 'value' => 100])
+             ->assertUnprocessable()
+             ->assertJsonValidationErrors(['value']);
+    }
+
+    public function test_a_target_margin_skips_products_without_a_cost(): void
+    {
+        $this->stocked(['p_salePrice' => 100, 'p_purchasePrice' => 0]);
+
+        $this->preview(['mode' => 'target_margin', 'value' => 30])
+             ->assertOk()
+             ->assertJsonPath('matched', 1)
+             ->assertJsonPath('skipped_no_basis', 1);
+    }
+
+    public function test_a_target_margin_can_be_applied(): void
+    {
+        $product = $this->stocked(['p_salePrice' => 100, 'p_purchasePrice' => 80]);
+
+        $this->apply(['mode' => 'target_margin', 'value' => 30, 'expected_count' => 1])
+             ->assertOk()
+             ->assertJsonPath('updated', 1);
+
+        $this->assertEquals(114.29, (float) $product->fresh()->p_salePrice);
+    }
 }

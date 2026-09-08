@@ -36,7 +36,13 @@ class BulkSalePriceUpdater
      * accepte pour ne pas casser un appel deja ecrit, mais l'ecran ne le propose
      * plus — deux chemins vers le meme calcul se contredisent tot ou tard.
      */
-    public const MODES = ['percent', 'amount', 'margin', 'set'];
+    public const MODES = ['percent', 'amount', 'margin', 'target_margin', 'set'];
+
+    /**
+     * Une marge de 100 % sur le prix de vente voudrait dire un prix infini :
+     * la part du cout y serait nulle. Le mode `target_margin` s'arrete avant.
+     */
+    public const MAX_TARGET_MARGIN = 99.9;
 
     /** Sur quoi le pourcentage ou le montant s'applique. */
     public const BASES = ['sale', 'purchase', 'cost'];
@@ -93,6 +99,27 @@ class BulkSalePriceUpdater
             });
         }
 
+        // Marge actuelle, rapportee au prix de vente — la lecture affichee en
+        // premier a l'ecran. Un produit sans prix de vente ou sans prix d'achat
+        // n'a pas de marge connue : des qu'un seuil est demande, il sort du
+        // perimetre plutot que de compter comme s'il valait zero.
+        $min = $filters['margin_min'] ?? null;
+        $max = $filters['margin_max'] ?? null;
+
+        if ($min !== null || $max !== null) {
+            $query->where('p_salePrice', '>', 0)->where('p_purchasePrice', '>', 0);
+
+            $margin = '((p_salePrice - p_purchasePrice) / p_salePrice * 100)';
+
+            if ($min !== null) {
+                $query->whereRaw($margin . ' >= ?', [$min]);
+            }
+
+            if ($max !== null) {
+                $query->whereRaw($margin . ' <= ?', [$max]);
+            }
+        }
+
         return $query->orderBy('products.id');
     }
 
@@ -127,6 +154,24 @@ class BulkSalePriceUpdater
 
         if ($mode === 'set') {
             return $this->applyRounding($value, $rule['rounding'] ?? 'none');
+        }
+
+        // La marge cible se lit sur le prix de vente, pas sur l'achat : viser
+        // 30 % ne veut pas dire majorer l'achat de 30 %. Le prix qui laisse
+        // cette part-la, c'est achat / (1 - marge) — un achat a 80 vise a 30 %
+        // donne 114,29, dont 34,29 de marge, soit bien 30 % de 114,29.
+        //
+        // Le prix de vente ne peut pas servir de base ici : on part forcement
+        // du cout, sinon le calcul se mordrait la queue.
+        if ($mode === 'target_margin') {
+            $basis = $basis === 'sale' ? 'purchase' : $basis;
+            $base  = $this->basisValue($product, $basis);
+
+            if ($base <= 0 || $value >= self::MAX_TARGET_MARGIN) {
+                return null;
+            }
+
+            return $this->applyRounding($base / (1 - $value / 100), $rule['rounding'] ?? 'none');
         }
 
         $base = $this->basisValue($product, $basis);
