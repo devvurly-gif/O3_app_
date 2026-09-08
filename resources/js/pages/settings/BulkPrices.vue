@@ -297,7 +297,20 @@
                 <th class="py-2 pr-3 font-semibold text-right">Avant</th>
                 <th class="py-2 pr-3 font-semibold text-right">Après</th>
                 <th class="py-2 pr-3 font-semibold text-right">Écart</th>
-                <th v-if="preview.costs_visible" class="py-2 font-semibold text-right">Marge / achat</th>
+                <th
+                  v-if="preview.costs_visible"
+                  class="py-2 pr-3 font-semibold text-right"
+                  title="Part de la marge dans le prix de vente : (vente − achat) ÷ vente"
+                >
+                  Marge / vente
+                </th>
+                <th
+                  v-if="preview.costs_visible"
+                  class="py-2 font-semibold text-right"
+                  title="Coefficient sur le prix d'achat : (vente − achat) ÷ achat"
+                >
+                  Marge / achat
+                </th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
@@ -331,6 +344,28 @@
                 >
                   {{ row.delta >= 0 ? '+' : '' }}{{ formatAmount(row.delta) }}
                 </td>
+                <td v-if="preview.costs_visible" class="py-1.5 pr-3 text-right tabular-nums">
+                  <span
+                    v-if="row.margin_sale === null || row.margin_sale === undefined"
+                    class="text-gray-300 dark:text-gray-600"
+                    >—</span
+                  >
+                  <span
+                    v-else
+                    :class="
+                      row.margin_sale < 0
+                        ? 'font-bold text-red-600 dark:text-red-400'
+                        : 'font-semibold text-gray-800 dark:text-gray-200'
+                    "
+                  >
+                    {{ row.margin_sale.toFixed(1) }} %
+                    <span
+                      v-if="row.margin_sale_before !== null && row.margin_sale_before !== undefined"
+                      class="text-xs font-normal text-gray-400 dark:text-gray-500"
+                      >(av. {{ row.margin_sale_before.toFixed(1) }} %)</span
+                    >
+                  </span>
+                </td>
                 <td v-if="preview.costs_visible" class="py-1.5 text-right tabular-nums">
                   <span v-if="row.margin === null || row.margin === undefined" class="text-gray-300 dark:text-gray-600"
                     >—</span
@@ -338,7 +373,7 @@
                   <span
                     v-else
                     :class="
-                      row.margin < 0 ? 'font-bold text-red-600 dark:text-red-400' : 'text-gray-700 dark:text-gray-300'
+                      row.margin < 0 ? 'font-bold text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'
                     "
                   >
                     {{ row.margin.toFixed(1) }} %
@@ -448,6 +483,8 @@ interface PreviewRow {
   cost?: number
   margin?: number | null
   margin_before?: number | null
+  margin_sale?: number | null
+  margin_sale_before?: number | null
 }
 
 interface PreviewResponse {

@@ -55,6 +55,8 @@ class BulkPriceExport implements FromGenerator, WithHeadings, ShouldAutoSize, Wi
             $line[] = $row['skipped'] ? null : $row['delta'];
 
             if ($this->withCosts) {
+                $line[] = $row['margin_sale_before'];
+                $line[] = $row['margin_sale'];
                 $line[] = $row['margin_before'];
                 $line[] = $row['margin'];
             }
@@ -79,8 +81,13 @@ class BulkPriceExport implements FromGenerator, WithHeadings, ShouldAutoSize, Wi
         $headings[] = 'Écart';
 
         if ($this->withCosts) {
-            $headings[] = 'Marge avant (%)';
-            $headings[] = 'Marge après (%)';
+            // La feuille porte les deux lectures : sur vente en premier, celle
+            // que l'ecran affiche et qu'on compare a un taux cible ; sur achat
+            // ensuite, le coefficient d'achat.
+            $headings[] = 'Marge / vente avant (%)';
+            $headings[] = 'Marge / vente après (%)';
+            $headings[] = 'Marge / achat avant (%)';
+            $headings[] = 'Marge / achat après (%)';
         }
 
         $headings[] = 'Statut';

@@ -77,6 +77,12 @@ function bulkPriceRound(price: number, rounding: string): number {
   return Math.round(out * 100) / 100
 }
 
+/** (prix − achat) ÷ base, en %. Meme regle que BulkSalePriceUpdater. */
+function bulkPriceMargin(price: number, purchase: number, base: number): number | null {
+  if (purchase <= 0 || base <= 0) return null
+  return Math.round(((price - purchase) / base) * 1000) / 10
+}
+
 function bulkPriceResponse(url: string, body: BulkPriceRequest) {
   const rows = (productPage.data as Array<Record<string, unknown>>).filter((p) => {
     if (body.category_ids?.length && !body.category_ids.includes(Number(p.category_id))) return false
@@ -133,8 +139,10 @@ function bulkPriceResponse(url: string, body: BulkPriceRequest) {
         delta: Math.round((next - current) * 100) / 100,
         purchase,
         cost: Math.round(Number(p.p_cost) * 100) / 100,
-        margin: purchase > 0 ? Math.round(((next - purchase) / purchase) * 1000) / 10 : null,
-        margin_before: purchase > 0 ? Math.round(((current - purchase) / purchase) * 1000) / 10 : null,
+        margin: bulkPriceMargin(next, purchase, purchase),
+        margin_before: bulkPriceMargin(current, purchase, purchase),
+        margin_sale: bulkPriceMargin(next, purchase, next),
+        margin_sale_before: bulkPriceMargin(current, purchase, current),
       })
     }
   }

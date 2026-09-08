@@ -580,4 +580,63 @@ class ProductBulkPriceTest extends TestCase
              ->post('/api/products/bulk-price/export', ['mode' => 'percent', 'value' => 10])
              ->assertForbidden();
     }
+
+    // ── Les deux lectures de la marge ────────────────────────────
+
+    public function test_the_margin_is_reported_on_the_sale_price_as_well(): void
+    {
+        $this->stocked(['p_salePrice' => 100, 'p_purchasePrice' => 80]);
+
+        // Passe a 120 : gagne 40 sur un achat a 80, soit 50 % sur achat, mais
+        // 33,3 % de ce qu'encaisse la caisse. Avant : 25 % et 20 %.
+        $this->preview(['mode' => 'percent', 'value' => 20])
+             ->assertOk()
+             ->assertJsonPath('sample.0.margin', 50)
+             ->assertJsonPath('sample.0.margin_before', 25)
+             ->assertJsonPath('sample.0.margin_sale', 33.3)
+             ->assertJsonPath('sample.0.margin_sale_before', 20);
+    }
+
+    public function test_the_sale_margin_turns_negative_below_the_purchase_price(): void
+    {
+        $this->stocked(['p_salePrice' => 100, 'p_purchasePrice' => 90]);
+
+        // 85 pour un achat a 90 : on perd 5, soit -5,9 % du prix encaisse.
+        $this->preview(['mode' => 'percent', 'value' => -15])
+             ->assertOk()
+             ->assertJsonPath('sample.0.margin_sale', -5.9)
+             ->assertJsonPath('below_purchase', 1);
+    }
+
+    public function test_neither_margin_is_computed_without_a_purchase_price(): void
+    {
+        // Rapporter 110 a un achat inconnu afficherait « 100 % de marge » sur
+        // un article dont on ignore justement le cout.
+        $this->stocked(['p_salePrice' => 100, 'p_purchasePrice' => 0]);
+
+        $this->preview(['mode' => 'percent', 'value' => 10])
+             ->assertOk()
+             ->assertJsonPath('sample.0.margin', null)
+             ->assertJsonPath('sample.0.margin_sale', null);
+    }
+
+    public function test_the_sale_margin_is_hidden_without_view_cost(): void
+    {
+        $this->stocked(['p_salePrice' => 100, 'p_purchasePrice' => 80]);
+
+        $role = Role::create(['name' => 'tarificateur_2', 'display_name' => 'Tarificateur', 'is_system' => false]);
+        $role->permissions()->sync([
+            Permission::firstOrCreate(
+                ['name' => 'products.update'],
+                ['module' => 'products', 'action' => 'update', 'display_name' => 'Produits — Modifier']
+            )->id,
+        ]);
+
+        $response = $this->actingAs(User::factory()->create(['role_id' => $role->id]), 'sanctum')
+                         ->postJson('/api/products/bulk-price/preview', ['mode' => 'percent', 'value' => 10])
+                         ->assertOk();
+
+        $this->assertArrayNotHasKey('margin_sale', $response->json('sample.0'));
+        $this->assertArrayNotHasKey('margin_sale_before', $response->json('sample.0'));
+    }
 }

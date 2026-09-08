@@ -177,13 +177,41 @@ class BulkSalePriceUpdater
         ];
 
         if ($withCosts) {
-            $row['purchase']      = $purchase;
-            $row['cost']          = round((float) $product->p_cost, 2);
-            $row['margin']        = $purchase > 0 && $new !== null ? round(($new - $purchase) / $purchase * 100, 1) : null;
-            $row['margin_before'] = $purchase > 0 ? round(($current - $purchase) / $purchase * 100, 1) : null;
+            $row['purchase'] = $purchase;
+            $row['cost']     = round((float) $product->p_cost, 2);
+
+            // Deux lectures de la meme marge, et il faut les deux.
+            //
+            // `margin` rapporte le gain au prix d'achat — le coefficient qu'on
+            // applique en achetant. `margin_sale` le rapporte au prix de vente
+            // — la part de marge dans ce qu'encaisse la caisse, celle qu'on
+            // compare a un taux cible ou a un concurrent. Un article achete 80
+            // et vendu 100 fait 25 % sur achat et 20 % sur vente : meme somme,
+            // deux chiffres, et les confondre fausse la decision.
+            //
+            // Prix d'achat a zero : aucune des deux n'a de sens. Rapporter 100
+            // a un achat inconnu afficherait « 100 % de marge » sur un article
+            // dont on ignore justement le cout.
+            $row['margin']             = $this->marginOn($new, $purchase, $purchase);
+            $row['margin_before']      = $this->marginOn($current, $purchase, $purchase);
+            $row['margin_sale']        = $this->marginOn($new, $purchase, $new);
+            $row['margin_sale_before'] = $this->marginOn($current, $purchase, $current);
         }
 
         return $row;
+    }
+
+    /**
+     * (prix - achat) / base, en pourcentage — null des que la base ou l'achat
+     * manque, plutot qu'un chiffre qui aurait l'air d'un resultat.
+     */
+    private function marginOn(?float $price, float $purchase, ?float $base): ?float
+    {
+        if ($price === null || $base === null || $purchase <= 0 || $base <= 0) {
+            return null;
+        }
+
+        return round(($price - $purchase) / $base * 100, 1);
     }
 
     /**
