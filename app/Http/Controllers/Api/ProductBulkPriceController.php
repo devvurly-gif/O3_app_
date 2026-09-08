@@ -113,7 +113,6 @@ class ProductBulkPriceController extends Controller
             'brand_ids.*'    => ['integer'],
             'status'         => ['nullable', Rule::in(['all', 'active', 'inactive'])],
             'search'         => ['nullable', 'string', 'max:120'],
-            'in_stock'       => ['nullable', 'boolean'],
 
             'mode'           => ['required', Rule::in(BulkSalePriceUpdater::MODES)],
             'value'          => ['required', 'numeric'],
@@ -129,7 +128,6 @@ class ProductBulkPriceController extends Controller
             'brand_ids'    => $validated['brand_ids']    ?? [],
             'status'       => $validated['status']       ?? 'all',
             'search'       => $validated['search']       ?? null,
-            'in_stock'     => $request->boolean('in_stock'),
         ];
 
         $rule = [

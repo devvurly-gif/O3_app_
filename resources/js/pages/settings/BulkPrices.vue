@@ -82,13 +82,25 @@
             </select>
           </div>
 
-          <div class="md:col-span-2">
-            <label class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
-              <input v-model="filters.in_stock" type="checkbox" class="rounded" @change="preview = null" />
-              Seulement les articles dont le stock est positif
-            </label>
-            <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 ml-6">
-              Stock cumulé sur tous les dépôts. Décochez pour retarifer aussi ce qui n'est pas en stock.
+          <div
+            class="md:col-span-2 flex items-start gap-2 rounded-lg bg-gray-50 dark:bg-gray-900/40 border border-gray-200 dark:border-gray-700 px-3 py-2"
+          >
+            <svg
+              class="w-4 h-4 mt-0.5 shrink-0 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <p class="text-xs text-gray-600 dark:text-gray-400">
+              Seuls les articles dont le <b>stock est positif</b> entrent dans le périmètre — stock cumulé sur tous les
+              dépôts. Un article sans ligne de stock, épuisé, ou négatif au total n'est jamais retarifé ici.
             </p>
           </div>
 
@@ -279,6 +291,7 @@
               >
                 <th class="py-2 pr-3 font-semibold">Code</th>
                 <th class="py-2 pr-3 font-semibold">Produit</th>
+                <th class="py-2 pr-3 font-semibold text-right">Stock</th>
                 <th v-if="preview.costs_visible" class="py-2 pr-3 font-semibold text-right">Achat</th>
                 <th v-if="preview.costs_visible" class="py-2 pr-3 font-semibold text-right">Coût</th>
                 <th class="py-2 pr-3 font-semibold text-right">Avant</th>
@@ -291,6 +304,9 @@
               <tr v-for="row in preview.sample" :key="row.id">
                 <td class="py-1.5 pr-3 font-mono text-xs text-gray-500 dark:text-gray-400">{{ row.p_code }}</td>
                 <td class="py-1.5 pr-3 text-gray-800 dark:text-gray-200">{{ row.p_title }}</td>
+                <td class="py-1.5 pr-3 text-right tabular-nums text-gray-700 dark:text-gray-300">
+                  {{ formatQty(row.stock) }}
+                </td>
                 <td
                   v-if="preview.costs_visible"
                   class="py-1.5 pr-3 text-right tabular-nums text-gray-500 dark:text-gray-400"
@@ -424,6 +440,7 @@ interface PreviewRow {
   id: number
   p_code: string
   p_title: string
+  stock: number
   current: number
   new: number
   delta: number
@@ -458,8 +475,6 @@ const filters = reactive({
   brand_ids: [] as number[],
   status: 'all',
   search: '',
-  // Coche par defaut : retarifer porte d'abord sur ce qu'on a en rayon.
-  in_stock: true,
 })
 
 const rule = reactive({
@@ -531,13 +546,17 @@ const ruleSummary = computed(() => {
   }
 })
 
+/** Le stock se lit en unites : 12 plutot que 12,00, mais 2,5 reste 2,5. */
+function formatQty(qty: number): string {
+  return Number.isInteger(qty) ? String(qty) : formatAmount(qty)
+}
+
 function payload() {
   return {
     category_ids: filters.category_ids,
     brand_ids: filters.brand_ids,
     status: filters.status,
     search: filters.search || null,
-    in_stock: filters.in_stock,
     mode: rule.mode,
     value: rule.value,
     basis: rule.basis,
@@ -599,7 +618,6 @@ function resetAll() {
   filters.brand_ids = []
   filters.status = 'all'
   filters.search = ''
-  filters.in_stock = true
   rule.mode = 'percent'
   rule.value = 0
   rule.basis = 'sale'

@@ -32,6 +32,36 @@ class ProductBulkPriceTest extends TestCase
         $this->admin = User::factory()->admin()->create();
     }
 
+    /**
+     * Un produit en stock.
+     *
+     * Le perimetre ne retient que le stock positif, sans option : un produit
+     * sans ligne de stock n'existe pas pour cet ecran, il faut donc lui en
+     * donner une des qu'on veut le voir dans un chiffrage.
+     *
+     * @param array<string, mixed> $attributes
+     */
+    private function stocked(array $attributes = [], float $stock = 10): Product
+    {
+        $product = Product::factory()->create($attributes);
+
+        WarehouseHasStock::factory()->create([
+            'product_id' => $product->id,
+            'stockLevel' => $stock,
+        ]);
+
+        return $product;
+    }
+
+    /**
+     * @param array<string, mixed> $attributes
+     * @return list<Product>
+     */
+    private function stockedMany(int $count, array $attributes = []): array
+    {
+        return array_map(fn () => $this->stocked($attributes), range(1, $count));
+    }
+
     /** @param array<string, mixed> $payload */
     private function preview(array $payload)
     {
@@ -50,7 +80,7 @@ class ProductBulkPriceTest extends TestCase
 
     public function test_preview_reports_the_change_without_writing_it(): void
     {
-        $product = Product::factory()->create(['p_salePrice' => 100]);
+        $product = $this->stocked(['p_salePrice' => 100]);
 
         $this->preview(['mode' => 'percent', 'value' => 10])
              ->assertOk()
@@ -64,8 +94,8 @@ class ProductBulkPriceTest extends TestCase
 
     public function test_preview_counts_products_the_rule_leaves_untouched(): void
     {
-        Product::factory()->create(['p_salePrice' => 100]);
-        Product::factory()->create(['p_salePrice' => 0]);
+        $this->stocked(['p_salePrice' => 100]);
+        $this->stocked(['p_salePrice' => 0]);
 
         // +10 % sur 0 donne 0 : le produit est compte, pas modifie.
         $this->preview(['mode' => 'percent', 'value' => 10])
@@ -77,8 +107,8 @@ class ProductBulkPriceTest extends TestCase
 
     public function test_margin_skips_products_without_a_basis(): void
     {
-        Product::factory()->create(['p_purchasePrice' => 80, 'p_salePrice' => 90]);
-        Product::factory()->create(['p_purchasePrice' => 0,  'p_salePrice' => 90]);
+        $this->stocked(['p_purchasePrice' => 80, 'p_salePrice' => 90]);
+        $this->stocked(['p_purchasePrice' => 0,  'p_salePrice' => 90]);
 
         $this->preview(['mode' => 'margin', 'value' => 25])
              ->assertOk()
@@ -95,8 +125,8 @@ class ProductBulkPriceTest extends TestCase
         $ciblee = Category::factory()->create();
         $autre  = Category::factory()->create();
 
-        Product::factory()->count(2)->create(['category_id' => $ciblee->id, 'p_salePrice' => 100]);
-        Product::factory()->create(['category_id' => $autre->id, 'p_salePrice' => 100]);
+        $this->stockedMany(2, ['category_id' => $ciblee->id, 'p_salePrice' => 100]);
+        $this->stocked(['category_id' => $autre->id, 'p_salePrice' => 100]);
 
         $this->preview([
             'mode'         => 'percent',
@@ -107,8 +137,8 @@ class ProductBulkPriceTest extends TestCase
 
     public function test_inactive_products_can_be_left_out(): void
     {
-        Product::factory()->create(['p_status' => true,  'p_salePrice' => 100]);
-        Product::factory()->create(['p_status' => false, 'p_salePrice' => 100]);
+        $this->stocked(['p_status' => true,  'p_salePrice' => 100]);
+        $this->stocked(['p_status' => false, 'p_salePrice' => 100]);
 
         $this->preview(['mode' => 'percent', 'value' => 10, 'status' => 'active'])
              ->assertOk()
@@ -119,8 +149,8 @@ class ProductBulkPriceTest extends TestCase
     {
         $marque = Brand::factory()->create();
 
-        Product::factory()->create(['brand_id' => $marque->id, 'p_salePrice' => 100]);
-        Product::factory()->create(['p_salePrice' => 100]);
+        $this->stocked(['brand_id' => $marque->id, 'p_salePrice' => 100]);
+        $this->stocked(['p_salePrice' => 100]);
 
         $this->preview(['mode' => 'set', 'value' => 50, 'brand_ids' => [$marque->id]])
              ->assertOk()
@@ -131,7 +161,7 @@ class ProductBulkPriceTest extends TestCase
 
     public function test_rounding_to_the_nearest_dirham(): void
     {
-        Product::factory()->create(['p_salePrice' => 100]);
+        $this->stocked(['p_salePrice' => 100]);
 
         $this->preview(['mode' => 'percent', 'value' => 7, 'rounding' => '1'])
              ->assertOk()
@@ -140,7 +170,7 @@ class ProductBulkPriceTest extends TestCase
 
     public function test_psychological_rounding_lands_below_the_round_figure(): void
     {
-        Product::factory()->create(['p_salePrice' => 100]);
+        $this->stocked(['p_salePrice' => 100]);
 
         // 100 + 0 % arrondi en .90 doit donner 99,90, pas 100,90.
         $this->preview(['mode' => 'amount', 'value' => 0, 'rounding' => 'end_90'])
@@ -150,7 +180,7 @@ class ProductBulkPriceTest extends TestCase
 
     public function test_rounding_never_pushes_a_positive_price_below_zero(): void
     {
-        Product::factory()->create(['p_salePrice' => 0.40]);
+        $this->stocked(['p_salePrice' => 0.40]);
 
         $this->preview(['mode' => 'amount', 'value' => 0, 'rounding' => 'end_90'])
              ->assertOk()
@@ -161,8 +191,8 @@ class ProductBulkPriceTest extends TestCase
 
     public function test_apply_writes_the_new_prices(): void
     {
-        $a = Product::factory()->create(['p_salePrice' => 100]);
-        $b = Product::factory()->create(['p_salePrice' => 250]);
+        $a = $this->stocked(['p_salePrice' => 100]);
+        $b = $this->stocked(['p_salePrice' => 250]);
 
         $this->apply(['mode' => 'percent', 'value' => 10, 'expected_count' => 2])
              ->assertOk()
@@ -174,7 +204,7 @@ class ProductBulkPriceTest extends TestCase
 
     public function test_apply_refuses_when_the_batch_no_longer_matches_the_preview(): void
     {
-        Product::factory()->count(3)->create(['p_salePrice' => 100]);
+        $this->stockedMany(3, ['p_salePrice' => 100]);
 
         $this->apply(['mode' => 'percent', 'value' => 10, 'expected_count' => 2])
              ->assertStatus(422)
@@ -186,7 +216,7 @@ class ProductBulkPriceTest extends TestCase
 
     public function test_apply_refuses_a_rule_that_would_produce_a_negative_price(): void
     {
-        $product = Product::factory()->create(['p_salePrice' => 100]);
+        $product = $this->stocked(['p_salePrice' => 100]);
 
         $this->apply(['mode' => 'amount', 'value' => -150, 'expected_count' => 1])
              ->assertStatus(422)
@@ -197,8 +227,8 @@ class ProductBulkPriceTest extends TestCase
 
     public function test_apply_leaves_untouched_products_alone(): void
     {
-        Product::factory()->create(['p_salePrice' => 100]);
-        Product::factory()->create(['p_salePrice' => 0]);
+        $this->stocked(['p_salePrice' => 100]);
+        $this->stocked(['p_salePrice' => 0]);
 
         $this->apply(['mode' => 'percent', 'value' => 10, 'expected_count' => 2])
              ->assertOk()
@@ -208,7 +238,7 @@ class ProductBulkPriceTest extends TestCase
 
     public function test_the_change_lands_in_the_audit_trail(): void
     {
-        $product = Product::factory()->create(['p_salePrice' => 100]);
+        $product = $this->stocked(['p_salePrice' => 100]);
 
         $this->apply(['mode' => 'percent', 'value' => 10, 'expected_count' => 1])->assertOk();
 
@@ -223,7 +253,7 @@ class ProductBulkPriceTest extends TestCase
 
     public function test_a_cashier_cannot_reprice_the_catalogue(): void
     {
-        $product = Product::factory()->create(['p_salePrice' => 100]);
+        $product = $this->stocked(['p_salePrice' => 100]);
         $cashier = User::factory()->cashier()->create();
 
         $this->actingAs($cashier, 'sanctum')
@@ -237,7 +267,7 @@ class ProductBulkPriceTest extends TestCase
 
     public function test_a_manager_can_reprice_the_catalogue(): void
     {
-        Product::factory()->create(['p_salePrice' => 100]);
+        $this->stocked(['p_salePrice' => 100]);
         $manager = User::factory()->manager()->create();
 
         $this->actingAs($manager, 'sanctum')
@@ -258,7 +288,7 @@ class ProductBulkPriceTest extends TestCase
 
     public function test_the_batch_ceiling_is_exposed_by_the_preview(): void
     {
-        Product::factory()->create(['p_salePrice' => 100]);
+        $this->stocked(['p_salePrice' => 100]);
 
         $this->preview(['mode' => 'percent', 'value' => 10])
              ->assertOk()
@@ -269,7 +299,7 @@ class ProductBulkPriceTest extends TestCase
 
     public function test_the_preview_carries_the_cost_side_so_the_admin_can_judge(): void
     {
-        Product::factory()->create([
+        $this->stocked([
             'p_salePrice'     => 100,
             'p_purchasePrice' => 80,
             'p_cost'          => 85,
@@ -287,8 +317,8 @@ class ProductBulkPriceTest extends TestCase
 
     public function test_products_falling_under_their_purchase_price_are_counted(): void
     {
-        Product::factory()->create(['p_salePrice' => 100, 'p_purchasePrice' => 90]);
-        Product::factory()->create(['p_salePrice' => 100, 'p_purchasePrice' => 50]);
+        $this->stocked(['p_salePrice' => 100, 'p_purchasePrice' => 90]);
+        $this->stocked(['p_salePrice' => 100, 'p_purchasePrice' => 50]);
 
         // −15 % ramene le premier a 85, sous son achat a 90 ; pas le second.
         $this->preview(['mode' => 'percent', 'value' => -15])
@@ -298,7 +328,7 @@ class ProductBulkPriceTest extends TestCase
 
     public function test_selling_under_purchase_price_is_a_warning_not_a_refusal(): void
     {
-        $product = Product::factory()->create(['p_salePrice' => 100, 'p_purchasePrice' => 90]);
+        $product = $this->stocked(['p_salePrice' => 100, 'p_purchasePrice' => 90]);
 
         // La vente a perte se decide, elle ne se bloque pas : c'est le prix
         // negatif qui est refuse, pas la marge negative.
@@ -310,7 +340,7 @@ class ProductBulkPriceTest extends TestCase
 
     public function test_a_product_without_a_purchase_price_has_no_margin(): void
     {
-        Product::factory()->create(['p_salePrice' => 100, 'p_purchasePrice' => 0]);
+        $this->stocked(['p_salePrice' => 100, 'p_purchasePrice' => 0]);
 
         $this->preview(['mode' => 'percent', 'value' => 10])
              ->assertOk()
@@ -320,7 +350,7 @@ class ProductBulkPriceTest extends TestCase
 
     public function test_the_cost_side_is_hidden_from_a_role_without_view_cost(): void
     {
-        Product::factory()->create(['p_salePrice' => 100, 'p_purchasePrice' => 80]);
+        $this->stocked(['p_salePrice' => 100, 'p_purchasePrice' => 80]);
 
         // Un role qui peut modifier les produits sans voir les couts : les
         // colonnes d'achat ne doivent pas voyager dans le JSON.
@@ -349,7 +379,7 @@ class ProductBulkPriceTest extends TestCase
 
     public function test_a_percentage_can_be_applied_to_the_purchase_price(): void
     {
-        Product::factory()->create(['p_salePrice' => 500, 'p_purchasePrice' => 80]);
+        $this->stocked(['p_salePrice' => 500, 'p_purchasePrice' => 80]);
 
         $this->preview(['mode' => 'percent', 'value' => 25, 'basis' => 'purchase'])
              ->assertOk()
@@ -358,7 +388,7 @@ class ProductBulkPriceTest extends TestCase
 
     public function test_a_percentage_can_be_applied_to_the_cost_price(): void
     {
-        Product::factory()->create(['p_salePrice' => 500, 'p_purchasePrice' => 80, 'p_cost' => 90]);
+        $this->stocked(['p_salePrice' => 500, 'p_purchasePrice' => 80, 'p_cost' => 90]);
 
         $this->preview(['mode' => 'percent', 'value' => 20, 'basis' => 'cost'])
              ->assertOk()
@@ -367,7 +397,7 @@ class ProductBulkPriceTest extends TestCase
 
     public function test_a_fixed_amount_can_be_applied_to_the_purchase_price(): void
     {
-        Product::factory()->create(['p_salePrice' => 500, 'p_purchasePrice' => 80]);
+        $this->stocked(['p_salePrice' => 500, 'p_purchasePrice' => 80]);
 
         $this->preview(['mode' => 'amount', 'value' => 30, 'basis' => 'purchase'])
              ->assertOk()
@@ -376,7 +406,7 @@ class ProductBulkPriceTest extends TestCase
 
     public function test_the_sale_price_stays_the_default_basis(): void
     {
-        Product::factory()->create(['p_salePrice' => 200, 'p_purchasePrice' => 80]);
+        $this->stocked(['p_salePrice' => 200, 'p_purchasePrice' => 80]);
 
         // Sans `basis`, on part du prix de vente : 200 + 10 % = 220.
         $this->preview(['mode' => 'percent', 'value' => 10])
@@ -386,7 +416,7 @@ class ProductBulkPriceTest extends TestCase
 
     public function test_a_cost_basis_at_zero_is_skipped_not_zeroed(): void
     {
-        Product::factory()->create(['p_salePrice' => 300, 'p_purchasePrice' => 0]);
+        $this->stocked(['p_salePrice' => 300, 'p_purchasePrice' => 0]);
 
         // Sans prix d'achat, appliquer une marge donnerait 0 : on ignore le
         // produit plutot que de brader un article dont on ignore le cout.
@@ -399,7 +429,7 @@ class ProductBulkPriceTest extends TestCase
 
     public function test_a_sale_basis_at_zero_is_not_skipped(): void
     {
-        Product::factory()->create(['p_salePrice' => 0, 'p_purchasePrice' => 50]);
+        $this->stocked(['p_salePrice' => 0, 'p_purchasePrice' => 50]);
 
         // Un produit non tarife reste a zero : c'est un cas normal, pas une
         // base manquante.
@@ -411,7 +441,7 @@ class ProductBulkPriceTest extends TestCase
 
     public function test_the_legacy_margin_mode_still_maps_to_a_purchase_percentage(): void
     {
-        Product::factory()->create(['p_salePrice' => 500, 'p_purchasePrice' => 80]);
+        $this->stocked(['p_salePrice' => 500, 'p_purchasePrice' => 80]);
 
         // `margin` n'est plus propose par l'ecran mais reste accepte : il doit
         // rendre exactement ce que rend `percent` sur le prix d'achat.
@@ -429,7 +459,7 @@ class ProductBulkPriceTest extends TestCase
 
     public function test_applying_on_the_purchase_price_writes_the_new_prices(): void
     {
-        $product = Product::factory()->create(['p_salePrice' => 500, 'p_purchasePrice' => 80]);
+        $product = $this->stocked(['p_salePrice' => 500, 'p_purchasePrice' => 80]);
 
         $this->apply([
             'mode' => 'percent', 'value' => 25, 'basis' => 'purchase', 'expected_count' => 1,
@@ -438,42 +468,46 @@ class ProductBulkPriceTest extends TestCase
         $this->assertEquals(100, (float) $product->fresh()->p_salePrice);
     }
 
-    // ── Filtre stock ─────────────────────────────────────────────
+    // ── Perimetre : stock positif obligatoire ────────────────────
 
-    public function test_the_stock_filter_keeps_only_products_with_stock_left(): void
+    public function test_only_products_left_in_stock_enter_the_batch(): void
     {
-        $enStock   = Product::factory()->create(['p_salePrice' => 100]);
-        $epuise    = Product::factory()->create(['p_salePrice' => 100]);
-        $sansLigne = Product::factory()->create(['p_salePrice' => 100]);
+        $enStock = Product::factory()->create(['p_salePrice' => 100]);
+        $epuise  = Product::factory()->create(['p_salePrice' => 100]);
+        Product::factory()->create(['p_salePrice' => 100]); // aucune ligne de stock
 
         WarehouseHasStock::factory()->create(['product_id' => $enStock->id, 'stockLevel' => 4]);
         WarehouseHasStock::factory()->create(['product_id' => $epuise->id,  'stockLevel' => 0]);
 
-        $this->preview(['mode' => 'percent', 'value' => 10, 'in_stock' => true])
+        // Aucun drapeau a passer : la regle ne se desactive pas.
+        $this->preview(['mode' => 'percent', 'value' => 10])
              ->assertOk()
              ->assertJsonPath('matched', 1)
              ->assertJsonPath('sample.0.id', $enStock->id);
+    }
 
-        // Sans le filtre, les trois reviennent — dont celui qui n'a aucune
-        // ligne de stock.
+    public function test_the_quantity_in_stock_is_reported_on_each_line(): void
+    {
+        $this->stocked(['p_salePrice' => 100], 7.5);
+
         $this->preview(['mode' => 'percent', 'value' => 10])
              ->assertOk()
-             ->assertJsonPath('matched', 3);
-
-        $this->assertNotNull($sansLigne->id);
+             ->assertJsonPath('sample.0.stock', 7.5);
     }
 
     public function test_stock_is_summed_across_warehouses(): void
     {
         $product = Product::factory()->create(['p_salePrice' => 100]);
 
-        // Un depot en negatif, un autre qui compense : le total decide.
+        // Un depot en negatif, un autre qui compense : le total decide, et
+        // c'est le total qui s'affiche.
         WarehouseHasStock::factory()->create(['product_id' => $product->id, 'stockLevel' => -2]);
         WarehouseHasStock::factory()->create(['product_id' => $product->id, 'stockLevel' => 5]);
 
-        $this->preview(['mode' => 'percent', 'value' => 10, 'in_stock' => true])
+        $this->preview(['mode' => 'percent', 'value' => 10])
              ->assertOk()
-             ->assertJsonPath('matched', 1);
+             ->assertJsonPath('matched', 1)
+             ->assertJsonPath('sample.0.stock', 3);
     }
 
     public function test_a_product_in_negative_stock_overall_is_left_out(): void
@@ -481,20 +515,19 @@ class ProductBulkPriceTest extends TestCase
         $product = Product::factory()->create(['p_salePrice' => 100]);
         WarehouseHasStock::factory()->create(['product_id' => $product->id, 'stockLevel' => -3]);
 
-        $this->preview(['mode' => 'percent', 'value' => 10, 'in_stock' => true])
+        $this->preview(['mode' => 'percent', 'value' => 10])
              ->assertOk()
              ->assertJsonPath('matched', 0);
     }
 
-    public function test_applying_respects_the_stock_filter(): void
+    public function test_applying_never_touches_a_product_out_of_stock(): void
     {
-        $enStock = Product::factory()->create(['p_salePrice' => 100]);
+        $enStock = $this->stocked(['p_salePrice' => 100], 7);
         $epuise  = Product::factory()->create(['p_salePrice' => 100]);
 
-        WarehouseHasStock::factory()->create(['product_id' => $enStock->id, 'stockLevel' => 7]);
-        WarehouseHasStock::factory()->create(['product_id' => $epuise->id,  'stockLevel' => 0]);
+        WarehouseHasStock::factory()->create(['product_id' => $epuise->id, 'stockLevel' => 0]);
 
-        $this->apply(['mode' => 'percent', 'value' => 10, 'in_stock' => true, 'expected_count' => 1])
+        $this->apply(['mode' => 'percent', 'value' => 10, 'expected_count' => 1])
              ->assertOk()
              ->assertJsonPath('updated', 1);
 
@@ -506,7 +539,7 @@ class ProductBulkPriceTest extends TestCase
 
     public function test_the_preview_can_be_downloaded_as_a_spreadsheet(): void
     {
-        Product::factory()->count(3)->create(['p_salePrice' => 100, 'p_purchasePrice' => 80]);
+        $this->stockedMany(3, ['p_salePrice' => 100, 'p_purchasePrice' => 80]);
 
         $response = $this->actingAs($this->admin, 'sanctum')
                          ->post('/api/products/bulk-price/export', ['mode' => 'percent', 'value' => 10]);
@@ -525,8 +558,7 @@ class ProductBulkPriceTest extends TestCase
     public function test_the_export_covers_the_whole_batch_not_just_the_sample(): void
     {
         // Le chiffrage plafonne l'echantillon a SAMPLE_SIZE ; la feuille, non.
-        Product::factory()->count(BulkSalePriceUpdater::SAMPLE_SIZE + 5)
-               ->create(['p_salePrice' => 100, 'p_purchasePrice' => 80]);
+        $this->stockedMany(BulkSalePriceUpdater::SAMPLE_SIZE + 5, ['p_salePrice' => 100, 'p_purchasePrice' => 80]);
 
         $rows = iterator_to_array(
             app(BulkSalePriceUpdater::class)->rows(['status' => 'all'], ['mode' => 'percent', 'value' => 10], true)
@@ -541,7 +573,7 @@ class ProductBulkPriceTest extends TestCase
 
     public function test_the_export_obeys_the_same_permission_as_the_rest(): void
     {
-        Product::factory()->create(['p_salePrice' => 100]);
+        $this->stocked(['p_salePrice' => 100]);
         $cashier = User::factory()->cashier()->create();
 
         $this->actingAs($cashier, 'sanctum')

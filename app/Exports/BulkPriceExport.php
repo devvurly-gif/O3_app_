@@ -40,6 +40,7 @@ class BulkPriceExport implements FromGenerator, WithHeadings, ShouldAutoSize, Wi
             $line = [
                 $row['p_code'],
                 $row['p_title'],
+                $row['stock'],
             ];
 
             if ($this->withCosts) {
@@ -66,7 +67,7 @@ class BulkPriceExport implements FromGenerator, WithHeadings, ShouldAutoSize, Wi
 
     public function headings(): array
     {
-        $headings = ['Code', 'Produit'];
+        $headings = ['Code', 'Produit', 'Stock'];
 
         if ($this->withCosts) {
             $headings[] = "Prix d'achat";

@@ -43,13 +43,33 @@ class BulkSalePriceUpdater
 
     public const ROUNDINGS = ['none', '0.05', '0.10', '0.50', '1', '5', '10', 'end_90', 'end_99'];
 
-    /** @param array<string, mixed> $filters */
+    /**
+     * Le perimetre : les produits en stock, avec leur quantite.
+     *
+     * Le stock positif n'est pas une option — une revision de tarif porte sur
+     * ce qu'on a en rayon. La jointure sur la somme par produit fait les deux
+     * en une passe : elle ecarte ceux dont le total est nul ou negatif, et
+     * ramene `stock_qty` avec la ligne. L'accesseur `total_stock` du modele ne
+     * saurait ni l'un ni l'autre — il interroge la base produit par produit.
+     *
+     * Les lignes de variantes portent aussi leur `product_id`, elles entrent
+     * donc dans la meme somme.
+     *
+     * @param array<string, mixed> $filters
+     */
     public function query(array $filters): Builder
     {
-        $query = Product::query();
+        $stock = DB::table('warehouse_has_stock')
+            ->select('product_id', DB::raw('SUM(stockLevel) AS stock_qty'))
+            ->groupBy('product_id')
+            ->havingRaw('SUM(stockLevel) > 0');
+
+        $query = Product::query()
+            ->joinSub($stock, 'stk', fn ($join) => $join->on('stk.product_id', '=', 'products.id'))
+            ->select('products.*', 'stk.stock_qty');
 
         if (!empty($filters['product_ids'])) {
-            $query->whereIn('id', $filters['product_ids']);
+            $query->whereIn('products.id', $filters['product_ids']);
         }
 
         if (!empty($filters['category_ids'])) {
@@ -73,21 +93,7 @@ class BulkSalePriceUpdater
             });
         }
 
-        // Stock positif : somme des lignes de stock du produit, tous depots
-        // confondus. Le total passe par une sous-requete plutot que par
-        // l'accesseur `total_stock`, qui interroge la base produit par produit
-        // et ne sait pas filtrer. Les lignes de variantes portent aussi leur
-        // `product_id`, elles entrent donc dans la meme somme.
-        if (!empty($filters['in_stock'])) {
-            $query->whereIn('id', function ($q) {
-                $q->select('product_id')
-                  ->from('warehouse_has_stock')
-                  ->groupBy('product_id')
-                  ->havingRaw('SUM(stockLevel) > 0');
-            });
-        }
-
-        return $query->orderBy('id');
+        return $query->orderBy('products.id');
     }
 
     /**
@@ -157,6 +163,8 @@ class BulkSalePriceUpdater
             'id'      => $product->id,
             'p_code'  => $product->p_code,
             'p_title' => $product->p_title,
+            // Ramene par la jointure du perimetre, pas par l'accesseur.
+            'stock'   => round((float) ($product->stock_qty ?? 0), 2),
             'current' => $current,
             'new'     => $new,
             'delta'   => $new === null ? null : round($new - $current, 2),
@@ -181,8 +189,11 @@ class BulkSalePriceUpdater
     /**
      * Toutes les lignes du perimetre, en flux.
      *
-     * `cursor()` plutot qu'un `get()` : l'export peut porter des milliers de
-     * lignes et n'a aucune raison de les tenir toutes en memoire.
+     * `lazy()` plutot qu'un `get()` : l'export peut porter des milliers de
+     * lignes et n'a aucune raison de les tenir toutes en memoire. Pas
+     * `cursor()` non plus — il tient la connexion ouverte en mode non
+     * bufferise, et toute requete emise pendant la boucle (une sauvegarde, un
+     * test sous transaction) tombe alors sur « commands out of sync ».
      *
      * @param array<string, mixed> $filters
      * @param array<string, mixed> $rule
@@ -190,7 +201,7 @@ class BulkSalePriceUpdater
      */
     public function rows(array $filters, array $rule, bool $withCosts = false): \Generator
     {
-        foreach ($this->query($filters)->cursor() as $product) {
+        foreach ($this->query($filters)->lazy() as $product) {
             yield $this->describe($product, $rule, $withCosts);
         }
     }
