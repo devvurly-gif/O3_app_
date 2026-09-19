@@ -238,6 +238,16 @@ const routes: RouteRecordRaw[] = [
     meta: { layout: 'app', title: 'Document Incrementors', breadcrumb: 'Numéroteurs Document', adminOnly: true },
   },
   {
+    path: '/settings/document-templates',
+    component: () => import('../pages/settings/DocumentTemplates.vue'),
+    meta: {
+      layout: 'app',
+      title: 'Modèles de documents',
+      breadcrumb: 'Modèles de documents',
+      adminOnly: true,
+    },
+  },
+  {
     path: '/settings/app',
     component: () => import('../pages/settings/AppSettings.vue'),
     meta: { layout: 'app', title: 'App Settings', breadcrumb: 'Paramètres', adminOnly: true },

@@ -33,6 +33,7 @@ use App\Http\Controllers\Api\Stock\DocumentStockController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DashboardWidgetController;
 use App\Http\Controllers\Api\DocumentPdfController;
+use App\Http\Controllers\Api\DocumentTemplateController;
 use App\Http\Controllers\Api\ExportController;
 use App\Http\Controllers\Api\ImportController;
 use App\Http\Controllers\Api\ReportController;
@@ -454,6 +455,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('document-incrementors/{document_incrementor}',       [DocumentIncrementorController::class, 'show']);
         Route::put('document-incrementors/{document_incrementor}',       [DocumentIncrementorController::class, 'update']);
         Route::delete('document-incrementors/{document_incrementor}',    [DocumentIncrementorController::class, 'destroy']);
+
+        // Modeles de documents imprimes : chaque tenant regle sa facture,
+        // son bon de livraison, etc. (cf. DocumentTemplateService).
+        Route::get('document-templates',                     [DocumentTemplateController::class, 'index']);
+        Route::put('document-templates/{type}',              [DocumentTemplateController::class, 'update']);
+        Route::delete('document-templates/{type}',           [DocumentTemplateController::class, 'destroy']);
+        Route::post('document-templates/{type}/preview',     [DocumentTemplateController::class, 'preview']);
 
         Route::post('settings',   [SettingController::class, 'upsert']);
         Route::delete('settings', [SettingController::class, 'destroy']);

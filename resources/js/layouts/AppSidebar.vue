@@ -925,6 +925,12 @@ const tenantGroups: SidebarGroup[] = [
         icon: icons.docs,
         permission: 'settings.manage',
       },
+      {
+        to: '/settings/document-templates',
+        labelKey: 'documentTemplates.title',
+        icon: icons.docs,
+        permission: 'settings.manage',
+      },
       { to: '/settings/app', labelKey: 'appSettings.title', icon: icons.appsettings, permission: 'settings.manage' },
       { to: '/settings/imports', labelKey: 'imports.title', icon: icons.stock, permission: 'settings.manage' },
       {
