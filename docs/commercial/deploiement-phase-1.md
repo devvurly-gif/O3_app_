@@ -41,7 +41,22 @@ Sans elle, `config('mail.admin_notification_to')` retombe sur `mail.from.address
 
 ## 3. Sur le VPS, dans cet ordre
 
-### 3.1 Migrations
+### 3.1 Rafraîchir la config AVANT de migrer
+
+> Corrigé après le déploiement du 2026-09-20, où l'ordre inverse a été suivi.
+
+`bootstrap/cache/config.php` existe en production. Un fichier `config/*.php`
+**neuf** — ici `config/plans.php` — y est donc invisible tant que `config:cache`
+n'a pas tourné. Or `php artisan migrate` lit cette config cachée : lancée avant,
+la migration de reprise s'exécute avec `config('plans.plans')` à `null`, et
+enregistre des dérogations fausses. C'est exactement ce qui s'est produit le
+2026-09-20 (corrigé ensuite à la main, voir §3.3).
+
+```bash
+cd /var/www/O3_app && sudo -u www-data php artisan config:cache
+```
+
+### 3.2 Migrations
 
 ```bash
 cd /var/www/O3_app && sudo -u www-data php artisan migrate --force
@@ -53,7 +68,7 @@ Trois migrations s'exécutent :
 2. `backfill_tenant_subscription_state` — **la reprise des tenants existants**
 3. `create_tenant_payments_table` — table des règlements
 
-### 3.2 Vérifier la reprise AVANT d'aller plus loin
+### 3.3 Vérifier la reprise AVANT d'aller plus loin
 
 C'est le point de non-retour : le middleware n'est pas encore actif tant que
 les routes ne sont pas recachées. Contrôler que chaque tenant réel est ressorti
@@ -74,7 +89,7 @@ dérogations :
 cd /var/www/O3_app && sudo -u www-data php artisan tinker --execute="App\Models\Tenant::all()->each(fn(\$t) => print(\$t->id.' → '.json_encode(app(App\Services\PlanService::class)->overridesOf(\$t)).PHP_EOL));"
 ```
 
-### 3.3 Simuler le cron avant de l'armer
+### 3.4 Simuler le cron avant de l'armer
 
 ```bash
 cd /var/www/O3_app && sudo -u www-data php artisan subscriptions:check --dry-run
@@ -84,32 +99,41 @@ Aucune écriture, aucun email. La sortie annonce les bascules et les relances qu
 partiraient. Si elle annonce une suspension sur un client réel, l'échéance de
 l'étape 3.2 est mauvaise.
 
-### 3.4 Caches — sans cette étape, rien ne s'applique
+### 3.5 Opcache
 
 ```bash
-cd /var/www/O3_app && sudo -u www-data php artisan route:cache && sudo -u www-data php artisan config:cache
+cd /var/www/O3_app && systemctl reload php8.2-fpm
 ```
 
-`route:cache` est **obligatoire** : `routes/api.php` et `routes/tenant.php` ont
-changé, et sans lui la modification reste inerte — sans le moindre message.
-`config:cache` l'est tout autant, `config/plans.php` étant un fichier neuf.
+**Le cache de routes n'existe plus en production** (constaté le 2026-09-20 :
+`bootstrap/cache/routes-v7.php` absent). Les routes s'appliquent donc dès le
+`git pull`, et il ne faut pas créer ce cache sans raison. Vérifier plutôt que
+supposer :
 
-### 3.5 Assets
+```bash
+test -f /var/www/O3_app/bootstrap/cache/routes-v7.php && echo PRESENT || echo ABSENT
+```
+
+S'il est présent, `sudo -u www-data php artisan route:cache` redevient
+obligatoire — sans lui la modification reste inerte, sans le moindre message.
+
+### 3.6 Assets
 
 Suivre la procédure `build-new` du guide VPS (`vps_access.md`) : un
 `npm run build` direct supprime les assets pendant environ une minute.
 
-### 3.6 Vérifier que le planificateur tourne
+### 3.7 Vérifier que le planificateur tourne
 
-`subscriptions:check` est programmé à 7 h dans `app/Console/Kernel.php`, mais il
-ne s'exécutera que si le planificateur Laravel est bien dans la crontab :
+Le planificateur d'O3_app passe par **systemd**, pas par la crontab : la seule
+ligne `schedule:run` de la crontab root concerne `worldcup2026-app`, ce qui prête
+à confusion.
 
 ```bash
-sudo -u www-data crontab -l | grep schedule:run
+systemctl list-timers o3-scheduler.timer --no-pager && cd /var/www/O3_app && sudo -u www-data php artisan schedule:list | grep subscriptions
 ```
 
-Si la ligne est absente, **aucune relance ne partira jamais** et les essais ne se
-termineront pas — c'est-à-dire que la phase 1 n'aura rien changé.
+`config/app.php` étant en `UTC`, le créneau de 7 h tombe à **8 h heure
+marocaine** — juste avant l'ouverture.
 
 ---
 
