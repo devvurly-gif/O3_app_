@@ -34,6 +34,12 @@ class RequestPlanChangeRequest extends FormRequest
                 Rule::in([SubscriptionService::PERIOD_MONTHLY, SubscriptionService::PERIOD_YEARLY]),
             ],
             'note' => ['nullable', 'string', 'max:2000'],
+            // Mentions légales reprises sur la facture. Demandées ici parce
+            // que c'est le seul moment où le client est devant l'écran et
+            // motivé : les réclamer après coup, facture déjà émise, oblige à
+            // l'annuler et à la refaire.
+            'billing_ice'     => ['nullable', 'string', 'max:50'],
+            'billing_address' => ['nullable', 'string', 'max:500'],
         ];
     }
 

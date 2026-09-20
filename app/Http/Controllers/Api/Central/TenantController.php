@@ -189,6 +189,11 @@ class TenantController extends Controller
             'email'               => 'sometimes|email',
             'domain'              => 'sometimes|string',
             'plan'                => ['sometimes', Rule::in(array_keys((array) config('plans.plans', [])))],
+            // Mentions légales du client, reprises sur ses factures
+            // d'abonnement. L'ICE est obligatoire sur une facture B2B
+            // marocaine : sans lui, la facture part avec « non communiqué ».
+            'billing_ice'         => 'sometimes|nullable|string|max:50',
+            'billing_address'     => 'sometimes|nullable|string|max:500',
             'is_active'           => 'sometimes|boolean',
             'pos_enabled'         => 'sometimes|boolean',
             'paiement_bl_enabled' => 'sometimes|boolean',

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\Central\PublicRegistrationController;
 use App\Http\Controllers\Api\Central\TenantController;
+use App\Http\Controllers\Api\Central\TenantInvoiceController;
 use App\Http\Controllers\Api\Central\TenantSubscriptionController;
 use Illuminate\Support\Facades\Route;
 
@@ -48,6 +49,14 @@ Route::prefix('api/central')->middleware(['api', 'auth:sanctum', 'role:admin'])-
     Route::get('tenants/{tenant}/subscription',          [TenantSubscriptionController::class, 'show']);
     Route::put('tenants/{tenant}/subscription',          [TenantSubscriptionController::class, 'updatePlan']);
     Route::post('tenants/{tenant}/subscription/payment', [TenantSubscriptionController::class, 'recordPayment']);
+
+    // Factures d'abonnement : émission manuelle, téléchargement, renvoi,
+    // annulation. L'émission automatique passe par `subscriptions:invoice`.
+    Route::get('tenants/{tenant}/invoices',  [TenantInvoiceController::class, 'index']);
+    Route::post('tenants/{tenant}/invoices', [TenantInvoiceController::class, 'store']);
+    Route::get('invoices/{invoice}/pdf',     [TenantInvoiceController::class, 'pdf']);
+    Route::post('invoices/{invoice}/send',   [TenantInvoiceController::class, 'send']);
+    Route::post('invoices/{invoice}/cancel', [TenantInvoiceController::class, 'cancel']);
 
     // Service contract: download template + send by email for e-signature
     Route::get('tenants/{tenant}/contract',         [TenantController::class, 'downloadContract']);

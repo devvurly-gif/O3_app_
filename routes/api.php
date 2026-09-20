@@ -577,4 +577,6 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::middleware('auth:sanctum')->prefix('subscription')->group(function () {
     Route::get('/',        [SubscriptionController::class, 'show'])->name('subscription.show');
     Route::post('request', [SubscriptionController::class, 'requestPlan'])->name('subscription.request');
+    Route::get('invoices',             [SubscriptionController::class, 'invoices'])->name('subscription.invoices');
+    Route::get('invoices/{invoice}/pdf', [SubscriptionController::class, 'invoicePdf'])->name('subscription.invoice.pdf');
 });

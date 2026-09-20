@@ -225,12 +225,26 @@ Le formulaire lit maintenant le catalogue servi par `/api/central/plans`.
 > Rappel `CLAUDE.md` : toute modification de `routes/api.php` exige
 > `php artisan route:cache` sur le VPS, sinon elle reste inerte.
 
-### Phase 2 — Facturation automatique *(~1 semaine)*
+### Phase 2 — Facturation automatique — ✅ **implémentée le 2026-09-20**
 
-Facture d'abonnement O3App en PDF, numérotée, envoyée à chaque échéance.
-Bonne nouvelle : le moteur existe déjà (`DocumentPdfService`,
-`DocumentNumberService`, et `GeneratePeriodicInvoices` qui fait exactement ça
-pour les clients *de tes clients*). C'est une transposition, pas une création.
+> Code écrit et testé (658 tests verts). **Inactive tant que l'identité de
+> facturation n'est pas renseignée** : le code refuse d'émettre plutôt que de
+> produire une facture non conforme. Mise en service et variables à renseigner :
+> [facturation-abonnements.md](facturation-abonnements.md).
+
+Facture d'abonnement en PDF, numérotée `FA-2026-0001`, émise 15 jours avant
+l'échéance pour la période suivante (facturation d'avance, article 8.3 du
+contrat) et envoyée par email. Le règlement saisi au back-office la solde et
+repousse l'échéance.
+
+Ce qui est verrouillé : séquence continue sans doublon (verrou de ligne, pas de
+`MAX()+1`), facture figée à l'émission, annulation plutôt que suppression, pas
+de double facturation d'une période, et un email qui échoue ne détruit pas un
+document déjà numéroté. TVA marocaine à 20 %, ou mention d'exonération si
+l'entité n'y est pas assujettie.
+
+Le client télécharge ses factures depuis `/abonnement` ; son ICE lui est demandé
+au moment où il choisit sa formule.
 
 ### Phase 3 — Confort *(plus tard, sur signal du marché)*
 
@@ -260,9 +274,10 @@ pénible — c'est-à-dire quand tu as déjà des clients payants.
 2. **Le sort des clients actuels** : `jadema` et `teliphoni` passent-ils au tarif
    public, ou gardent-ils un tarif historique en échange de leur témoignage ?
    (Recommandation : tarif historique gelé 12 mois contre étude de cas signée.)
-3. **L'entité de facturation** : les factures d'abonnement de la phase 2 doivent
-   sortir au nom d'une structure existante. Si ce point n'est pas réglé, la
-   phase 2 est bloquée quel que soit l'état du code.
+3. **L'entité de facturation** : les factures d'abonnement doivent sortir au nom
+   d'une structure existante. Le code de la phase 2 est prêt et refuse d'émettre
+   tant que raison sociale, adresse et **ICE** ne sont pas renseignés — c'est
+   désormais le seul obstacle entre toi et la première facture envoyée.
 
 ---
 

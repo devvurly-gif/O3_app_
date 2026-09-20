@@ -100,6 +100,21 @@ export interface Plan {
   limits: PlanLimits
 }
 
+export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'cancelled'
+
+export interface SubscriptionInvoice {
+  id: number
+  number: string
+  issued_at: string
+  due_at: string
+  period_starts_at: string
+  period_ends_at: string
+  /** Montant en centimes de dirham, TTC. */
+  amount_ttc_cents: number
+  status: InvoiceStatus
+  paid_at: string | null
+}
+
 export interface SubscriptionDetail extends SubscriptionSummary {
   is_trial: boolean
   grace_days: number

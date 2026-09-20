@@ -1006,6 +1006,23 @@ export default {
     requestFailed: "La demande n'a pas pu être envoyée. Réessayez ou contactez-nous.",
     noteLabel: 'Message (facultatif)',
     notePlaceholder: 'Nombre de postes, besoins particuliers, délai souhaité…',
+    invoices: {
+      title: 'Mes factures',
+      empty: 'Aucune facture pour le moment.',
+      number: 'Numéro',
+      date: 'Date',
+      period: 'Période',
+      amount: 'Montant TTC',
+      status: 'Statut',
+      download: 'Télécharger',
+      dueOn: 'à régler avant le {date}',
+      statuses: {
+        draft: 'Brouillon',
+        sent: 'Envoyée',
+        paid: 'Réglée',
+        cancelled: 'Annulée',
+      },
+    },
     features: {
       ventes: 'Ventes et facturation',
       achats: 'Achats et fournisseurs',

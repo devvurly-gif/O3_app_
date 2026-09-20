@@ -5,6 +5,7 @@ import { useTenantStore, type Tenant } from '@/stores/central/useTenantStore'
 import { useToastStore } from '@/stores/toastStore'
 import { useFormat } from '@/composables/useFormat'
 import TenantSubscriptionCard from '@/components/central/TenantSubscriptionCard.vue'
+import TenantInvoicesCard from '@/components/central/TenantInvoicesCard.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -530,6 +531,9 @@ function getPlanColor(plan: string) {
 
       <!-- Abonnement : echeance, encaissement, historique des reglements. -->
       <TenantSubscriptionCard :tenant-id="tenant.id" @updated="loadTenant" />
+
+      <!-- Factures d'abonnement : émission manuelle, renvoi, annulation. -->
+      <TenantInvoicesCard :tenant-id="tenant.id" />
 
       <!-- Feature Flags -->
       <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">

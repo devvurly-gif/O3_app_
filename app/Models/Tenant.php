@@ -42,6 +42,8 @@ use Stancl\Tenancy\Database\Concerns\HasDomains;
  * @property string|null $requested_billing_period
  * @property string|null $requested_at
  * @property string|null $requested_note
+ * @property string|null $billing_ice           ICE du client, obligatoire sur une facture B2B marocaine
+ * @property string|null $billing_address       Adresse de facturation du client
  * @property string|null $last_reminder_sent_for Échéance pour laquelle la dernière relance est partie
  * @property int|null    $last_reminder_days     Palier de relance déjà envoyé (7, 3, 1, 0)
  * @property bool        $url_ready             Domaine résolu et servi

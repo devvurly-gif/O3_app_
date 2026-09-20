@@ -5,7 +5,7 @@ import http from '@/services/http'
 import { usePlanLabels } from '@/composables/usePlanLabels'
 import { useAuthStore } from '@/stores/authStore'
 import { useToastStore } from '@/stores/toastStore'
-import type { Plan, SubscriptionDetail } from '@/types'
+import type { Plan, SubscriptionDetail, SubscriptionInvoice } from '@/types'
 
 /**
  * Ecran « choisir une formule ».
@@ -17,13 +17,14 @@ import type { Plan, SubscriptionDetail } from '@/types'
 const { t } = useI18n()
 const auth = useAuthStore()
 const toast = useToastStore()
-const { featureLabel } = usePlanLabels()
+const { featureLabel, formatMad } = usePlanLabels()
 
 const detail = ref<SubscriptionDetail | null>(null)
 const loading = ref(true)
 const submitting = ref<string | null>(null)
 const period = ref<'monthly' | 'yearly'>('monthly')
 const note = ref('')
+const invoices = ref<SubscriptionInvoice[]>([])
 
 const plans = computed<Plan[]>(() => detail.value?.plans ?? [])
 
@@ -60,6 +61,36 @@ async function load(): Promise<void> {
   }
 }
 
+async function loadInvoices(): Promise<void> {
+  // Sépare du chargement de la formule : un client dont les factures
+  // n'arriveraient pas doit quand même pouvoir choisir son offre.
+  try {
+    const { data } = await http.get<{ data: SubscriptionInvoice[] }>('/subscription/invoices')
+    invoices.value = data.data
+  } catch {
+    invoices.value = []
+  }
+}
+
+/**
+ * Téléchargement par le navigateur.
+ *
+ * Passe par une requête authentifiée plutôt que par un lien direct : le jeton
+ * vit dans localStorage, une balise <a> ne le transmettrait pas.
+ */
+async function downloadInvoice(invoice: SubscriptionInvoice): Promise<void> {
+  const response = await http.get(`/subscription/invoices/${invoice.id}/pdf`, {
+    responseType: 'blob',
+  })
+
+  const url = URL.createObjectURL(response.data as Blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `Facture_${invoice.number}.pdf`
+  link.click()
+  URL.revokeObjectURL(url)
+}
+
 async function request(plan: Plan): Promise<void> {
   submitting.value = plan.key
   try {
@@ -79,7 +110,10 @@ async function request(plan: Plan): Promise<void> {
   }
 }
 
-onMounted(load)
+onMounted(async () => {
+  await load()
+  await loadInvoices()
+})
 </script>
 
 <template>
@@ -214,6 +248,59 @@ onMounted(load)
           {{ submitting === plan.key ? $t('subscription.requesting') : $t('subscription.requestPlan') }}
         </button>
       </article>
+    </section>
+
+    <!-- Factures -->
+    <section
+      v-if="invoices.length"
+      class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5"
+    >
+      <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">
+        {{ $t('subscription.invoices.title') }}
+      </h2>
+
+      <ul class="divide-y divide-gray-100 dark:divide-gray-800">
+        <li
+          v-for="invoice in invoices"
+          :key="invoice.id"
+          class="py-3 flex flex-wrap items-center justify-between gap-3"
+        >
+          <div class="min-w-0">
+            <p class="font-medium text-gray-900 dark:text-gray-100">{{ invoice.number }}</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+              {{ formatDate(invoice.period_starts_at) }} — {{ formatDate(invoice.period_ends_at) }}
+              <template v-if="invoice.status !== 'paid'">
+                · {{ $t('subscription.invoices.dueOn', { date: formatDate(invoice.due_at) }) }}
+              </template>
+            </p>
+          </div>
+
+          <div class="flex items-center gap-3 shrink-0">
+            <span
+              class="px-2.5 py-1 rounded-full text-xs font-semibold"
+              :class="
+                invoice.status === 'paid'
+                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300'
+                  : 'bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300'
+              "
+            >
+              {{ $t(`subscription.invoices.statuses.${invoice.status}`) }}
+            </span>
+
+            <span class="font-semibold text-gray-900 dark:text-gray-100">
+              {{ formatMad(invoice.amount_ttc_cents) }}
+            </span>
+
+            <button
+              type="button"
+              class="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              @click="downloadInvoice(invoice)"
+            >
+              {{ $t('subscription.invoices.download') }}
+            </button>
+          </div>
+        </li>
+      </ul>
     </section>
 
     <!-- Message libre -->

@@ -1006,6 +1006,23 @@ export default {
     requestFailed: 'The request could not be sent. Please try again or contact us.',
     noteLabel: 'Message (optional)',
     notePlaceholder: 'Number of seats, specific needs, desired timeline…',
+    invoices: {
+      title: 'My invoices',
+      empty: 'No invoice yet.',
+      number: 'Number',
+      date: 'Date',
+      period: 'Period',
+      amount: 'Total incl. tax',
+      status: 'Status',
+      download: 'Download',
+      dueOn: 'due by {date}',
+      statuses: {
+        draft: 'Draft',
+        sent: 'Sent',
+        paid: 'Paid',
+        cancelled: 'Cancelled',
+      },
+    },
     features: {
       ventes: 'Sales and invoicing',
       achats: 'Purchases and suppliers',

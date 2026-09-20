@@ -65,17 +65,7 @@ class SubscriptionService
         $period = $this->normalizePeriod($data['billing_period'] ?? self::PERIOD_MONTHLY);
         $paidAt = CarbonImmutable::parse($data['paid_at'] ?? 'now')->startOfDay();
 
-        // Un client qui règle en avance ne doit pas perdre les jours qui lui
-        // restent : la nouvelle période s'enchaîne à la précédente tant que
-        // celle-ci court encore.
-        $current    = $tenant->subscription_ends_at;
-        $startsAt   = ($current !== null && $current->endOfDay()->isFuture())
-            ? CarbonImmutable::parse($current)->addDay()->startOfDay()
-            : CarbonImmutable::now()->startOfDay();
-
-        $endsAt = ($period === self::PERIOD_YEARLY)
-            ? $startsAt->addYear()->subDay()
-            : $startsAt->addMonth()->subDay();
+        [$startsAt, $endsAt] = $this->nextPeriodFor($tenant, $period);
 
         $amount = $data['amount_cents'] ?? $this->catalogPrice($plan, $period);
 
@@ -101,19 +91,70 @@ class SubscriptionService
 
             $this->plans->applyTo($tenant, $plan);
 
+            // Solde la facture ouverte correspondante. Résolu ici et non
+            // injecté au constructeur : SubscriptionInvoiceService dépend
+            // lui-même de ce service (il a besoin de nextPeriodFor et du tarif
+            // catalogue), et l'injecter créerait un cycle.
+            app(SubscriptionInvoiceService::class)->settleOutstanding($tenant, $payment);
+
             return $payment;
         });
+    }
+
+    /**
+     * Période qui suit celle en cours.
+     *
+     * Un client qui règle en avance ne doit pas perdre les jours qui lui
+     * restent : la nouvelle période s'enchaîne à la précédente tant que
+     * celle-ci court encore, et ne démarre à aujourd'hui que si l'échéance est
+     * déjà passée.
+     *
+     * Partagé avec SubscriptionInvoiceService : la facture doit porter très
+     * exactement la période que le règlement ouvrira, sinon le client paie une
+     * chose et reçoit l'autre.
+     *
+     * @return array{0: CarbonImmutable, 1: CarbonImmutable} début, fin
+     */
+    public function nextPeriodFor(Tenant $tenant, string $billingPeriod): array
+    {
+        $period  = $this->normalizePeriod($billingPeriod);
+        $current = $tenant->subscription_ends_at;
+
+        $startsAt = ($current !== null && $current->endOfDay()->isFuture())
+            ? CarbonImmutable::parse($current)->addDay()->startOfDay()
+            : CarbonImmutable::now()->startOfDay();
+
+        $endsAt = ($period === self::PERIOD_YEARLY)
+            ? $startsAt->addYear()->subDay()
+            : $startsAt->addMonth()->subDay();
+
+        return [$startsAt, $endsAt];
     }
 
     /**
      * Le client choisit une formule depuis son espace. Enregistre l'intention
      * et prévient O3App : c'est le déclencheur de l'envoi du contrat et de la
      * facture, pas un encaissement.
+     *
+     * @param array{billing_ice?: string|null, billing_address?: string|null} $billing
      */
-    public function requestPlan(Tenant $tenant, string $plan, ?string $billingPeriod = null, ?string $note = null): Tenant
-    {
+    public function requestPlan(
+        Tenant $tenant,
+        string $plan,
+        ?string $billingPeriod = null,
+        ?string $note = null,
+        array $billing = [],
+    ): Tenant {
         if (!$this->plans->exists($plan)) {
             throw new InvalidArgumentException("Formule inconnue : {$plan}");
+        }
+
+        // Mentions légales de facturation : on n'écrase jamais une valeur déjà
+        // connue par un champ laissé vide.
+        foreach (['billing_ice', 'billing_address'] as $field) {
+            if (filled($billing[$field] ?? null)) {
+                $tenant->{$field} = $billing[$field];
+            }
         }
 
         $tenant->requested_plan           = $plan;

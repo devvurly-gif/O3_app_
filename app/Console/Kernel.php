@@ -21,6 +21,10 @@ class Kernel extends ConsoleKernel
         // en lecture seule doit le découvrir par l'email de relance, pas en
         // tapant sa première facture de la journée.
         $schedule->command('subscriptions:check')->dailyAt('07:00');
+        // Après subscriptions:check : les statuts sont à jour, et un tenant qui
+        // vient de basculer en impayé a déjà sa facture, émise quinze jours
+        // plus tôt.
+        $schedule->command('subscriptions:invoice')->dailyAt('07:15');
     }
 
     /**
