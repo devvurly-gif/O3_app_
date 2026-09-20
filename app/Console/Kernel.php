@@ -17,6 +17,10 @@ class Kernel extends ConsoleKernel
         $schedule->command('billing:generate-periodic-invoices')->dailyAt('01:00');
         $schedule->command('tenants:sync-feature-flags')->dailyAt('02:00');
         $schedule->command('treasury:generate')->dailyAt('03:00');
+        // Après les travaux de nuit, avant l'ouverture : un client qui bascule
+        // en lecture seule doit le découvrir par l'email de relance, pas en
+        // tapant sa première facture de la journée.
+        $schedule->command('subscriptions:check')->dailyAt('07:00');
     }
 
     /**

@@ -36,6 +36,10 @@
            le focus, sinon le lien deplace le defilement sans deplacer le
            clavier et la tabulation repart de la navigation. -->
       <main id="contenu-principal" tabindex="-1" class="flex-1 pt-16 focus:outline-none">
+        <!-- Etat de l'abonnement : ne s'affiche qu'en fin d'essai ou en
+             impaye, et se place avant le contenu pour etre lu en premier. -->
+        <SubscriptionBanner />
+
         <div class="px-3 py-4 sm:px-6 sm:py-6">
           <!-- Breadcrumb -->
           <div class="mb-4">
@@ -64,6 +68,7 @@ import { useAuthStore } from '@/stores/authStore'
 import AppSidebar from './AppSidebar.vue'
 import AppTopbar from './AppTopbar.vue'
 import AppBreadcrumb from './AppBreadcrumb.vue'
+import SubscriptionBanner from '@/components/SubscriptionBanner.vue'
 
 const auth = useAuthStore()
 

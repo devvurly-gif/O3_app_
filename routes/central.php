@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\Central\PublicRegistrationController;
 use App\Http\Controllers\Api\Central\TenantController;
+use App\Http\Controllers\Api\Central\TenantSubscriptionController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -39,6 +40,14 @@ Route::prefix('api/central')->middleware(['api', 'auth:sanctum', 'role:admin'])-
     Route::get('tenants/{tenant}/url-status',     [TenantController::class, 'urlStatus']);
     Route::post('tenants/scrape-products',          [TenantController::class, 'scrapeProducts']);
     Route::post('tenants/{tenant}/import-products', [TenantController::class, 'importProducts']);
+
+    // Catalogue des formules (source unique : config/plans.php).
+    Route::get('plans', [TenantSubscriptionController::class, 'plans']);
+
+    // Abonnement : consultation, encaissement, changement de formule.
+    Route::get('tenants/{tenant}/subscription',          [TenantSubscriptionController::class, 'show']);
+    Route::put('tenants/{tenant}/subscription',          [TenantSubscriptionController::class, 'updatePlan']);
+    Route::post('tenants/{tenant}/subscription/payment', [TenantSubscriptionController::class, 'recordPayment']);
 
     // Service contract: download template + send by email for e-signature
     Route::get('tenants/{tenant}/contract',         [TenantController::class, 'downloadContract']);

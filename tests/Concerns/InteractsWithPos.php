@@ -7,12 +7,10 @@ use App\Models\Permission;
 use App\Models\PosSession;
 use App\Models\PosTerminal;
 use App\Models\Product;
-use App\Models\Tenant;
 use App\Models\ThirdPartner;
 use App\Models\User;
 use App\Models\Warehouse;
 use App\Models\WarehouseHasStock;
-use Stancl\Tenancy\Contracts\Tenant as TenantContract;
 
 /**
  * Scaffolding for the POS feature tests.
@@ -36,32 +34,10 @@ use Stancl\Tenancy\Contracts\Tenant as TenantContract;
  */
 trait InteractsWithPos
 {
+    use InteractsWithTenancy;
+
     protected PosTerminal $terminal;
     protected Warehouse $warehouse;
-
-    /**
-     * Bind an in-memory tenant so `feature:` middleware resolves.
-     * Every flag defaults to enabled; pass overrides to turn one off.
-     */
-    protected function fakeTenant(array $features = []): Tenant
-    {
-        $tenant = new Tenant();
-        $tenant->id   = 'test-tenant';
-        $tenant->name = 'Tenant de test';
-
-        foreach (array_merge([
-            'pos_enabled'      => true,
-            'ecom_enabled'     => false,
-            'variants_enabled' => false,
-            'imei_enabled'     => false,
-        ], $features) as $flag => $value) {
-            $tenant->{$flag} = $value;
-        }
-
-        $this->app->instance(TenantContract::class, $tenant);
-
-        return $tenant;
-    }
 
     /**
      * Attach permissions to the user's role, creating the Permission rows

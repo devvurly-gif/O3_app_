@@ -1,12 +1,17 @@
 ﻿<script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import http from '@/services/http'
 import { useTenantStore } from '@/stores/central/useTenantStore'
 import { useToastStore } from '@/stores/toastStore'
+import { usePlanLabels } from '@/composables/usePlanLabels'
+import type { Plan } from '@/types'
 
 const router = useRouter()
 const store = useTenantStore()
 const toast = useToastStore()
+
+const { featureLabel } = usePlanLabels()
 
 const loading = ref(false)
 const errors = ref<Record<string, string[]>>({})
@@ -16,7 +21,7 @@ const form = ref({
   name: '',
   email: '',
   domain: '',
-  plan: 'starter',
+  plan: '',
   admin_password: '',
   pos_enabled: false,
   paiement_bl_enabled: false,
@@ -48,52 +53,53 @@ async function onSubmit() {
   }
 }
 
+/**
+ * Les interrupteurs refletent la formule choisie.
+ *
+ * Cote serveur, un `*_enabled` transmis qui diverge de la formule est
+ * enregistre comme une derogation commerciale. Les pre-cocher d'apres les
+ * capacites de la formule est donc indispensable : les laisser a faux
+ * reviendrait a retirer le POS au moment meme ou l'on cree un client Pro.
+ */
 function onPlanChange(plan: string) {
   form.value.plan = plan
-  // Auto-enable POS for business/enterprise plans
-  if (plan === 'business' || plan === 'enterprise') {
-    form.value.pos_enabled = true
-  }
-  // Auto-enable eCom for enterprise plan
-  if (plan === 'enterprise') {
-    form.value.ecom_enabled = true
-  }
+
+  const features = plans.value.find((p) => p.key === plan)?.features ?? []
+
+  form.value.pos_enabled = features.includes('pos')
+  form.value.ecom_enabled = features.includes('ecom')
+  form.value.paiement_bl_enabled = features.includes('paiement_bl')
 }
 
 const toggleClass = 'w-11 h-6 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-orange-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[\'\'] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 dark:after:border-gray-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500'
 
-const plans = [
-  {
-    value: 'starter',
-    label: 'Starter',
-    desc: 'Ventes + Stock',
-    features: ['Gestion des ventes', 'Gestion du stock', 'Sous-domaine gratuit', '500 emails/mois', 'Support email'],
-    price: '499',
-    color: 'border-gray-300 dark:border-gray-600',
-    selectedColor: 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20',
-    badge: '',
-  },
-  {
-    value: 'business',
-    label: 'Business',
-    desc: 'Ventes + Achats + Stock + POS',
-    features: ['Tout le plan Starter', 'Gestion des achats', 'Point de vente (POS)', 'Domaine personnalisé', '2000 emails/mois', '200 WhatsApp/mois', 'Support prioritaire'],
-    price: '999',
-    color: 'border-gray-300 dark:border-gray-600',
-    selectedColor: 'border-orange-500 bg-orange-50 dark:bg-orange-900/20',
-    badge: 'Populaire',
-  },
-  {
-    value: 'enterprise',
-    label: 'Enterprise',
-    desc: 'Tout + eCom + WhatsApp illimité',
-    features: ['Tout le plan Business', 'Module e-Commerce', 'WhatsApp illimité', 'Emails illimités', 'Domaine personnalisé (.ma)', 'Backup quotidien', 'Formation 2h incluse', 'Support téléphonique'],
-    price: '1999',
-    color: 'border-gray-300 dark:border-gray-600',
-    selectedColor: 'border-purple-500 bg-purple-50 dark:bg-purple-900/20',
-    badge: 'Premium',
-  },
-]
+/**
+ * Catalogue servi par /api/central/plans, c'est-a-dire config/plans.php.
+ *
+ * Ce tableau etait ecrit en dur ici, avec ses propres tarifs (499 / 999 /
+ * 1999) : une quatrieme definition de l'offre, qui ne correspondait ni au
+ * contrat, ni a ce qui etait facture.
+ */
+const plans = ref<Plan[]>([])
+
+const planTone: Record<string, { selectedColor: string; badge: string }> = {
+  essentiel: { selectedColor: 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20', badge: '' },
+  pro: { selectedColor: 'border-orange-500 bg-orange-50 dark:bg-orange-900/20', badge: 'Populaire' },
+  business: { selectedColor: 'border-purple-500 bg-purple-50 dark:bg-purple-900/20', badge: 'Premium' },
+}
+
+function planPrice(plan: Plan): string {
+  return (plan.price_month_cents / 100).toLocaleString('fr-MA', { maximumFractionDigits: 0 })
+}
+
+onMounted(async () => {
+  const { data } = await http.get<{ data: Plan[] }>('/central/plans')
+  plans.value = data.data
+
+  if (plans.value.length) {
+    onPlanChange(plans.value[0].key)
+  }
+})
 </script>
 
 <template>
@@ -192,28 +198,30 @@ const plans = [
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <button
             v-for="plan in plans"
-            :key="plan.value"
+            :key="plan.key"
             type="button"
-            @click="onPlanChange(plan.value)"
+            @click="onPlanChange(plan.key)"
             :class="[
               'relative rounded-xl border-2 p-5 text-left transition cursor-pointer',
-              form.plan === plan.value ? plan.selectedColor : plan.color,
+              form.plan === plan.key
+                ? planTone[plan.key]?.selectedColor
+                : 'border-gray-300 dark:border-gray-600',
             ]"
           >
             <!-- Badge -->
             <span
-              v-if="plan.badge"
+              v-if="planTone[plan.key]?.badge"
               :class="[
                 'absolute -top-2.5 right-3 px-2.5 py-0.5 text-xs font-bold rounded-full',
-                plan.value === 'business' ? 'bg-orange-500 text-white' : 'bg-purple-600 text-white',
+                plan.key === 'pro' ? 'bg-orange-500 text-white' : 'bg-purple-600 text-white',
               ]"
-            >{{ plan.badge }}</span>
+            >{{ planTone[plan.key].badge }}</span>
 
             <!-- Header -->
             <div class="flex items-center justify-between mb-1">
-              <span class="text-base font-bold text-gray-900 dark:text-white">{{ plan.label }}</span>
+              <span class="text-base font-bold text-gray-900 dark:text-white">{{ plan.name }}</span>
               <span
-                v-if="form.plan === plan.value"
+                v-if="form.plan === plan.key"
                 class="w-5 h-5 bg-orange-700 rounded-full flex items-center justify-center"
               >
                 <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
@@ -221,11 +229,11 @@ const plans = [
                 </svg>
               </span>
             </div>
-            <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">{{ plan.desc }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">{{ plan.tagline }}</p>
 
             <!-- Price -->
             <div class="mb-3">
-              <span class="text-2xl font-extrabold text-gray-900 dark:text-white">{{ plan.price }}</span>
+              <span class="text-2xl font-extrabold text-gray-900 dark:text-white">{{ planPrice(plan) }}</span>
               <span class="text-sm text-gray-500 dark:text-gray-400"> MAD/mois</span>
             </div>
 
@@ -235,7 +243,7 @@ const plans = [
                 <svg class="w-3.5 h-3.5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                 </svg>
-                {{ feature }}
+                {{ featureLabel(feature) }}
               </li>
             </ul>
           </button>

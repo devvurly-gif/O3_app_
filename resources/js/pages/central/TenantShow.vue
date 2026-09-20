@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useTenantStore, type Tenant } from '@/stores/central/useTenantStore'
 import { useToastStore } from '@/stores/toastStore'
 import { useFormat } from '@/composables/useFormat'
+import TenantSubscriptionCard from '@/components/central/TenantSubscriptionCard.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -71,10 +72,19 @@ async function saveInfo() {
   savingInfo.value = false
 }
 
-onMounted(async () => {
+/**
+ * Recharge la fiche. Appelée au montage et après un encaissement : la formule
+ * et les capacités du tenant changent avec le règlement, la page doit le
+ * refléter sans que l'utilisateur ait à actualiser.
+ */
+async function loadTenant() {
   try {
     tenant.value = await store.fetchOne(route.params.id as string)
   } catch { /* interceptor */ }
+}
+
+onMounted(async () => {
+  await loadTenant()
   loading.value = false
 })
 
@@ -330,9 +340,9 @@ function formatDate(d: string) {
 
 function getPlanColor(plan: string) {
   return {
-    starter: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
-    business: 'bg-orange-100 text-orange-600 dark:bg-orange-900 dark:text-orange-300',
-    enterprise: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
+    essentiel: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
+    pro: 'bg-orange-100 text-orange-600 dark:bg-orange-900 dark:text-orange-300',
+    business: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
   }[plan] || 'bg-gray-100 text-gray-700'
 }
 </script>
@@ -499,7 +509,7 @@ function getPlanColor(plan: string) {
           <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Changer de plan</h3>
           <div class="space-y-2">
             <button
-              v-for="plan in ['starter', 'business', 'enterprise']"
+              v-for="plan in ['essentiel', 'pro', 'business']"
               :key="plan"
               @click="changePlan(plan)"
               :disabled="saving || tenant.plan === plan"
@@ -517,6 +527,9 @@ function getPlanColor(plan: string) {
           </div>
         </div>
       </div>
+
+      <!-- Abonnement : echeance, encaissement, historique des reglements. -->
+      <TenantSubscriptionCard :tenant-id="tenant.id" @updated="loadTenant" />
 
       <!-- Feature Flags -->
       <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">

@@ -2,16 +2,18 @@
 
 namespace App\Services;
 
+use App\Models\Tenant;
 use App\Models\User;
 use App\Repositories\Contracts\UserRepositoryInterface;
-use App\Services\PackageService;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
 class AuthService
 {
-    public function __construct(private UserRepositoryInterface $users)
-    {
+    public function __construct(
+        private UserRepositoryInterface $users,
+        private PlanService $plans,
+    ) {
     }
 
     /**
@@ -64,8 +66,6 @@ class AuthService
 
     private function formatProfile(User $user): array
     {
-        $features = $this->tenantFeatures();
-
         return [
             'id'          => $user->id,
             'name'        => $user->name,
@@ -74,27 +74,59 @@ class AuthService
             'role_id'     => $user->role_id,
             'permissions' => $user->role?->permissions->pluck('name')->toArray() ?? [],
             'avatar'         => $user->avatar,
-            // Frontend uses these slugs for sidebar/route gating (auth.hasModule('pos'/'ecom')).
-            // Source of truth: tenant flags in central tenants table.
-            'active_modules' => array_keys(array_filter($features)),
+            // Slugs utilisés par le frontend pour le menu et les pages
+            // (auth.hasModule('pos'/'ecom'/…)).
+            'active_modules' => $this->tenantFeatures(),
+            // Bandeau d'essai et écran « choisir une formule ».
+            'subscription'   => $this->subscriptionSummary(),
         ];
     }
 
     /**
-     * Read tenant feature flags from central tenants table.
+     * Capacités effectives du tenant, déduites de sa formule.
      *
-     * @return array{pos: bool, ecom: bool, variants: bool, imei: bool, ocr_import: bool}
+     * Lisait auparavant quatre booléens saisis à la main plus PackageService,
+     * qui répondait depuis un réglage de la base du tenant jamais écrit — donc
+     * l'import OCR arrivait ici désactivé pour tout le monde, quel que soit le
+     * montant payé.
+     *
+     * @return array<int, string>
      */
     private function tenantFeatures(): array
     {
-        $tenant = function_exists('tenant') ? tenant() : null;
+        $tenant = $this->tenant();
+
+        return $tenant ? $this->plans->featuresForTenant($tenant) : [];
+    }
+
+    /**
+     * État de l'abonnement tel que le frontend en a besoin.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function subscriptionSummary(): ?array
+    {
+        $tenant = $this->tenant();
+
+        if (!$tenant) {
+            return null;
+        }
 
         return [
-            'pos'      => (bool) ($tenant?->pos_enabled       ?? false),
-            'ecom'     => (bool) ($tenant?->ecom_enabled      ?? false),
-            'variants' => (bool) ($tenant?->variants_enabled  ?? false),
-            'imei'     => (bool) ($tenant?->imei_enabled      ?? false),
-            'ocr_import' => PackageService::isOcrImportEnabled(),
+            'status'               => $tenant->currentStatus()->value,
+            'status_label'         => $tenant->currentStatus()->label(),
+            'plan'                 => $tenant->plan,
+            'plan_name'            => $this->plans->get((string) $tenant->plan)['name'] ?? $tenant->plan,
+            'subscription_ends_at' => $tenant->subscription_ends_at?->toDateString(),
+            'days_left'            => $tenant->daysUntilExpiry(),
+            'can_write'            => $tenant->canWrite(),
         ];
+    }
+
+    private function tenant(): ?Tenant
+    {
+        $tenant = function_exists('tenant') ? tenant() : null;
+
+        return $tenant instanceof Tenant ? $tenant : null;
     }
 }

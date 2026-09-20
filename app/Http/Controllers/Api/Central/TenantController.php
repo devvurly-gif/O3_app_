@@ -5,16 +5,55 @@ namespace App\Http\Controllers\Api\Central;
 use App\Http\Controllers\Controller;
 use App\Mail\TenantContractMail;
 use App\Models\Tenant;
+use App\Services\PlanService;
 use App\Services\ProductScraperService;
+use App\Services\SubscriptionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class TenantController extends Controller
 {
+    public function __construct(
+        private readonly PlanService $plans,
+        private readonly SubscriptionService $subscriptions,
+    ) {
+    }
+
+    /**
+     * Convertit les `*_enabled` transmis par le back-office en dérogations à
+     * la formule.
+     *
+     * Seules les valeurs qui divergent de la formule sont retenues : tracer
+     * une dérogation qui répète ce que la formule dit déjà finirait par figer
+     * un droit que le client devrait perdre en changeant d'offre.
+     *
+     * @param  array<string, mixed> $validated
+     * @return array<string, bool>
+     */
+    private function overridesFromRequest(array $validated, string $plan): array
+    {
+        $overrides = [];
+
+        foreach (PlanService::ENFORCED_FEATURES as $feature => $column) {
+            if (!array_key_exists($column, $validated)) {
+                continue;
+            }
+
+            $granted = (bool) $validated[$column];
+
+            if ($granted !== $this->plans->planHasFeature($plan, $feature)) {
+                $overrides[$feature] = $granted;
+            }
+        }
+
+        return $overrides;
+    }
+
     /**
      * List all tenants.
      */
@@ -46,7 +85,7 @@ class TenantController extends Controller
      *   "name": "Acme Corp",
      *   "email": "admin@acme.com",
      *   "domain": "acme.o3app.com",
-     *   "plan": "starter",
+     *   "plan": "essentiel",
      *   "admin_password": "secret123"
      * }
      */
@@ -57,7 +96,7 @@ class TenantController extends Controller
             'name'                => 'required|string|max:255',
             'email'               => 'required|email|unique:tenants,email',
             'domain'              => 'required|string|unique:domains,domain',
-            'plan'                => 'required|in:starter,business,enterprise',
+            'plan'                => ['required', Rule::in(array_keys((array) config('plans.plans', [])))],
             'admin_password'      => 'required|string|min:6',
             'pos_enabled'         => 'sometimes|boolean',
             'paiement_bl_enabled' => 'sometimes|boolean',
@@ -67,26 +106,31 @@ class TenantController extends Controller
         ]);
 
         $tenant = Tenant::create([
-            'id'            => $validated['id'],
-            'name'          => $validated['name'],
-            'email'         => $validated['email'],
-            'plan'          => $validated['plan'],
-            'trial_ends_at' => now()->addDays(14),
+            'id'    => $validated['id'],
+            'name'  => $validated['name'],
+            'email' => $validated['email'],
+            'plan'  => $validated['plan'],
         ]);
 
-        // Store feature flags in JSON data column
-        $tenant->pos_enabled = $validated['pos_enabled'] ?? in_array($validated['plan'], ['business', 'enterprise']);
-        $tenant->paiement_bl_enabled = $validated['paiement_bl_enabled'] ?? false;
-        $tenant->ecom_enabled = $validated['ecom_enabled'] ?? false;
-        $tenant->variants_enabled = $validated['variants_enabled'] ?? false;
-        $tenant->imei_enabled = $validated['imei_enabled'] ?? false;
         // Auto-generate unique API key for ecom
         $tenant->ecom_api_key = 'ecom_' . bin2hex(random_bytes(20));
+
+        // Les capacités découlent de la formule. Un `*_enabled` transmis
+        // explicitement est traité comme une dérogation commerciale, tracée
+        // comme telle, et non comme une écriture directe du drapeau : c'est ce
+        // qui garantit qu'un changement de formule ultérieur n'efface pas un
+        // module offert au client.
+        $tenant->feature_overrides = $this->overridesFromRequest($validated, $validated['plan']);
+
         $tenant->save();
 
         $tenant->domains()->create([
             'domain' => $validated['domain'],
         ]);
+
+        // Ouvre l'essai de 14 jours sur la formule choisie et applique ses
+        // capacités (remplace l'écriture manuelle des drapeaux ci-dessus).
+        $this->subscriptions->startTrial($tenant, $validated['plan']);
 
         // Seed the tenant database with an admin user + base data
         $tenant->run(function () use ($validated, $tenant) {
@@ -113,9 +157,10 @@ class TenantController extends Controller
             \App\Models\Setting::set('company', 'name', $validated['name']);
             \App\Models\Setting::set('company', 'email', $validated['email']);
 
-            // Set tenant-level feature flags
+            // Set tenant-level feature flags. La source est le drapeau central,
+            // lui-même dérivé de la formule — pas la requête.
             \App\Models\Setting::set('ventes', 'paiement_sur_bl',
-                ($validated['paiement_bl_enabled'] ?? false) ? 'true' : 'false'
+                $tenant->paiement_bl_enabled ? 'true' : 'false'
             );
 
             // Seed document incrementors (devis, factures, BL, etc.)
@@ -143,7 +188,7 @@ class TenantController extends Controller
             'name'                => 'sometimes|string|max:255',
             'email'               => 'sometimes|email',
             'domain'              => 'sometimes|string',
-            'plan'                => 'sometimes|in:starter,business,enterprise',
+            'plan'                => ['sometimes', Rule::in(array_keys((array) config('plans.plans', [])))],
             'is_active'           => 'sometimes|boolean',
             'pos_enabled'         => 'sometimes|boolean',
             'paiement_bl_enabled' => 'sometimes|boolean',
@@ -184,10 +229,14 @@ class TenantController extends Controller
             }
         }
 
-        // Separate custom columns from data-stored attributes
-        $customFields = ['name', 'email', 'plan', 'is_active'];
+        // Separate custom columns from data-stored attributes. Les drapeaux de
+        // capacité sont retirés du lot : ils ne s'écrivent plus directement,
+        // ils se déduisent de la formule (voir plus bas).
+        $featureFields = array_values(PlanService::ENFORCED_FEATURES);
+        $customFields  = ['name', 'email', 'plan', 'is_active'];
+
         $custom = array_intersect_key($validated, array_flip($customFields));
-        $extra  = array_diff_key($validated, array_flip($customFields));
+        $extra  = array_diff_key($validated, array_flip([...$customFields, ...$featureFields]));
 
         if ($custom) {
             $tenant->update($custom);
@@ -197,7 +246,21 @@ class TenantController extends Controller
         foreach ($extra as $key => $value) {
             $tenant->$key = $value;
         }
-        $tenant->save();
+
+        $plan = $validated['plan'] ?? (string) $tenant->plan;
+
+        // Un `*_enabled` transmis devient une dérogation explicite : le client
+        // garde le module même si sa formule change plus tard.
+        $overrides = $this->overridesFromRequest($validated, $plan);
+
+        if ($overrides !== []) {
+            $tenant->feature_overrides = array_merge(
+                $this->plans->overridesOf($tenant),
+                $overrides
+            );
+        }
+
+        $this->plans->applyTo($tenant, $plan);
 
         // Sync tenant-side settings & seed POS terminal when toggling pos_enabled.
         // (Feature gating itself reads tenant flags directly — no in-tenant module table.)
@@ -205,9 +268,9 @@ class TenantController extends Controller
             || array_key_exists('paiement_bl_enabled', $validated);
 
         if ($syncNeeded) {
-            $tenant->run(function () use ($validated) {
+            $tenant->run(function () use ($validated, $tenant) {
                 // Seed POS terminal if enabling POS for first time
-                if (! empty($validated['pos_enabled'])) {
+                if ($tenant->pos_enabled) {
                     $warehouse = \App\Models\Warehouse::first();
                     if ($warehouse) {
                         \App\Models\PosTerminal::firstOrCreate(
@@ -217,9 +280,10 @@ class TenantController extends Controller
                     }
                 }
 
-                // Sync paiement_sur_bl setting
+                // Sync paiement_sur_bl setting — depuis le drapeau central
+                // recalculé par PlanService, pas depuis la requête.
                 if (array_key_exists('paiement_bl_enabled', $validated)) {
-                    \App\Models\Setting::set('ventes', 'paiement_sur_bl', $validated['paiement_bl_enabled'] ? 'true' : 'false');
+                    \App\Models\Setting::set('ventes', 'paiement_sur_bl', $tenant->paiement_bl_enabled ? 'true' : 'false');
                 }
             });
         }

@@ -6,7 +6,10 @@ export interface Tenant {
   id: string
   name: string
   email: string
-  plan: 'starter' | 'business' | 'enterprise'
+  /** Cle de config('plans.plans') cote serveur : essentiel | pro | business. */
+  plan: string
+  status: 'pending' | 'trial' | 'active' | 'past_due' | 'suspended'
+  subscription_ends_at: string | null
   is_active: boolean
   url_ready: boolean | null
   pos_enabled: boolean

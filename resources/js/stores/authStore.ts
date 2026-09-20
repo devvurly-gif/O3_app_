@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import http from '@/services/http'
-import type { User, LoginResponse } from '@/types'
+import type { User, LoginResponse, SubscriptionSummary } from '@/types'
 
 export const useAuthStore = defineStore('auth', () => {
   // ── State ────────────────────────────────────────────────────────────────
@@ -17,6 +17,22 @@ export const useAuthStore = defineStore('auth', () => {
   const userPermissions = computed(() => user.value?.permissions ?? [])
   const activeModules = computed(() => user.value?.active_modules ?? [])
   const isAdmin = computed(() => user.value?.role === 'admin')
+
+  // ── Abonnement ───────────────────────────────────────────────────────────
+  // L'etat commercial arrive avec le profil : il conditionne le bandeau et,
+  // cote serveur, le droit d'ecrire. Absent sur le domaine central, ou aucun
+  // tenant n'est resolu.
+  const subscription = computed<SubscriptionSummary | null>(() => user.value?.subscription ?? null)
+  const isTrial = computed(() => subscription.value?.status === 'trial')
+  const daysLeft = computed(() => subscription.value?.days_left ?? null)
+
+  /**
+   * Vrai quand le serveur refusera les ecritures. On se fie a `can_write`
+   * plutot qu'au statut : c'est la meme valeur que celle appliquee par le
+   * middleware, donc le bandeau ne peut pas annoncer autre chose que ce que
+   * l'API fera reellement.
+   */
+  const isReadOnly = computed(() => subscription.value !== null && !subscription.value.can_write)
 
   function hasPermission(permission: string): boolean {
     if (isAdmin.value) return true
@@ -86,6 +102,10 @@ export const useAuthStore = defineStore('auth', () => {
     userAvatar,
     userPermissions,
     activeModules,
+    subscription,
+    isTrial,
+    isReadOnly,
+    daysLeft,
     // permission helpers
     hasPermission,
     hasAnyPermission,

@@ -65,6 +65,48 @@ export interface User extends BaseModel {
   is_active: boolean
   avatar: string | null
   structure_id: number | null
+  /** Etat commercial du tenant, renvoye par /auth/me et /auth/login. */
+  subscription?: SubscriptionSummary | null
+}
+
+export type SubscriptionStatus = 'pending' | 'trial' | 'active' | 'past_due' | 'suspended'
+
+export interface SubscriptionSummary {
+  status: SubscriptionStatus
+  status_label: string
+  plan: string
+  plan_name: string
+  subscription_ends_at: string | null
+  /** Negatif si l'echeance est depassee, null si aucune echeance n'est posee. */
+  days_left: number | null
+  can_write: boolean
+}
+
+export interface PlanLimits {
+  users: number | null
+  pos_terminals: number | null
+  storage_gb: number | null
+}
+
+export interface Plan {
+  key: string
+  name: string
+  tagline: string
+  /** Montants en centimes de dirham, hors taxes. */
+  price_month_cents: number
+  price_year_cents: number
+  setup_fee_cents: number
+  features: string[]
+  limits: PlanLimits
+}
+
+export interface SubscriptionDetail extends SubscriptionSummary {
+  is_trial: boolean
+  grace_days: number
+  features: string[]
+  requested_plan: string | null
+  requested_at: string | null
+  plans: Plan[]
 }
 
 export interface LoginPayload {

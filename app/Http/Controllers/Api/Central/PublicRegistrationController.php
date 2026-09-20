@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Api\Central;
 
 use App\Http\Controllers\Controller;
+use App\Enums\TenantStatus;
 use App\Mail\TenantSignupNotificationMail;
 use App\Mail\TenantVerificationMail;
 use App\Models\Tenant;
+use App\Services\SubscriptionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -29,6 +31,10 @@ use Illuminate\Support\Str;
  */
 class PublicRegistrationController extends Controller
 {
+    public function __construct(private readonly SubscriptionService $subscriptions)
+    {
+    }
+
     /**
      * Sub-domains we reserve for platform infra. A registrant trying
      * one of these gets a 422.
@@ -116,20 +122,22 @@ class PublicRegistrationController extends Controller
         try {
             // Create the tenant in INACTIVE state until the email link
             // is clicked. Stancl auto-creates the tenant DB on save.
+            // L'essai ne démarre pas ici mais à la vérification de l'email
+            // (voir verify()) : un lien jamais cliqué ne doit pas consommer
+            // les 14 jours. D'où le statut `pending` et l'absence d'échéance.
             $tenant = Tenant::create([
-                'id'            => $validated['tenant_id'],
-                'name'          => $validated['company_name'],
-                'email'         => $validated['email'],
-                'plan'          => 'starter',
-                'is_active'     => false,
-                'trial_ends_at' => now()->addDays(14),
+                'id'        => $validated['tenant_id'],
+                'name'      => $validated['company_name'],
+                'email'     => $validated['email'],
+                'plan'      => (string) config('plans.trial_plan', 'pro'),
+                'status'    => TenantStatus::Pending,
+                'is_active' => false,
             ]);
 
-            // Persist the verification fields + sane feature defaults
-            // (Starter = no premium modules pre-activated).
-            $tenant->pos_enabled         = false;
-            $tenant->paiement_bl_enabled = false;
-            $tenant->ecom_enabled        = false;
+            // Les booléens de capacité ne se saisissent plus ici : ils sont
+            // dérivés de la formule par PlanService, appliqué au démarrage de
+            // l'essai. Les écrire à la main réintroduirait la divergence entre
+            // formule vendue et droits réels.
             $tenant->ecom_api_key        = 'ecom_' . bin2hex(random_bytes(20));
             $tenant->verification_token             = $verificationToken;
             $tenant->verification_token_expires_at  = $tokenExpiresAt->toIso8601String();
@@ -252,6 +260,11 @@ class PublicRegistrationController extends Controller
         $tenant->verification_token_expires_at = null;
         $tenant->verified_at = now()->toIso8601String();
         $tenant->save();
+
+        // Démarre les 14 jours et ouvre les capacités de la formule d'essai.
+        // Jusqu'ici l'essai n'était qu'une date posée sur le tenant, que rien
+        // ne lisait : il ne se terminait jamais.
+        $this->subscriptions->startTrial($tenant);
 
         $tenant->load('domains');
         $domain = $tenant->domains->first()?->domain;

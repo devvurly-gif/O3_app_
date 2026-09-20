@@ -68,6 +68,7 @@ class Kernel extends HttpKernel
         'role'       => \App\Http\Middleware\CheckRole::class,
         'permission' => \App\Http\Middleware\CheckPermission::class,
         'feature'    => \App\Http\Middleware\CheckTenantFeature::class,
+        'tenant.active' => \App\Http\Middleware\EnsureTenantActive::class,
         'ecom.key'   => \App\Http\Middleware\EcomApiKey::class,
     ];
 }

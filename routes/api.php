@@ -16,7 +16,9 @@ use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ProductImageController;
 use App\Http\Controllers\Api\ProductVideoController;
 use App\Http\Controllers\Api\ProductDocumentController;
+use App\Http\Controllers\Api\PackageInfoController;
 use App\Http\Controllers\Api\SettingController;
+use App\Http\Controllers\Api\SubscriptionController;
 use App\Http\Controllers\Api\StockMouvementController;
 use App\Http\Controllers\Api\StockOperationController;
 use App\Http\Controllers\Api\StructureIncrementorController;
@@ -88,7 +90,16 @@ Route::prefix('auth')->group(function () {
 });
 
 // ── Protected (any authenticated user) ────────────────────────────────────
-Route::middleware('auth:sanctum')->group(function () {
+//
+// `tenant.active` applique le statut commercial : essai terminé, échéance
+// dépassée, compte désactivé. Il est posé ici ET sur le groupe de
+// routes/tenant.php, pour deux raisons distinctes — le groupe de tenant.php
+// couvre automatiquement toute route ajoutée plus tard sur un domaine tenant,
+// tandis que ce groupe-ci est celui qui répond sur le domaine central, où
+// routes/api.php est monté une seconde fois par routes/web.php. Le middleware
+// passe sans rien faire quand aucun tenant n'est résolu, donc la double
+// application est sans effet de bord.
+Route::middleware(['auth:sanctum', 'tenant.active'])->group(function () {
 
     // Auth
     Route::prefix('auth')->group(function () {
@@ -529,7 +540,10 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::get('ecom/config', EcomConfigController::class)->middleware('throttle:30,1');
 
 // ── eCom Public API (API Key auth, no session) ────────────────────────────
-Route::prefix('ecom')->middleware(['ecom.key', 'throttle:60,1'])->group(function () {
+// La boutique en ligne est un service rendu au client : elle s'arrête avec
+// l'abonnement, comme le reste. Sans `tenant.active` ici, un compte impayé
+// continuerait d'encaisser des commandes en ligne.
+Route::prefix('ecom')->middleware(['ecom.key', 'throttle:60,1', 'tenant.active'])->group(function () {
     // Catalogue
     Route::get('products',           [EcomCatalogueController::class, 'products']);
     Route::get('products/{slug}',    [EcomCatalogueController::class, 'product']);
@@ -548,6 +562,19 @@ Route::prefix('ecom')->middleware(['ecom.key', 'throttle:60,1'])->group(function
     Route::get('customers/lookup',   [EcomOrderController::class, 'lookupCustomer']);
 });
 
-// Package and Features info
-Route::get('/package-info', [\App\Http\Controllers\Api\PackageInfoController::class, 'getPackageInfo']);
-Route::get('/feature/{feature}/enabled', [\App\Http\Controllers\Api\PackageInfoController::class, 'isFeatureEnabled']);
+// ── Formule et capacités du tenant ────────────────────────────────────────
+// Étaient publiques : n'importe qui pouvait lire la formule d'un client en
+// appelant l'URL sans jeton.
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/package-info',              [PackageInfoController::class, 'getPackageInfo']);
+    Route::get('/feature/{feature}/enabled', [PackageInfoController::class, 'isFeatureEnabled']);
+});
+
+// ── Abonnement ────────────────────────────────────────────────────────────
+// Volontairement hors du filtre `tenant.active` (voir sa liste ALWAYS_ALLOWED) :
+// un compte échu doit pouvoir consulter son état et choisir une formule, sinon
+// il n'a aucun moyen de régulariser.
+Route::middleware('auth:sanctum')->prefix('subscription')->group(function () {
+    Route::get('/',        [SubscriptionController::class, 'show'])->name('subscription.show');
+    Route::post('request', [SubscriptionController::class, 'requestPlan'])->name('subscription.request');
+});

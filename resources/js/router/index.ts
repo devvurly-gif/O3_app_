@@ -37,6 +37,13 @@ const routes: RouteRecordRaw[] = [
     meta: { layout: 'app', title: 'Dashboard', breadcrumb: 'Dashboard' },
   },
   {
+    // Joignable meme quand l'abonnement est echu : c'est la seule page qui
+    // permet de regulariser, la fermer reviendrait a enfermer le client.
+    path: '/abonnement',
+    component: () => import('../pages/Subscription.vue'),
+    meta: { layout: 'app', title: 'Abonnement', breadcrumb: 'Abonnement' },
+  },
+  {
     path: '/profile',
     component: () => import('../pages/Profile.vue'),
     meta: { layout: 'app', title: 'Mon Profil', breadcrumb: 'Profil' },

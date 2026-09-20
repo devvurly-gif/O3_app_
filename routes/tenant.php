@@ -21,6 +21,11 @@ Route::middleware([
     'api',
     InitializeTenancyByDomain::class,
     PreventAccessFromCentralDomains::class,
+    // Statut commercial du tenant (essai terminé, impayé, compte désactivé).
+    // Posé ici et non dans routes/api.php : le filtre doit couvrir TOUTES les
+    // routes tenant, y compris celles ajoutées plus tard, sans que personne
+    // n'ait à y penser.
+    'tenant.active',
 ])->prefix('api')->group(base_path('routes/api.php'));
 
 // ── 2. Tenant Web ───────────────────────────────────────────────────────

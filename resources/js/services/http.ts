@@ -49,6 +49,17 @@ http.interceptors.response.use(
         toast?.error(data?.message || 'Accès refusé. Vous n\'avez pas les permissions nécessaires.')
         break
 
+      // ── 402 Abonnement échu ─────────────────────────────────
+      // Le middleware `tenant.active` refuse les écritures d'un compte dont
+      // l'échéance est dépassée. Sans ce cas, le formulaire échouerait en
+      // silence et l'utilisateur conclurait à un bug plutôt qu'à un impayé.
+      case 402:
+        toast?.error(data?.message || 'Votre abonnement est arrivé à échéance.')
+        if (!window.location.pathname.startsWith('/abonnement')) {
+          window.location.href = '/abonnement'
+        }
+        break
+
       // ── 404 Not Found ───────────────────────────────────────
       case 404:
         // Silent for API calls — pages handle their own 404
