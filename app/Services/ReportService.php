@@ -24,6 +24,14 @@ class ReportService
         'InvoicePurchase', 'CreditNotePurchase', 'ReturnPurchase',
     ];
 
+    /**
+     * Statuts qui ne comptent pas dans un rapport : le brouillon n'engage
+     * rien, l'annulé n'engage plus, et le converti a déjà été repris par le
+     * document qui le remplace — le compter serait compter deux fois la
+     * même marchandise.
+     */
+    private const NON_COUNTING_STATUSES = ['cancelled', 'draft', 'converted'];
+
     private const TYPE_LABELS = [
         'QuoteSale'            => 'Devis',
         'CustomerOrder'        => 'Bon de Commande',
@@ -64,8 +72,9 @@ class ReportService
         $row = DocumentFooter::query()
             ->join('document_headers', 'document_footers.document_header_id', '=', 'document_headers.id')
             ->whereIn('document_headers.document_type', $invoiceTypes)
-            ->whereNotIn('document_headers.status', ['cancelled', 'draft'])
-            ->whereBetween('document_headers.created_at', [$from, $to])
+            ->whereNotIn('document_headers.status', self::NON_COUNTING_STATUSES)
+            ->whereNull('document_headers.deleted_at')
+            ->whereBetween('document_headers.issued_at', [$from, $to])
             ->select(
                 DB::raw('COALESCE(SUM(document_footers.total_ttc), 0) as revenue_ttc'),
                 DB::raw('COALESCE(SUM(document_footers.total_ht), 0)  as revenue_ht'),
@@ -89,8 +98,10 @@ class ReportService
         return DocumentLigne::query()
             ->join('document_headers', 'document_lignes.document_header_id', '=', 'document_headers.id')
             ->whereIn('document_headers.document_type', ['InvoiceSale', 'TicketSale'])
-            ->whereNotIn('document_headers.status', ['cancelled', 'draft'])
-            ->whereBetween('document_headers.created_at', [$from, $to])
+            ->whereNotIn('document_headers.status', self::NON_COUNTING_STATUSES)
+            ->whereNull('document_headers.deleted_at')
+            ->tap(fn ($q) => $this->excludeAlreadyInvoiced($q, 'InvoiceSale'))
+            ->whereBetween('document_headers.issued_at', [$from, $to])
             ->select(
                 'document_lignes.product_id',
                 'document_lignes.designation',
@@ -110,8 +121,9 @@ class ReportService
             ->join('document_headers', 'document_footers.document_header_id', '=', 'document_headers.id')
             ->join('third_partners', 'document_headers.thirdPartner_id', '=', 'third_partners.id')
             ->whereIn('document_headers.document_type', ['InvoiceSale', 'TicketSale'])
-            ->whereNotIn('document_headers.status', ['cancelled', 'draft'])
-            ->whereBetween('document_headers.created_at', [$from, $to])
+            ->whereNotIn('document_headers.status', self::NON_COUNTING_STATUSES)
+            ->whereNull('document_headers.deleted_at')
+            ->whereBetween('document_headers.issued_at', [$from, $to])
             ->select(
                 'third_partners.id',
                 'third_partners.tp_title',
@@ -130,10 +142,11 @@ class ReportService
         return DocumentFooter::query()
             ->join('document_headers', 'document_footers.document_header_id', '=', 'document_headers.id')
             ->whereIn('document_headers.document_type', ['InvoiceSale', 'TicketSale'])
-            ->whereNotIn('document_headers.status', ['cancelled', 'draft'])
-            ->whereBetween('document_headers.created_at', [$from, $to])
+            ->whereNotIn('document_headers.status', self::NON_COUNTING_STATUSES)
+            ->whereNull('document_headers.deleted_at')
+            ->whereBetween('document_headers.issued_at', [$from, $to])
             ->select(
-                DB::raw("DATE(document_headers.created_at) as day"),
+                DB::raw("DATE(document_headers.issued_at) as day"),
                 DB::raw('SUM(document_footers.total_ttc) as total')
             )
             ->groupBy('day')
@@ -169,8 +182,9 @@ class ReportService
         $row = DocumentFooter::query()
             ->join('document_headers', 'document_footers.document_header_id', '=', 'document_headers.id')
             ->whereIn('document_headers.document_type', ['InvoicePurchase'])
-            ->whereNotIn('document_headers.status', ['cancelled', 'draft'])
-            ->whereBetween('document_headers.created_at', [$from, $to])
+            ->whereNotIn('document_headers.status', self::NON_COUNTING_STATUSES)
+            ->whereNull('document_headers.deleted_at')
+            ->whereBetween('document_headers.issued_at', [$from, $to])
             ->select(
                 DB::raw('COALESCE(SUM(document_footers.total_ttc), 0) as spending_ttc'),
                 DB::raw('COALESCE(SUM(document_footers.total_ht), 0)  as spending_ht'),
@@ -194,8 +208,10 @@ class ReportService
         return DocumentLigne::query()
             ->join('document_headers', 'document_lignes.document_header_id', '=', 'document_headers.id')
             ->whereIn('document_headers.document_type', ['InvoicePurchase', 'ReceiptNotePurchase'])
-            ->whereNotIn('document_headers.status', ['cancelled', 'draft'])
-            ->whereBetween('document_headers.created_at', [$from, $to])
+            ->whereNotIn('document_headers.status', self::NON_COUNTING_STATUSES)
+            ->whereNull('document_headers.deleted_at')
+            ->tap(fn ($q) => $this->excludeAlreadyInvoiced($q, 'InvoicePurchase'))
+            ->whereBetween('document_headers.issued_at', [$from, $to])
             ->select(
                 'document_lignes.product_id',
                 'document_lignes.designation',
@@ -215,8 +231,9 @@ class ReportService
             ->join('document_headers', 'document_footers.document_header_id', '=', 'document_headers.id')
             ->join('third_partners', 'document_headers.thirdPartner_id', '=', 'third_partners.id')
             ->whereIn('document_headers.document_type', ['InvoicePurchase'])
-            ->whereNotIn('document_headers.status', ['cancelled', 'draft'])
-            ->whereBetween('document_headers.created_at', [$from, $to])
+            ->whereNotIn('document_headers.status', self::NON_COUNTING_STATUSES)
+            ->whereNull('document_headers.deleted_at')
+            ->whereBetween('document_headers.issued_at', [$from, $to])
             ->select(
                 'third_partners.id',
                 'third_partners.tp_title',
@@ -235,10 +252,11 @@ class ReportService
         return DocumentFooter::query()
             ->join('document_headers', 'document_footers.document_header_id', '=', 'document_headers.id')
             ->whereIn('document_headers.document_type', ['InvoicePurchase'])
-            ->whereNotIn('document_headers.status', ['cancelled', 'draft'])
-            ->whereBetween('document_headers.created_at', [$from, $to])
+            ->whereNotIn('document_headers.status', self::NON_COUNTING_STATUSES)
+            ->whereNull('document_headers.deleted_at')
+            ->whereBetween('document_headers.issued_at', [$from, $to])
             ->select(
-                DB::raw("DATE(document_headers.created_at) as day"),
+                DB::raw("DATE(document_headers.issued_at) as day"),
                 DB::raw('SUM(document_footers.total_ttc) as total')
             )
             ->groupBy('day')
@@ -379,11 +397,30 @@ class ReportService
     //  SHARED HELPERS
     // ═══════════════════════════════════════════════════════════════════
 
+    /**
+     * Écarte les documents déjà repris par une facture (BL livré puis
+     * facturé, BR reçu puis facturé). Le statut ne suffit pas : selon le
+     * chemin emprunté, le bon reste en 'received' ou 'delivered' alors que
+     * sa facture existe déjà. C'est le lien de filiation qui fait foi.
+     */
+    private function excludeAlreadyInvoiced($query, string $invoiceType): void
+    {
+        $query->whereNotExists(function ($sub) use ($invoiceType) {
+            $sub->select(DB::raw(1))
+                ->from('document_headers as facture')
+                ->whereColumn('facture.parent_id', 'document_headers.id')
+                ->where('facture.document_type', $invoiceType)
+                ->whereNotIn('facture.status', self::NON_COUNTING_STATUSES)
+                ->whereNull('facture.deleted_at');
+        });
+    }
+
     private function countByType(array $types, Carbon $from, Carbon $to): array
     {
         return DocumentHeader::query()
             ->whereIn('document_type', $types)
-            ->whereBetween('created_at', [$from, $to])
+            ->whereNotIn('status', self::NON_COUNTING_STATUSES)
+            ->whereBetween('issued_at', [$from, $to])
             ->select('document_type', DB::raw('COUNT(*) as count'))
             ->groupBy('document_type')
             ->get()
@@ -399,7 +436,7 @@ class ReportService
     {
         return DocumentHeader::query()
             ->whereIn('document_type', $types)
-            ->whereBetween('created_at', [$from, $to])
+            ->whereBetween('issued_at', [$from, $to])
             ->select('status', DB::raw('COUNT(*) as count'))
             ->groupBy('status')
             ->get()
@@ -415,6 +452,9 @@ class ReportService
         return Payment::query()
             ->join('document_headers', 'payments.document_header_id', '=', 'document_headers.id')
             ->whereIn('document_headers.document_type', $types)
+            // Un règlement rattaché à un document supprimé n'existe plus :
+            // le regroupement déplace les paiements vers la facture groupée.
+            ->whereNull('document_headers.deleted_at')
             ->whereBetween('payments.paid_at', [$from, $to])
             ->select(
                 'payments.method',
