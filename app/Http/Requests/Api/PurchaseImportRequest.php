@@ -61,6 +61,7 @@ class PurchaseImportRequest extends FormRequest
 
             'lines'                => ['required', 'array', 'min:1', 'max:500'],
             'lines.*.sku'          => ['required', 'string', 'max:100'],
+            'lines.*.ean13'        => ['nullable', 'digits:13'],
             'lines.*.designation'  => ['required', 'string', 'max:500'],
             'lines.*.qty'          => ['required', 'numeric', 'gt:0'],
             'lines.*.unit'         => ['nullable', 'string', 'max:20'],

@@ -23,6 +23,9 @@ use Illuminate\Support\Str;
  *   - Fournisseur → ThirdPartner (tp_Role = supplier), code et structure_id générés
  *     automatiquement par BelongsToStructure (comme tout tiers créé depuis l'écran O3).
  *   - Article     → Product (p_sku, p_title…), même mécanisme de code automatique.
+ *     Rapproché par SKU en priorité, ou par EAN13 (champ optionnel `lines[].ean13`, match
+ *     exact uniquement) si le SKU est absent du catalogue — utile quand le document ne
+ *     porte qu'un code-barres lisible.
  *   - Document    → DocumentHeaderService::createWithLinesAndFooter() : c'est le MÊME
  *     service que l'écran « Nouveau document » — numérotation via DocumentIncrementor,
  *     lignes et pied de document dans la même transaction.
@@ -186,11 +189,12 @@ class PurchaseImportService
 
     private function resolveLines(array $lines, bool $allowCreate): array
     {
-        // Catalogue complet (id, sku, titre) — une seule requête, sert aux correspondances
-        // exactes, normalisées et « sosies ».
-        $catalog = Product::query()->select(['id', 'p_sku', 'p_title'])->get();
+        // Catalogue complet (id, sku, ean13, titre) — une seule requête, sert aux
+        // correspondances exactes, normalisées, « sosies » et par code-barres EAN13.
+        $catalog = Product::query()->select(['id', 'p_sku', 'p_ean13', 'p_title'])->get();
         $byNorm     = $catalog->groupBy(fn ($p) => $this->normSku($p->p_sku));
         $bySkeleton = $catalog->groupBy(fn ($p) => $this->skeletonSku($p->p_sku));
+        $byEan13    = $catalog->filter(fn ($p) => !empty($p->p_ean13))->groupBy(fn ($p) => trim($p->p_ean13));
 
         $seenInPayload = [];
         $out = [];
@@ -218,6 +222,15 @@ class PurchaseImportService
                 $list = $look->map(fn ($p) => $p->p_sku)->implode(', ');
                 $this->block('SKU_LOOKALIKE', "lines.{$i}.sku",
                     "« {$sku} » n'existe pas mais ressemble à : {$list}. Erreur de lecture probable — confirmer le SKU avant toute création.");
+                $action = 'blocked';
+            } elseif (!empty($l['ean13']) && ($eanCands = $byEan13->get(trim($l['ean13']), collect()))->count() === 1) {
+                // Pas de logique « sosie » ici : un EAN13 se vérifie par sa clé de contrôle,
+                // pas par ressemblance visuelle — un match exact suffit.
+                $product = $eanCands->first();
+                $this->info('EAN13_MATCH', "lines.{$i}.ean13",
+                    "Article rapproché par EAN13 {$l['ean13']} : SKU lu « {$sku} » ≠ SKU O3 « {$product->p_sku} ».");
+            } elseif (!empty($l['ean13']) && $eanCands->count() > 1) {
+                $this->block('EAN13_AMBIGUOUS', "lines.{$i}.ean13", "Plusieurs produits O3 partagent l'EAN13 {$l['ean13']}. Préciser le SKU exact.");
                 $action = 'blocked';
             } elseif (!$allowCreate) {
                 $this->block('PRODUCT_NOT_FOUND', "lines.{$i}.sku", "Article {$sku} introuvable et création désactivée (allow_create.products = false).");
