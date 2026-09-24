@@ -367,6 +367,16 @@ Route::middleware(['auth:sanctum', 'tenant.active'])->group(function () {
         // ── OCR Invoice Import ──────────────────────────────────────
         Route::post('achats/ocr/parse',   [\App\Http\Controllers\Api\Achats\OcrInvoiceController::class, 'parse']);
         Route::post('achats/ocr/confirm', [\App\Http\Controllers\Api\Achats\OcrInvoiceController::class, 'confirm']);
+
+        // ── Import API — agent de saisie des achats (factures fournisseurs\CLAUDE.md) ──
+        // Jeton dédié requis avec l'ability "achats:import" (PurchaseImportRequest::authorize()).
+        Route::middleware('throttle:60,1')->group(function () {
+            Route::post('achats/import', [\App\Http\Controllers\Api\PurchaseImportController::class, 'store'])
+                ->name('api.achats.import');
+            Route::get('achats/import/{externalId}', [\App\Http\Controllers\Api\PurchaseImportController::class, 'show'])
+                ->where('externalId', '[A-Za-z0-9\-_]+')
+                ->name('api.achats.import.show');
+        });
     });
 
     // ── Stock write (admin, manager, warehouse) ───────────────────────────
