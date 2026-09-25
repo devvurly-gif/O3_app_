@@ -12,6 +12,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
+        $schedule->command('achats:draft-daily-po')->dailyAt('07:30');
         $schedule->command('notify:low-stock --threshold=5')->dailyAt('08:00');
         $schedule->command('notify:due-invoices --days=0')->dailyAt('09:00');
         $schedule->command('billing:generate-periodic-invoices')->dailyAt('01:00');
