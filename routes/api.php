@@ -395,7 +395,7 @@ Route::middleware(['auth:sanctum', 'tenant.active'])->group(function () {
         });
 
         // ── Messagerie commandes — chat équipe (BL brouillon depuis un texte libre) ──
-        Route::middleware(['permission:documents.create', 'throttle:60,1'])->prefix('messagerie')->group(function () {
+        Route::middleware(['permission:documents.create', 'throttle:60,1,messagerie'])->prefix('messagerie')->group(function () {
             Route::post('commandes',     [\App\Http\Controllers\Api\Messaging\OrderMessagingController::class, 'send'])->name('api.messagerie.send');
             Route::get('conversations',  [\App\Http\Controllers\Api\Messaging\OrderMessagingController::class, 'conversations'])->name('api.messagerie.conversations');
             Route::get('fil',            [\App\Http\Controllers\Api\Messaging\OrderMessagingController::class, 'thread'])->name('api.messagerie.thread');
@@ -593,13 +593,25 @@ Route::prefix('ecom')->middleware(['ecom.key', 'throttle:60,1', 'tenant.active']
     // Orders
     Route::post('orders',            [EcomOrderController::class, 'store']);
     Route::get('customers/lookup',   [EcomOrderController::class, 'lookupCustomer']);
+
+    // Chat « commande rapide » : code reçu sur le téléphone de la fiche client,
+    // puis commande en texte libre -> BL brouillon (EcomChatController).
+    // Préfixe de throttle propre à chaque route : sans lui, le compteur est
+    // partagé par IP avec toute la boutique.
+    Route::prefix('chat')->group(function () {
+        Route::post('code',     [\App\Http\Controllers\Api\Ecom\EcomChatController::class, 'requestCode'])->middleware('throttle:5,10,chat-code');
+        Route::post('verify',   [\App\Http\Controllers\Api\Ecom\EcomChatController::class, 'verify'])->middleware('throttle:10,10,chat-verify');
+        Route::post('messages', [\App\Http\Controllers\Api\Ecom\EcomChatController::class, 'send'])->middleware('throttle:10,1,chat-send');
+        Route::get('messages',  [\App\Http\Controllers\Api\Ecom\EcomChatController::class, 'history']);
+        Route::post('logout',   [\App\Http\Controllers\Api\Ecom\EcomChatController::class, 'logout']);
+    });
 });
 
 // ── Messagerie commandes : WhatsApp / SMS reçus sur un numéro Twilio ──────
 // Pas de jeton possible côté Twilio : l'authenticité repose sur la signature
 // X-Twilio-Signature (VerifyTwilioSignature). Le BL créé reste un brouillon.
 Route::post('webhooks/twilio/inbound', \App\Http\Controllers\Api\Messaging\TwilioInboundController::class)
-    ->middleware(['twilio.signature', 'throttle:120,1', 'tenant.active'])
+    ->middleware(['twilio.signature', 'throttle:120,1,twilio', 'tenant.active'])
     ->name('api.webhooks.twilio.inbound');
 
 // ── Formule et capacités du tenant ────────────────────────────────────────
