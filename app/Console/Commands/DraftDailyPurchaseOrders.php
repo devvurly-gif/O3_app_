@@ -92,13 +92,20 @@ class DraftDailyPurchaseOrders extends Command
         $productIds = $soldByProduct->keys()->all();
         $products = Product::whereIn('id', $productIds)->get()->keyBy('id');
 
-        // 2. Fournisseur : d'abord le fournisseur par défaut réglé explicitement sur
-        //    la fiche produit (Product::defaultSupplier, via products:set-supplier),
-        //    sinon inféré depuis l'historique d'achat (fréquence, départagé par la
+        // 2. Fournisseur : d'abord le(s) fournisseur(s) liés explicitement au produit
+        //    (product_suppliers — un produit s'achète souvent chez plusieurs
+        //    fournisseurs ; on prend le préféré, priority la plus basse), sinon
+        //    inféré depuis l'historique d'achat (fréquence, départagé par la
         //    commande la plus récente). Jamais deviné autrement : un produit sans
-        //    fournisseur par défaut ni historique est exclu, pas assigné au hasard.
-        $defaultSupplierByProduct = $products->filter(fn ($p) => !empty($p->default_supplier_id))
-            ->map(fn ($p) => $p->default_supplier_id);
+        //    fournisseur lié ni historique est exclu, pas assigné au hasard.
+        $preferredLinkByProduct = DB::table('product_suppliers')
+            ->whereIn('product_id', $productIds)
+            ->orderBy('product_id')
+            ->orderBy('priority')
+            ->orderBy('id')
+            ->get()
+            ->groupBy('product_id')
+            ->map(fn ($rows) => $rows->first()); // priorité la plus basse en premier
 
         $historicalSupplierByProduct = DocumentLigne::query()
             ->join('document_headers', 'document_lignes.document_header_id', '=', 'document_headers.id')
@@ -119,10 +126,6 @@ class DraftDailyPurchaseOrders extends Command
             ->groupBy('product_id')
             ->map(fn ($rows) => $rows->first()->thirdPartner_id);
 
-        // union() garde la valeur de la collection de gauche pour une clé déjà
-        // présente : le fournisseur par défaut a donc bien priorité sur l'historique.
-        $supplierByProduct = $defaultSupplierByProduct->union($historicalSupplierByProduct);
-
         $unassigned = [];
         $linesBySupplier = [];
         foreach ($soldByProduct as $productId => $qty) {
@@ -130,18 +133,23 @@ class DraftDailyPurchaseOrders extends Command
             if (!$product) {
                 continue; // produit supprimé entre-temps
             }
-            $supplierId = $supplierByProduct->get($productId);
+
+            $link = $preferredLinkByProduct->get($productId);
+            $supplierId = $link->third_partner_id ?? $historicalSupplierByProduct->get($productId);
             if (!$supplierId) {
                 $unassigned[] = ['product' => $product, 'qty' => $qty];
                 continue;
             }
+
             $linesBySupplier[$supplierId][] = [
                 'product_id'       => $product->id,
                 'designation'      => $product->p_title,
-                'reference'        => $product->p_sku,
+                'reference'        => $link->supplier_sku ?? $product->p_sku,
                 'quantity'         => $qty,
                 'unit'             => $product->p_unit ?? 'pièce',
-                'unit_price'       => $product->p_purchasePrice,
+                // Prix propre à ce fournisseur si connu (product_suppliers.purchase_price),
+                // sinon le dernier prix d'achat générique du produit.
+                'unit_price'       => $link->purchase_price ?? $product->p_purchasePrice,
                 'discount_percent' => 0,
                 'tax_percent'      => $product->p_taxRate,
             ];

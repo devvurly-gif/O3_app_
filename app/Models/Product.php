@@ -69,7 +69,6 @@ class Product extends Model
         'p_unit',
         'category_id',
         'brand_id',
-        'default_supplier_id',
         'structure_id',
         'is_ecom',
         'p_slug',
@@ -98,13 +97,19 @@ class Product extends Model
     }
 
     /**
-     * Fournisseur à utiliser par défaut par achats:draft-daily-po quand aucun
-     * historique d'achat n'existe encore pour ce produit — jamais deviné
-     * automatiquement, réglé explicitement via `php artisan products:set-supplier`.
+     * Fournisseurs pouvant livrer ce produit, du plus préféré (priority=1) au
+     * moins préféré — un produit s'achète souvent chez plusieurs fournisseurs.
+     * Utilisé par achats:draft-daily-po (le préféré, avant repli sur
+     * l'historique d'achat) ; géré via `php artisan products:link-supplier` /
+     * `products:unlink-supplier` / `products:list-suppliers`.
      */
-    public function defaultSupplier(): BelongsTo
+    public function suppliers(): BelongsToMany
     {
-        return $this->belongsTo(ThirdPartner::class, 'default_supplier_id');
+        return $this->belongsToMany(ThirdPartner::class, 'product_suppliers')
+            ->withPivot(['supplier_sku', 'purchase_price', 'priority', 'lead_time_days'])
+            ->withTimestamps()
+            ->orderBy('product_suppliers.priority')
+            ->orderBy('product_suppliers.id');
     }
 
     public function structure(): BelongsTo
