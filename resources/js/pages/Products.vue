@@ -491,7 +491,7 @@
     />
 
     <!-- Create / Edit Modal with Tabs -->
-    <BaseModal v-model="showModal" :title="editTarget ? $t('products.editTitle') : $t('products.addTitle')" size="2xl">
+    <BaseModal v-model="showModal" :title="editTarget ? (editTarget.p_title || $t('products.editTitle')) : $t('products.addTitle')" size="2xl">
       <form class="space-y-0" @submit.prevent="submit">
         <!-- Tab Navigation (sticky, flush to modal top) -->
         <div class="sticky top-0 z-10 -mx-4 sm:-mx-5 -mt-3 mb-3 px-4 sm:px-5 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700">
