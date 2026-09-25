@@ -9,36 +9,31 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 
 /**
- * Émet (ou réémet) le jeton Sanctum du compte de service « Agent IA — Achats »
- * utilisé par l'agent de saisie Jadema (voir « factures fournisseurs\importer\
- * README.md ») pour appeler POST /api/achats/import.
+ * Émet (ou réémet) le jeton Sanctum du compte de service « Agent IA —
+ * Facturation client » utilisé par l'agent de facturation client Jadema
+ * (voir « facturation clients\CLAUDE.md ») pour appeler
+ * POST /api/ventes/whatsapp-import.
  *
- * Compte et jeton **entièrement indépendants** de l'agent de facturation
- * client (IssueVentesAgentToken) : révoquer/réémettre celui-ci n'affecte
+ * Compte et jeton **entièrement indépendants** de l'agent de saisie des
+ * achats (IssueAchatsAgentToken) : révoquer/réémettre celui-ci n'affecte
  * jamais l'autre agent, et inversement — chacun a son propre compte
  * technique, sa propre ability Sanctum, son propre jeton.
- *
- * Le compte est un utilisateur technique du tenant, sans mot de passe communiqué
- * (il ne se connecte jamais à l'UI) et sans autre droit que l'ability Sanctum
- * "achats:import" portée par son jeton — l'autorisation de la route repose
- * uniquement sur PurchaseImportRequest::authorize() -> tokenCan('achats:import'),
- * pas sur le rôle applicatif.
  *
  * Idempotent : ré-exécuter la commande ne duplique jamais le compte et n'émet un
  * nouveau jeton que si --fresh est passé explicitement (sinon un jeton existant
  * reste valide et n'est pas révélé une seconde fois).
  */
-class IssueAchatsAgentToken extends Command
+class IssueVentesAgentToken extends Command
 {
-    private const EMAIL = 'agent-ia.achats@jadema.o3app.local';
-    private const TOKEN_NAME = 'agent-saisie';
-    private const ABILITY = 'achats:import';
+    private const EMAIL = 'agent-ia.ventes@jadema.o3app.local';
+    private const TOKEN_NAME = 'agent-facturation-client';
+    private const ABILITY = 'ventes:whatsapp-import';
 
-    protected $signature = 'achats:agent-token
+    protected $signature = 'ventes:agent-token
         {tenant=jadema : ID du tenant}
         {--fresh : révoque le(s) jeton(s) existant(s) et en émet un nouveau}';
 
-    protected $description = "Crée (si besoin) le compte de service « Agent IA — Achats » et émet son jeton d'import achats";
+    protected $description = "Crée (si besoin) le compte de service « Agent IA — Facturation client » et émet son jeton";
 
     public function handle(): int
     {
@@ -65,7 +60,7 @@ class IssueAchatsAgentToken extends Command
         $user = User::withTrashed()->firstOrNew(['email' => self::EMAIL]);
         $isNew = !$user->exists;
 
-        $user->name = 'Agent IA — Achats';
+        $user->name = 'Agent IA — Facturation client';
         $user->email = self::EMAIL;
         $user->is_active = true;
         // Pas de structure_id : BelongsToStructure ne l'auto-remplit que depuis
@@ -101,9 +96,9 @@ class IssueAchatsAgentToken extends Command
         $this->line("<fg=black;bg=yellow> JETON (ne sera plus jamais affiché) </>");
         $this->line($token);
         $this->newLine();
-        $this->info('Copiez-le maintenant dans "factures fournisseurs\importer\.o3token" (une seule ligne) '
-            . 'ou dans la variable d\'environnement O3_API_TOKEN. Ce jeton est propre à l\'agent achats : '
-            . 'ne le mettez pas dans facturation clients\importer\.o3token (voir ventes:agent-token).');
+        $this->info('Copiez-le maintenant dans "facturation clients\importer\.o3token" (une seule ligne) '
+            . 'ou dans une variable d\'environnement dédiée. Ce jeton est propre à l\'agent facturation client : '
+            . 'ne le mettez pas dans factures fournisseurs\importer\.o3token (voir achats:agent-token).');
 
         return self::SUCCESS;
     }
