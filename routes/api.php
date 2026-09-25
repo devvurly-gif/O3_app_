@@ -383,6 +383,16 @@ Route::middleware(['auth:sanctum', 'tenant.active'])->group(function () {
                 ->where('externalId', '[A-Za-z0-9\-_]+')
                 ->name('api.achats.import.show');
         });
+
+        // ── Import API — agent de facturation client (facturation clients\CLAUDE.md) ──
+        // Jeton dédié requis avec l'ability "ventes:whatsapp-import" (WhatsAppOrderImportRequest::authorize()).
+        Route::middleware('throttle:60,1')->group(function () {
+            Route::post('ventes/whatsapp-import', [\App\Http\Controllers\Api\Ventes\WhatsAppOrderController::class, 'store'])
+                ->name('api.ventes.whatsapp-import');
+            Route::get('ventes/whatsapp-import/{externalId}', [\App\Http\Controllers\Api\Ventes\WhatsAppOrderController::class, 'show'])
+                ->where('externalId', '[A-Za-z0-9\-_]+')
+                ->name('api.ventes.whatsapp-import.show');
+        });
     });
 
     // ── Stock write (admin, manager, warehouse) ───────────────────────────
