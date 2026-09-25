@@ -92,10 +92,15 @@ class DraftDailyPurchaseOrders extends Command
         $productIds = $soldByProduct->keys()->all();
         $products = Product::whereIn('id', $productIds)->get()->keyBy('id');
 
-        // 2. Fournisseur habituel par produit, inféré depuis l'historique d'achat
-        //    (fréquence, départagé par la commande la plus récente). Jamais deviné :
-        //    un produit sans historique d'achat est exclu, pas assigné au hasard.
-        $supplierByProduct = DocumentLigne::query()
+        // 2. Fournisseur : d'abord le fournisseur par défaut réglé explicitement sur
+        //    la fiche produit (Product::defaultSupplier, via products:set-supplier),
+        //    sinon inféré depuis l'historique d'achat (fréquence, départagé par la
+        //    commande la plus récente). Jamais deviné autrement : un produit sans
+        //    fournisseur par défaut ni historique est exclu, pas assigné au hasard.
+        $defaultSupplierByProduct = $products->filter(fn ($p) => !empty($p->default_supplier_id))
+            ->map(fn ($p) => $p->default_supplier_id);
+
+        $historicalSupplierByProduct = DocumentLigne::query()
             ->join('document_headers', 'document_lignes.document_header_id', '=', 'document_headers.id')
             ->whereIn('document_headers.document_type', ['ReceiptNotePurchase', 'InvoicePurchase'])
             ->whereNotIn('document_headers.status', self::NON_COUNTING_STATUSES)
@@ -113,6 +118,10 @@ class DraftDailyPurchaseOrders extends Command
             ->get()
             ->groupBy('product_id')
             ->map(fn ($rows) => $rows->first()->thirdPartner_id);
+
+        // union() garde la valeur de la collection de gauche pour une clé déjà
+        // présente : le fournisseur par défaut a donc bien priorité sur l'historique.
+        $supplierByProduct = $defaultSupplierByProduct->union($historicalSupplierByProduct);
 
         $unassigned = [];
         $linesBySupplier = [];

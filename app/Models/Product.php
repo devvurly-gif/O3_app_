@@ -69,6 +69,7 @@ class Product extends Model
         'p_unit',
         'category_id',
         'brand_id',
+        'default_supplier_id',
         'structure_id',
         'is_ecom',
         'p_slug',
@@ -94,6 +95,16 @@ class Product extends Model
     public function brand(): BelongsTo
     {
         return $this->belongsTo(Brand::class);
+    }
+
+    /**
+     * Fournisseur à utiliser par défaut par achats:draft-daily-po quand aucun
+     * historique d'achat n'existe encore pour ce produit — jamais deviné
+     * automatiquement, réglé explicitement via `php artisan products:set-supplier`.
+     */
+    public function defaultSupplier(): BelongsTo
+    {
+        return $this->belongsTo(ThirdPartner::class, 'default_supplier_id');
     }
 
     public function structure(): BelongsTo
