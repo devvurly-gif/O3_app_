@@ -41,16 +41,30 @@ class WhatsAppOrderImportService
     private array $errors = [];
     private array $warnings = [];
 
+    /** Mots ignorés quand on cherche un produit mot par mot. */
+    private const STOPWORDS = ['de', 'du', 'des', 'la', 'le', 'les', 'et', 'en', 'au', 'aux', 'un', 'une', 'pour', 'avec', 'sur'];
+
+    private string $origin = 'Commande WhatsApp';
+
     public function __construct(
         private DocumentHeaderService $documentService,
         private StockMouvementService $stockService,
         private PriceResolver $priceResolver,
+        private CustomerLookup $customers,
     ) {
     }
 
-    public function handle(array $payload, bool $dryRun, int $userId): array
+    /**
+     * @param ThirdPartner|null $knownCustomer client déjà identifié de façon sûre par
+     *        l'appelant (chat client vérifié par code, client choisi par un employé) :
+     *        la recherche par téléphone/code/nom est alors sautée. Usage interne
+     *        uniquement — l'API HTTP ne le transmet jamais.
+     * @param string $origin libellé de provenance écrit dans les notes du BL.
+     */
+    public function handle(array $payload, bool $dryRun, int $userId, ?ThirdPartner $knownCustomer = null, string $origin = 'Commande WhatsApp'): array
     {
         $this->errors = $this->warnings = [];
+        $this->origin = $origin;
         $externalId = $payload['external_id'];
         $hash = hash('sha256', json_encode(collect($payload)->except('dry_run')->all()));
 
@@ -65,14 +79,14 @@ class WhatsAppOrderImportService
             return array_merge($existing->response, ['status' => 'already_imported']);
         }
 
-        $customer     = $this->resolveCustomer($payload['customer']);
+        $customer     = $knownCustomer ?? $this->resolveCustomer($payload['customer'] ?? []);
         $lines        = $this->resolveLines($payload['lines'], $customer);
         $warehouse    = $this->resolveWarehouse();
         $incrementor  = $this->resolveIncrementor();
         $computed     = $this->computeTotals($lines);
 
         $preview = [
-            'customer'  => $customer ? $this->customerSummary($customer) : $payload['customer'],
+            'customer'  => $customer ? $this->customerSummary($customer) : ($payload['customer'] ?? []),
             'warehouse' => $warehouse?->wh_title,
             'totals'    => $computed,
             'lines'     => array_map(fn ($l) => collect($l)->except('product')->all(), $lines),
@@ -106,33 +120,31 @@ class WhatsAppOrderImportService
 
     private function resolveCustomer(array $c): ?ThirdPartner
     {
-        $q = fn () => ThirdPartner::query()->whereIn('tp_Role', ['customer', 'both']);
+        // Priorité : téléphone (le numéro WhatsApp de l'expéditeur, comparé
+        // quel que soit son format de saisie) > code client > raison sociale exacte.
+        $criteria = [
+            'phone' => fn ($v) => $this->customers->byPhone($v),
+            'code'  => fn ($v) => $this->customers->byCode($v),
+            'name'  => fn ($v) => $this->customers->byExactName($v),
+        ];
 
-        // Priorité : téléphone (le numéro WhatsApp de l'expéditeur) > raison sociale exacte.
-        if (!empty($c['phone'])) {
-            $found = $q()->where('tp_phone', $c['phone'])->get();
+        foreach ($criteria as $field => $search) {
+            if (empty($c[$field])) {
+                continue;
+            }
+            $found = $search($c[$field]);
             if ($found->count() === 1) {
                 return $found->first();
             }
             if ($found->count() > 1) {
-                $this->block('CUSTOMER_AMBIGUOUS', 'customer.phone', "Plusieurs clients O3 partagent le téléphone « {$c['phone']} ». Préciser lequel.");
-                return null;
-            }
-        }
-
-        if (!empty($c['name'])) {
-            $found = $q()->where('tp_title', $c['name'])->get();
-            if ($found->count() === 1) {
-                return $found->first();
-            }
-            if ($found->count() > 1) {
-                $this->block('CUSTOMER_AMBIGUOUS', 'customer.name', "Plusieurs clients O3 portent le nom « {$c['name']} ». Préciser (téléphone) lequel.");
+                $list = $found->map(fn ($p) => "{$p->tp_code} ({$p->tp_title})")->implode(', ');
+                $this->block('CUSTOMER_AMBIGUOUS', "customer.{$field}", "Plusieurs clients O3 correspondent à « {$c[$field]} » : {$list}. Préciser lequel.");
                 return null;
             }
         }
 
         $this->block('CUSTOMER_NOT_FOUND', 'customer',
-            "Aucun client O3 trouvé pour téléphone « " . ($c['phone'] ?? '—') . " » / nom « " . ($c['name'] ?? '—') . " ». Vérifier la fiche client dans O3 — jamais de création automatique depuis un message WhatsApp.");
+            "Aucun client O3 trouvé pour téléphone « " . ($c['phone'] ?? '—') . " » / code « " . ($c['code'] ?? '—') . " » / nom « " . ($c['name'] ?? '—') . " ». Vérifier la fiche client dans O3 — jamais de création automatique depuis un message.");
         return null;
     }
 
@@ -152,23 +164,21 @@ class WhatsAppOrderImportService
             $qty = (float) $l['quantity'];
             $product = null;
 
-            $candidates = Product::query()
-                ->where(function ($q) use ($query) {
-                    foreach (['p_title', 'p_code', 'p_sku', 'p_ean13', 'p_description'] as $col) {
-                        $q->orWhere($col, 'like', '%' . $query . '%');
-                    }
-                })
-                ->limit(10)
-                ->get(['id', 'p_title', 'p_sku']);
+            $candidates = $this->searchProducts($query);
 
             if ($candidates->count() === 1) {
                 $product = $candidates->first();
                 $this->info('PRODUCT_MATCHED', "lines.{$i}.query", "« {$query} » rapproché de {$product->p_sku} — {$product->p_title}.");
             } elseif ($candidates->count() > 1) {
                 $list = $candidates->map(fn ($p) => "{$p->p_sku} ({$p->p_title})")->implode(', ');
-                $this->block('PRODUCT_AMBIGUOUS', "lines.{$i}.query", "« {$query} » correspond à plusieurs produits O3 : {$list}. Préciser lequel — jamais de choix au hasard.");
+                $this->block('PRODUCT_AMBIGUOUS', "lines.{$i}.query", "« {$query} » correspond à plusieurs produits O3 : {$list}. Préciser lequel — jamais de choix au hasard.", [
+                    'query'      => $query,
+                    'candidates' => $candidates->map(fn ($p) => ['sku' => $p->p_sku, 'title' => $p->p_title])->all(),
+                ]);
             } else {
-                $this->block('PRODUCT_NOT_FOUND', "lines.{$i}.query", "« {$query} » ne correspond à aucun produit O3. Vérifier l'orthographe ou créer la fiche produit dans O3 avant de réessayer — jamais de création automatique depuis un texte client.");
+                $this->block('PRODUCT_NOT_FOUND', "lines.{$i}.query", "« {$query} » ne correspond à aucun produit O3. Vérifier l'orthographe ou créer la fiche produit dans O3 avant de réessayer — jamais de création automatique depuis un texte client.", [
+                    'query' => $query,
+                ]);
             }
 
             $unitPrice = 0.0;
@@ -205,6 +215,44 @@ class WhatsAppOrderImportService
         }
 
         return $out;
+    }
+
+    /**
+     * Phrase entière d'abord ; si rien ne correspond, repli mot par mot
+     * (« perceuses 18V » → « perceuse » ET « 18v ») : tous les mots doivent
+     * se retrouver dans le même produit. Dans les deux cas l'appelant exige
+     * un candidat unique — le repli élargit la recherche, jamais le choix.
+     */
+    private function searchProducts(string $query)
+    {
+        $columns = ['p_title', 'p_code', 'p_sku', 'p_ean13', 'p_description'];
+        $matching = fn (string $term) => function ($q) use ($columns, $term) {
+            foreach ($columns as $col) {
+                $q->orWhere($col, 'like', '%' . $term . '%');
+            }
+        };
+
+        $candidates = Product::query()->where($matching($query))->limit(10)->get(['id', 'p_title', 'p_sku']);
+        if ($candidates->isNotEmpty()) {
+            return $candidates;
+        }
+
+        $words = collect(preg_split('/[\s,;\/]+/u', mb_strtolower($query)))
+            ->filter(fn ($w) => mb_strlen($w) >= 2 && !in_array($w, self::STOPWORDS, true))
+            ->map(fn ($w) => mb_strlen($w) > 3 ? preg_replace('/(?<=[a-zà-ÿ])[sx]$/u', '', $w) : $w)
+            ->unique()
+            ->values();
+
+        // Rien de nouveau à essayer : aucun mot utile, ou un seul mot identique à la phrase déjà cherchée.
+        if ($words->isEmpty() || ($words->count() === 1 && $words->first() === mb_strtolower(trim($query)))) {
+            return $candidates;
+        }
+
+        $q = Product::query();
+        foreach ($words as $word) {
+            $q->where($matching($word));
+        }
+        return $q->limit(10)->get(['id', 'p_title', 'p_sku']);
     }
 
     // ───────────────────────────── 3. Entrepôt / numérotation ─────────────────────────────
@@ -244,7 +292,8 @@ class WhatsAppOrderImportService
     private function createDeliveryNote(array $p, ThirdPartner $customer, Warehouse $warehouse, DocumentIncrementor $incrementor, array $lines, array $totals, int $userId): DocumentHeader
     {
         $notes = trim(sprintf(
-            "Commande WhatsApp.\n%s\n[Import API %s]",
+            "%s.\n%s\n[Import API %s]",
+            $this->origin,
             trim($p['notes'] ?? ($p['source_text'] ?? '')),
             $p['external_id']
         ));
@@ -325,9 +374,10 @@ class WhatsAppOrderImportService
         return $response;
     }
 
-    private function block(string $code, string $field, string $message): void
+    /** @param array $extra données structurées en plus (ex. candidats), pour les réponses automatiques. */
+    private function block(string $code, string $field, string $message, array $extra = []): void
     {
-        $this->errors[] = ['level' => 'BLOQUANT', 'code' => $code, 'field' => $field, 'message' => $message];
+        $this->errors[] = array_merge(['level' => 'BLOQUANT', 'code' => $code, 'field' => $field, 'message' => $message], $extra);
     }
 
     private function warn(string $code, string $field, string $message): void

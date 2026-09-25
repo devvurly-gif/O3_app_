@@ -120,6 +120,11 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../pages/ventes/DocumentVenteShow.vue'),
     meta: { layout: 'app', title: 'Document', breadcrumb: 'Détail' },
   },
+  {
+    path: '/ventes/messagerie',
+    component: () => import('../pages/ventes/OrderMessaging.vue'),
+    meta: { layout: 'app', title: 'Messagerie commandes', breadcrumb: 'Messagerie' },
+  },
 
   // Stock
 

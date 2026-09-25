@@ -234,6 +234,7 @@ export default {
     salesList: 'List',
     newCustomerOrder: 'New sales order',
     newDeliveryNote: 'New delivery note',
+    orderMessaging: 'Order messaging',
     newSalesInvoice: 'New sales invoice',
     newCreditNote: 'New credit note',
     // ── Section Achats du menu ──

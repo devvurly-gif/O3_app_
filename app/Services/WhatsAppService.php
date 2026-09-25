@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Setting;
+use App\Support\PhoneNumber;
 use Illuminate\Support\Facades\Log;
 use Twilio\Rest\Client;
 
@@ -74,16 +75,6 @@ class WhatsAppService
             return $phone;
         }
 
-        $phone = preg_replace('/[\s\-\.]/', '', $phone);
-
-        if (str_starts_with($phone, '0')) {
-            $phone = '+212' . substr($phone, 1);
-        }
-
-        if (!str_starts_with($phone, '+')) {
-            $phone = '+' . $phone;
-        }
-
-        return 'whatsapp:' . $phone;
+        return 'whatsapp:' . (PhoneNumber::normalize($phone) ?? $phone);
     }
 }

@@ -608,6 +608,132 @@
         </section>
       </template>
 
+      <!-- ═══════════════════ TAB: MESSAGERIE COMMANDES ═══════════════════ -->
+      <template v-if="activeTab === 'messaging'">
+        <section class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 space-y-4">
+          <div>
+            <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 uppercase tracking-wide">
+              Messagerie commandes
+            </h3>
+            <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
+              Les commandes reçues par WhatsApp, SMS ou chat boutique créent un BL en brouillon (jamais confirmé
+              automatiquement) et l'expéditeur reçoit un récapitulatif. Identifiants Twilio : onglet WhatsApp.
+            </p>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input
+                v-model="messaging.inbound_enabled"
+                type="checkbox"
+                true-value="true"
+                false-value="false"
+                class="sr-only peer"
+              />
+              <div :class="toggleClass"></div>
+            </label>
+            <span class="text-sm text-gray-700 dark:text-gray-300">
+              Accepter les commandes reçues par WhatsApp, SMS et chat boutique
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label for="appsettings-messaging-sms-from" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Numéro Twilio pour les SMS
+              </label>
+              <input
+                id="appsettings-messaging-sms-from"
+                v-model="messaging.sms_from"
+                type="text"
+                placeholder="+212…"
+                :class="inputClass"
+              />
+              <p class="text-xs text-gray-400 mt-1">Numéro Twilio capable d'envoyer et recevoir des SMS.</p>
+            </div>
+            <div>
+              <span class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Adresse de réception (à coller dans Twilio)
+              </span>
+              <code class="block px-3 py-2.5 rounded-lg bg-gray-100 dark:bg-gray-900 text-xs break-all text-gray-700 dark:text-gray-300">
+                {{ webhookUrl }}
+              </code>
+              <p class="text-xs text-gray-400 mt-1">
+                Dans Twilio, champ « A message comes in » (méthode POST) des numéros WhatsApp et SMS.
+              </p>
+            </div>
+          </div>
+
+          <div class="border-t border-gray-100 dark:border-gray-700 pt-4 space-y-4">
+            <div class="flex items-center gap-2">
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input
+                  v-model="messaging.ai_enabled"
+                  type="checkbox"
+                  true-value="true"
+                  false-value="false"
+                  class="sr-only peer"
+                />
+                <div :class="toggleClass"></div>
+              </label>
+              <span class="text-sm text-gray-700 dark:text-gray-300">
+                Lecture par IA (Claude) quand un message n'est pas compris par les règles simples
+              </span>
+            </div>
+            <p class="text-xs text-gray-400">
+              L'IA ne fait que découper le message en articles : elle ne choisit jamais un produit ni un client. Chaque
+              appel est facturé par Anthropic sur votre clé.
+            </p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label for="appsettings-messaging-api-key" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Clé API Anthropic
+                </label>
+                <input
+                  id="appsettings-messaging-api-key"
+                  v-model="messaging.anthropic_api_key"
+                  type="password"
+                  autocomplete="off"
+                  :placeholder="messaging.anthropic_api_key_set === 'true' ? 'Clé enregistrée — laisser vide pour la garder' : 'sk-ant-…'"
+                  :class="inputClass + ' font-mono text-xs'"
+                />
+                <div class="flex items-center gap-3 mt-1">
+                  <span
+                    class="text-xs"
+                    :class="messaging.anthropic_api_key_set === 'true' ? 'text-green-600' : 'text-gray-400'"
+                  >
+                    {{ messaging.anthropic_api_key_set === 'true' ? 'Clé enregistrée (chiffrée)' : 'Aucune clé enregistrée' }}
+                  </span>
+                  <button
+                    v-if="messaging.anthropic_api_key_set === 'true'"
+                    class="text-xs text-red-600 hover:underline"
+                    @click="removeAnthropicKey"
+                  >
+                    Supprimer la clé
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label for="appsettings-messaging-ai-model" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Modèle
+                </label>
+                <select id="appsettings-messaging-ai-model" v-model="messaging.ai_model" :class="inputClass">
+                  <option value="">claude-sonnet-5 (par défaut)</option>
+                  <option value="claude-haiku-4-5-20251001">claude-haiku-4-5 (moins cher)</option>
+                  <option value="claude-opus-5-5">claude-opus-5-5 (le plus capable)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex justify-end">
+            <button :class="btnClass" :disabled="saving.messaging" @click="saveMessaging">
+              {{ saving.messaging ? $t('common.saving') : 'Enregistrer la messagerie' }}
+            </button>
+          </div>
+        </section>
+      </template>
+
       <!-- ═══════════════════ TAB: EMAIL ═══════════════════ -->
       <template v-if="activeTab === 'email'">
         <section class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 space-y-4">
@@ -1538,6 +1664,7 @@ const tabs = computed(() => [
   { id: 'taxes', label: t('appSettings.tabTaxes') },
   { id: 'stock', label: t('appSettings.tabStock') },
   { id: 'whatsapp', label: 'WhatsApp' },
+  { id: 'messaging', label: 'Messagerie' },
   { id: 'email', label: 'Email' },
   { id: 'display', label: t('appSettings.tabDisplay') },
   { id: 'ecommerce', label: t('appSettings.tabEcommerce') },
@@ -1553,6 +1680,7 @@ const saving = reactive<Record<string, boolean>>({
   ventes: false,
   pos: false,
   whatsapp: false,
+  messaging: false,
   email: false,
   display: false,
   ecommerce: false,
@@ -1581,6 +1709,18 @@ const whatsapp = reactive({
   twilio_whatsapp_from: '',
   whatsapp_enabled: 'false',
 })
+// anthropic_api_key n'est jamais renvoyée par l'API (chiffrée côté serveur) :
+// seul anthropic_api_key_set indique si une clé existe. Champ vide à
+// l'enregistrement = on garde la clé existante.
+const messaging = reactive({
+  inbound_enabled: 'false',
+  sms_from: '',
+  ai_enabled: 'false',
+  anthropic_api_key: '',
+  anthropic_api_key_set: 'false',
+  ai_model: '',
+})
+const webhookUrl = `${window.location.origin}/api/webhooks/twilio/inbound`
 const ecommerce = reactive({
   shop_tagline: '',
   promo_banner: '',
@@ -1643,6 +1783,7 @@ function applySettings() {
   mergeKnownKeys(ventes, s.ventes)
   mergeKnownKeys(pos, s.pos)
   mergeKnownKeys(whatsapp, s.whatsapp)
+  mergeKnownKeys(messaging, s.messaging)
   mergeKnownKeys(ecommerce, s.ecommerce)
   mergeKnownKeys(email, s.email)
   mergeKnownKeys(display, s.display)
@@ -1659,6 +1800,42 @@ async function saveSection(domain: string, values: Record<string, string>) {
     toast.value?.notify(t('common.failedSave'), 'error')
   } finally {
     saving[domain] = false
+  }
+}
+
+async function saveMessaging() {
+  const { anthropic_api_key_set: _set, anthropic_api_key: key, ...values } = messaging
+  const payload: Record<string, string> = { ...values }
+  if (key.trim()) payload.anthropic_api_key = key.trim()
+
+  saving.messaging = true
+  try {
+    await store.save('messaging', payload)
+    // Ne jamais garder la clé en clair côté navigateur après l'envoi.
+    const stored = store.settings.messaging as Record<string, string> | undefined
+    if (stored) {
+      delete stored.anthropic_api_key
+      if (key.trim()) stored.anthropic_api_key_set = 'true'
+    }
+    messaging.anthropic_api_key = ''
+    if (key.trim()) messaging.anthropic_api_key_set = 'true'
+    toast.value?.notify(t('appSettings.saved'), 'success')
+  } catch {
+    toast.value?.notify(t('common.failedSave'), 'error')
+  } finally {
+    saving.messaging = false
+  }
+}
+
+async function removeAnthropicKey() {
+  try {
+    await store.remove('messaging', 'anthropic_api_key')
+    const stored = store.settings.messaging as Record<string, string> | undefined
+    if (stored) stored.anthropic_api_key_set = 'false'
+    messaging.anthropic_api_key_set = 'false'
+    toast.value?.notify('Clé supprimée.', 'success')
+  } catch {
+    toast.value?.notify(t('common.failedSave'), 'error')
   }
 }
 

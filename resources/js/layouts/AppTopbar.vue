@@ -333,6 +333,8 @@ function notifTitle(data) {
       return `Paiement ${data.amount} DH recu — ${data.document_reference}`
     case 'stock_movement':
       return `Stock bas: ${data.product_name} (${data.new_stock_level} restant)`
+    case 'message_order':
+      return `BL brouillon ${data.reference} reçu par ${data.channel_label} — ${data.customer ?? ''}`
     default:
       return 'Notification'
   }
@@ -348,6 +350,8 @@ function notifIconClass(type) {
       return 'bg-green-100 text-green-600'
     case 'invoice_due_reminder':
       return 'bg-red-100 text-red-600'
+    case 'message_order':
+      return 'bg-violet-100 text-violet-600'
     default:
       return 'bg-gray-100 text-gray-500'
   }
@@ -364,6 +368,8 @@ function notifIcon(type) {
       return '$'
     case 'payment_received':
       return '+'
+    case 'message_order':
+      return '@'
     default:
       return '?'
   }

@@ -144,6 +144,21 @@
             />
           </div>
           <div>
+            <label for="users-phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Téléphone <span class="text-gray-400 dark:text-gray-500 font-normal">(facultatif)</span>
+            </label>
+            <input
+              id="users-phone"
+              v-model="form.phone"
+              type="tel"
+              placeholder="06 12 34 56 78"
+              class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            />
+            <p class="text-xs text-gray-400 mt-1">
+              Permet à cet utilisateur de créer des BL en envoyant un WhatsApp ou un SMS (Messagerie commandes).
+            </p>
+          </div>
+          <div>
             <label for="users-password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               {{ $t('auth.password') }} <span v-if="!editTarget" class="text-red-500">*</span>
               <span v-else class="text-gray-400 dark:text-gray-500 font-normal">{{ $t('users.keepPassword') }}</span>
@@ -261,7 +276,7 @@ const deleting = ref(false)
 const editTarget = ref(null)
 const deleteTarget = ref(null)
 
-const emptyForm = () => ({ name: '', email: '', password: '', role_id: null as number | null, is_active: true })
+const emptyForm = () => ({ name: '', email: '', phone: '', password: '', role_id: null as number | null, is_active: true })
 const form = reactive(emptyForm())
 
 const columns = computed(() => [
@@ -305,14 +320,21 @@ function openCreate() {
 
 function openEdit(row) {
   editTarget.value = row
-  Object.assign(form, { name: row.name, email: row.email, password: '', role_id: row.role_id, is_active: row.is_active })
+  Object.assign(form, {
+    name: row.name,
+    email: row.email,
+    phone: row.phone ?? '',
+    password: '',
+    role_id: row.role_id,
+    is_active: row.is_active,
+  })
   showModal.value = true
 }
 
 async function submit() {
   if (!form.name.trim() || !form.email.trim()) return
   saving.value = true
-  const payload = { ...form }
+  const payload = { ...form, phone: form.phone.trim() || null }
   if (editTarget.value && !payload.password) delete payload.password
   try {
     if (editTarget.value) {

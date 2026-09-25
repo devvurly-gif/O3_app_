@@ -234,6 +234,7 @@ export default {
     salesList: 'Liste',
     newCustomerOrder: 'Nouveau BC',
     newDeliveryNote: 'Nouveau BL',
+    orderMessaging: 'Messagerie commandes',
     newSalesInvoice: 'Nouvelle facture de vente',
     newCreditNote: 'Nouvelle facture de retour',
     // ── Section Achats du menu ──

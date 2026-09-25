@@ -70,5 +70,6 @@ class Kernel extends HttpKernel
         'feature'    => \App\Http\Middleware\CheckTenantFeature::class,
         'tenant.active' => \App\Http\Middleware\EnsureTenantActive::class,
         'ecom.key'   => \App\Http\Middleware\EcomApiKey::class,
+        'twilio.signature' => \App\Http\Middleware\VerifyTwilioSignature::class,
     ];
 }

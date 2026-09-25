@@ -21,13 +21,22 @@ class WhatsAppOrderImportRequest extends FormRequest
 
     public function rules(): array
     {
+        return array_merge(['dry_run' => ['sometimes', 'boolean']], self::payloadRules());
+    }
+
+    /**
+     * Règles de forme du contenu d'une commande, partagées avec la messagerie
+     * (InboundOrderService), qui construit le même payload sans passer par HTTP.
+     */
+    public static function payloadRules(): array
+    {
         return [
-            'dry_run'              => ['sometimes', 'boolean'],
             'external_id'          => ['required', 'string', 'max:40', 'regex:/^[A-Za-z0-9\-_]+$/'],
             'source_text'          => ['nullable', 'string', 'max:4000'],
 
             'customer'              => ['required', 'array'],
             'customer.phone'        => ['nullable', 'string', 'max:50'],
+            'customer.code'         => ['nullable', 'string', 'max:50'],
             'customer.name'         => ['nullable', 'string', 'max:255'],
 
             'lines'                => ['required', 'array', 'min:1', 'max:100'],
@@ -43,8 +52,8 @@ class WhatsAppOrderImportRequest extends FormRequest
     {
         $validator->after(function (Validator $v) {
             $c = $this->input('customer', []);
-            if (empty($c['phone']) && empty($c['name'])) {
-                $v->errors()->add('customer', 'Au moins un identifiant client est requis (phone ou name).');
+            if (empty($c['phone']) && empty($c['code']) && empty($c['name'])) {
+                $v->errors()->add('customer', 'Au moins un identifiant client est requis (phone, code ou name).');
             }
         });
     }

@@ -38,6 +38,10 @@ class SettingController extends Controller
         // de vente au moment de fermer la caisse, un client a la fois.
         'pos'      => ['facture_cloture'],
         'whatsapp' => ['twilio_sid', 'twilio_auth_token', 'twilio_whatsapp_from', 'whatsapp_enabled', 'enabled'],
+        // Messagerie commandes (App\Services\Messaging) : réception WhatsApp/SMS/chat
+        // boutique, numéro SMS expéditeur, lecture par IA en secours.
+        // anthropic_api_key est chiffrée en base et jamais renvoyée (voir SECRET_SETTINGS).
+        'messaging' => ['inbound_enabled', 'sms_from', 'ai_enabled', 'anthropic_api_key', 'ai_model'],
         'ecommerce' => ['promo_banner', 'promo_banner_enabled', 'primary_color', 'default_theme', 'delivery_threshold', 'address', 'location', 'phone', 'email', 'instagram_url', 'facebook_url', 'whatsapp_number', 'shop_tagline'],
         'email'    => ['mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_encryption', 'mail_from_address', 'mail_from_name', 'mail_enabled'],
         'mail'     => ['enabled'],
@@ -54,6 +58,15 @@ class SettingController extends Controller
         ],
     ];
 
+    /**
+     * Secrets écrits chiffrés et jamais renvoyés au navigateur : la lecture
+     * n'expose que « <clé>_set » ; une valeur vide à l'enregistrement conserve
+     * le secret existant (le formulaire ne le connaît pas).
+     */
+    private const SECRET_SETTINGS = [
+        'messaging' => ['anthropic_api_key'],
+    ];
+
     public function __construct(private SettingRepositoryInterface $settings)
     {
     }
@@ -61,6 +74,18 @@ class SettingController extends Controller
     public function index(Request $request): JsonResponse
     {
         $data = $this->settings->allByDomain($request->domain);
+
+        foreach (self::SECRET_SETTINGS as $domain => $keys) {
+            if (!$data->has($domain)) {
+                continue;
+            }
+            $values = $data->get($domain);
+            foreach ($keys as $key) {
+                $values->put("{$key}_set", filled($values->get($key)) ? 'true' : 'false');
+                $values->forget($key);
+            }
+        }
+
         $data['tenant_id'] = tenant('id');
 
         return response()->json($data);
@@ -86,7 +111,15 @@ class SettingController extends Controller
             ], 422);
         }
 
+        $secrets = self::SECRET_SETTINGS[$data['domain']] ?? [];
+
         foreach ($data['settings'] as $key => $value) {
+            if (in_array($key, $secrets, true)) {
+                if (blank($value)) {
+                    continue; // champ laissé vide : on garde le secret déjà enregistré
+                }
+                $value = encrypt(trim($value));
+            }
             $this->settings->upsert($data["domain"], $key, $value ?? "");
         }
 

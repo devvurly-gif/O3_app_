@@ -393,6 +393,13 @@ Route::middleware(['auth:sanctum', 'tenant.active'])->group(function () {
                 ->where('externalId', '[A-Za-z0-9\-_]+')
                 ->name('api.ventes.whatsapp-import.show');
         });
+
+        // ── Messagerie commandes — chat équipe (BL brouillon depuis un texte libre) ──
+        Route::middleware(['permission:documents.create', 'throttle:60,1'])->prefix('messagerie')->group(function () {
+            Route::post('commandes',     [\App\Http\Controllers\Api\Messaging\OrderMessagingController::class, 'send'])->name('api.messagerie.send');
+            Route::get('conversations',  [\App\Http\Controllers\Api\Messaging\OrderMessagingController::class, 'conversations'])->name('api.messagerie.conversations');
+            Route::get('fil',            [\App\Http\Controllers\Api\Messaging\OrderMessagingController::class, 'thread'])->name('api.messagerie.thread');
+        });
     });
 
     // ── Stock write (admin, manager, warehouse) ───────────────────────────
@@ -587,6 +594,13 @@ Route::prefix('ecom')->middleware(['ecom.key', 'throttle:60,1', 'tenant.active']
     Route::post('orders',            [EcomOrderController::class, 'store']);
     Route::get('customers/lookup',   [EcomOrderController::class, 'lookupCustomer']);
 });
+
+// ── Messagerie commandes : WhatsApp / SMS reçus sur un numéro Twilio ──────
+// Pas de jeton possible côté Twilio : l'authenticité repose sur la signature
+// X-Twilio-Signature (VerifyTwilioSignature). Le BL créé reste un brouillon.
+Route::post('webhooks/twilio/inbound', \App\Http\Controllers\Api\Messaging\TwilioInboundController::class)
+    ->middleware(['twilio.signature', 'throttle:120,1', 'tenant.active'])
+    ->name('api.webhooks.twilio.inbound');
 
 // ── Formule et capacités du tenant ────────────────────────────────────────
 // Étaient publiques : n'importe qui pouvait lire la formule d'un client en
