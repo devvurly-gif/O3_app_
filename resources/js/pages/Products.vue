@@ -581,7 +581,7 @@
           />
         </div>
         <!-- Tab: Fournisseurs -->
-        <div v-if="currentTab === 5" class="space-y-3 py-2">
+        <div v-if="currentTab === 5" class="space-y-3 py-2" :style="{ minHeight: tabMinHeight }">
           <ProductSuppliersTab
             v-model:link-adding="linkAdding"
             :has-product="!!editTarget"
