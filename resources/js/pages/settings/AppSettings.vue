@@ -506,13 +506,110 @@
             </div>
             <div>
               <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 uppercase tracking-wide">
-                WhatsApp (Twilio)
+                WhatsApp / SMS
               </h3>
               <p class="text-xs text-gray-400 dark:text-gray-500">{{ $t('appSettings.whatsappDesc') }}</p>
             </div>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label
+              for="appsettings-whatsapp-provider"
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >
+              Fournisseur
+            </label>
+            <select id="appsettings-whatsapp-provider" v-model="whatsapp.provider" :class="inputClass + ' sm:max-w-xs'">
+              <option value="twilio">Twilio</option>
+              <option value="infobip">Infobip</option>
+            </select>
+            <p class="text-xs text-gray-400 mt-1">
+              Utilisé pour tous les envois WhatsApp et SMS d'O3 (notifications, messagerie commandes, codes de
+              vérification). Les réglages de l'autre fournisseur sont conservés.
+            </p>
+          </div>
+
+          <!-- Infobip -->
+          <div v-if="whatsapp.provider === 'infobip'" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label
+                for="appsettings-infobip-base-url"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
+                Adresse d'API Infobip
+              </label>
+              <input
+                id="appsettings-infobip-base-url"
+                v-model="whatsapp.infobip_base_url"
+                type="text"
+                placeholder="xxxxx.api.infobip.com"
+                :class="inputClass + ' font-mono text-xs'"
+              />
+              <p class="text-xs text-gray-400 mt-1">
+                Affichée sur la page d'accueil du portail Infobip (« API Base URL »).
+              </p>
+            </div>
+            <div>
+              <label
+                for="appsettings-infobip-api-key"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
+                Clé API Infobip
+              </label>
+              <input
+                id="appsettings-infobip-api-key"
+                v-model="whatsapp.infobip_api_key"
+                type="password"
+                autocomplete="off"
+                :placeholder="
+                  whatsapp.infobip_api_key_set === 'true' ? 'Clé enregistrée — laisser vide pour la garder' : 'Clé API'
+                "
+                :class="inputClass + ' font-mono text-xs'"
+              />
+              <p
+                class="text-xs mt-1"
+                :class="whatsapp.infobip_api_key_set === 'true' ? 'text-green-600' : 'text-gray-400'"
+              >
+                {{ whatsapp.infobip_api_key_set === 'true' ? 'Clé enregistrée (chiffrée)' : 'Aucune clé enregistrée' }}
+              </p>
+            </div>
+            <div>
+              <label
+                for="appsettings-infobip-whatsapp-from"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
+                Numéro WhatsApp expéditeur
+              </label>
+              <input
+                id="appsettings-infobip-whatsapp-from"
+                v-model="whatsapp.infobip_whatsapp_from"
+                type="text"
+                placeholder="212…"
+                :class="inputClass"
+              />
+              <p class="text-xs text-gray-400 mt-1">
+                Expéditeur SMS : onglet Messagerie. Compte d'essai Infobip : envois limités au numéro vérifié.
+              </p>
+            </div>
+            <div class="flex items-end">
+              <div class="flex items-center gap-2">
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input
+                    v-model="whatsapp.whatsapp_enabled"
+                    type="checkbox"
+                    true-value="true"
+                    false-value="false"
+                    class="sr-only peer"
+                  />
+                  <div :class="toggleClass"></div>
+                </label>
+                <span class="text-sm text-gray-700 dark:text-gray-300">{{ $t('appSettings.enableWhatsapp') }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Twilio -->
+          <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label
                 for="appsettings-whatsapp-twilio-sid"
@@ -601,7 +698,7 @@
             >
               {{ testingWhatsapp ? $t('appSettings.testing') : $t('appSettings.testWhatsapp') }}
             </button>
-            <button :class="btnClass" :disabled="saving.whatsapp" @click="saveSection('whatsapp', whatsapp)">
+            <button :class="btnClass" :disabled="saving.whatsapp" @click="saveWhatsapp">
               {{ saving.whatsapp ? $t('common.saving') : $t('appSettings.saveWhatsapp') }}
             </button>
           </div>
@@ -639,26 +736,49 @@
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label for="appsettings-messaging-sms-from" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Numéro Twilio pour les SMS
+              <label
+                for="appsettings-messaging-sms-from"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
+                Expéditeur SMS
               </label>
               <input
                 id="appsettings-messaging-sms-from"
                 v-model="messaging.sms_from"
                 type="text"
-                placeholder="+212…"
+                :placeholder="whatsapp.provider === 'infobip' ? 'Numéro ou nom d\'expéditeur Infobip' : '+212…'"
                 :class="inputClass"
               />
-              <p class="text-xs text-gray-400 mt-1">Numéro Twilio capable d'envoyer et recevoir des SMS.</p>
+              <p class="text-xs text-gray-400 mt-1">
+                {{
+                  whatsapp.provider === 'infobip'
+                    ? "Numéro Infobip ou nom d'expéditeur autorisé par Infobip."
+                    : "Numéro Twilio capable d'envoyer et recevoir des SMS."
+                }}
+              </p>
             </div>
             <div>
               <span class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Adresse de réception (à coller dans Twilio)
+                Adresse de réception (à coller dans {{ whatsapp.provider === 'infobip' ? 'Infobip' : 'Twilio' }})
               </span>
-              <code class="block px-3 py-2.5 rounded-lg bg-gray-100 dark:bg-gray-900 text-xs break-all text-gray-700 dark:text-gray-300">
+              <code
+                v-if="webhookUrl"
+                class="block px-3 py-2.5 rounded-lg bg-gray-100 dark:bg-gray-900 text-xs break-all text-gray-700 dark:text-gray-300"
+              >
                 {{ webhookUrl }}
               </code>
-              <p class="text-xs text-gray-400 mt-1">
+              <p v-if="whatsapp.provider === 'infobip'" class="text-xs text-gray-400 mt-1">
+                Numéro SMS : « Forward to HTTP », format MO_JSON_2. WhatsApp : adresse des messages entrants de
+                l'expéditeur. Cette adresse contient un secret : ne la partagez pas.
+                <button
+                  type="button"
+                  class="text-orange-700 dark:text-orange-400 hover:underline"
+                  @click="generateInfobipSecret"
+                >
+                  {{ webhookUrl ? 'Générer une nouvelle adresse' : 'Générer une adresse secrète' }}
+                </button>
+              </p>
+              <p v-else class="text-xs text-gray-400 mt-1">
                 Dans Twilio, champ « A message comes in » (méthode POST) des numéros WhatsApp et SMS.
               </p>
             </div>
@@ -686,7 +806,10 @@
             </p>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label for="appsettings-messaging-api-key" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label
+                  for="appsettings-messaging-api-key"
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >
                   Clé API Anthropic
                 </label>
                 <input
@@ -694,7 +817,11 @@
                   v-model="messaging.anthropic_api_key"
                   type="password"
                   autocomplete="off"
-                  :placeholder="messaging.anthropic_api_key_set === 'true' ? 'Clé enregistrée — laisser vide pour la garder' : 'sk-ant-…'"
+                  :placeholder="
+                    messaging.anthropic_api_key_set === 'true'
+                      ? 'Clé enregistrée — laisser vide pour la garder'
+                      : 'sk-ant-…'
+                  "
                   :class="inputClass + ' font-mono text-xs'"
                 />
                 <div class="flex items-center gap-3 mt-1">
@@ -702,7 +829,11 @@
                     class="text-xs"
                     :class="messaging.anthropic_api_key_set === 'true' ? 'text-green-600' : 'text-gray-400'"
                   >
-                    {{ messaging.anthropic_api_key_set === 'true' ? 'Clé enregistrée (chiffrée)' : 'Aucune clé enregistrée' }}
+                    {{
+                      messaging.anthropic_api_key_set === 'true'
+                        ? 'Clé enregistrée (chiffrée)'
+                        : 'Aucune clé enregistrée'
+                    }}
                   </span>
                   <button
                     v-if="messaging.anthropic_api_key_set === 'true'"
@@ -714,7 +845,10 @@
                 </div>
               </div>
               <div>
-                <label for="appsettings-messaging-ai-model" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label
+                  for="appsettings-messaging-ai-model"
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >
                   Modèle
                 </label>
                 <select id="appsettings-messaging-ai-model" v-model="messaging.ai_model" :class="inputClass">
@@ -1663,7 +1797,7 @@ const tabs = computed(() => [
   { id: 'info', label: t('appSettings.tabInfo') },
   { id: 'taxes', label: t('appSettings.tabTaxes') },
   { id: 'stock', label: t('appSettings.tabStock') },
-  { id: 'whatsapp', label: 'WhatsApp' },
+  { id: 'whatsapp', label: 'WhatsApp / SMS' },
   { id: 'messaging', label: 'Messagerie' },
   { id: 'email', label: 'Email' },
   { id: 'display', label: t('appSettings.tabDisplay') },
@@ -1708,6 +1842,14 @@ const whatsapp = reactive({
   twilio_auth_token: '',
   twilio_whatsapp_from: '',
   whatsapp_enabled: 'false',
+  // Fournisseur actif et réglages Infobip. infobip_api_key n'est jamais
+  // renvoyée par l'API (chiffrée) : seul infobip_api_key_set dit si elle existe.
+  provider: 'twilio',
+  infobip_base_url: '',
+  infobip_api_key: '',
+  infobip_api_key_set: 'false',
+  infobip_whatsapp_from: '',
+  infobip_webhook_secret: '',
 })
 // anthropic_api_key n'est jamais renvoyée par l'API (chiffrée côté serveur) :
 // seul anthropic_api_key_set indique si une clé existe. Champ vide à
@@ -1720,7 +1862,12 @@ const messaging = reactive({
   anthropic_api_key_set: 'false',
   ai_model: '',
 })
-const webhookUrl = `${window.location.origin}/api/webhooks/twilio/inbound`
+const webhookUrl = computed(() => {
+  if (whatsapp.provider !== 'infobip') return `${window.location.origin}/api/webhooks/twilio/inbound`
+  return whatsapp.infobip_webhook_secret
+    ? `${window.location.origin}/api/webhooks/infobip/inbound/${whatsapp.infobip_webhook_secret}`
+    : ''
+})
 const ecommerce = reactive({
   shop_tagline: '',
   promo_banner: '',
@@ -1824,6 +1971,50 @@ async function saveMessaging() {
     toast.value?.notify(t('common.failedSave'), 'error')
   } finally {
     saving.messaging = false
+  }
+}
+
+async function saveWhatsapp() {
+  const { infobip_api_key_set: _set, infobip_api_key: key, ...values } = whatsapp
+  const payload: Record<string, string> = { ...values }
+  if (key.trim()) payload.infobip_api_key = key.trim()
+
+  saving.whatsapp = true
+  try {
+    await store.save('whatsapp', payload)
+    // Ne jamais garder la clé API en clair côté navigateur après l'envoi.
+    const stored = store.settings.whatsapp as Record<string, string> | undefined
+    if (stored) {
+      delete stored.infobip_api_key
+      if (key.trim()) stored.infobip_api_key_set = 'true'
+    }
+    whatsapp.infobip_api_key = ''
+    if (key.trim()) whatsapp.infobip_api_key_set = 'true'
+    toast.value?.notify(t('appSettings.saved'), 'success')
+  } catch {
+    toast.value?.notify(t('common.failedSave'), 'error')
+  } finally {
+    saving.whatsapp = false
+  }
+}
+
+/** Secret de l'adresse de réception Infobip : 40 caractères aléatoires, générés dans le navigateur. */
+async function generateInfobipSecret() {
+  if (
+    whatsapp.infobip_webhook_secret &&
+    !confirm("L'adresse actuelle cessera de fonctionner : il faudra coller la nouvelle dans Infobip. Continuer ?")
+  ) {
+    return
+  }
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+  const bytes = crypto.getRandomValues(new Uint8Array(40))
+  const secret = Array.from(bytes, (b) => alphabet[b % alphabet.length]).join('')
+  try {
+    await store.save('whatsapp', { infobip_webhook_secret: secret })
+    whatsapp.infobip_webhook_secret = secret
+    toast.value?.notify('Adresse de réception Infobip générée.', 'success')
+  } catch {
+    toast.value?.notify(t('common.failedSave'), 'error')
   }
 }
 

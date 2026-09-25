@@ -37,7 +37,11 @@ class SettingController extends Controller
         // facture_cloture : recapitule les tickets d'une session en factures
         // de vente au moment de fermer la caisse, un client a la fois.
         'pos'      => ['facture_cloture'],
-        'whatsapp' => ['twilio_sid', 'twilio_auth_token', 'twilio_whatsapp_from', 'whatsapp_enabled', 'enabled'],
+        // provider : twilio (défaut) ou infobip — suivi par WhatsAppService et SmsService.
+        'whatsapp' => [
+            'twilio_sid', 'twilio_auth_token', 'twilio_whatsapp_from', 'whatsapp_enabled', 'enabled',
+            'provider', 'infobip_base_url', 'infobip_api_key', 'infobip_whatsapp_from', 'infobip_webhook_secret',
+        ],
         // Messagerie commandes (App\Services\Messaging) : réception WhatsApp/SMS/chat
         // boutique, numéro SMS expéditeur, lecture par IA en secours.
         // anthropic_api_key est chiffrée en base et jamais renvoyée (voir SECRET_SETTINGS).
@@ -65,6 +69,7 @@ class SettingController extends Controller
      */
     private const SECRET_SETTINGS = [
         'messaging' => ['anthropic_api_key'],
+        'whatsapp'  => ['infobip_api_key'],
     ];
 
     public function __construct(private SettingRepositoryInterface $settings)
@@ -202,7 +207,7 @@ class SettingController extends Controller
             'success' => $sent,
             'message' => $sent
                 ? "WhatsApp test sent to {$phone}"
-                : 'WhatsApp test failed. Check your Twilio credentials.',
+                : 'WhatsApp test failed. Check the credentials of the selected provider (Twilio or Infobip).',
         ], $sent ? 200 : 422);
     }
 

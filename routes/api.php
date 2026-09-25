@@ -614,6 +614,13 @@ Route::post('webhooks/twilio/inbound', \App\Http\Controllers\Api\Messaging\Twili
     ->middleware(['twilio.signature', 'throttle:120,1,twilio', 'tenant.active'])
     ->name('api.webhooks.twilio.inbound');
 
+// Même chose via Infobip (fournisseur au choix : whatsapp.provider). Infobip ne
+// signe pas ces renvois : l'adresse porte un secret propre au tenant.
+Route::post('webhooks/infobip/inbound/{secret}', \App\Http\Controllers\Api\Messaging\InfobipInboundController::class)
+    ->where('secret', '[A-Za-z0-9]{32,64}')
+    ->middleware(['throttle:120,1,infobip', 'tenant.active'])
+    ->name('api.webhooks.infobip.inbound');
+
 // ── Formule et capacités du tenant ────────────────────────────────────────
 // Étaient publiques : n'importe qui pouvait lire la formule d'un client en
 // appelant l'URL sans jeton.

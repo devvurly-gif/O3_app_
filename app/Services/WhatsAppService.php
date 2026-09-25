@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Setting;
+use App\Services\Messaging\InfobipClient;
 use App\Support\PhoneNumber;
 use Illuminate\Support\Facades\Log;
 use Twilio\Rest\Client;
@@ -37,10 +38,20 @@ class WhatsAppService
     }
 
     /**
-     * Send a WhatsApp message via Twilio.
+     * Send a WhatsApp message via the configured provider: Twilio (default)
+     * or Infobip (setting whatsapp.provider). Every caller — sale/payment
+     * notifications, order replies, verification codes — follows the setting.
      */
     public function send(string $to, string $message): bool
     {
+        if (Setting::get('whatsapp', 'provider', 'twilio') === 'infobip') {
+            if (Setting::get('whatsapp', 'whatsapp_enabled', 'true') === 'false') {
+                Log::info('WhatsApp: disabled in settings.');
+                return false;
+            }
+            return app(InfobipClient::class)->sendWhatsApp($to, $message);
+        }
+
         $client = $this->getClient();
         if (!$client) return false;
 
