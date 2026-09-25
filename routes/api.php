@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ProductImageController;
 use App\Http\Controllers\Api\ProductVideoController;
 use App\Http\Controllers\Api\ProductDocumentController;
+use App\Http\Controllers\Api\ProductSupplierController;
 use App\Http\Controllers\Api\PackageInfoController;
 use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\SubscriptionController;
@@ -146,6 +147,7 @@ Route::middleware(['auth:sanctum', 'tenant.active'])->group(function () {
     Route::get('products/{product}/images',          [ProductImageController::class, 'index']);
     Route::get('products/{product}/videos',          [ProductVideoController::class, 'index']);
     Route::get('products/{product}/documents',       [ProductDocumentController::class, 'index']);
+    Route::get('products/{product}/suppliers',       [ProductSupplierController::class, 'index']);
     Route::get('third-partners',                     [ThirdPartnerController::class, 'index']);
     Route::get('third-partners/{thirdPartner}',      [ThirdPartnerController::class, 'show']);
     Route::get('warehouses',                         [WarehouseController::class, 'index']);
@@ -255,6 +257,10 @@ Route::middleware(['auth:sanctum', 'tenant.active'])->group(function () {
 
         Route::post('products/{product}/documents',                  [ProductDocumentController::class, 'store']);
         Route::delete('products/{product}/documents/{document}',     [ProductDocumentController::class, 'destroy']);
+
+        Route::post('products/{product}/suppliers',                  [ProductSupplierController::class, 'store']);
+        Route::put('products/{product}/suppliers/{supplier}',        [ProductSupplierController::class, 'update']);
+        Route::delete('products/{product}/suppliers/{supplier}',     [ProductSupplierController::class, 'destroy']);
 
         Route::post('storage/products/upload',                       [StorageGalleryController::class, 'upload']);
         Route::post('storage/products/assign',                       [StorageGalleryController::class, 'assign']);

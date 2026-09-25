@@ -580,8 +580,23 @@
             @delete-document="doDeleteDocument"
           />
         </div>
+        <!-- Tab: Fournisseurs -->
+        <div v-if="currentTab === 5" class="space-y-3 py-2">
+          <ProductSuppliersTab
+            v-model:link-adding="linkAdding"
+            :has-product="!!editTarget"
+            :suppliers="productSuppliers"
+            :supplier-options="supplierOptions"
+            :link-saving="linkSaving"
+            :link-deleting-id="linkDeletingId"
+            :new-link="newLink"
+            :is-supplier-already-linked="isSupplierAlreadyLinked"
+            @add="addSupplierLink"
+            @remove="removeSupplierLink"
+          />
+        </div>
         <!-- Tab: Variantes -->
-        <div v-if="currentTab === 5 && variantsEnabled" class="space-y-3 py-2">
+        <div v-if="currentTab === 6 && variantsEnabled" class="space-y-3 py-2">
           <ProductVariantsTab
             :variants="productVariants"
             @generate="applyGenerated"
@@ -653,6 +668,7 @@ import { useProductColumns } from '@/composables/useProductColumns'
 import { useProductList } from '@/composables/useProductList'
 import { useProductMedia } from '@/composables/useProductMedia'
 import { useProductPriceTiers } from '@/composables/useProductPriceTiers'
+import { useProductSuppliers } from '@/composables/useProductSuppliers'
 import { useProductVariants } from '@/composables/useProductVariants'
 import BaseTable from '@/components/BaseTable.vue'
 import BasePagination from '@/components/BasePagination.vue'
@@ -661,6 +677,7 @@ import BaseNotification from '@/components/BaseNotification.vue'
 import ProductInfoTab from '@/components/products/ProductInfoTab.vue'
 import ProductMediaTab from '@/components/products/ProductMediaTab.vue'
 import ProductPricingTab from '@/components/products/ProductPricingTab.vue'
+import ProductSuppliersTab from '@/components/products/ProductSuppliersTab.vue'
 import ProductStatsTab from '@/components/products/ProductStatsTab.vue'
 import ProductStockTab from '@/components/products/ProductStockTab.vue'
 import ProductVariantsTab from '@/components/products/ProductVariantsTab.vue'
@@ -800,6 +817,36 @@ const {
   notify: (message, level) => (toast.value as any)?.notify(message, level),
 })
 
+// Fournisseurs pouvant livrer le produit ouvert — priorite la plus basse en
+// premier, utilisee par achats:draft-daily-po cote O3.
+const {
+  items: productSuppliers,
+  adding: linkAdding,
+  saving: linkSaving,
+  deletingId: linkDeletingId,
+  newLink,
+  isSupplierAlreadyLinked,
+  add: addSupplierLink,
+  remove: removeSupplierLink,
+} = useProductSuppliers({
+  product: () => editTarget.value,
+  notify: (message, level) => (toast.value as any)?.notify(message, level),
+})
+
+// Tiers fournisseur/both pour le select de l'onglet Fournisseurs — charge
+// une fois, pas a chaque ouverture de fiche produit (liste tenant-wide).
+const supplierOptions = ref<any[]>([])
+async function loadSupplierOptions() {
+  if (supplierOptions.value.length) return
+  try {
+    const { data } = await http.get('/third-partners', { params: { per_page: 500 } })
+    const rows = Array.isArray(data) ? data : data.data ?? []
+    supplierOptions.value = rows.filter((p: any) => p.tp_Role === 'supplier' || p.tp_Role === 'both')
+  } catch (e) {
+    console.error('Failed to load supplier options', e)
+  }
+}
+
 // Declinaisons du produit, inertes tant que le module n'est pas actif.
 const {
   variants: productVariants,
@@ -826,6 +873,7 @@ const tabs = computed(() => [
   { label: t('products.tabStock') ?? 'Stock' },
   { label: t('products.tabStatistics') ?? 'Statistics' },
   { label: t('products.tabGallery') ?? 'Media' },
+  { label: 'Fournisseurs' },
   ...(variantsEnabled.value ? [{ label: 'Variantes' }] : []),
 ])
 
@@ -938,12 +986,14 @@ async function openEdit(row) {
   // relation graph (warehouseStocks.warehouse, priceListItems, etc.)
   // that the paginated list endpoint does not eager-load.
   try {
-    const [productRes, statsRes, stockRes, pricesRes] = await Promise.allSettled([
+    const [productRes, statsRes, stockRes, pricesRes, suppliersRes] = await Promise.allSettled([
       http.get(`/products/${row.id}`),
       http.get(`/products/${row.id}/statistics`),
       http.get(`/products/${row.id}/stock-history`, { params: { per_page: 20 } }),
       http.get(`/products/${row.id}/price-lists`),
+      http.get(`/products/${row.id}/suppliers`),
     ])
+    loadSupplierOptions() // tenant-wide, met en cache après le premier chargement
 
     if (productRes.status === 'fulfilled' && productRes.value.data) {
       // Merge: preserve list-level computed fields (e.g. total_stock) if the
@@ -960,6 +1010,10 @@ async function openEdit(row) {
     if (pricesRes.status === 'fulfilled') {
       const data = pricesRes.value.data
       priceListItems.value = Array.isArray(data) ? data : data.data ?? []
+    }
+    if (suppliersRes.status === 'fulfilled') {
+      const data = suppliersRes.value.data
+      productSuppliers.value = Array.isArray(data) ? data : data.data ?? []
     }
   } catch (e) {
     console.error('Error loading product details:', e)
