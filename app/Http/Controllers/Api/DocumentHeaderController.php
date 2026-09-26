@@ -158,6 +158,15 @@ class DocumentHeaderController extends Controller
             $this->stockService->cancelDocumentMovements($documentHeader);
         }
 
+        // A draft BL reserves stock through 'pending' movements built from its
+        // lines. The lines were just replaced: rebuild the reservation, or the
+        // old quantities stay reserved (and get applied at confirmation).
+        $fresh = $documentHeader->fresh();
+        if ($linesData !== null && $fresh->document_type === 'DeliveryNote' && $fresh->status === 'draft'
+            && $fresh->stockMouvements()->where('status', 'pending')->exists()) {
+            $this->stockService->resyncPending($fresh);
+        }
+
         CacheService::flushDocuments();
 
         return response()->json(

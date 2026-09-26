@@ -5,12 +5,14 @@ namespace App\Services\Ventes;
 use App\Models\DocumentHeader;
 use App\Models\DocumentIncrementor;
 use App\Models\Product;
+use App\Models\Setting;
 use App\Models\ThirdPartner;
 use App\Models\Warehouse;
 use App\Models\WhatsAppOrderImport;
 use App\Services\DocumentHeaderService;
 use App\Services\PriceResolver;
 use App\Services\StockMouvementService;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -97,23 +99,165 @@ class WhatsAppOrderImportService
                 $this->respond('rejected', $payload, $dryRun, ['preview' => $preview]));
         }
         if ($dryRun) {
+            // Indique le BL du jour qui recevrait cette commande (un BL par client et par jour).
+            if ($target = $this->findTodayDraft($customer)) {
+                $preview['target_document'] = ['id' => $target->id, 'reference' => $target->reference];
+            }
             return $this->respond('valid', $payload, $dryRun, ['preview' => $preview]);
         }
 
         // Écriture : brouillon uniquement, stock en pending — la confirmation
         // (déduction réelle du stock) reste un geste manuel dans O3.
-        $document = DB::transaction(function () use ($payload, $customer, $warehouse, $incrementor, $lines, $computed, $userId) {
-            return $this->createDeliveryNote($payload, $customer, $warehouse, $incrementor, $lines, $computed, $userId);
+        // Un BL par client et par jour : s'il existe déjà un BL brouillon du
+        // jour issu de la messagerie, la commande s'y ajoute.
+        [$document, $appended] = DB::transaction(function () use ($payload, $customer, $warehouse, $incrementor, $lines, $computed, $userId) {
+            if ($target = $this->findTodayDraft($customer, lock: true)) {
+                $this->appendToDeliveryNote($target, $payload, $lines, $customer);
+                return [$target->fresh(), true];
+            }
+            return [$this->createDeliveryNote($payload, $customer, $warehouse, $incrementor, $lines, $computed, $userId), false];
         });
 
         return $this->log($userId, $payload, $hash, false, $this->respond('created', $payload, false, [
             'preview'  => $preview,
-            'document' => [
-                'id'        => $document->id,
-                'reference' => $document->reference,
-                'url'       => url("/ventes/documents/{$document->id}"),
-            ],
+            'document' => $this->documentSummary($document, $appended),
         ]), $document);
+    }
+
+    // ───────────────────────────── Un BL par client et par jour ─────────────────────────────
+
+    /**
+     * BL brouillon du jour de ce client, créé par la messagerie ou l'agent de
+     * facturation client (présent dans whatsapp_order_imports) — jamais un BL
+     * saisi à la main dans O3. « Aujourd'hui » s'entend dans le fuseau du
+     * tenant (réglage locale.timezone), l'application stockant en UTC.
+     */
+    private function findTodayDraft(ThirdPartner $customer, bool $lock = false): ?DocumentHeader
+    {
+        $tz = Setting::get('locale', 'timezone') ?: config('app.timezone');
+        try {
+            $start = Carbon::now($tz)->startOfDay();
+        } catch (\Throwable) {
+            $start = Carbon::now()->startOfDay();
+        }
+        $from = $start->copy()->setTimezone(config('app.timezone'));
+        $to = $start->copy()->addDay()->setTimezone(config('app.timezone'));
+
+        $query = DocumentHeader::query()
+            ->where('document_type', self::DOC_TYPE)
+            ->where('status', 'draft')
+            ->where('thirdPartner_id', $customer->id)
+            ->where('created_at', '>=', $from)
+            ->where('created_at', '<', $to)
+            ->whereIn('id', WhatsAppOrderImport::query()->where('status', 'created')->whereNotNull('document_id')->select('document_id'))
+            ->latest('id');
+
+        if ($lock) {
+            $query->lockForUpdate();
+        }
+
+        return $query->first();
+    }
+
+    /**
+     * Ajoute les lignes au BL du jour : un produit déjà présent voit sa
+     * quantité augmenter (prix recalculé pour la nouvelle quantité, sauf s'il
+     * a été modifié à la main), sinon nouvelle ligne. Pied recalculé depuis
+     * toutes les lignes, paiements déjà saisis conservés, réservation de
+     * stock reconstruite.
+     */
+    private function appendToDeliveryNote(DocumentHeader $document, array $p, array $lines, ThirdPartner $customer): void
+    {
+        $document->load('lignes', 'footer');
+        $sort = (int) $document->lignes->max('sort_order');
+
+        foreach ($lines as $l) {
+            $existing = $l['product_id']
+                ? $document->lignes->first(fn ($x) => (int) $x->product_id === (int) $l['product_id'])
+                : null;
+
+            if ($existing) {
+                $oldQty = (float) $existing->quantity;
+                $newQty = $oldQty + (float) $l['qty'];
+                $untouched = abs((float) $existing->unit_price - $this->unitPriceFor($l['product_id'], $customer, $oldQty)) < 0.005;
+                $existing->quantity = $newQty;
+                if ($untouched) {
+                    $existing->unit_price = $this->unitPriceFor($l['product_id'], $customer, $newQty);
+                }
+                $existing->save();
+                continue;
+            }
+
+            $document->lignes()->create([
+                'product_id'       => $l['product_id'],
+                'designation'      => $l['designation'],
+                'reference'        => $l['sku'],
+                'quantity'         => $l['qty'],
+                'unit'             => $l['unit'] ?? 'pièce',
+                'unit_price'       => $l['unit_price_ht'],
+                'discount_percent' => 0,
+                'tax_percent'      => $l['vat_rate'],
+                'sort_order'       => ++$sort,
+            ]);
+        }
+
+        $document->load('lignes');
+        $ht = round((float) $document->lignes->sum('total_ligne_ht'), 2);
+        $tva = round((float) $document->lignes->sum('total_tax'), 2);
+        $gross = round((float) $document->lignes->sum(fn ($x) => (float) $x->quantity * (float) $x->unit_price), 2);
+        $totals = [
+            'total_ht'       => $ht,
+            'total_discount' => max(0, round($gross - $ht, 2)),
+            'total_tax'      => $tva,
+            'total_ttc'      => round($ht + $tva, 2),
+        ];
+        $footer = $document->footer
+            ? tap($document->footer)->update($totals)
+            : $document->footer()->create($totals + ['amount_paid' => 0, 'amount_due' => $totals['total_ttc']]);
+        $footer->recalculateAmountDue();
+
+        $tz = Setting::get('locale', 'timezone') ?: config('app.timezone');
+        $when = Carbon::now($tz)->format('d/m H:i');
+        $document->update(['notes' => trim(($document->notes ?? '') . sprintf(
+            "\n---\nAjout du %s (%s) :\n%s\n[Import API %s]",
+            $when,
+            $this->origin,
+            trim($p['notes'] ?? ($p['source_text'] ?? '')),
+            $p['external_id']
+        ))]);
+
+        $this->stockService->resyncPending($document);
+    }
+
+    private function unitPriceFor(int $productId, ThirdPartner $customer, float $qty): float
+    {
+        $product = Product::find($productId);
+        if (!$product) {
+            return 0.0;
+        }
+        return (float) $this->priceResolver->resolve(product: $product, customer: $customer, quantity: (int) $qty, channel: 'all')['price_ht'];
+    }
+
+    /** Contenu complet du BL (toutes ses lignes) : sert au récapitulatif envoyé au client. */
+    private function documentSummary(DocumentHeader $document, bool $appended): array
+    {
+        $document->loadMissing('lignes', 'footer');
+        return [
+            'id'        => $document->id,
+            'reference' => $document->reference,
+            'url'       => url("/ventes/documents/{$document->id}"),
+            'appended'  => $appended,
+            'lines'     => $document->lignes->sortBy('sort_order')->values()->map(fn ($x) => [
+                'designation' => $x->designation,
+                'sku'         => $x->reference,
+                'qty'         => (float) $x->quantity,
+            ])->all(),
+            'totals'    => [
+                'ht'  => (float) ($document->footer->total_ht ?? 0),
+                'tva' => (float) ($document->footer->total_tax ?? 0),
+                'ttc' => (float) ($document->footer->total_ttc ?? 0),
+            ],
+        ];
     }
 
     // ───────────────────────────── 1. Client ─────────────────────────────

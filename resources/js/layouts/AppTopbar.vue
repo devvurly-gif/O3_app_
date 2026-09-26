@@ -334,7 +334,9 @@ function notifTitle(data) {
     case 'stock_movement':
       return `Stock bas: ${data.product_name} (${data.new_stock_level} restant)`
     case 'message_order':
-      return `BL brouillon ${data.reference} reçu par ${data.channel_label} — ${data.customer ?? ''}`
+      return data.appended
+        ? `Commande ajoutée au BL ${data.reference} (${data.channel_label}) — ${data.customer ?? ''}`
+        : `BL brouillon ${data.reference} reçu par ${data.channel_label} — ${data.customer ?? ''}`
     default:
       return 'Notification'
   }

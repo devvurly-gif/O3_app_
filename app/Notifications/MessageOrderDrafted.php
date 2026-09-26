@@ -21,9 +21,11 @@ class MessageOrderDrafted extends Notification implements ShouldQueue
     public int $tries = 3;
     public int $backoff = 60;
 
+    /** @param bool $appended commande ajoutée au BL brouillon du jour (un BL par client et par jour) */
     public function __construct(
         private DocumentHeader $document,
         private string $channel,
+        private bool $appended = false,
     ) {}
 
     public function via(object $notifiable): array
@@ -36,7 +38,7 @@ class MessageOrderDrafted extends Notification implements ShouldQueue
         $partner = $this->document->thirdPartner?->tp_title ?? '—';
 
         return (new WebPushMessage)
-            ->title('BL brouillon reçu par ' . $this->channelLabel())
+            ->title(($this->appended ? 'Commande ajoutée au BL du jour, reçue par ' : 'BL brouillon reçu par ') . $this->channelLabel())
             ->body("{$partner} · {$this->document->reference}")
             ->icon('/favicon.ico')
             ->data(['url' => $this->webPushUrl('/ventes/documents/' . $this->document->id)]);
@@ -51,6 +53,7 @@ class MessageOrderDrafted extends Notification implements ShouldQueue
             'document_id' => $this->document->id,
             'reference'   => $this->document->reference,
             'customer'    => $this->document->thirdPartner?->tp_title,
+            'appended'    => $this->appended,
         ];
     }
 

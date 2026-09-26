@@ -274,6 +274,21 @@ class StockMouvementService
     }
 
     /**
+     * Recompute the pending reservation of a document from its CURRENT lines:
+     * pending rows are cancelled (no stock was touched by them) and recreated
+     * with pending: true. Applied movements are never touched.
+     *
+     * Needed whenever the lines of a draft change after its reservation was
+     * created — an edit in the UI, or an order appended by the messaging —
+     * otherwise confirming it would apply the old, stale reservation.
+     */
+    public function resyncPending(DocumentHeader $document): void
+    {
+        $this->mouvements->updateStatusForDocument($document->id, 'pending', 'cancelled');
+        $this->processDocument($document->fresh(), pending: true);
+    }
+
+    /**
      * Reverse all stock movements of a document (legacy — kept for compatibility).
      */
     public function reverseDocument(DocumentHeader $document): void

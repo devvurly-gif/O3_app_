@@ -14,11 +14,18 @@ class OrderReplyFormatter
 {
     public function created(array $result, string $customerName): string
     {
-        $out = ["{$this->shop()} - commande reçue.", "BL brouillon {$result['document']['reference']} ({$customerName}) :"];
-        foreach ($result['preview']['lines'] ?? [] as $l) {
-            $out[] = '- ' . $this->qty($l['qty']) . ' x ' . $l['designation'] . ($l['sku'] ? " ({$l['sku']})" : '');
+        $doc = $result['document'];
+        $out = !empty($doc['appended'])
+            ? ["{$this->shop()} - commande ajoutée à votre BL du jour.", "BL brouillon {$doc['reference']} ({$customerName}), contenu complet :"]
+            : ["{$this->shop()} - commande reçue.", "BL brouillon {$doc['reference']} ({$customerName}) :"];
+
+        // Contenu complet du BL (toutes les commandes du jour), à défaut les lignes de ce message.
+        $lines = $doc['lines'] ?? ($result['preview']['lines'] ?? []);
+        foreach ($lines as $l) {
+            $out[] = '- ' . $this->qty($l['qty']) . ' x ' . $l['designation'] . (!empty($l['sku']) ? " ({$l['sku']})" : '');
         }
-        $out[] = 'Total TTC estimé : ' . $this->money($result['preview']['totals']['ttc'] ?? 0) . ' MAD.';
+        $ttc = $doc['totals']['ttc'] ?? ($result['preview']['totals']['ttc'] ?? 0);
+        $out[] = 'Total TTC estimé : ' . $this->money($ttc) . ' MAD.';
         $out[] = 'Elle sera vérifiée puis confirmée par notre équipe.';
         return implode("\n", $out);
     }

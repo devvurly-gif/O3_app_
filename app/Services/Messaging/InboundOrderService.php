@@ -179,7 +179,7 @@ class InboundOrderService
 
         if ($result['status'] === 'created') {
             $reply = $this->replies->created($result, $customer->tp_title);
-            $this->notifyTeam($result['document']['id'], $channel);
+            $this->notifyTeam($result['document']['id'], $channel, !empty($result['document']['appended']));
             return $this->finish($inbound, 'created', $reply, $staff, $customer, $parsed->method, $result['document']);
         }
 
@@ -319,7 +319,7 @@ class InboundOrderService
             : $this->sms->send($phone, $text);
     }
 
-    private function notifyTeam(int $documentId, string $channel): void
+    private function notifyTeam(int $documentId, string $channel, bool $appended = false): void
     {
         try {
             $document = DocumentHeader::with('thirdPartner')->find($documentId);
@@ -329,7 +329,7 @@ class InboundOrderService
             User::whereHas('role', fn ($q) => $q->whereIn('name', ['admin', 'manager']))
                 ->where('is_active', true)
                 ->get()
-                ->each(fn (User $u) => $u->notify(new MessageOrderDrafted($document, $channel)));
+                ->each(fn (User $u) => $u->notify(new MessageOrderDrafted($document, $channel, $appended)));
         } catch (\Throwable $e) {
             Log::warning("Messagerie : notification équipe échouée pour le document {$documentId} : {$e->getMessage()}");
         }

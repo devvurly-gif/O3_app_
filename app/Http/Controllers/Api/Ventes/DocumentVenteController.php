@@ -170,12 +170,11 @@ class DocumentVenteController extends Controller
                 'movement_statuses' => $bl->stockMouvements()->pluck('status')->toArray(),
             ]);
 
-            if (!$hasPendingMovements && $bl->lignes->isNotEmpty()) {
-                \Illuminate\Support\Facades\Log::warning('★ NO PENDING MOVEMENTS - CREATING ★', [
-                    'bl_id' => $bl->id,
-                    'bl_ref' => $bl->reference,
-                ]);
-                $this->stockService->processDocument($bl, pending: true);
+            // Reservation rebuilt from the CURRENT lines: the draft may have been
+            // edited (or completed by the messaging) after its pending movements
+            // were created — applying those would deduct the old quantities.
+            if ($bl->lignes->isNotEmpty()) {
+                $this->stockService->resyncPending($bl);
             }
 
             // Apply the pending movements and update stock
@@ -278,13 +277,9 @@ class DocumentVenteController extends Controller
             DB::transaction(function () use ($bl) {
                 $bl->loadMissing('lignes');
 
-                // If no pending movements exist, create them (handles BLs created directly without BC)
-                $hasPendingMovements = $bl->stockMouvements()
-                    ->where('status', 'pending')
-                    ->exists();
-
-                if (!$hasPendingMovements && $bl->lignes->isNotEmpty()) {
-                    $this->stockService->processDocument($bl, pending: true);
+                // Reservation rebuilt from the current lines (see confirmer_bl).
+                if ($bl->lignes->isNotEmpty()) {
+                    $this->stockService->resyncPending($bl);
                 }
 
                 // Apply the pending movements and update stock
