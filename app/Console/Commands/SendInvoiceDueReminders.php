@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Console\Concerns\RunsForEachTenant;
 use App\Models\DocumentHeader;
 use App\Models\User;
 use App\Notifications\InvoiceDueReminder;
@@ -9,13 +10,25 @@ use Illuminate\Console\Command;
 
 class SendInvoiceDueReminders extends Command
 {
-    protected $signature = 'notify:due-invoices {--days=0 : Days past due date (0 = today)}';
+    use RunsForEachTenant;
+
+    protected $signature = 'notify:due-invoices
+        {--days=0 : Days past due date (0 = today)}
+        {--tenant= : Only remind this tenant (default: every tenant in good standing)}';
 
     protected $description = 'Send email reminders for overdue invoices';
 
     public function handle(): int
     {
-        $days = (int) $this->option('days');
+        return $this->runForEachTenant(
+            fn () => $this->remind((int) $this->option('days')),
+            writes: false,
+            only: $this->option('tenant'),
+        );
+    }
+
+    private function remind(int $days): int
+    {
         $cutoffDate = now()->subDays($days);
 
         $overdueDocuments = DocumentHeader::with(['thirdPartner', 'footer'])

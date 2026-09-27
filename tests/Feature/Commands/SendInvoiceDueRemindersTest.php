@@ -2,17 +2,31 @@
 
 namespace Tests\Feature\Commands;
 
+use App\Enums\TenantStatus;
 use App\Models\DocumentFooter;
 use App\Models\DocumentHeader;
+use App\Models\Tenant;
+use App\Models\ThirdPartner;
 use App\Models\User;
 use App\Notifications\InvoiceDueReminder;
+use Tests\Concerns\InteractsWithTenancy;
 use Tests\Concerns\RefreshTenantDatabase;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class SendInvoiceDueRemindersTest extends TestCase
 {
+    use InteractsWithTenancy;
     use RefreshTenantDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Le planificateur lance la commande depuis le contexte central : sans
+        // tenant enregistré, elle n'a plus personne à relancer.
+        $this->tenantsOnTheTestDatabase(['jadema' => []]);
+    }
 
     public function test_command_sends_reminders_for_overdue_invoices(): void
     {
@@ -112,5 +126,55 @@ class SendInvoiceDueRemindersTest extends TestCase
              ->assertSuccessful();
 
         Notification::assertNothingSent();
+    }
+
+    /**
+     * Régression : lancée depuis le contexte central par o3-scheduler, la
+     * commande cherchait les factures échues dans la base centrale et ne
+     * relançait jamais personne.
+     */
+    public function test_each_tenant_in_good_standing_is_reminded_of_its_own_invoices(): void
+    {
+        Notification::fake();
+
+        $this->tenantsOnTheTestDatabase([
+            'teliphoni' => ['status' => TenantStatus::Trial],
+            // Lecture seule : ses créances restent les siennes, la relance aussi.
+            'impaye'    => ['status' => TenantStatus::PastDue],
+            'suspendu'  => ['status' => TenantStatus::Suspended],
+            'coupe'     => ['is_active' => false],
+        ]);
+
+        $reminded = [];
+        $this->isolateEachTenantRun(
+            seed: function (Tenant $tenant) {
+                $admin = User::factory()->admin()->create(['email' => "admin@{$tenant->id}.test"]);
+
+                $doc = DocumentHeader::factory()->invoice()->confirmed()->create([
+                    'user_id'         => $admin->id,
+                    'thirdPartner_id' => ThirdPartner::factory()->create(['tp_title' => "Débiteur {$tenant->id}"])->id,
+                    'due_at'          => now()->subDays(3),
+                ]);
+                DocumentFooter::factory()->create([
+                    'document_header_id' => $doc->id,
+                    'amount_due'         => 500,
+                ]);
+            },
+            inspect: function (Tenant $tenant) use (&$reminded) {
+                $admin = User::where('email', "admin@{$tenant->id}.test")->firstOrFail();
+
+                $reminded[$tenant->id] = Notification::sent($admin, InvoiceDueReminder::class)
+                    ->map(fn (InvoiceDueReminder $reminder) => array_column($reminder->toArray($admin)['items'], 'partner'))
+                    ->all();
+            },
+        );
+
+        $this->artisan('notify:due-invoices', ['--days' => 0])->assertSuccessful();
+
+        $this->assertSame([
+            'impaye'    => [['Débiteur impaye']],
+            'jadema'    => [['Débiteur jadema']],
+            'teliphoni' => [['Débiteur teliphoni']],
+        ], $reminded);
     }
 }

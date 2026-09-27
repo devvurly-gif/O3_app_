@@ -2,11 +2,11 @@
 
 namespace App\Console\Commands;
 
+use App\Console\Concerns\RunsForEachTenant;
 use App\Models\DocumentIncrementor;
 use App\Models\DocumentLigne;
 use App\Models\Product;
 use App\Models\StockMouvement;
-use App\Models\Tenant;
 use App\Models\ThirdPartner;
 use App\Models\User;
 use App\Models\Warehouse;
@@ -33,13 +33,15 @@ use Illuminate\Console\Command;
  */
 class DraftDailyPurchaseOrders extends Command
 {
+    use RunsForEachTenant;
+
     private const DOC_TYPE = 'PurchaseOrder';
     private const SALE_REASONS = ['sale', 'sale_delivery', 'pos_sale'];
     private const NON_COUNTING_STATUSES = ['cancelled', 'draft', 'converted'];
     private const SERVICE_ACCOUNT_EMAIL = 'agent-ia.achats@jadema.o3app.local';
 
     protected $signature = 'achats:draft-daily-po
-        {tenant=jadema : ID du tenant}
+        {tenant? : ID du tenant ; omis, tous les tenants en règle dotés du compte de service}
         {--days=1 : nombre de jours de ventes à recommander (1 = la veille)}
         {--dry-run : calcule et affiche sans rien créer}';
 
@@ -52,20 +54,19 @@ class DraftDailyPurchaseOrders extends Command
 
     public function handle(): int
     {
-        $tenantId = $this->argument('tenant');
-        $tenant = Tenant::find($tenantId);
+        $only = $this->argument('tenant');
 
-        if (!$tenant) {
-            $this->error("Tenant '{$tenantId}' introuvable.");
-            return self::FAILURE;
-        }
+        return $this->runForEachTenant(function () use ($only) {
+            // En tournée, le compte de service tient lieu d'inscription : il
+            // n'existe que chez les tenants où `achats:agent-token` a été
+            // lancé. Les autres ne sont pas en échec, simplement pas concernés.
+            if ($only === null && !User::where('email', self::SERVICE_ACCOUNT_EMAIL)->exists()) {
+                $this->line('  Pas de compte de service « Agent IA — Achats » : tenant non concerné.');
+                return self::SUCCESS;
+            }
 
-        $exit = self::FAILURE;
-        $tenant->run(function () use (&$exit) {
-            $exit = $this->draft();
-        });
-
-        return $exit;
+            return $this->draft();
+        }, writes: true, only: $only);
     }
 
     private function draft(): int

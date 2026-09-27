@@ -12,6 +12,10 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
+        // Le planificateur tourne dans le contexte CENTRAL (o3-scheduler) :
+        // chaque commande travaillant sur des données client doit entrer
+        // elle-même dans chaque tenant (voir Console\Concerns\RunsForEachTenant),
+        // sans quoi elle lit la base centrale et ne fait rien.
         $schedule->command('achats:draft-daily-po')->dailyAt('07:30');
         $schedule->command('notify:low-stock --threshold=5')->dailyAt('08:00');
         $schedule->command('notify:due-invoices --days=0')->dailyAt('09:00');

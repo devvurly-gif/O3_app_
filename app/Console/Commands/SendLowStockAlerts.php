@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Console\Concerns\RunsForEachTenant;
 use App\Models\User;
 use App\Models\WarehouseHasStock;
 use App\Notifications\LowStockAlert;
@@ -9,14 +10,25 @@ use Illuminate\Console\Command;
 
 class SendLowStockAlerts extends Command
 {
-    protected $signature = 'notify:low-stock {--threshold=5 : Stock level threshold}';
+    use RunsForEachTenant;
+
+    protected $signature = 'notify:low-stock
+        {--threshold=5 : Stock level threshold}
+        {--tenant= : Only alert this tenant (default: every tenant in good standing)}';
 
     protected $description = 'Send email alerts for products with low stock levels';
 
     public function handle(): int
     {
-        $threshold = (float) $this->option('threshold');
+        return $this->runForEachTenant(
+            fn () => $this->sendAlerts((float) $this->option('threshold')),
+            writes: false,
+            only: $this->option('tenant'),
+        );
+    }
 
+    private function sendAlerts(float $threshold): int
+    {
         $lowItems = WarehouseHasStock::with(['product', 'warehouse'])
             ->where('stockLevel', '>', 0)
             ->where('stockLevel', '<=', $threshold)

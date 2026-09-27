@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Console\Concerns\RunsForEachTenant;
 use App\Models\DocumentHeader;
 use App\Models\Payment;
 use App\Models\ThirdPartner;
@@ -15,7 +16,10 @@ use Illuminate\Support\Facades\Log;
 
 class GeneratePeriodicInvoices extends Command
 {
+    use RunsForEachTenant;
+
     protected $signature = 'billing:generate-periodic-invoices
+        {--tenant= : Only bill this tenant (default: every tenant in good standing)}
         {--dry-run : List what would be billed without creating invoices}';
 
     protected $description = 'Generate grouped invoices for en_compte clients based on their billing frequency';
@@ -36,6 +40,21 @@ class GeneratePeriodicInvoices extends Command
 
         $this->info('Fréquences à facturer : ' . implode(', ', $frequencies));
 
+        return $this->runForEachTenant(
+            fn () => $this->bill($frequencies, $incrementors, $incrementorService),
+            writes: true,
+            only: $this->option('tenant'),
+        );
+    }
+
+    /**
+     * Facture les clients en_compte du tenant courant.
+     */
+    private function bill(
+        array $frequencies,
+        DocumentIncrementorRepositoryInterface $incrementors,
+        DocumentIncrementorService $incrementorService,
+    ): int {
         $partners = ThirdPartner::where('type_compte', 'en_compte')
             ->whereIn('frequence_facturation', $frequencies)
             ->get();
