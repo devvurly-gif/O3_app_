@@ -95,11 +95,15 @@ class IssueAchatsAgentToken extends Command
             $this->warn('Ancien(s) jeton(s) révoqué(s).');
         }
 
-        $token = $user->createToken(self::TOKEN_NAME, [self::ABILITY])->plainTextToken;
+        // Durée de vie propre (1 an) : sans elle, le jeton expirerait au bout de
+        // 12 h comme une session (voir AppServiceProvider). À réémettre avec --fresh.
+        $expiresAt = now()->addYear();
+        $token = $user->createToken(self::TOKEN_NAME, [self::ABILITY], $expiresAt)->plainTextToken;
 
         $this->newLine();
         $this->line("<fg=black;bg=yellow> JETON (ne sera plus jamais affiché) </>");
         $this->line($token);
+        $this->line('Valable jusqu\'au ' . $expiresAt->format('d/m/Y') . ' (réémettre avec --fresh avant cette date).');
         $this->newLine();
         $this->info('Copiez-le maintenant dans "factures fournisseurs\importer\.o3token" (une seule ligne) '
             . 'ou dans la variable d\'environnement O3_API_TOKEN. Ce jeton est propre à l\'agent achats : '

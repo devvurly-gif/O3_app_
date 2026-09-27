@@ -8,6 +8,7 @@ use App\Models\Payment;
 use App\Models\ProductImage;
 use App\Models\ProductDocument;
 use App\Models\Tenant;
+use App\Models\User;
 use App\Observers\DocumentAchatObserver;
 use App\Observers\DocumentHeaderObserver;
 use App\Observers\DocumentNotificationObserver;
@@ -20,6 +21,7 @@ use App\Observers\TenantObserver;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Sanctum\Sanctum;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -44,5 +46,23 @@ class AppServiceProvider extends ServiceProvider
         ProductDocument::observe(ProductDocumentObserver::class);
         DatabaseNotification::observe(NotificationObserver::class);
         Tenant::observe(TenantObserver::class);
+
+        // Tous les jetons Sanctum expirent 12 h après leur création
+        // (config sanctum.expiration) : c'est voulu pour les sessions des
+        // utilisateurs, mais un jeton de service (agents IA, émis par
+        // achats:agent-token / ventes:agent-token) serait alors inutilisable le
+        // lendemain. Un tel jeton porte sa propre date de fin (expires_at) : il
+        // vaut jusqu'à cette date. Jamais pour un jeton à pleins droits (« * ») :
+        // une session ne peut pas s'offrir une durée de vie plus longue.
+        Sanctum::authenticateAccessTokensUsing(function ($token, bool $isValid): bool {
+            if ($isValid) {
+                return true;
+            }
+
+            return $token->expires_at !== null
+                && ! $token->expires_at->isPast()
+                && ! in_array('*', $token->abilities ?? [], true)
+                && $token->tokenable instanceof User;
+        });
     }
 }
