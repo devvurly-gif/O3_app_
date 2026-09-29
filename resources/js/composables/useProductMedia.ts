@@ -47,9 +47,12 @@ export function useProductMedia(options: ProductMediaOptions) {
 
   // ── Images ────────────────────────────────────────────────────────────────
   async function handleImageUpload(e: any): Promise<void> {
-    const files = e.target.files
+    // Copie avant de vider le champ : e.target.files est une FileList vivante,
+    // que la remise a zero de l input vide aussi — la boucle d envoi tournait
+    // alors sur zero fichier, sans erreur.
+    const files: File[] = Array.from(e.target.files ?? [])
     const id = productId()
-    if (!files || !id) return
+    if (!files.length || !id) return
     e.target.value = '' // reset input
 
     uploadingImage.value = true
@@ -140,9 +143,12 @@ export function useProductMedia(options: ProductMediaOptions) {
 
   // ── Documents ─────────────────────────────────────────────────────────────
   async function handleDocumentUpload(e: any): Promise<void> {
-    const files = e.target.files
+    // Copie avant de vider le champ : e.target.files est une FileList vivante,
+    // que la remise a zero de l input vide aussi — la boucle d envoi tournait
+    // alors sur zero fichier, sans erreur.
+    const files: File[] = Array.from(e.target.files ?? [])
     const id = productId()
-    if (!files || !id) return
+    if (!files.length || !id) return
     e.target.value = ''
 
     uploadingDocument.value = true
