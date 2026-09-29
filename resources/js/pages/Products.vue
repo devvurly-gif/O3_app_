@@ -514,13 +514,16 @@
         </div>
 
         <!-- Tab: Info -->
-        <div v-if="currentTab === 0" ref="infoTabRef" class="space-y-3 py-2">
+        <div v-if="currentTab === 0" ref="infoTabRef" class="space-y-2.5 py-1">
           <ProductInfoTab
             :categories="categories"
             :brands="brands"
             :ecom-enabled="ecomEnabled"
             :imei-enabled="imeiEnabled"
+            :primary-image="primaryEditImage"
+            :has-product="!!editTarget"
             @slug-from-title="generateSlugFromTitle"
+            @open-media="currentTab = 4"
           />
         </div>
 
@@ -866,6 +869,9 @@ const warehouseStocksList = computed(() => {
   if (!t) return []
   return t.warehouse_stocks ?? t.warehouseStocks ?? []
 })
+
+/** L'image affichee en tete de l'onglet Infos : la principale, sinon la premiere. */
+const primaryEditImage = computed(() => editImages.value.find((img: any) => img.isPrimary) ?? editImages.value[0] ?? null)
 
 const tabs = computed(() => [
   { label: t('products.tabInfo') ?? 'Info' },
