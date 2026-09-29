@@ -72,10 +72,14 @@ class CustomerChatAuth
         ]);
 
         $text = "Votre code de commande : {$code} (valable " . self::CODE_TTL_MINUTES . " min). Ne le communiquez à personne.";
-        // SMS d'abord : un WhatsApp envoyé hors fenêtre de 24 h exige un modèle approuvé.
-        if (!Setting::get('messaging', 'sms_from') || !$this->sms->send($normalized, $text)) {
-            $this->whatsapp->send($normalized, $text);
+        // SMS et WhatsApp à la fois : le fournisseur accepte l'envoi puis peut le
+        // rejeter quelques secondes plus tard (crédit épuisé, route indisponible,
+        // WhatsApp hors fenêtre de 24 h) sans que O3 le sache. Le même code part
+        // sur les deux canaux, le client utilise celui qu'il reçoit.
+        if (Setting::get('messaging', 'sms_from')) {
+            $this->sms->send($normalized, $text);
         }
+        $this->whatsapp->send($normalized, $text);
     }
 
     /** @return array{token: string, customer: ThirdPartner}|null */

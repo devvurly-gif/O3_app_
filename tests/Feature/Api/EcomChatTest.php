@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Models\Setting;
 use App\Models\ThirdPartner;
 use App\Models\Warehouse;
+use App\Services\SmsService;
 use App\Services\WhatsAppService;
 use Illuminate\Support\Facades\Notification;
 use Tests\Concerns\RefreshTenantDatabase;
@@ -88,6 +89,27 @@ class EcomChatTest extends TestCase
             $this->postJson('/api/ecom/chat/verify', ['phone' => '0612345678', 'code' => $bad], $this->headers)->assertStatus(422);
         }
         $this->postJson('/api/ecom/chat/verify', ['phone' => '0612345678', 'code' => $good], $this->headers)->assertStatus(422);
+    }
+
+    public function test_code_goes_out_by_sms_and_whatsapp_even_when_the_sms_is_accepted(): void
+    {
+        // Un SMS accepté par le fournisseur peut être rejeté juste après : WhatsApp part quand même.
+        Setting::set('messaging', 'sms_from', 'JADEMA');
+        $sms = [];
+        $this->app->instance(SmsService::class, new class($sms) extends SmsService {
+            public function __construct(private array &$sms) {}
+            public function send(string $to, string $message): bool
+            {
+                $this->sms[] = [$to, $message];
+                return true;
+            }
+        });
+
+        $this->postJson('/api/ecom/chat/code', ['phone' => '0612345678'], $this->headers)->assertOk();
+
+        $this->assertCount(1, $sms);
+        $this->assertCount(1, $this->sent);
+        $this->assertSame($sms[0], end($this->sent));
     }
 
     public function test_messages_require_a_valid_session(): void
