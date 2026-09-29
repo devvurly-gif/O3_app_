@@ -24,6 +24,7 @@
           <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase">Date</th>
           <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase">Type</th>
           <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase text-right">Total TTC</th>
+          <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase text-right">Payé</th>
           <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase text-right">Reste dû</th>
           <th class="py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase text-center">Statut</th>
         </tr>
@@ -49,6 +50,9 @@
           <td class="py-2.5 px-3 text-right font-mono font-medium">
             {{ formatNumber(inv.footer?.total_ttc ?? 0) }} <span class="text-gray-400 dark:text-gray-500 text-xs">DH</span>
           </td>
+          <td class="py-2.5 px-3 text-right font-mono font-medium text-emerald-600">
+            {{ formatNumber(inv.footer?.amount_paid ?? 0) }} <span class="text-gray-400 dark:text-gray-500 text-xs">DH</span>
+          </td>
           <td
             class="py-2.5 px-3 text-right font-mono font-medium"
             :class="(inv.footer?.amount_due ?? 0) > 0 ? 'text-red-600' : 'text-emerald-600'"
@@ -73,11 +77,14 @@
               v-if="documents.length !== countableDocuments.length"
               class="text-xs font-normal text-gray-400 dark:text-gray-500 ml-1"
             >
-              (sur {{ documents.length }} — devis et annulés exclus)
+              (sur {{ documents.length }} — convertis, annulés et brouillons exclus)
             </span>
           </td>
           <td class="py-2.5 px-3 text-right font-mono">
             {{ formatNumber(totalTtc) }} <span class="text-gray-400 dark:text-gray-500 text-xs">DH</span>
+          </td>
+          <td class="py-2.5 px-3 text-right font-mono text-emerald-600">
+            {{ formatNumber(totalPaid) }} <span class="text-gray-400 dark:text-gray-500 text-xs">DH</span>
           </td>
           <td class="py-2.5 px-3 text-right font-mono" :class="totalDue > 0 ? 'text-red-600' : 'text-emerald-600'">
             {{ formatNumber(totalDue) }} <span class="text-gray-400 dark:text-gray-500 text-xs">DH</span>
@@ -116,6 +123,7 @@ withDefaults(
     documents: any[]
     countableDocuments: any[]
     totalTtc: number
+    totalPaid: number
     totalDue: number
     /** Ce document est-il deja porte par un autre ? Il est alors grise. */
     isBilled?: (doc: any) => boolean

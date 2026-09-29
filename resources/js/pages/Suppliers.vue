@@ -459,6 +459,7 @@
             :documents="supplierDocuments"
             :countable-documents="countableSupplierDocuments"
             :total-ttc="totalDocsTTC"
+            :total-paid="totalDocsPaid"
             :total-due="totalDocsDue"
             :is-billed="isBilledReceipt"
             billed-title="Bon déjà facturé : son montant est porté par la facture, et ne compte pas une seconde fois."
@@ -684,6 +685,7 @@
             :documents="showDocuments"
             :countable-documents="countableShowDocuments"
             :total-ttc="showTotalTTC"
+            :total-paid="showTotalPaid"
             :total-due="showTotalDue"
             :is-billed="isBilledReceipt"
             billed-title="Bon déjà facturé : son montant est porté par la facture, et ne compte pas une seconde fois."
@@ -862,32 +864,37 @@ const availableTabs = computed<TabDef[]>(() => {
 })
 
 // ── Compte fournisseur ───────────────────────────────────────────────────
+/** Les documents qui viennent en deduction : retours et avoirs fournisseur. */
+const PURCHASE_DEDUCTIBLE_TYPES = ['ReturnPurchase', 'CreditNotePurchase']
+
 /**
- * Un document qui pese sur la dette fournisseur.
+ * Un document qui compte dans le total de l'onglet Documents, quel que soit
+ * son type (BC, bon de reception, facture). Hors du total : les brouillons,
+ * les annules, et tout document deja converti — un BC devenu bon de
+ * reception, un bon deja porte par une facture (`isBilledReceipt`). Sans ce
+ * dernier filtre, un bon et sa facture compteraient deux fois : 103 455 de
+ * bons plus 103 455 de facture groupee affichaient 206 910.
  *
- * Seule la facture d'achat compte, jamais le bon de reception : recevoir la
- * marchandise ne cree pas la dette, c'est la facture qui la cree. Compter les
- * deux doublait le total des que les bons etaient factures — 103 455 de bons
- * plus 103 455 de facture groupee affichaient 206 910 dus a un fournisseur qui
- * n'en reclamait que 103 455.
- *
- * C'est la regle qu'applique deja ThirdPartner::recalculateEncours() : l'ecran
- * doit montrer le meme perimetre que le chiffre qu'il place a cote.
+ * L'encours du fournisseur (ThirdPartner::recalculateEncours(), onglet
+ * Credit) reste calcule sur les seules factures.
  */
 function isCountablePurchase(doc: any): boolean {
   return (
-    doc.document_type === 'InvoicePurchase' &&
+    !PURCHASE_DEDUCTIBLE_TYPES.includes(doc.document_type) &&
     doc.status !== 'cancelled' &&
-    doc.status !== 'draft'
+    doc.status !== 'draft' &&
+    doc.status !== 'converted' &&
+    !isBilledReceipt(doc)
   )
 }
 
-/** Un retour fournisseur vient en deduction, comme dans le calcul d'encours. */
+/** Un retour ou un avoir fournisseur vient en deduction. */
 function isCountableReturn(doc: any): boolean {
   return (
-    doc.document_type === 'ReturnPurchase' &&
+    PURCHASE_DEDUCTIBLE_TYPES.includes(doc.document_type) &&
     doc.status !== 'cancelled' &&
-    doc.status !== 'draft'
+    doc.status !== 'draft' &&
+    doc.status !== 'converted'
   )
 }
 
@@ -909,6 +916,7 @@ const {
   countableDocuments: countableSupplierDocuments,
   totalTtc: totalDocsTTC,
   totalDue: totalDocsDue,
+  totalPaid: totalDocsPaid,
   totalPayments: totalPaymentsAmount,
   unpaidCount: unpaidDocs,
   paymentRate,
@@ -941,6 +949,7 @@ const {
   countableDocuments: countableShowDocuments,
   totalTtc: showTotalTTC,
   totalDue: showTotalDue,
+  totalPaid: showTotalPaid,
   totalPayments: showTotalPayments,
   unpaidCount: showUnpaidCount,
   paymentRate: showPaymentRate,

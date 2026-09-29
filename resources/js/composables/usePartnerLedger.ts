@@ -28,6 +28,10 @@ function amountDueOf(docs: any[]): number {
   return docs.reduce((sum, doc) => sum + Number(doc.footer?.amount_due ?? 0), 0)
 }
 
+function amountPaidOf(docs: any[]): number {
+  return docs.reduce((sum, doc) => sum + Number(doc.footer?.amount_paid ?? 0), 0)
+}
+
 /**
  * @param detail  la fiche renvoyee par `/third-partners/{id}`, ou null tant
  *                qu'elle n'est pas chargee.
@@ -66,6 +70,8 @@ export function usePartnerLedger(detail: MaybeRefOrGetter<any>, options: Partner
 
   const totalDue = computed(() => amountDueOf(countableDocuments.value) - amountDueOf(deductibleDocuments.value))
 
+  const totalPaid = computed(() => amountPaidOf(countableDocuments.value) - amountPaidOf(deductibleDocuments.value))
+
   const totalPayments = computed(() => payments.value.reduce((sum, p) => sum + Number(p.amount ?? 0), 0))
 
   /**
@@ -83,6 +89,7 @@ export function usePartnerLedger(detail: MaybeRefOrGetter<any>, options: Partner
     deductibleDocuments,
     totalTtc,
     totalDue,
+    totalPaid,
     totalPayments,
     unpaidCount,
     paymentRate,

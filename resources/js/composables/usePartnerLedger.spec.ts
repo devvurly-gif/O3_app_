@@ -86,6 +86,22 @@ describe('usePartnerLedger', () => {
     expect(totalDue.value).toBe(300) // 400 + 0 − 100
   })
 
+  it('cumule le paye sur le meme perimetre, retours deduits', () => {
+    const paid = (d: any, amount_paid: number | string) => ({ ...d, footer: { ...d.footer, amount_paid } })
+    const detail = ref({
+      document_headers: [
+        paid(doc(1, 'InvoicePurchase', 'confirmed', '2026-01-10', 1000, 400), 600),
+        paid(doc(2, 'InvoicePurchase', 'paid', '2026-03-02', 2500, 0), '2500'),
+        paid(doc(3, 'ReturnPurchase', 'confirmed', '2026-02-20', 300, 100), 200),
+        paid(doc(5, 'InvoicePurchase', 'cancelled', '2026-04-01', 999, 0), 999),
+        doc(7, 'InvoicePurchase', 'confirmed', '2026-04-10', 50, 50),
+      ],
+    })
+    const { totalTtc, totalPaid, totalDue } = usePartnerLedger(detail, purchaseScope)
+    expect(totalPaid.value).toBe(2900) // 600 + 2500 + 0 − 200
+    expect(totalPaid.value + totalDue.value).toBe(totalTtc.value)
+  })
+
   it('compte les impayes sans filtre de perimetre', () => {
     // Indicateur de suivi : un bon de reception non solde y figure, alors
     // qu'il ne pese pas sur la dette.
