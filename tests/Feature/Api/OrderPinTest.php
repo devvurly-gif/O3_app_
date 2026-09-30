@@ -89,6 +89,17 @@ class OrderPinTest extends TestCase
         $this->assertStringNotContainsString("PIN {$this->pin}", (string) DocumentHeader::first()->notes);
     }
 
+    public function test_a_pin_sent_alone_does_not_authorise_the_next_message(): void
+    {
+        $alone = $this->order("PIN {$this->pin}", 'wa-1');
+        $this->assertSame('rejected', $alone['status']);
+        $this->assertStringContainsString('même message', $alone['reply']);
+
+        $next = $this->order('2 perceuse 18V', 'wa-2');
+        $this->assertStringContainsString('PIN manquant', $next['reply']);
+        $this->assertSame(0, DocumentHeader::count());
+    }
+
     public function test_five_wrong_pins_lock_the_channel_until_a_new_pin_is_generated(): void
     {
         for ($i = 1; $i <= 4; $i++) {

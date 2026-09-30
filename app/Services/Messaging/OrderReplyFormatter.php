@@ -125,6 +125,12 @@ class OrderReplyFormatter
         };
     }
 
+    public function pinWithoutOrder(): string
+    {
+        return "{$this->shop()} - PIN correct, mais aucune commande dans ce message.\n"
+            . "Envoyez le PIN et la commande dans le même message, par exemple :\nPIN 1234\n2 perceuse 18V";
+    }
+
     private function shop(): string
     {
         return Setting::get('company', 'name') ?: (Setting::get('general', 'company_name') ?: 'O3');

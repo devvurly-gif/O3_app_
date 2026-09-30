@@ -134,6 +134,12 @@ class InboundOrderService
                 $reply = $this->replies->pinProblem($state, $this->pins->remainingAttempts($customer));
                 return $this->finish($inbound, 'rejected', $reply, null, $customer, meta: ['reason' => "pin_{$state}"]);
             }
+
+            // PIN envoyé seul : il ne vaut que pour le message qui le porte,
+            // jamais pour les suivants. On le dit clairement au client.
+            if (trim($body) === '') {
+                return $this->finish($inbound, 'rejected', $this->replies->pinWithoutOrder(), null, $customer, meta: ['reason' => 'pin_without_order']);
+            }
         }
 
         // 3. Lecture : règles, puis IA en secours si elles ne comprennent pas tout.
