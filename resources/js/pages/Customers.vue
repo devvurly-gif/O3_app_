@@ -308,6 +308,35 @@
               />
               <label for="cust-status" class="text-sm text-gray-700 dark:text-gray-300">{{ $t('common.active') }}</label>
             </div>
+            <!-- PIN des commandes par WhatsApp / SMS -->
+            <template v-if="editTarget">
+              <hr class="border-gray-100 dark:border-gray-700" />
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    PIN des commandes WhatsApp / SMS
+                    <span
+                      class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                      :class="{
+                        'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300': pinState === 'active',
+                        'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300': pinState === 'locked',
+                        'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300': pinState === 'none',
+                      }"
+                      >{{ pinStateBadge }}</span
+                    >
+                  </p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ pinStateHelp }}</p>
+                </div>
+                <button
+                  type="button"
+                  class="px-3.5 py-2 text-sm font-medium rounded-lg border border-[#7C5CFC] text-[#6D4CE0] hover:bg-[#F1ECFC] dark:hover:bg-gray-700 transition disabled:opacity-60"
+                  :disabled="pinBusy"
+                  @click="askNewPin"
+                >
+                  {{ pinState === 'none' ? 'Générer un PIN' : 'Générer un nouveau PIN' }}
+                </button>
+              </div>
+            </template>
           </form>
         </div>
 
@@ -935,6 +964,52 @@
       </template>
     </BaseModal>
 
+    <!-- PIN de commande : montre une seule fois -->
+    <BaseModal v-model="showPinReveal" title="PIN des commandes WhatsApp / SMS" size="sm">
+      <p class="text-sm text-gray-600 dark:text-gray-400">
+        À remettre à <span class="font-semibold">{{ pinReveal?.name }}</span>. Il ne sera plus affiché : notez-le maintenant.
+      </p>
+      <p class="my-5 text-center font-mono text-4xl font-bold tracking-[0.4em] text-[#6D4CE0] dark:text-[#B9A5FF]">
+        {{ pinReveal?.pin }}
+      </p>
+      <p class="text-xs text-gray-500 dark:text-gray-400">
+        Pour commander par WhatsApp ou SMS, le client commence son message par
+        <span class="font-mono font-semibold">PIN {{ pinReveal?.pin }}</span>, puis écrit un article par ligne.
+        Après 5 PIN incorrects, ses commandes par message sont bloquées jusqu'à un nouveau PIN.
+      </p>
+      <template #footer>
+        <button
+          class="px-4 py-2 text-sm font-semibold bg-[#7C5CFC] hover:bg-[#6D4CE0] text-white rounded-lg transition"
+          @click="showPinReveal = false"
+        >
+          J'ai noté le PIN
+        </button>
+      </template>
+    </BaseModal>
+
+    <!-- Remplacer un PIN actif -->
+    <BaseModal v-model="showPinConfirm" title="Générer un nouveau PIN ?" size="sm">
+      <p class="text-sm text-gray-600 dark:text-gray-400">
+        L'ancien PIN de <span class="font-semibold">{{ editTarget?.tp_title }}</span> cessera aussitôt de fonctionner.
+        Il faudra lui communiquer le nouveau.
+      </p>
+      <template #footer>
+        <button
+          class="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition"
+          @click="showPinConfirm = false"
+        >
+          {{ $t('common.cancel') }}
+        </button>
+        <button
+          class="px-4 py-2 text-sm font-semibold bg-[#7C5CFC] hover:bg-[#6D4CE0] text-white rounded-lg transition disabled:opacity-60"
+          :disabled="pinBusy"
+          @click="regeneratePin"
+        >
+          Générer
+        </button>
+      </template>
+    </BaseModal>
+
     <BaseNotification ref="toast" />
   </div>
 </template>
@@ -1123,7 +1198,61 @@ const {
     // Factures et reglements arrivent en arriere-plan.
     if (row) loadCustomerDetail(row.id)
   },
+  onCreated: (row) => {
+    if (row.order_pin) revealPin(row.tp_title, row.order_pin)
+  },
 })
+
+// ── PIN des commandes par WhatsApp / SMS ─────────────────────────────────
+// Le serveur ne rend le PIN en clair qu'a la creation de la fiche ou a sa
+// regeneration ; il n'est garde ici que le temps de la fenetre qui l'affiche.
+const showPinReveal = ref(false)
+const pinReveal = ref<{ name: string; pin: string } | null>(null)
+const showPinConfirm = ref(false)
+const pinBusy = ref(false)
+
+const pinState = computed<'none' | 'active' | 'locked'>(() => editTarget.value?.order_pin_state ?? 'none')
+const pinStateBadge = computed(() => ({ active: 'Actif', locked: 'Bloqué', none: 'Aucun' })[pinState.value])
+const pinStateHelp = computed(
+  () =>
+    ({
+      active: 'Le client le donne en tête de chaque commande envoyée par message.',
+      locked: 'Bloqué après 5 PIN incorrects : générez un nouveau PIN pour débloquer.',
+      none: 'Sans PIN, les commandes de ce client par WhatsApp ou SMS sont refusées.',
+    })[pinState.value],
+)
+
+watch(showPinReveal, (open) => {
+  if (!open) pinReveal.value = null
+})
+
+function revealPin(name: string, pin: string): void {
+  pinReveal.value = { name, pin }
+  showPinReveal.value = true
+}
+
+function askNewPin(): void {
+  if (pinState.value === 'active') showPinConfirm.value = true
+  else regeneratePin()
+}
+
+async function regeneratePin(): Promise<void> {
+  const target = editTarget.value
+  if (!target) return
+  pinBusy.value = true
+  try {
+    const { data } = await http.post(`/third-partners/${target.id}/order-pin`)
+    target.order_pin_state = 'active'
+    const row = store.items.find((p: any) => p.id === target.id)
+    if (row) row.order_pin_state = 'active'
+    showPinConfirm.value = false
+    revealPin(target.tp_title, data.order_pin)
+  } catch (err: any) {
+    ;(toast.value as any)?.notify(err?.response?.data?.message ?? 'Impossible de générer le PIN.', 'error')
+  } finally {
+    pinBusy.value = false
+  }
+}
 
 // ── WebSocket listener for encours updates ───────────────────────────────
 let currentPartnerChannel: any = null

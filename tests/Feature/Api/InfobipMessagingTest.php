@@ -10,6 +10,7 @@ use App\Models\Setting;
 use App\Models\ThirdPartner;
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Services\Messaging\OrderPin;
 use App\Services\SmsService;
 use App\Services\WhatsAppService;
 use Illuminate\Http\Client\Request as HttpRequest;
@@ -26,6 +27,7 @@ class InfobipMessagingTest extends TestCase
     private const SECRET = 'AbCdEfGhIjKlMnOpQrStUvWxYz0123456789abcd';
 
     private ThirdPartner $customer;
+    private string $pin;
 
     protected function setUp(): void
     {
@@ -43,6 +45,7 @@ class InfobipMessagingTest extends TestCase
         Setting::set('messaging', 'inbound_enabled', 'true');
 
         $this->customer = ThirdPartner::factory()->customer()->create(['tp_title' => 'Client test', 'tp_phone' => '0620696967']);
+        $this->pin = app(OrderPin::class)->generate($this->customer);
         Warehouse::factory()->create(['wh_status' => true]);
         DocumentIncrementor::factory()->forDeliveryNote()->create();
         Product::factory()->create(['p_title' => 'Marteau de coffreur', 'p_sku' => 'MRT01', 'p_code' => 'MRT01', 'p_description' => 'Marteau', 'p_ean13' => null]);
@@ -81,7 +84,7 @@ class InfobipMessagingTest extends TestCase
         $this->postJson('/api/webhooks/infobip/inbound/' . self::SECRET, [
             'results' => [[
                 'messageId' => '2491729790183409612', 'from' => '212620696967', 'to' => '212500000000',
-                'text' => '2 marteau', 'cleanText' => '', 'keyword' => '2', 'receivedAt' => '2026-09-25T11:43:00.603+0000',
+                'text' => "PIN {$this->pin}\n2 marteau", 'cleanText' => '', 'keyword' => '2', 'receivedAt' => '2026-09-25T11:43:00.603+0000',
             ]],
             'messageCount' => 1, 'pendingMessageCount' => 0,
         ])->assertOk()->assertJsonPath('received', 1);
@@ -98,7 +101,7 @@ class InfobipMessagingTest extends TestCase
         $url = '/api/webhooks/infobip/inbound/' . self::SECRET;
         $base = ['from' => '212620696967', 'to' => '212500000000', 'integrationType' => 'WHATSAPP', 'receivedAt' => '2026-09-25T11:43:00.603+0000'];
 
-        $this->postJson($url, ['results' => [$base + ['messageId' => 'wa-1', 'message' => ['type' => 'TEXT', 'text' => '1 marteau']]]])->assertOk();
+        $this->postJson($url, ['results' => [$base + ['messageId' => 'wa-1', 'message' => ['type' => 'TEXT', 'text' => "PIN {$this->pin}\n1 marteau"]]]])->assertOk();
         $this->assertSame(1, DocumentHeader::count());
 
         // Photo : rien n'est créé, on demande le texte.
@@ -108,7 +111,7 @@ class InfobipMessagingTest extends TestCase
             && str_contains($r['content']['text'], 'en texte'));
 
         // Même messageId rejoué par Infobip : ignoré.
-        $this->postJson($url, ['results' => [$base + ['messageId' => 'wa-1', 'message' => ['type' => 'TEXT', 'text' => '1 marteau']]]])->assertOk();
+        $this->postJson($url, ['results' => [$base + ['messageId' => 'wa-1', 'message' => ['type' => 'TEXT', 'text' => "PIN {$this->pin}\n1 marteau"]]]])->assertOk();
         $this->assertSame(1, DocumentHeader::count());
     }
 

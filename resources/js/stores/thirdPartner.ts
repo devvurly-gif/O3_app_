@@ -7,8 +7,10 @@ export const useThirdPartnerStore = defineStore('thirdPartner', () => {
   const { items, meta, loading, error, params, fetchPage, goToPage } = usePaginatedApi<ThirdPartner>('/third-partners')
 
   async function create(payload: Partial<ThirdPartner>): Promise<ThirdPartner> {
-    const { data } = await http.post<ThirdPartner>('/third-partners', payload)
-    items.value.unshift(data)
+    const { data } = await http.post<ThirdPartner & { order_pin?: string }>('/third-partners', payload)
+    // Le PIN de commande en clair n'est montre qu'une fois : il ne reste pas dans la liste.
+    const { order_pin: _pin, ...row } = data
+    items.value.unshift(row)
     return data
   }
 

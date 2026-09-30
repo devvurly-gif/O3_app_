@@ -95,6 +95,11 @@ export interface ThirdPartnerFormOptions<T> {
    * remet ses onglets a zero et va chercher le detail de la fiche.
    */
   onOpen?: (row: any | null) => void
+  /**
+   * Fiche tout juste creee, telle que renvoyee par le serveur. Un client y
+   * porte son PIN de commande en clair, montre cette seule fois.
+   */
+  onCreated?: (row: any) => void
 }
 
 /**
@@ -150,8 +155,9 @@ export function useThirdPartnerForm<T extends Record<string, any>>(options: Thir
         await store.update(editTarget.value.id, payload)
         options.notify(t(`${options.scope}.updated`), 'success')
       } else {
-        await store.create(payload)
+        const created = await store.create(payload)
         options.notify(t(`${options.scope}.created`), 'success')
+        options.onCreated?.(created)
       }
       showModal.value = false
     } catch (err: unknown) {

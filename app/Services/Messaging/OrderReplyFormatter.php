@@ -110,6 +110,21 @@ class OrderReplyFormatter
         return "{$this->shop()} - merci d'envoyer votre commande en texte (les photos et messages vocaux ne sont pas lus automatiquement).";
     }
 
+    /** @param string $state missing | wrong | locked | none (voir OrderPin::check) */
+    public function pinProblem(string $state, int $remaining = 0): string
+    {
+        $example = "Commencez votre message par votre PIN, par exemple :\nPIN 1234\n2 perceuse 18V";
+
+        return match ($state) {
+            'missing' => "{$this->shop()} - commande non enregistrée : PIN manquant.\n{$example}",
+            'wrong'   => "{$this->shop()} - commande non enregistrée : PIN incorrect. "
+                . ($remaining === 1 ? 'Dernier essai' : "Encore {$remaining} essais")
+                . " avant blocage des commandes par message.",
+            'locked'  => "{$this->shop()} - commandes par message bloquées après plusieurs PIN incorrects. Contactez-nous pour obtenir un nouveau PIN.",
+            default   => "{$this->shop()} - votre compte n'a pas encore de PIN de commande. Contactez-nous pour l'obtenir.",
+        };
+    }
+
     private function shop(): string
     {
         return Setting::get('company', 'name') ?: (Setting::get('general', 'company_name') ?: 'O3');

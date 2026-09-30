@@ -232,6 +232,9 @@ export interface ThirdPartner extends BaseModel {
   frequence_facturation: FrequenceFacturation | null
   price_list_id?: number | null
   price_list?: PriceList | null
+  /** PIN des commandes par WhatsApp/SMS : none, active, ou locked apres 5 erreurs. */
+  order_pin_state?: 'none' | 'active' | 'locked'
+  order_pin_set_at?: string | null
 }
 
 // ── Warehouse ─────────────────────────────────────────────────────────────

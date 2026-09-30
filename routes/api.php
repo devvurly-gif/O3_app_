@@ -269,6 +269,8 @@ Route::middleware(['auth:sanctum', 'tenant.active'])->group(function () {
         Route::put('third-partners/{thirdPartner}',       [ThirdPartnerController::class, 'update']);
         Route::patch('third-partners/{thirdPartner}',     [ThirdPartnerController::class, 'update']);
         Route::delete('third-partners/{thirdPartner}',    [ThirdPartnerController::class, 'destroy']);
+        Route::post('third-partners/{thirdPartner}/order-pin', [ThirdPartnerController::class, 'regenerateOrderPin'])
+            ->middleware('throttle:20,1,order-pin');
 
         // ── Imports ─────────────────────────────────────────────────────
         Route::post('import/products',       [ImportController::class, 'products']);

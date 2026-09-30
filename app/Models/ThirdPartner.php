@@ -57,7 +57,26 @@ class ThirdPartner extends Model
         'tp_status'       => 'boolean',
         'encours_actuel'  => 'decimal:2',
         'seuil_credit'    => 'decimal:2',
+        'order_pin_set_at'    => 'datetime',
+        'order_pin_locked_at' => 'datetime',
     ];
+
+    // PIN de commande par message : jamais sérialisé, seul son état l'est.
+    // Écrit uniquement par App\Services\Messaging\OrderPin (pas fillable).
+    protected $hidden = ['order_pin_hash', 'order_pin_failures'];
+
+    protected $appends = ['order_pin_state'];
+
+    /** none : pas de PIN · active : PIN utilisable · locked : bloqué après trop d'erreurs */
+    public function getOrderPinStateAttribute(): string
+    {
+        // Lecture brute : les requêtes qui ne sélectionnent que quelques
+        // colonnes (listes, recherches) ne doivent pas lever d'erreur.
+        if (($this->attributes['order_pin_locked_at'] ?? null) !== null) {
+            return 'locked';
+        }
+        return !empty($this->attributes['order_pin_hash']) ? 'active' : 'none';
+    }
 
     // ── Incrementor resolution ────────────────────────────────────
     // Suppliers and customers use separate code sequences.

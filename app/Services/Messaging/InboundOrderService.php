@@ -10,6 +10,7 @@ use App\Models\Setting;
 use App\Models\ThirdPartner;
 use App\Models\User;
 use App\Notifications\MessageOrderDrafted;
+use App\Notifications\OrderPinLocked;
 use App\Services\SmsService;
 use App\Services\Ventes\CustomerLookup;
 use App\Services\Ventes\WhatsAppOrderImportService;
@@ -36,7 +37,9 @@ use Illuminate\Support\Str;
  *   - numéro d'un utilisateur O3 (users.phone) → mode équipe : la 1re ligne
  *     « Client : … » désigne le client ;
  *   - numéro d'un client (tp_phone) → la commande est pour ce client, et lui
- *     seul (une ligne « Client : » venant d'un client est ignorée) ;
+ *     seul (une ligne « Client : » venant d'un client est ignorée). Par
+ *     WhatsApp ou SMS, la 1re ligne doit porter son PIN (« PIN 1234 ») : avoir
+ *     accès à son téléphone ne suffit pas (voir OrderPin) ;
  *   - numéro inconnu → rien n'est créé, l'IA n'est pas appelée.
  */
 class InboundOrderService
@@ -52,6 +55,7 @@ class InboundOrderService
         private WhatsAppOrderImportService $import,
         private WhatsAppService $whatsapp,
         private SmsService $sms,
+        private OrderPin $pins,
     ) {
     }
 
@@ -84,7 +88,8 @@ class InboundOrderService
             'phone'               => $phone,
             'third_partner_id'    => $customer?->id,
             'user_id'             => $staff?->id,
-            'body'                => mb_substr($body, 0, 10000),
+            // Le PIN n'est jamais conservé dans l'historique.
+            'body'                => mb_substr($this->pins->redact($body), 0, 10000),
             'provider_message_id' => $providerMessageId,
             'meta'                => $numMedia > 0 ? ['num_media' => $numMedia] : null,
         ]);
@@ -110,11 +115,28 @@ class InboundOrderService
         }
         $staffMode = $staff !== null;
 
+        // Photo ou vocal sans texte : il ne peut pas porter de PIN, on demande le texte.
         if ($numMedia > 0 && trim($body) === '') {
             return $this->finish($inbound, 'rejected', $this->replies->mediaNotSupported(), $staff, $customer);
         }
 
-        // 2. Lecture : règles, puis IA en secours si elles ne comprennent pas tout.
+        // 2. PIN du client : par WhatsApp ou SMS, avoir son téléphone ne suffit
+        //    pas. Vérifié avant toute lecture (ni règles ni IA sans PIN valide).
+        if ($external && !$staffMode) {
+            [$pin, $body] = $this->pins->extract($body);
+            $wasLocked = $customer->order_pin_locked_at !== null;
+            $state = $this->pins->check($customer, $pin);
+
+            if ($state !== 'ok') {
+                if ($state === 'locked' && !$wasLocked) {
+                    $this->notifyPinLocked($customer, $channel);
+                }
+                $reply = $this->replies->pinProblem($state, $this->pins->remainingAttempts($customer));
+                return $this->finish($inbound, 'rejected', $reply, null, $customer, meta: ['reason' => "pin_{$state}"]);
+            }
+        }
+
+        // 3. Lecture : règles, puis IA en secours si elles ne comprennent pas tout.
         $parsed = $this->parser->parse($body);
         if (!$parsed->isComplete() && $this->ai->enabled()) {
             $viaAi = $this->ai->extract($body);
@@ -123,7 +145,7 @@ class InboundOrderService
             }
         }
 
-        // 3. Pour quel client ?
+        // 4. Pour quel client ?
         if ($staffMode && !$customer) {
             $hint = $parsed->customerHint;
             if (!$hint) {
@@ -146,7 +168,7 @@ class InboundOrderService
             return $this->finish($inbound, 'rejected', $this->replies->help(), $staff, $customer, $parsed->method);
         }
 
-        // 4. Même contrat et même moteur que l'import API de l'agent de facturation client.
+        // 5. Même contrat et même moteur que l'import API de l'agent de facturation client.
         $label = OrderMessage::CHANNEL_LABELS[$channel] ?? $channel;
         $payload = [
             'external_id' => 'MSG-' . $inbound->id,
@@ -317,6 +339,19 @@ class InboundOrderService
         return $channel === 'whatsapp'
             ? $this->whatsapp->send($phone, $text)
             : $this->sms->send($phone, $text);
+    }
+
+    private function notifyPinLocked(ThirdPartner $customer, string $channel): void
+    {
+        Log::warning("Messagerie : commandes par message bloquées pour le client {$customer->id} après " . OrderPin::MAX_FAILURES . ' PIN incorrects.');
+        try {
+            User::whereHas('role', fn ($q) => $q->whereIn('name', ['admin', 'manager']))
+                ->where('is_active', true)
+                ->get()
+                ->each(fn (User $u) => $u->notify(new OrderPinLocked($customer, $channel)));
+        } catch (\Throwable $e) {
+            Log::warning("Messagerie : notification de blocage PIN échouée pour le client {$customer->id} : {$e->getMessage()}");
+        }
     }
 
     private function notifyTeam(int $documentId, string $channel, bool $appended = false): void

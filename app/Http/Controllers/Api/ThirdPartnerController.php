@@ -8,6 +8,7 @@ use App\Models\Setting;
 use App\Models\ThirdPartner;
 use App\Repositories\Contracts\ThirdPartnerRepositoryInterface;
 use App\Services\CacheService;
+use App\Services\Messaging\OrderPin;
 use App\Services\PaymentNotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,8 +17,10 @@ use Illuminate\Support\Facades\Log;
 
 class ThirdPartnerController extends Controller
 {
-    public function __construct(private ThirdPartnerRepositoryInterface $partners)
-    {
+    public function __construct(
+        private ThirdPartnerRepositoryInterface $partners,
+        private OrderPin $pins,
+    ) {
     }
 
     public function index(Request $request): JsonResponse
@@ -65,7 +68,35 @@ class ThirdPartnerController extends Controller
         $partner = $this->partners->create($data);
         CacheService::flushPartners();
 
-        return response()->json($partner, 201);
+        // PIN des commandes par WhatsApp/SMS : tiré à la création, montré une
+        // seule fois dans cette réponse, à remettre au client par l'équipe.
+        $body = $partner->toArray();
+        if ($partner->isCustomer()) {
+            $body['order_pin'] = $this->pins->generate($partner);
+            $body['order_pin_state'] = 'active';
+        }
+
+        return response()->json($body, 201);
+    }
+
+    /**
+     * POST /third-partners/{id}/order-pin — nouveau PIN de commande par message
+     * (PIN perdu, divulgué, ou canal bloqué après trop d'erreurs). L'ancien PIN
+     * cesse aussitôt de fonctionner ; le nouveau n'est montré qu'ici.
+     */
+    public function regenerateOrderPin(ThirdPartner $thirdPartner): JsonResponse
+    {
+        if (!$thirdPartner->isCustomer()) {
+            return response()->json(['message' => 'Seul un client peut avoir un PIN de commande.'], 422);
+        }
+
+        $pin = $this->pins->generate($thirdPartner);
+        activity()->performedOn($thirdPartner)->causedBy(auth()->user())->log('PIN de commande régénéré');
+
+        return response()->json([
+            'order_pin'       => $pin,
+            'order_pin_state' => 'active',
+        ]);
     }
 
     public function show(ThirdPartner $thirdPartner): JsonResponse

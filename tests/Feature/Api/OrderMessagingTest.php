@@ -11,6 +11,7 @@ use App\Models\ThirdPartner;
 use App\Models\User;
 use App\Models\Warehouse;
 use App\Services\Messaging\InboundOrderService;
+use App\Services\Messaging\OrderPin;
 use App\Services\WhatsAppService;
 use Illuminate\Support\Facades\Notification;
 use Laravel\Sanctum\Sanctum;
@@ -25,6 +26,7 @@ class OrderMessagingTest extends TestCase
 
     private User $admin;
     private ThirdPartner $customer;
+    private string $pin;
     /** @var array<int, string> textes envoyés via WhatsAppService, par numéro */
     private array $sentWhatsApp = [];
 
@@ -39,6 +41,7 @@ class OrderMessagingTest extends TestCase
             'tp_code'  => 'C0012',
             'tp_phone' => '06 12 34 56 78',
         ]);
+        $this->pin = app(OrderPin::class)->generate($this->customer);
 
         Warehouse::factory()->create(['wh_status' => true]);
         DocumentIncrementor::factory()->forDeliveryNote()->create();
@@ -122,7 +125,7 @@ class OrderMessagingTest extends TestCase
     {
         Setting::set('messaging', 'inbound_enabled', 'true');
 
-        $result = app(InboundOrderService::class)->process('whatsapp', 'whatsapp:+212612345678', "salam\n2 perceuse 18V", 'SM123');
+        $result = app(InboundOrderService::class)->process('whatsapp', 'whatsapp:+212612345678', "PIN {$this->pin}\nsalam\n2 perceuse 18V", 'SM123');
 
         $this->assertSame('created', $result['status']);
         $this->assertSame($this->customer->id, DocumentHeader::first()->thirdPartner_id);
@@ -130,7 +133,7 @@ class OrderMessagingTest extends TestCase
         $this->assertSame('+212612345678', $this->sentWhatsApp[0][0]);
 
         // Même MessageSid renvoyé par Twilio : ignoré, pas de second BL.
-        $again = app(InboundOrderService::class)->process('whatsapp', 'whatsapp:+212612345678', "salam\n2 perceuse 18V", 'SM123');
+        $again = app(InboundOrderService::class)->process('whatsapp', 'whatsapp:+212612345678', "PIN {$this->pin}\nsalam\n2 perceuse 18V", 'SM123');
         $this->assertSame('duplicate', $again['status']);
         $this->assertSame(1, DocumentHeader::count());
     }
@@ -166,7 +169,7 @@ class OrderMessagingTest extends TestCase
         Setting::set('messaging', 'inbound_enabled', 'true');
 
         $url = 'http://localhost/api/webhooks/twilio/inbound';
-        $params = ['From' => 'whatsapp:+212612345678', 'Body' => '2 perceuse 18V', 'MessageSid' => 'SMabc', 'NumMedia' => '0'];
+        $params = ['From' => 'whatsapp:+212612345678', 'Body' => "PIN {$this->pin}\n2 perceuse 18V", 'MessageSid' => 'SMabc', 'NumMedia' => '0'];
         $signature = (new RequestValidator('twilio-secret'))->computeSignature($url, $params);
 
         $this->post($url, $params, ['X-Twilio-Signature' => $signature])
