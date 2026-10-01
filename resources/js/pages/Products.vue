@@ -528,7 +528,7 @@
         </div>
 
         <!-- Tab: Tarifs (Pricing) -->
-        <div v-if="currentTab === 1" class="space-y-4 py-2" :style="{ minHeight: tabMinHeight }">
+        <div v-if="currentTab === 1" class="space-y-2.5 py-1" :style="{ minHeight: tabMinHeight }">
           <ProductPricingTab
             v-model:tier-adding="tierAdding"
             :has-product="!!editTarget"
@@ -546,7 +546,7 @@
         </div>
 
         <!-- Tab: Stock -->
-        <div v-if="currentTab === 2" class="space-y-3 py-2" :style="{ minHeight: tabMinHeight }">
+        <div v-if="currentTab === 2" class="space-y-2.5 py-1" :style="{ minHeight: tabMinHeight }">
           <ProductStockTab
             :product="editTarget"
             :warehouse-stocks="warehouseStocksList"
@@ -558,12 +558,12 @@
         </div>
 
         <!-- Tab: Statistics -->
-        <div v-if="currentTab === 3" class="space-y-3 py-2" :style="{ minHeight: tabMinHeight }">
+        <div v-if="currentTab === 3" class="space-y-2.5 py-1" :style="{ minHeight: tabMinHeight }">
           <ProductStatsTab :statistics="statistics" :has-product="!!editTarget" />
         </div>
 
         <!-- Tab: Gallery -->
-        <div v-if="currentTab === 4" class="space-y-3 py-2" :style="{ minHeight: tabMinHeight }">
+        <div v-if="currentTab === 4" class="space-y-2.5 py-1" :style="{ minHeight: tabMinHeight }">
           <ProductMediaTab
             v-model:new-video-title="newVideoTitle"
             v-model:new-video-url="newVideoUrl"
@@ -584,7 +584,7 @@
           />
         </div>
         <!-- Tab: Fournisseurs -->
-        <div v-if="currentTab === 5" class="space-y-3 py-2" :style="{ minHeight: tabMinHeight }">
+        <div v-if="currentTab === 5" class="space-y-2.5 py-1" :style="{ minHeight: tabMinHeight }">
           <ProductSuppliersTab
             v-model:link-adding="linkAdding"
             :has-product="!!editTarget"

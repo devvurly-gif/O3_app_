@@ -1,12 +1,12 @@
 <template>
     <!-- Master Prices Section -->
-    <div class="bg-gray-50 dark:bg-gray-800/60 p-3 rounded-lg space-y-3">
+    <div class="space-y-2.5">
       <h4 class="font-semibold text-gray-900 dark:text-white text-sm">Master Prices</h4>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-2.5">
         <!-- Purchase Price -->
         <div>
-          <label for="products-p-purchaseprice" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+          <label for="products-p-purchaseprice" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-0.5"
             >{{ $t('products.purchasePrice') }} <span class="text-red-500">*</span></label
           >
           <input
@@ -17,13 +17,13 @@
             step="0.01"
             required
             placeholder="0.00"
-            class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
+            class="w-full px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
           />
         </div>
 
         <!-- Sale Price -->
         <div>
-          <label for="products-p-saleprice" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+          <label for="products-p-saleprice" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-0.5"
             >{{ $t('products.salePrice') }} <span class="text-red-500">*</span></label
           >
           <input
@@ -34,13 +34,13 @@
             step="0.01"
             required
             placeholder="0.00"
-            class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
+            class="w-full px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
           />
         </div>
 
         <!-- Cost Price -->
         <div>
-          <label for="products-p-cost" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.costPrice') ?? 'Cost Price' }}</label>
+          <label for="products-p-cost" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-0.5">{{ $t('products.costPrice') ?? 'Cost Price' }}</label>
           <input
             id="products-p-cost"
             v-model.number="form.p_cost"
@@ -48,13 +48,13 @@
             min="0"
             step="0.01"
             placeholder="0.00"
-            class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
+            class="w-full px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
           />
         </div>
 
         <!-- Tax Rate -->
         <div>
-          <label for="products-p-taxrate" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.taxRate') }}</label>
+          <label for="products-p-taxrate" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-0.5">{{ $t('products.taxRate') }}</label>
           <input
             id="products-p-taxrate"
             v-model.number="form.p_taxRate"
@@ -63,19 +63,19 @@
             max="100"
             step="0.01"
             placeholder="20"
-            class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
+            class="w-full px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
           />
         </div>
 
         <!-- Unit -->
-        <div class="sm:col-span-2 lg:col-span-1">
-          <label for="products-p-unit" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('products.unit') }}</label>
+        <div class="sm:col-span-2">
+          <label for="products-p-unit" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-0.5">{{ $t('products.unit') }}</label>
           <input
             id="products-p-unit"
             v-model="form.p_unit"
             type="text"
             :placeholder="$t('products.unitPlaceholder')"
-            class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
+            class="w-full px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
           />
         </div>
       </div>
@@ -93,7 +93,7 @@
     </div>
 
     <!-- Price List Tiers Section -->
-    <div class="space-y-2">
+    <div class="space-y-2 pt-2.5 border-t border-gray-200 dark:border-gray-700">
       <div class="flex items-center justify-between">
         <h4 class="font-semibold text-gray-900 dark:text-white text-sm">Tarifs par grille</h4>
         <button
