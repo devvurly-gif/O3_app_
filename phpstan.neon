@@ -1,6 +1,7 @@
 includes:
     - vendor/larastan/larastan/extension.neon
-    # Dette figee : les 25 erreurs qui restaient apres le nettoyage. Elle est
+    # Dette figee : 88 erreurs, regenerees le 2026-10-01 (le code ajoute depuis fin
+    # aout n etait plus couvert). Elle est
     # faite pour maigrir, pas pour durer. Toute erreur NOUVELLE echoue la CI.
     - phpstan-baseline.neon
 

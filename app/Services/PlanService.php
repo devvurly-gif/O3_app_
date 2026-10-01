@@ -202,6 +202,8 @@ class PlanService
      */
     private function mirrorPaiementBlSetting(Tenant $tenant): void
     {
+        $original = tenant();
+
         try {
             $tenant->run(function () use ($tenant) {
                 Setting::set(
@@ -215,6 +217,13 @@ class PlanService
                 'tenant_id' => $tenant->id,
                 'error'     => $e->getMessage(),
             ]);
+        } finally {
+            // Tenant::run() ne referme pas le contexte quand le callback
+            // lève : sans cela, la connexion par défaut reste braquée sur une
+            // base de tenant absente et fait échouer tout ce qui suit.
+            if (tenant()?->getTenantKey() !== $original?->getTenantKey()) {
+                $original ? tenancy()->initialize($original) : tenancy()->end();
+            }
         }
     }
 

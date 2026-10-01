@@ -3,12 +3,107 @@ parameters:
 		-
 			message: "#^Access to an undefined property Illuminate\\\\Database\\\\Eloquent\\\\Model\\:\\:\\$id\\.$#"
 			count: 1
+			path: app/Console/Commands/CheckSubscriptions.php
+
+		-
+			message: "#^Call to an undefined method Illuminate\\\\Database\\\\Eloquent\\\\Model\\:\\:currentStatus\\(\\)\\.$#"
+			count: 2
+			path: app/Console/Commands/CheckSubscriptions.php
+
+		-
+			message: "#^Parameter \\#1 \\$tenant of method App\\\\Console\\\\Commands\\\\CheckSubscriptions\\:\\:sendReminderIfDue\\(\\) expects App\\\\Models\\\\Tenant, Illuminate\\\\Database\\\\Eloquent\\\\Model given\\.$#"
+			count: 1
+			path: app/Console/Commands/CheckSubscriptions.php
+
+		-
+			message: "#^Parameter \\#1 \\$tenant of method App\\\\Services\\\\SubscriptionService\\:\\:projectedStatusFor\\(\\) expects App\\\\Models\\\\Tenant, Illuminate\\\\Database\\\\Eloquent\\\\Model given\\.$#"
+			count: 1
+			path: app/Console/Commands/CheckSubscriptions.php
+
+		-
+			message: "#^Parameter \\#1 \\$tenant of method App\\\\Services\\\\SubscriptionService\\:\\:refreshStatus\\(\\) expects App\\\\Models\\\\Tenant, Illuminate\\\\Database\\\\Eloquent\\\\Model given\\.$#"
+			count: 1
+			path: app/Console/Commands/CheckSubscriptions.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\DocumentLigne\\:\\:\\$thirdPartner_id\\.$#"
+			count: 1
+			path: app/Console/Commands/DraftDailyPurchaseOrders.php
+
+		-
+			message: "#^Method App\\\\Console\\\\Commands\\\\DraftDailyPurchaseOrders\\:\\:tenantsToProcess\\(\\) should return Illuminate\\\\Support\\\\Collection\\<int, App\\\\Models\\\\Tenant\\>\\|null but returns Stancl\\\\Tenancy\\\\Database\\\\TenantCollection\\.$#"
+			count: 1
+			path: app/Console/Commands/DraftDailyPurchaseOrders.php
+
+		-
+			message: "#^Parameter \\#1 \\$callback of method Illuminate\\\\Support\\\\Collection\\<\\(int\\|string\\),Illuminate\\\\Database\\\\Eloquent\\\\Model\\>\\:\\:filter\\(\\) expects \\(callable\\(Illuminate\\\\Database\\\\Eloquent\\\\Model, int\\|string\\)\\: bool\\)\\|null, Closure\\(App\\\\Models\\\\Tenant\\)\\: bool given\\.$#"
+			count: 1
+			path: app/Console/Commands/DraftDailyPurchaseOrders.php
+
+		-
+			message: "#^Parameter \\#1 \\$num of function number_format expects float, string given\\.$#"
+			count: 1
+			path: app/Console/Commands/FacturerBonsReception.php
+
+		-
+			message: "#^Method App\\\\Console\\\\Commands\\\\GeneratePeriodicInvoices\\:\\:tenantsToProcess\\(\\) should return Illuminate\\\\Support\\\\Collection\\<int, App\\\\Models\\\\Tenant\\>\\|null but returns Stancl\\\\Tenancy\\\\Database\\\\TenantCollection\\.$#"
+			count: 1
+			path: app/Console/Commands/GeneratePeriodicInvoices.php
+
+		-
+			message: "#^Parameter \\#1 \\$callback of method Illuminate\\\\Support\\\\Collection\\<\\(int\\|string\\),Illuminate\\\\Database\\\\Eloquent\\\\Model\\>\\:\\:filter\\(\\) expects \\(callable\\(Illuminate\\\\Database\\\\Eloquent\\\\Model, int\\|string\\)\\: bool\\)\\|null, Closure\\(App\\\\Models\\\\Tenant\\)\\: bool given\\.$#"
+			count: 1
+			path: app/Console/Commands/GeneratePeriodicInvoices.php
+
+		-
+			message: "#^Access to an undefined property Illuminate\\\\Database\\\\Eloquent\\\\Model\\:\\:\\$id\\.$#"
+			count: 3
+			path: app/Console/Commands/GenerateTreasuryRecurrences.php
+
+		-
+			message: "#^Call to an undefined method Illuminate\\\\Database\\\\Eloquent\\\\Model\\:\\:run\\(\\)\\.$#"
+			count: 1
+			path: app/Console/Commands/GenerateTreasuryRecurrences.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\ThirdPartner\\:\\:\\$pivot\\.$#"
+			count: 1
+			path: app/Console/Commands/ListProductSuppliers.php
+
+		-
+			message: "#^Access to an undefined property Illuminate\\\\Database\\\\Eloquent\\\\Model\\:\\:\\$id\\.$#"
+			count: 1
 			path: app/Console/Commands/RecalculatePartnersEncours.php
 
 		-
 			message: "#^Call to an undefined method Illuminate\\\\Database\\\\Eloquent\\\\Model\\:\\:run\\(\\)\\.$#"
 			count: 1
 			path: app/Console/Commands/RecalculatePartnersEncours.php
+
+		-
+			message: "#^Parameter \\#1 \\$num of function number_format expects float, string given\\.$#"
+			count: 1
+			path: app/Console/Commands/RegrouperFacturesAchat.php
+
+		-
+			message: "#^Method App\\\\Console\\\\Commands\\\\SendInvoiceDueReminders\\:\\:tenantsToProcess\\(\\) should return Illuminate\\\\Support\\\\Collection\\<int, App\\\\Models\\\\Tenant\\>\\|null but returns Stancl\\\\Tenancy\\\\Database\\\\TenantCollection\\.$#"
+			count: 1
+			path: app/Console/Commands/SendInvoiceDueReminders.php
+
+		-
+			message: "#^Parameter \\#1 \\$callback of method Illuminate\\\\Support\\\\Collection\\<\\(int\\|string\\),Illuminate\\\\Database\\\\Eloquent\\\\Model\\>\\:\\:filter\\(\\) expects \\(callable\\(Illuminate\\\\Database\\\\Eloquent\\\\Model, int\\|string\\)\\: bool\\)\\|null, Closure\\(App\\\\Models\\\\Tenant\\)\\: bool given\\.$#"
+			count: 1
+			path: app/Console/Commands/SendInvoiceDueReminders.php
+
+		-
+			message: "#^Method App\\\\Console\\\\Commands\\\\SendLowStockAlerts\\:\\:tenantsToProcess\\(\\) should return Illuminate\\\\Support\\\\Collection\\<int, App\\\\Models\\\\Tenant\\>\\|null but returns Stancl\\\\Tenancy\\\\Database\\\\TenantCollection\\.$#"
+			count: 1
+			path: app/Console/Commands/SendLowStockAlerts.php
+
+		-
+			message: "#^Parameter \\#1 \\$callback of method Illuminate\\\\Support\\\\Collection\\<\\(int\\|string\\),Illuminate\\\\Database\\\\Eloquent\\\\Model\\>\\:\\:filter\\(\\) expects \\(callable\\(Illuminate\\\\Database\\\\Eloquent\\\\Model, int\\|string\\)\\: bool\\)\\|null, Closure\\(App\\\\Models\\\\Tenant\\)\\: bool given\\.$#"
+			count: 1
+			path: app/Console/Commands/SendLowStockAlerts.php
 
 		-
 			message: "#^Call to method chunk\\(\\) on an unknown class Laravel\\\\Scout\\\\Builder\\.$#"
@@ -41,9 +136,19 @@ parameters:
 			path: app/Http/Controllers/Api/Ecom/EcomCatalogueController.php
 
 		-
+			message: "#^Parameter \\#1 \\$boolean of function abort_unless expects bool, App\\\\Models\\\\ThirdPartner\\|null given\\.$#"
+			count: 1
+			path: app/Http/Controllers/Api/Ecom/EcomChatController.php
+
+		-
 			message: "#^Offset 'name' on array\\{transport\\: string, name\\: string, host\\: non\\-empty\\-string, port\\: 515\\|6101\\|9100\\|9101\\|9102\\|9103, agent_url\\: string, dpi\\: int, darkness\\: int, speed\\: float, \\.\\.\\.\\} on left side of \\?\\? always exists and is not nullable\\.$#"
 			count: 1
 			path: app/Http/Controllers/Api/LabelPrintController.php
+
+		-
+			message: "#^Parameter \\#1 \\$callback of method Illuminate\\\\Support\\\\Collection\\<int,App\\\\Models\\\\OrderMessage\\>\\:\\:first\\(\\) expects \\(callable\\(App\\\\Models\\\\OrderMessage, int\\)\\: bool\\)\\|null, Closure\\(mixed\\)\\: \\(App\\\\Models\\\\ThirdPartner\\|null\\) given\\.$#"
+			count: 1
+			path: app/Http/Controllers/Api/Messaging/OrderMessagingController.php
 
 		-
 			message: "#^Method App\\\\Http\\\\Controllers\\\\Api\\\\Pos\\\\PosTicketController\\:\\:print\\(\\) should return Illuminate\\\\Http\\\\Response but returns Symfony\\\\Component\\\\HttpFoundation\\\\StreamedResponse\\.$#"
@@ -51,14 +156,59 @@ parameters:
 			path: app/Http/Controllers/Api/Pos/PosTicketController.php
 
 		-
+			message: "#^Call to an undefined method Illuminate\\\\Database\\\\Eloquent\\\\Model\\:\\:isCustomer\\(\\)\\.$#"
+			count: 1
+			path: app/Http/Controllers/Api/ThirdPartnerController.php
+
+		-
+			message: "#^Parameter \\#1 \\$customer of method App\\\\Services\\\\Messaging\\\\OrderPin\\:\\:generate\\(\\) expects App\\\\Models\\\\ThirdPartner, Illuminate\\\\Database\\\\Eloquent\\\\Model given\\.$#"
+			count: 1
+			path: app/Http/Controllers/Api/ThirdPartnerController.php
+
+		-
+			message: "#^Parameter \\#1 \\$callback of method Illuminate\\\\Support\\\\Collection\\<\\(int\\|string\\),Illuminate\\\\Database\\\\Eloquent\\\\Model\\>\\:\\:filter\\(\\) expects \\(callable\\(Illuminate\\\\Database\\\\Eloquent\\\\Model, int\\|string\\)\\: bool\\)\\|null, Closure\\(App\\\\Models\\\\CashCategory\\)\\: bool given\\.$#"
+			count: 1
+			path: app/Http/Controllers/Api/Treasury/CashCategoryController.php
+
+		-
 			message: "#^Call to an undefined method Laravel\\\\Sanctum\\\\Contracts\\\\HasAbilities\\:\\:getKey\\(\\)\\.$#"
 			count: 1
 			path: app/Http/Controllers/AuthController.php
 
 		-
+			message: "#^Access to an undefined property \\(object\\|string\\)\\:\\:\\$ct_direction\\.$#"
+			count: 1
+			path: app/Http/Requests/Treasury/UpdateCashTransactionRequest.php
+
+		-
+			message: "#^Access to an undefined property \\(object\\|string\\)\\:\\:\\$document_header_id\\.$#"
+			count: 1
+			path: app/Http/Requests/Treasury/UpdateCashTransactionRequest.php
+
+		-
 			message: "#^Call to function is_string\\(\\) with null will always evaluate to false\\.$#"
 			count: 1
 			path: app/Mail/SessionClosingReportMail.php
+
+		-
+			message: "#^Offset 'pos' does not exist on array\\<int, string\\>\\.$#"
+			count: 1
+			path: app/Services/AuthService.php
+
+		-
+			message: "#^Access to an undefined property Illuminate\\\\Database\\\\Eloquent\\\\Model\\:\\:\\$p_salePrice\\.$#"
+			count: 2
+			path: app/Services/BulkSalePriceUpdater.php
+
+		-
+			message: "#^Parameter \\#1 \\$product of method App\\\\Services\\\\BulkSalePriceUpdater\\:\\:describe\\(\\) expects App\\\\Models\\\\Product, Illuminate\\\\Database\\\\Eloquent\\\\Model given\\.$#"
+			count: 1
+			path: app/Services/BulkSalePriceUpdater.php
+
+		-
+			message: "#^Parameter \\#1 \\$product of method App\\\\Services\\\\BulkSalePriceUpdater\\:\\:newPriceFor\\(\\) expects App\\\\Models\\\\Product, Illuminate\\\\Database\\\\Eloquent\\\\Model given\\.$#"
+			count: 1
+			path: app/Services/BulkSalePriceUpdater.php
 
 		-
 			message: "#^Offset 'ca_month'\\|'clients'\\|'invoices_month'\\|'margin_month'\\|'margin_today'\\|'outstanding'\\|'payments_month'\\|'products'\\|'purchases_month'\\|'suppliers'\\|'today_sales' on array\\{ca_month\\: 'main', purchases_month\\: 'main', payments_month\\: 'main', outstanding\\: 'main', today_sales\\: 'secondary', margin_today\\: 'secondary', margin_month\\: 'secondary', invoices_month\\: 'secondary', \\.\\.\\.\\} on left side of \\?\\? always exists and is not nullable\\.$#"
@@ -69,6 +219,66 @@ parameters:
 			message: "#^Parameter \\#1 \\$num of function round expects float\\|int, string given\\.$#"
 			count: 1
 			path: app/Services/DashboardService.php
+
+		-
+			message: "#^Access to an undefined property Illuminate\\\\Database\\\\Eloquent\\\\Model\\:\\:\\$company_role\\.$#"
+			count: 1
+			path: app/Services/DocumentGroupingService.php
+
+		-
+			message: "#^Access to an undefined property Illuminate\\\\Database\\\\Eloquent\\\\Model\\:\\:\\$document_incrementor_id\\.$#"
+			count: 1
+			path: app/Services/DocumentGroupingService.php
+
+		-
+			message: "#^Access to an undefined property Illuminate\\\\Database\\\\Eloquent\\\\Model\\:\\:\\$document_type\\.$#"
+			count: 2
+			path: app/Services/DocumentGroupingService.php
+
+		-
+			message: "#^Access to an undefined property Illuminate\\\\Database\\\\Eloquent\\\\Model\\:\\:\\$lignes\\.$#"
+			count: 1
+			path: app/Services/DocumentGroupingService.php
+
+		-
+			message: "#^Access to an undefined property Illuminate\\\\Database\\\\Eloquent\\\\Model\\:\\:\\$parent\\.$#"
+			count: 2
+			path: app/Services/DocumentGroupingService.php
+
+		-
+			message: "#^Access to an undefined property Illuminate\\\\Database\\\\Eloquent\\\\Model\\:\\:\\$payments\\.$#"
+			count: 1
+			path: app/Services/DocumentGroupingService.php
+
+		-
+			message: "#^Access to an undefined property Illuminate\\\\Database\\\\Eloquent\\\\Model\\:\\:\\$pos_session_id\\.$#"
+			count: 1
+			path: app/Services/DocumentGroupingService.php
+
+		-
+			message: "#^Access to an undefined property Illuminate\\\\Database\\\\Eloquent\\\\Model\\:\\:\\$status\\.$#"
+			count: 1
+			path: app/Services/DocumentGroupingService.php
+
+		-
+			message: "#^Access to an undefined property Illuminate\\\\Database\\\\Eloquent\\\\Model\\:\\:\\$thirdPartner_id\\.$#"
+			count: 3
+			path: app/Services/DocumentGroupingService.php
+
+		-
+			message: "#^Access to an undefined property Illuminate\\\\Database\\\\Eloquent\\\\Model\\:\\:\\$user_id\\.$#"
+			count: 1
+			path: app/Services/DocumentGroupingService.php
+
+		-
+			message: "#^Access to an undefined property Illuminate\\\\Database\\\\Eloquent\\\\Model\\:\\:\\$warehouse_id\\.$#"
+			count: 1
+			path: app/Services/DocumentGroupingService.php
+
+		-
+			message: "#^Parameter \\#1 \\$first of method App\\\\Services\\\\DocumentGroupingService\\:\\:invoiceIncrementor\\(\\) expects App\\\\Models\\\\DocumentHeader, Illuminate\\\\Database\\\\Eloquent\\\\Model\\|null given\\.$#"
+			count: 1
+			path: app/Services/DocumentGroupingService.php
 
 		-
 			message: "#^Access to an undefined property Illuminate\\\\Database\\\\Eloquent\\\\Model\\:\\:\\$id\\.$#"
@@ -96,12 +306,27 @@ parameters:
 			path: app/Services/InvoiceParserService.php
 
 		-
+			message: "#^Call to function is_string\\(\\) with array\\|null will always evaluate to false\\.$#"
+			count: 1
+			path: app/Services/PlanService.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\Payment\\:\\:\\$partner_id\\.$#"
+			count: 1
+			path: app/Services/PosService.php
+
+		-
 			message: "#^Method App\\\\Services\\\\PosService\\:\\:createDeliveryNoteFromTicket\\(\\) is unused\\.$#"
 			count: 1
 			path: app/Services/PosService.php
 
 		-
-			message: "#^Right side of && is always true\\.$#"
+			message: "#^Method App\\\\Services\\\\PosService\\:\\:postSessionTakings\\(\\) should return array\\<int, array\\<string, mixed\\>\\> but returns array\\<int\\<0, max\\>, App\\\\Models\\\\CashTransaction\\>\\.$#"
+			count: 1
+			path: app/Services/PosService.php
+
+		-
+			message: "#^Method App\\\\Services\\\\PosService\\:\\:salesCategoryId\\(\\) never returns null so it can be removed from the return type\\.$#"
 			count: 1
 			path: app/Services/PosService.php
 
@@ -124,3 +349,48 @@ parameters:
 			message: "#^Variable \\$products in empty\\(\\) always exists and is not falsy\\.$#"
 			count: 1
 			path: app/Services/ProductScraperService.php
+
+		-
+			message: "#^Variable \\$eanCands might not be defined\\.$#"
+			count: 1
+			path: app/Services/Purchases/PurchaseImportService.php
+
+		-
+			message: "#^Method App\\\\Services\\\\SubscriptionInvoiceService\\:\\:tenantsDueForInvoice\\(\\) should return Illuminate\\\\Support\\\\Collection\\<int, App\\\\Models\\\\Tenant\\> but returns Stancl\\\\Tenancy\\\\Database\\\\TenantCollection\\.$#"
+			count: 1
+			path: app/Services/SubscriptionInvoiceService.php
+
+		-
+			message: "#^Parameter \\#1 \\$callback of method Illuminate\\\\Support\\\\Collection\\<\\(int\\|string\\),Illuminate\\\\Database\\\\Eloquent\\\\Model\\>\\:\\:filter\\(\\) expects \\(callable\\(Illuminate\\\\Database\\\\Eloquent\\\\Model, int\\|string\\)\\: bool\\)\\|null, Closure\\(App\\\\Models\\\\Tenant\\)\\: bool given\\.$#"
+			count: 1
+			path: app/Services/SubscriptionInvoiceService.php
+
+		-
+			message: "#^Property App\\\\Models\\\\Tenant\\:\\:\\$subscription_ends_at \\(Carbon\\\\Carbon\\|null\\) does not accept Carbon\\\\CarbonImmutable\\.$#"
+			count: 2
+			path: app/Services/SubscriptionService.php
+
+		-
+			message: "#^Property App\\\\Models\\\\Tenant\\:\\:\\$trial_ends_at \\(Carbon\\\\Carbon\\|null\\) does not accept Carbon\\\\CarbonImmutable\\.$#"
+			count: 1
+			path: app/Services/SubscriptionService.php
+
+		-
+			message: "#^Method App\\\\Services\\\\TreasuryService\\:\\:accountBalances\\(\\) should return Illuminate\\\\Support\\\\Collection\\<int, array\\<string, mixed\\>\\> but returns Illuminate\\\\Support\\\\Collection\\<int, array\\{id\\: int, ca_title\\: string, ca_code\\: string\\|null, ca_type\\: string, ca_payment_method\\: string\\|null, ca_notes\\: string\\|null, ca_status\\: bool, initial_balance\\: float, \\.\\.\\.\\}\\>\\.$#"
+			count: 1
+			path: app/Services/TreasuryService.php
+
+		-
+			message: "#^Parameter \\#1 \\$callback of method Illuminate\\\\Support\\\\Collection\\<int,Illuminate\\\\Database\\\\Eloquent\\\\Model\\>\\:\\:filter\\(\\) expects \\(callable\\(Illuminate\\\\Database\\\\Eloquent\\\\Model, int\\)\\: bool\\)\\|null, Closure\\(App\\\\Models\\\\ThirdPartner\\)\\: bool given\\.$#"
+			count: 1
+			path: app/Services/Ventes/CustomerLookup.php
+
+		-
+			message: "#^If condition is always false\\.$#"
+			count: 1
+			path: app/Services/Ventes/WhatsAppOrderImportService.php
+
+		-
+			message: "#^Method App\\\\Services\\\\Ventes\\\\WhatsAppOrderImportService\\:\\:warn\\(\\) is unused\\.$#"
+			count: 1
+			path: app/Services/Ventes/WhatsAppOrderImportService.php
