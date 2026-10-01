@@ -132,11 +132,11 @@
     <BaseModal
       v-model="showModal"
       :title="editTarget ? $t('categories.editTitle') : $t('categories.addTitle')"
-      size="sm"
+      size="md"
     >
-      <form class="space-y-4" @submit.prevent="submit">
+      <form class="space-y-2.5" @submit.prevent="submit">
         <div>
-          <label for="categories-ctg-title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+          <label for="categories-ctg-title" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-0.5"
             >{{ $t('common.name') }} <span class="text-red-500">*</span></label
           >
           <input
@@ -145,23 +145,16 @@
             type="text"
             required
             placeholder="Category name"
-            class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
+            class="w-full px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 text-input focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
           />
-        </div>
-        <div class="flex items-center gap-2">
-          <input
-            id="cat-status"
-            v-model="form.ctg_status"
-            type="checkbox"
-            class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-[#7C5CFC] focus:ring-[#7C5CFC]"
-          />
-          <label for="cat-status" class="text-sm text-gray-700 dark:text-gray-300">{{ $t('common.active') }}</label>
         </div>
 
+        <!-- Publication boutique + statut sur une même ligne -->
+        <div class="pt-2.5 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row sm:items-center gap-2.5">
         <!-- Publier dans la boutique en ligne — visible uniquement si module ecom activé -->
         <div
           v-if="ecomEnabled"
-          class="flex items-start gap-2 p-3 rounded-lg bg-indigo-50/50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800"
+          class="flex-1 flex items-start gap-2 px-3 py-2 rounded-lg bg-indigo-50/50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800"
         >
           <input
             id="cat-ecom"
@@ -173,10 +166,22 @@
             <span class="text-sm font-medium text-indigo-900 dark:text-indigo-200">
               Publier dans la boutique en ligne
             </span>
-            <p class="text-[11px] text-indigo-700/70 dark:text-indigo-300/70 mt-0.5">
+            <p class="text-[11px] text-indigo-700/70 dark:text-indigo-300/70">
               Si décoché, la catégorie et tous ses produits sont masqués dans le storefront.
             </p>
           </label>
+        </div>
+
+        <!-- Status -->
+        <div class="flex items-center gap-2 sm:px-2">
+          <input
+            id="cat-status"
+            v-model="form.ctg_status"
+            type="checkbox"
+            class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-[#7C5CFC] focus:ring-[#7C5CFC]"
+          />
+          <label for="cat-status" class="text-sm text-gray-700 dark:text-gray-300">{{ $t('common.active') }}</label>
+        </div>
         </div>
       </form>
       <template #footer>
