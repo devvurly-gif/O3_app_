@@ -1,14 +1,15 @@
 <template>
-    <!-- Image principale, au-dessus du nom ; un clic ouvre l'onglet Medias -->
-    <div v-if="hasProduct" class="flex items-center gap-3">
+    <!-- Image principale a gauche, identite et classement a droite ; un clic sur l'image ouvre l'onglet Medias -->
+    <div class="flex flex-col sm:flex-row gap-4">
       <button
+        v-if="hasProduct"
         type="button"
-        class="shrink-0 w-20 h-20 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:ring-2 hover:ring-[#7C5CFC] transition flex items-center justify-center"
+        class="shrink-0 w-full sm:w-56 aspect-square self-start rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:ring-2 hover:ring-[#7C5CFC] transition flex items-center justify-center"
         :title="primaryImage ? 'Gérer les images' : 'Ajouter une image'"
         @click="emit('open-media')"
       >
         <img v-if="primaryImage" :src="primaryImage.url" :alt="primaryImage.title || form.p_title" class="w-full h-full object-contain" />
-        <svg v-else class="w-7 h-7 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <svg v-else class="w-10 h-10 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
             stroke-linejoin="round"
@@ -16,14 +17,10 @@
           />
         </svg>
       </button>
-      <p class="text-xs text-gray-400 dark:text-gray-500">
-        {{ primaryImage ? 'Image principale — cliquer pour gérer les images.' : 'Aucune image — cliquer pour en ajouter.' }}
-      </p>
-    </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-3 gap-y-2.5">
+    <div class="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-2.5 content-start">
       <!-- Title (full row) -->
-      <div class="sm:col-span-2 lg:col-span-3">
+      <div class="sm:col-span-2">
         <label for="products-p-title" :class="labelClass"
           >{{ $t('common.name') }} <span class="text-red-500">*</span></label
         >
@@ -76,7 +73,7 @@
       </div>
 
       <!-- IMEI — only for tenants tracking serial numbers -->
-      <div v-if="imeiEnabled" class="sm:col-span-2 lg:col-span-3">
+      <div v-if="imeiEnabled" class="sm:col-span-2">
         <label for="products-p-imei" :class="labelClass">IMEI</label>
         <input
           id="products-p-imei"
@@ -86,6 +83,42 @@
           :class="[inputClass, 'font-mono']"
         />
       </div>
+
+      <!-- E-commerce Slug — only when ecom module is enabled AND product is flagged for the store -->
+      <div v-if="ecomEnabled && form.is_ecom">
+        <label for="products-p-slug" :class="labelClass">{{ $t('products.slug') ?? 'Slug' }}</label>
+        <input
+          id="products-p-slug"
+          v-model="form.p_slug"
+          type="text"
+          :placeholder="$t('products.slugPlaceholder') ?? 'Auto-généré depuis le titre'"
+          :class="[inputClass, 'font-mono']"
+        />
+        <p class="mt-0.5 text-[11px] text-gray-400">URL de la fiche produit dans la boutique en ligne.</p>
+      </div>
+
+      <!-- Category -->
+      <div>
+        <label for="products-category-id" :class="labelClass">{{ $t('products.category') }}</label>
+        <select id="products-category-id" v-model="form.category_id" :class="inputClass">
+          <option :value="null">—</option>
+          <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+            {{ cat.ctg_title }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Brand -->
+      <div>
+        <label for="products-brand-id" :class="labelClass">{{ $t('products.brand') }}</label>
+        <select id="products-brand-id" v-model="form.brand_id" :class="inputClass">
+          <option :value="null">—</option>
+          <option v-for="br in brands" :key="br.id" :value="br.id">
+            {{ br.br_title }}
+          </option>
+        </select>
+      </div>
+    </div>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-x-3 gap-y-2.5">
@@ -126,45 +159,7 @@
       />
     </div>
 
-    <!-- Category / Brand / Slug -->
     <div class="pt-2.5 border-t border-gray-200 dark:border-gray-700 space-y-2.5">
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-3 gap-y-2.5">
-        <!-- Category -->
-        <div>
-          <label for="products-category-id" :class="labelClass">{{ $t('products.category') }}</label>
-          <select id="products-category-id" v-model="form.category_id" :class="inputClass">
-            <option :value="null">—</option>
-            <option v-for="cat in categories" :key="cat.id" :value="cat.id">
-              {{ cat.ctg_title }}
-            </option>
-          </select>
-        </div>
-
-        <!-- Brand -->
-        <div>
-          <label for="products-brand-id" :class="labelClass">{{ $t('products.brand') }}</label>
-          <select id="products-brand-id" v-model="form.brand_id" :class="inputClass">
-            <option :value="null">—</option>
-            <option v-for="br in brands" :key="br.id" :value="br.id">
-              {{ br.br_title }}
-            </option>
-          </select>
-        </div>
-
-        <!-- E-commerce Slug — only when ecom module is enabled AND product is flagged for the store -->
-        <div v-if="ecomEnabled && form.is_ecom">
-          <label for="products-p-slug" :class="labelClass">{{ $t('products.slug') ?? 'Slug' }}</label>
-          <input
-            id="products-p-slug"
-            v-model="form.p_slug"
-            type="text"
-            :placeholder="$t('products.slugPlaceholder') ?? 'Auto-généré depuis le titre'"
-            :class="[inputClass, 'font-mono']"
-          />
-          <p class="mt-0.5 text-[11px] text-gray-400">URL de la fiche produit dans la boutique en ligne.</p>
-        </div>
-      </div>
-
       <!-- Publish to Online Store + Status on one row -->
       <div class="flex flex-col sm:flex-row sm:items-center gap-2.5">
         <!-- Publish to Online Store — only visible when the tenant has the ecom module enabled -->
