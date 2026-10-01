@@ -112,11 +112,16 @@ class DailyDeliveryNoteTest extends TestCase
 
     public function test_the_day_follows_the_tenant_timezone(): void
     {
-        // 23:30 à Casablanca (UTC+1) le 25…
+        // Fuseau fixe UTC+1 plutôt que Africa/Casablanca : le Maroc change
+        // d'heure au Ramadan et la base des fuseaux varie d'une machine à
+        // l'autre (la CI voyait Casablanca à UTC+0 ce jour-là).
+        Setting::set('locale', 'timezone', 'Etc/GMT-1');
+
+        // 23:30 à UTC+1 le 25…
         Carbon::setTestNow(Carbon::parse('2026-09-25 22:30:00', 'UTC'));
         $first = $this->order('2 marteau')->json('document.id');
 
-        // …puis 00:30 le 26 à Casablanca : toujours le 25 en UTC, mais un autre jour pour le client.
+        // …puis 00:30 le 26 à UTC+1 : toujours le 25 en UTC, mais un autre jour pour le client.
         Carbon::setTestNow(Carbon::parse('2026-09-25 23:30:00', 'UTC'));
         $second = $this->order('1 marteau')->json('document.id');
 
