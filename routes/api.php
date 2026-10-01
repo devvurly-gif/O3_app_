@@ -376,31 +376,31 @@ Route::middleware(['auth:sanctum', 'tenant.active'])->group(function () {
         Route::post('achats/ocr/parse',   [\App\Http\Controllers\Api\Achats\OcrInvoiceController::class, 'parse']);
         Route::post('achats/ocr/confirm', [\App\Http\Controllers\Api\Achats\OcrInvoiceController::class, 'confirm']);
 
+        // Pas de ->name() dans ce fichier : il est enregistré une fois par domaine
+        // central et une fois pour les tenants, et `route:cache` refuse les doublons
+        // (voir tests/Feature/RouteNamesTest.php).
+
         // ── Import API — agent de saisie des achats (factures fournisseurs\CLAUDE.md) ──
         // Jeton dédié requis avec l'ability "achats:import" (PurchaseImportRequest::authorize()).
         Route::middleware('throttle:60,1')->group(function () {
-            Route::post('achats/import', [\App\Http\Controllers\Api\PurchaseImportController::class, 'store'])
-                ->name('api.achats.import');
+            Route::post('achats/import', [\App\Http\Controllers\Api\PurchaseImportController::class, 'store']);
             Route::get('achats/import/{externalId}', [\App\Http\Controllers\Api\PurchaseImportController::class, 'show'])
-                ->where('externalId', '[A-Za-z0-9\-_]+')
-                ->name('api.achats.import.show');
+                ->where('externalId', '[A-Za-z0-9\-_]+');
         });
 
         // ── Import API — agent de facturation client (facturation clients\CLAUDE.md) ──
         // Jeton dédié requis avec l'ability "ventes:whatsapp-import" (WhatsAppOrderImportRequest::authorize()).
         Route::middleware('throttle:60,1')->group(function () {
-            Route::post('ventes/whatsapp-import', [\App\Http\Controllers\Api\Ventes\WhatsAppOrderController::class, 'store'])
-                ->name('api.ventes.whatsapp-import');
+            Route::post('ventes/whatsapp-import', [\App\Http\Controllers\Api\Ventes\WhatsAppOrderController::class, 'store']);
             Route::get('ventes/whatsapp-import/{externalId}', [\App\Http\Controllers\Api\Ventes\WhatsAppOrderController::class, 'show'])
-                ->where('externalId', '[A-Za-z0-9\-_]+')
-                ->name('api.ventes.whatsapp-import.show');
+                ->where('externalId', '[A-Za-z0-9\-_]+');
         });
 
         // ── Messagerie commandes — chat équipe (BL brouillon depuis un texte libre) ──
         Route::middleware(['permission:documents.create', 'throttle:60,1,messagerie'])->prefix('messagerie')->group(function () {
-            Route::post('commandes',     [\App\Http\Controllers\Api\Messaging\OrderMessagingController::class, 'send'])->name('api.messagerie.send');
-            Route::get('conversations',  [\App\Http\Controllers\Api\Messaging\OrderMessagingController::class, 'conversations'])->name('api.messagerie.conversations');
-            Route::get('fil',            [\App\Http\Controllers\Api\Messaging\OrderMessagingController::class, 'thread'])->name('api.messagerie.thread');
+            Route::post('commandes',     [\App\Http\Controllers\Api\Messaging\OrderMessagingController::class, 'send']);
+            Route::get('conversations',  [\App\Http\Controllers\Api\Messaging\OrderMessagingController::class, 'conversations']);
+            Route::get('fil',            [\App\Http\Controllers\Api\Messaging\OrderMessagingController::class, 'thread']);
         });
     });
 
@@ -613,15 +613,13 @@ Route::prefix('ecom')->middleware(['ecom.key', 'throttle:60,1', 'tenant.active']
 // Pas de jeton possible côté Twilio : l'authenticité repose sur la signature
 // X-Twilio-Signature (VerifyTwilioSignature). Le BL créé reste un brouillon.
 Route::post('webhooks/twilio/inbound', \App\Http\Controllers\Api\Messaging\TwilioInboundController::class)
-    ->middleware(['twilio.signature', 'throttle:120,1,twilio', 'tenant.active'])
-    ->name('api.webhooks.twilio.inbound');
+    ->middleware(['twilio.signature', 'throttle:120,1,twilio', 'tenant.active']);
 
 // Même chose via Infobip (fournisseur au choix : whatsapp.provider). Infobip ne
 // signe pas ces renvois : l'adresse porte un secret propre au tenant.
 Route::post('webhooks/infobip/inbound/{secret}', \App\Http\Controllers\Api\Messaging\InfobipInboundController::class)
     ->where('secret', '[A-Za-z0-9]{32,64}')
-    ->middleware(['throttle:120,1,infobip', 'tenant.active'])
-    ->name('api.webhooks.infobip.inbound');
+    ->middleware(['throttle:120,1,infobip', 'tenant.active']);
 
 // ── Formule et capacités du tenant ────────────────────────────────────────
 // Étaient publiques : n'importe qui pouvait lire la formule d'un client en
@@ -636,8 +634,8 @@ Route::middleware('auth:sanctum')->group(function () {
 // un compte échu doit pouvoir consulter son état et choisir une formule, sinon
 // il n'a aucun moyen de régulariser.
 Route::middleware('auth:sanctum')->prefix('subscription')->group(function () {
-    Route::get('/',        [SubscriptionController::class, 'show'])->name('subscription.show');
-    Route::post('request', [SubscriptionController::class, 'requestPlan'])->name('subscription.request');
-    Route::get('invoices',             [SubscriptionController::class, 'invoices'])->name('subscription.invoices');
-    Route::get('invoices/{invoice}/pdf', [SubscriptionController::class, 'invoicePdf'])->name('subscription.invoice.pdf');
+    Route::get('/',        [SubscriptionController::class, 'show']);
+    Route::post('request', [SubscriptionController::class, 'requestPlan']);
+    Route::get('invoices',             [SubscriptionController::class, 'invoices']);
+    Route::get('invoices/{invoice}/pdf', [SubscriptionController::class, 'invoicePdf']);
 });
