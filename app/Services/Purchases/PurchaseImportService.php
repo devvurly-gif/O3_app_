@@ -5,14 +5,21 @@ namespace App\Services\Purchases;
 use App\Models\Category;
 use App\Models\DocumentHeader;
 use App\Models\DocumentIncrementor;
+use App\Models\PriceList;
+use App\Models\PriceListItem;
 use App\Models\Product;
+use App\Models\ProductVideo;
 use App\Models\PurchaseImport;
 use App\Models\ThirdPartner;
 use App\Models\Warehouse;
 use App\Services\DocumentHeaderService;
 use App\Services\StockMouvementService;
 use Carbon\Carbon;
+use App\Services\ProductImageService;
+use App\Services\ProductVideoService;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
 /**
@@ -83,6 +90,14 @@ class PurchaseImportService
     private array $errors = [];
     private array $warnings = [];
     private bool $pricesIncludeVat = false;
+    private ?float $marginPct = null;
+    private bool $saleWarned = false;
+
+    /** Hôtes autorisés pour le téléchargement des médias (anti-SSRF) ; extensible via config('purchase_import.media_hosts'). */
+    private const MEDIA_HOSTS = ['res-de.togroup.com', 'www.jadevermall.com', 'jadevermall.com'];
+    private const VIDEO_HOSTS = ['www.youtube.com', 'youtube.com', 'youtu.be', 'vimeo.com', 'player.vimeo.com', 'www.jadevermall.com', 'jadevermall.com', 'res-de.togroup.com'];
+    private const MEDIA_MAX_BYTES = 5 * 1024 * 1024;
+    private const PRICE_GAP_RATIO = 0.01;
 
     public function __construct(
         private DocumentHeaderService $documentService,
@@ -94,6 +109,8 @@ class PurchaseImportService
     {
         $this->errors = $this->warnings = [];
         $this->pricesIncludeVat = (bool) ($payload['prices_include_vat'] ?? false);
+        $this->marginPct = isset($payload['pricing']['margin_pct']) ? (float) $payload['pricing']['margin_pct'] : null;
+        $this->saleWarned = false;
         $externalId = $payload['external_id'];
         $hash = hash('sha256', json_encode(collect($payload)->except('dry_run')->all()));
         $allow = [
@@ -123,7 +140,7 @@ class PurchaseImportService
 
         $toCreate = [
             'products' => collect($lines)->where('action', 'create')
-                ->map(fn ($l) => ['sku' => $l['sku'], 'designation' => $l['designation'], 'purchase_price' => $l['unit_price_ht'], 'vat_rate' => $l['vat_rate']])
+                ->map(fn ($l) => ['sku' => $l['sku'], 'designation' => $l['designation'], 'purchase_price' => $l['purchase_ttc'], 'purchase_price_ht' => round($l['unit_price_ht'] * (1 - $l['discount_pct'] / 100), 2), 'vat_rate' => $l['vat_rate'], 'sale_price_ht' => $this->salePrices($l)['ht'], 'sale_price_ttc' => $this->salePrices($l)['ttc'], 'image_url' => $l['image_url'] ?? null, 'video_url' => $l['video_url'] ?? null])
                 ->values()->all(),
             'supplier' => $supplierPlan['action'] === 'create' ? $supplierPlan['data'] : null,
         ];
@@ -147,7 +164,8 @@ class PurchaseImportService
         // 4. Écriture — tout ou rien, dans l'ordre demandé : produits → fournisseur → document → stock
         $created = ['products' => [], 'supplier' => null];
 
-        $document = DB::transaction(function () use ($payload, $docType, &$lines, $supplierPlan, $warehouse, $incrementor, $computed, $userId, &$created) {
+        $supplier = null;
+        $document = DB::transaction(function () use ($payload, $docType, &$lines, $supplierPlan, $warehouse, $incrementor, $computed, $userId, &$created, &$supplier) {
             foreach ($lines as &$l) {
                 if ($l['action'] === 'create') {
                     $product = $this->createProduct($l, $payload['external_id']);
@@ -167,8 +185,10 @@ class PurchaseImportService
             return $this->createDocument($payload, $docType, $supplier, $warehouse, $incrementor, $lines, $computed, $userId);
         });
 
+        $this->applyTariffsAndMedia($lines, $supplier, array_column($created['products'], 'id'));
+
         foreach ($created['products'] as $p) {
-            $this->info('PRODUCT_CREATED', 'lines', "Produit créé : {$p['sku']} — {$p['designation']} (id {$p['id']}). À compléter dans O3 (catégorie, prix de vente, image).");
+            $this->info('PRODUCT_CREATED', 'lines', "Produit créé : {$p['sku']} — {$p['designation']} (id {$p['id']}). À compléter dans O3 (catégorie, prix de vente, image si non fournie).");
         }
         if ($created['supplier']) {
             $this->info('SUPPLIER_CREATED', 'supplier', "Fournisseur créé : {$created['supplier']['name']} (id {$created['supplier']['id']}). À compléter dans O3 (coordonnées, IF, RC).");
@@ -191,7 +211,7 @@ class PurchaseImportService
     {
         // Catalogue complet (id, sku, ean13, titre) — une seule requête, sert aux
         // correspondances exactes, normalisées, « sosies » et par code-barres EAN13.
-        $catalog = Product::query()->select(['id', 'p_sku', 'p_ean13', 'p_title'])->get();
+        $catalog = Product::query()->select(['id', 'p_sku', 'p_ean13', 'p_title', 'p_purchasePrice'])->get();
         $byNorm     = $catalog->groupBy(fn ($p) => $this->normSku($p->p_sku));
         $bySkeleton = $catalog->groupBy(fn ($p) => $this->skeletonSku($p->p_sku));
         $byEan13    = $catalog->filter(fn ($p) => !empty($p->p_ean13))->groupBy(fn ($p) => trim($p->p_ean13));
@@ -269,6 +289,22 @@ class PurchaseImportService
                 $puHt    = (float) $l['unit_price_ht'];
             }
 
+            // Prix d'achat O3 = prix d'achat TTC de la facture, remise déduite (décision du 2026-10-02).
+            $purchaseTtc = $this->pricesIncludeVat
+                ? round((float) $l['unit_price_ht'] * (1 - $discount / 100), 2)
+                : round($puHt * (1 - $discount / 100) * (1 + $vat / 100), 2);
+
+            if ($product && (float) $product->p_purchasePrice > 0 && $purchaseTtc > 0) {
+                $old = (float) $product->p_purchasePrice;
+                if (abs($purchaseTtc - $old) / $old > self::PRICE_GAP_RATIO) {
+                    $this->warn('PURCHASE_PRICE_GAP', "lines.{$i}.unit_price",
+                        sprintf('Prix d\'achat TTC facture %.2f ≠ prix O3 %.2f pour %s (%+.1f %%). Le prix du produit n\'est pas modifié.',
+                            $purchaseTtc, $old, $product->p_sku, ($purchaseTtc - $old) / $old * 100));
+                }
+            }
+
+            $this->checkMedia($l, $i);
+
             $out[] = [
                 'index'         => $i,
                 'action'        => $action,          // link | create | reuse | blocked
@@ -283,6 +319,10 @@ class PurchaseImportService
                 'vat_rate'      => $vat,
                 'total_ht'      => $ht,
                 'total_tva'     => $tvaLine,
+                'purchase_ttc'  => $purchaseTtc,
+                'ean13'         => $l['ean13'] ?? null,
+                'image_url'     => $l['image_url'] ?? null,
+                'video_url'     => $l['video_url'] ?? null,
             ];
         }
         return $out;
@@ -444,6 +484,136 @@ class PurchaseImportService
         }
     }
 
+    // ───────────────────────────── Tarifs et médias ─────────────────────────────
+
+    /** Prix de vente d'un produit créé : marge sur le prix d'achat TTC (pricing.margin_pct), sinon 0. */
+    private function salePrices(array $l): array
+    {
+        if ($this->marginPct === null || $l['purchase_ttc'] <= 0) {
+            return ['ht' => 0.0, 'ttc' => 0.0];
+        }
+        $ttc = round($l['purchase_ttc'] * (1 + $this->marginPct / 100), 2);
+        $ht  = round($ttc / (1 + $l['vat_rate'] / 100), 2);
+
+        return ['ht' => $ht, 'ttc' => $ttc];
+    }
+
+    private function checkMedia(array $l, int $i): void
+    {
+        foreach (['image_url' => self::MEDIA_HOSTS, 'video_url' => self::VIDEO_HOSTS] as $key => $hosts) {
+            if (empty($l[$key])) {
+                continue;
+            }
+            $allowed = array_merge($hosts, (array) config('purchase_import.media_hosts', []));
+            $parts = parse_url($l[$key]);
+            if (($parts['scheme'] ?? '') !== 'https' || !in_array(strtolower($parts['host'] ?? ''), $allowed, true)) {
+                $this->block('MEDIA_HOST_REFUSED', "lines.{$i}.{$key}", "URL média refusée (https et hôte autorisé requis) : {$l[$key]}");
+            }
+        }
+    }
+
+    /**
+     * Après la transaction : tarif fournisseur, prix de vente (liste par défaut) et médias.
+     * Un échec ici ne défait jamais le document : il remonte en ATTENTION.
+     */
+    private function applyTariffsAndMedia(array $lines, ?ThirdPartner $supplier, array $createdIds): void
+    {
+        $idsBySku = collect($lines)->whereNotNull('product_id')
+            ->mapWithKeys(fn ($l) => [$this->normSku($l['sku']) => $l['product_id']]);
+        $defaultList = PriceList::default();
+        $done = [];
+
+        foreach ($lines as $l) {
+            $productId = $l['product_id'] ?? $idsBySku->get($this->normSku($l['sku']));
+            if (!$productId || isset($done[$productId])) {
+                continue;
+            }
+            $done[$productId] = true;
+            $isNew = in_array($productId, $createdIds, true);
+
+            try {
+                if ($supplier) {
+                    $this->upsertSupplierTariff($productId, $supplier->id, $l);
+                }
+            } catch (\Throwable $e) {
+                $this->warn('TARIFF_SUPPLIER_FAILED', 'lines', "Tarif fournisseur non enregistré pour {$l['sku']} : {$e->getMessage()}");
+            }
+
+            try {
+                $sale = $this->salePrices($l);
+                if ($isNew && $sale['ht'] > 0) {
+                    if ($defaultList) {
+                        PriceListItem::create(['price_list_id' => $defaultList->id, 'product_id' => $productId, 'price_ht' => $sale['ht'], 'price_ttc' => $sale['ttc'], 'min_qty' => 1]);
+                    } else {
+                        $this->warn('NO_DEFAULT_PRICE_LIST', 'pricing', "Aucune liste de prix par défaut : {$l['sku']} n'a que son prix de vente de base.");
+                    }
+                } elseif ($isNew && !$this->saleWarned) {
+                    $this->saleWarned = true;
+                    $this->warn('SALE_PRICE_MISSING', 'pricing.margin_pct', 'Aucune marge fournie (pricing.margin_pct) : prix de vente des produits créés laissé à 0, à fixer dans O3.');
+                }
+            } catch (\Throwable $e) {
+                $this->warn('TARIFF_SALE_FAILED', 'lines', "Prix de vente non enregistré pour {$l['sku']} : {$e->getMessage()}");
+            }
+
+            try {
+                $this->attachMedia(Product::find($productId), $l);
+            } catch (\Throwable $e) {
+                $this->warn('MEDIA_FAILED', 'lines', "Média non rattaché pour {$l['sku']} : {$e->getMessage()}");
+            }
+        }
+    }
+
+    /** Dernier prix d'achat TTC du fournisseur pour ce produit (product_suppliers) ; conserve la priorité existante. */
+    private function upsertSupplierTariff(int $productId, int $supplierId, array $l): void
+    {
+        $row = DB::table('product_suppliers')->where(['product_id' => $productId, 'third_partner_id' => $supplierId])->first();
+        if ($row) {
+            DB::table('product_suppliers')->where('id', $row->id)->update([
+                'purchase_price' => $l['purchase_ttc'],
+                'supplier_sku'   => $row->supplier_sku ?: $l['sku'],
+                'updated_at'     => now(),
+            ]);
+            return;
+        }
+        DB::table('product_suppliers')->insert([
+            'product_id'       => $productId,
+            'third_partner_id' => $supplierId,
+            'supplier_sku'     => $l['sku'],
+            'purchase_price'   => $l['purchase_ttc'],
+            'priority'         => (int) DB::table('product_suppliers')->where('product_id', $productId)->max('priority') + 1,
+            'created_at'       => now(),
+            'updated_at'       => now(),
+        ]);
+    }
+
+    /** Rattache photo/vidéo uniquement si le produit n'en a pas déjà (jamais d'écrasement). */
+    private function attachMedia(?Product $product, array $l): void
+    {
+        if (!$product) {
+            return;
+        }
+        if (!empty($l['image_url']) && !$product->images()->exists()) {
+            $resp = Http::timeout(20)->withOptions(['allow_redirects' => false])->get($l['image_url']);
+            $body = $resp->successful() ? $resp->body() : '';
+            $info = $body !== '' && strlen($body) <= self::MEDIA_MAX_BYTES ? @getimagesizefromstring($body) : false;
+            $mimes = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
+            if (!$info || !isset($mimes[$info['mime']])) {
+                throw new \RuntimeException('image introuvable, trop lourde (> 5 Mo) ou format non pris en charge');
+            }
+            $tmp = tempnam(sys_get_temp_dir(), 'pimg');
+            file_put_contents($tmp, $body);
+            try {
+                $file = new UploadedFile($tmp, Str::slug($product->p_sku) . '.' . $mimes[$info['mime']], $info['mime'], null, true);
+                app(ProductImageService::class)->upload($product, $file, $product->p_title, $product->p_title, true);
+            } finally {
+                @unlink($tmp);
+            }
+        }
+        if (!empty($l['video_url']) && !ProductVideo::where('product_id', $product->id)->exists()) {
+            app(ProductVideoService::class)->add($product, $l['video_url'], $product->p_title);
+        }
+    }
+
     // ───────────────────────────── Écriture ─────────────────────────────
 
     private function createProduct(array $l, string $externalId): Product
@@ -454,9 +624,10 @@ class PurchaseImportService
             'p_sku'           => $l['sku'],
             'p_title'         => $l['designation'],
             'p_description'   => "Créé automatiquement par l'import API {$externalId}.",
-            'p_purchasePrice' => $l['unit_price_ht'],
-            'p_salePrice'     => 0,          // à fixer par l'utilisateur dans O3
-            'p_cost'          => $l['unit_price_ht'],
+            'p_purchasePrice' => $l['purchase_ttc'],                // TTC, remise déduite
+            'p_salePrice'     => $this->salePrices($l)['ht'],       // 0 sans pricing.margin_pct : à fixer dans O3
+            'p_cost'          => $l['purchase_ttc'],
+            'p_ean13'         => $l['ean13'] ?? null,
             'p_taxRate'       => $l['vat_rate'],
             'p_unit'          => $l['unit'] ?? 'pièce',
             'p_status'        => false,      // inactif tant que la fiche n'est pas complétée

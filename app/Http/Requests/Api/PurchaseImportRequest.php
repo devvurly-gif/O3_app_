@@ -70,6 +70,13 @@ class PurchaseImportRequest extends FormRequest
             'lines.*.unit_price_ht'=> ['required_without:lines.*.unit_price', 'nullable', 'numeric', 'min:0'],
             'lines.*.discount_pct' => ['nullable', 'numeric', 'between:0,100'],
             'lines.*.vat_rate'     => ['nullable', 'in:' . implode(',', self::VAT_RATES)],
+            // Médias (produits créés ou sans photo) : https + hôte autorisé, contrôlé par le service.
+            'lines.*.image_url'    => ['nullable', 'url:https', 'max:500'],
+            'lines.*.video_url'    => ['nullable', 'url:https', 'max:500'],
+
+            // Tarifs de vente des produits créés : marge % appliquée au prix d'achat TTC. Absent = prix de vente à 0.
+            'pricing'              => ['sometimes', 'array'],
+            'pricing.margin_pct'   => ['nullable', 'numeric', 'between:0,1000'],
 
             'notes'                => ['nullable', 'string', 'max:2000'],
         ];

@@ -386,6 +386,8 @@ Route::middleware(['auth:sanctum', 'tenant.active'])->group(function () {
             Route::post('achats/import', [\App\Http\Controllers\Api\PurchaseImportController::class, 'store']);
             Route::get('achats/import/{externalId}', [\App\Http\Controllers\Api\PurchaseImportController::class, 'show'])
                 ->where('externalId', '[A-Za-z0-9\-_]+');
+            // Contrôle en lecture seule des documents d'achat O3 — ability "achats:audit" (PurchaseAuditController).
+            Route::get('achats/audit', [\App\Http\Controllers\Api\PurchaseAuditController::class, 'index']);
         });
 
         // ── Import API — agent de facturation client (facturation clients\CLAUDE.md) ──
