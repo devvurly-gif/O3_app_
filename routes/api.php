@@ -367,6 +367,7 @@ Route::middleware(['auth:sanctum', 'tenant.active'])->group(function () {
         Route::post('achats/documents/{commande}/generer-reception',       [DocumentAchatController::class, 'generer_reception']);
         Route::put('achats/documents/{br}/confirmer-br',                   [DocumentAchatController::class, 'confirmer_br']);
         Route::put('achats/documents/{br}/confirmer-facture',              [DocumentAchatController::class, 'confirmer_facture']);
+        Route::put('achats/documents/{facture}/confirmer-facture-achat',   [DocumentAchatController::class, 'confirmer_facture_achat']);
         Route::post('achats/documents/{br}/annuler',                       [DocumentAchatController::class, 'annuler_br']);
         Route::post('achats/documents/{document}/retour-fournisseur',      [DocumentAchatController::class, 'retour_fournisseur']);
         // Plusieurs bons de reception coches dans la liste -> une facture unique.
@@ -404,6 +405,27 @@ Route::middleware(['auth:sanctum', 'tenant.active'])->group(function () {
             Route::get('conversations',  [\App\Http\Controllers\Api\Messaging\OrderMessagingController::class, 'conversations']);
             Route::get('fil',            [\App\Http\Controllers\Api\Messaging\OrderMessagingController::class, 'thread']);
         });
+
+        // ── Activité des agents IA (lecture seule : événements routés, agents, dossiers) ──
+        Route::middleware(['permission:settings.manage', 'throttle:60,1'])
+            ->get('agents/activite', [\App\Http\Controllers\Api\Agents\AgentActivityController::class, 'index']);
+
+        // Ordres donnés aux agents (ex. préparer un inventaire) : brouillon produit, rien n'est modifié.
+        Route::middleware(['permission:settings.manage', 'throttle:20,1,agent-orders'])->group(function () {
+            Route::post('agents/ordres', [\App\Http\Controllers\Api\Agents\AgentOrderController::class, 'store']);
+            Route::get('agents/ordres/{event}/fichier', [\App\Http\Controllers\Api\Agents\AgentOrderController::class, 'file'])
+                ->whereNumber('event');
+        });
+
+        // Relances de paiement : contrôle des encaissements par l'agent Recouvrement, brouillons validés par un humain.
+        Route::middleware(['role:admin,manager', 'throttle:30,1,relances'])->prefix('ventes/relances')->group(function () {
+            $c = \App\Http\Controllers\Api\Ventes\PaymentReminderController::class;
+            Route::get('/',                          [$c, 'index']);
+            Route::post('controle',                  [$c, 'control']);
+            Route::put('{reminder}',                 [$c, 'update'])->whereNumber('reminder');
+            Route::post('{reminder}/valider',        [$c, 'validateReminder'])->whereNumber('reminder');
+            Route::post('{reminder}/rejeter',        [$c, 'reject'])->whereNumber('reminder');
+        });
     });
 
     // ── Stock write (admin, manager, warehouse) ───────────────────────────
@@ -421,6 +443,16 @@ Route::middleware(['auth:sanctum', 'tenant.active'])->group(function () {
         Route::post('stock/entree',                                                   [StockOperationController::class, 'entree']);
         Route::post('stock/sortie',                                                   [StockOperationController::class, 'sortie']);
         Route::post('stock/ajustement',                                               [StockOperationController::class, 'ajustement']);
+
+        // Inventaire : feuilles préparées par l'agent Stocks, comptage, application des écarts (par un humain).
+        Route::middleware('throttle:30,1,inventaire')->prefix('stock/inventaires')->group(function () {
+            $c = \App\Http\Controllers\Api\Stock\InventoryController::class;
+            Route::get('/',                         [$c, 'index']);
+            Route::post('/',                        [$c, 'store']);
+            Route::get('{event}',                   [$c, 'show'])->whereNumber('event');
+            Route::post('{event}/appliquer',        [$c, 'apply'])->whereNumber('event');
+            Route::get('{event}/fichier',           [$c, 'file'])->whereNumber('event');
+        });
 
         // Stock document workflow (StockEntry, StockExit, StockAdjustment, StockTransfer)
         Route::post('stock/documents/{document}/appliquer',                           [DocumentStockController::class, 'appliquer']);

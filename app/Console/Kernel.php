@@ -19,6 +19,8 @@ class Kernel extends ConsoleKernel
         $schedule->command('achats:draft-daily-po')->dailyAt('07:30');
         $schedule->command('notify:low-stock --threshold=5')->dailyAt('08:00');
         $schedule->command('notify:due-invoices --days=0')->dailyAt('09:00');
+        // Brouillons de relance seulement (aucun client contacté) ; ignoré tant que l'agent est inactif.
+        $schedule->command('recouvrement:prepare')->dailyAt('09:15');
         $schedule->command('billing:generate-periodic-invoices')->dailyAt('01:00');
         $schedule->command('tenants:sync-feature-flags')->dailyAt('02:00');
         $schedule->command('treasury:generate')->dailyAt('03:00');

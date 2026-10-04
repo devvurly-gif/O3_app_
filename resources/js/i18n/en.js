@@ -199,6 +199,7 @@ export default {
     transferts: 'Transfers',
     operations: 'Operations',
     mouvements: 'Movements',
+    inventory: 'Inventory',
     documentsStock: 'Stock Documents',
     marketing: 'Marketing & eCom',
     // ── Sidebar (refonte) : libellés autrefois codés en dur + chrome ──
@@ -235,6 +236,8 @@ export default {
     newCustomerOrder: 'New sales order',
     newDeliveryNote: 'New delivery note',
     orderMessaging: 'Order messaging',
+    paymentReminders: 'Payment reminders',
+    agentActivity: 'Agent activity',
     newSalesInvoice: 'New sales invoice',
     newCreditNote: 'New credit note',
     // ── Section Achats du menu ──

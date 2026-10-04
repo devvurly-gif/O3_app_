@@ -152,6 +152,52 @@ class DocumentAchatController extends Controller
         ]);
     }
 
+    // ── Confirmer une facture d'achat directe (draft → confirmed, stock applied) ──
+
+    /**
+     * PUT /api/achats/documents/{facture}/confirmer-facture-achat
+     *
+     * InvoicePurchase (draft, sans BR d'origine) → confirmed — stock IN applied HERE.
+     * Les factures issues d'un BR n'entrent pas ici : leur stock est déjà passé par
+     * confirmer_br. Sert aux factures importées en brouillon par l'agent de saisie
+     * (PurchaseImportService), dont le mouvement de stock est seulement « pending ».
+     */
+    public function confirmer_facture_achat(DocumentHeader $facture): JsonResponse
+    {
+        if (!$facture->isInvoicePurchase()) {
+            return response()->json(['message' => 'Ce document n\'est pas une Facture Achat.'], 422);
+        }
+
+        if ($facture->parent_id) {
+            return response()->json(['message' => 'Cette facture est issue d\'un Bon de Réception : confirmez le BR.'], 422);
+        }
+
+        if ($facture->status !== 'draft') {
+            return response()->json(['message' => 'Cette facture est déjà confirmée. Statut : ' . $facture->status], 422);
+        }
+
+        DB::transaction(function () use ($facture) {
+            $facture->loadMissing('lignes');
+
+            // Sans mouvement en attente (facture créée à la main), on le crée avant de l'appliquer.
+            $hasPendingMovements = $facture->stockMouvements()
+                ->where('status', 'pending')
+                ->exists();
+
+            if (!$hasPendingMovements && $facture->lignes->isNotEmpty()) {
+                $this->stockService->processDocument($facture, pending: true);
+            }
+
+            $this->stockService->applyDocumentMovements($facture);
+            $facture->update(['status' => 'confirmed']);
+        });
+
+        return response()->json([
+            'message' => 'Facture Achat confirmée. Stock mis à jour.',
+            'data'    => $facture->fresh(['thirdPartner', 'lignes.product', 'footer', 'user', 'warehouse']),
+        ]);
+    }
+
     // ── Annuler BR (draft only) ──────────────────────────────────────
 
     /**

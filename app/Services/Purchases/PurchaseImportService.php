@@ -36,8 +36,9 @@ use Illuminate\Support\Str;
  *   - Document    → DocumentHeaderService::createWithLinesAndFooter() : c'est le MÊME
  *     service que l'écran « Nouveau document » — numérotation via DocumentIncrementor,
  *     lignes et pied de document dans la même transaction.
- *   - Stock       → StockMouvementService::processDocument() (mouvement 'in' appliqué
- *     immédiatement), exactement comme OcrInvoiceController::confirm().
+ *   - Stock       → StockMouvementService::processDocument(pending: true) : le document
+ *     reste en BROUILLON et le mouvement 'in' est seulement en attente ; rien n'entre en
+ *     stock avant la confirmation humaine dans O3 (décision du 2026-10-03).
  *
  * Deux écarts du contrat JSON (importer\README.md) par rapport au schéma O3 actuel,
  * assumés ici plutôt que de modifier le schéma sans que ce soit demandé :
@@ -707,10 +708,11 @@ class PurchaseImportService
 
         $document = $this->documentService->createWithLinesAndFooter($headerData, $linesData, $footerData);
 
-        // Même flux que OcrInvoiceController::confirm() : brouillon → confirmé, puis stock.
-        $document->update(['status' => 'confirmed']);
+        // Le document reste en brouillon : la confirmation est un geste humain dans O3.
+        // Le stock n'est qu'« en attente » (mouvement pending), comme un BR créé depuis
+        // l'écran (DocumentAchatController) ; il est appliqué à la confirmation.
         $document->load('lignes');
-        $this->stockService->processDocument($document);
+        $this->stockService->processDocument($document, pending: true);
 
         return $document->fresh();
     }

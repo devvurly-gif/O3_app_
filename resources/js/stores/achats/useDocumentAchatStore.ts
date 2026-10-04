@@ -139,6 +139,29 @@ export const useDocumentAchatStore = defineStore('documentAchat', () => {
   }
 
   /**
+   * Confirm a draft purchase invoice created directly (e.g. imported by the
+   * data-entry agent) — applies its pending stock movements. Invoices issued
+   * from a BR are not concerned: their stock moved when the BR was confirmed.
+   */
+  async function confirmerFactureAchat(factureId: number): Promise<DocumentHeader> {
+    loading.value = true
+    error.value = null
+    try {
+      const { data } = await http.put<{ message: string; data: DocumentHeader }>(
+        `/achats/documents/${factureId}/confirmer-facture-achat`,
+      )
+      current.value = data.data
+      return data.data
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { message?: string } } }
+      error.value = err.response?.data?.message ?? 'Erreur de confirmation.'
+      throw e
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /**
    * Create a supplier return (Bon de Retour) from a committed BR or purchase
    * invoice — the way to undo a confirmed document, since cancelling one is
    * refused. Without `lines` the whole document is returned.
@@ -278,6 +301,7 @@ export const useDocumentAchatStore = defineStore('documentAchat', () => {
     addPayment,
     genererReception,
     confirmerBR,
+    confirmerFactureAchat,
     confirmerFacture,
     regrouperBons,
     retourFournisseur,

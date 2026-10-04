@@ -90,6 +90,9 @@ async function confirmDocument() {
     // For ReceiptNotePurchase (BR), use the specific confirmerBR endpoint to apply stock movements
     if (doc.value.document_type === 'ReceiptNotePurchase') {
       doc.value = await store.confirmerBR(doc.value.id)
+    } else if (doc.value.document_type === 'InvoicePurchase' && !doc.value.parent_id) {
+      // Facture d'achat directe (ex. importée en brouillon) : applique son stock en attente
+      doc.value = await store.confirmerFactureAchat(doc.value.id)
     } else {
       // For other document types, use generic status update
       await store.updateStatus(doc.value.id, 'confirmed')

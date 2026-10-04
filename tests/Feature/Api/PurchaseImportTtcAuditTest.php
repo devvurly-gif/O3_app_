@@ -137,4 +137,68 @@ class PurchaseImportTtcAuditTest extends TestCase
         $this->assertContains('TOTAL_HT_MISMATCH', $codes);
         $this->assertGreaterThan(0, $bad->json('summary.bloquant'));
     }
+
+    public function test_imported_documents_stay_draft_and_stock_is_only_pending(): void
+    {
+        foreach (['bon_reception' => 'FA-TEST-0001', 'facture_achat' => 'FA-TEST-0002'] as $type => $externalId) {
+            $this->as(['achats:import'])->postJson('/api/achats/import', $this->payload([
+                'external_id' => $externalId, 'type' => $type, 'supplier_reference' => 'REF-' . $externalId,
+            ], ['sku' => 'STK-' . $externalId]))->assertCreated();
+        }
+
+        $docs = \App\Models\DocumentHeader::all();
+        $this->assertCount(2, $docs);
+        foreach ($docs as $doc) {
+            $this->assertSame('draft', $doc->status);
+            $moves = $doc->stockMouvements()->get();
+            $this->assertCount(1, $moves);
+            $this->assertSame('pending', $moves->first()->status);
+        }
+        // Rien n'est entré en stock avant la confirmation humaine.
+        $this->assertEquals(0, DB::table('warehouse_has_stock')->sum('stockLevel'));
+    }
+
+    public function test_confirming_an_imported_purchase_invoice_applies_the_stock_once(): void
+    {
+        $this->as(['achats:import'])->postJson('/api/achats/import', $this->payload(['type' => 'facture_achat']))->assertCreated();
+        $doc = \App\Models\DocumentHeader::sole();
+
+        $this->actingAs($this->agent, 'sanctum')
+            ->putJson("/api/achats/documents/{$doc->id}/confirmer-facture-achat")
+            ->assertOk()
+            ->assertJsonPath('data.status', 'confirmed');
+
+        $this->assertEquals(2, DB::table('warehouse_has_stock')->sum('stockLevel'));
+        $this->assertSame('applied', $doc->stockMouvements()->sole()->status);
+
+        $this->actingAs($this->agent, 'sanctum')
+            ->putJson("/api/achats/documents/{$doc->id}/confirmer-facture-achat")
+            ->assertStatus(422);
+        $this->assertEquals(2, DB::table('warehouse_has_stock')->sum('stockLevel'));
+    }
+
+    public function test_confirm_purchase_invoice_refuses_other_documents(): void
+    {
+        $this->as(['achats:import'])->postJson('/api/achats/import', $this->payload(['type' => 'bon_reception']))->assertCreated();
+        $br = \App\Models\DocumentHeader::sole();
+
+        $this->actingAs($this->agent, 'sanctum')
+            ->putJson("/api/achats/documents/{$br->id}/confirmer-facture-achat")
+            ->assertStatus(422);
+
+        $facture = \App\Models\DocumentHeader::factory()->create([
+            'document_incrementor_id' => $br->document_incrementor_id,
+            'document_type'           => 'InvoicePurchase',
+            'thirdPartner_id'         => $br->thirdPartner_id,
+            'warehouse_id'            => $br->warehouse_id,
+            'parent_id'               => $br->id,
+            'status'                  => 'draft',
+            'user_id'                 => $this->agent->id,
+        ]);
+
+        $this->actingAs($this->agent, 'sanctum')
+            ->putJson("/api/achats/documents/{$facture->id}/confirmer-facture-achat")
+            ->assertStatus(422);
+        $this->assertSame(0, (int) DB::table('warehouse_has_stock')->sum('stockLevel'));
+    }
 }

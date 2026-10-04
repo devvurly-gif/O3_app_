@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\Agents\AgentRegistry;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 
@@ -78,6 +79,8 @@ class IssueVentesAgentToken extends Command
         }
 
         $this->info($isNew ? "Compte créé : {$user->email}" : "Compte existant réutilisé : {$user->email}");
+
+        app(AgentRegistry::class)->register('ventes', $user, self::ABILITY, 'Ventes & CRM');
 
         $hasTokens = $user->tokens()->exists();
         if ($hasTokens && !$this->option('fresh')) {

@@ -11,6 +11,7 @@ use App\Models\ThirdPartner;
 use App\Models\User;
 use App\Notifications\MessageOrderDrafted;
 use App\Notifications\OrderPinLocked;
+use App\Services\Agents\OrderMessageEventRecorder;
 use App\Services\SmsService;
 use App\Services\Ventes\CustomerLookup;
 use App\Services\Ventes\WhatsAppOrderImportService;
@@ -56,6 +57,7 @@ class InboundOrderService
         private WhatsAppService $whatsapp,
         private SmsService $sms,
         private OrderPin $pins,
+        private OrderMessageEventRecorder $events,
     ) {
     }
 
@@ -308,6 +310,9 @@ class InboundOrderService
             'document_id'      => $document['id'] ?? null,
             'meta'             => array_merge($inbound->meta ?? [], $meta) ?: null,
         ]);
+
+        // Mode observation du routeur des agents IA (désactivé par défaut).
+        $this->events->record($inbound->fresh());
 
         if ($reply !== null) {
             $outbound = OrderMessage::create([

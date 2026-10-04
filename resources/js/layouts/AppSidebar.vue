@@ -814,6 +814,8 @@ const tenantGroups: SidebarGroup[] = [
       },
       // Commandes reçues par WhatsApp / SMS / chat, et saisie d'un BL en texte libre.
       { to: '/ventes/messagerie', labelKey: 'nav.orderMessaging', icon: icons.chat, permission: 'documents.create' },
+      // Contrôle des encaissements et relances préparées par l'agent Recouvrement (administrateurs et gestionnaires).
+      { to: '/ventes/relances', labelKey: 'nav.paymentReminders', icon: icons.listdoc, permission: 'treasury.manage' },
       {
         to: '/ventes/documents/create?type=InvoiceSale',
         labelKey: 'nav.newSalesInvoice',
@@ -901,6 +903,8 @@ const tenantGroups: SidebarGroup[] = [
         permission: 'stock.adjust',
       },
       { to: '/stock/mouvements', labelKey: 'nav.mouvements', icon: icons.listdoc, permission: 'stock.view' },
+      // Feuilles d'inventaire préparées par l'agent Stocks, comptage et ajustement des écarts.
+      { to: '/stock/inventaire', labelKey: 'nav.inventory', icon: icons.docs, permission: 'stock.adjust' },
     ],
   },
   {
@@ -916,6 +920,8 @@ const tenantGroups: SidebarGroup[] = [
     links: [
       { to: '/settings/users', labelKey: 'users.title', icon: icons.users, permission: 'settings.manage' },
       { to: '/settings/roles', labelKey: 'nav.roles', icon: icons.roles, permission: 'settings.manage' },
+      // Événements routés vers les agents IA (lecture seule).
+      { to: '/settings/agents', labelKey: 'nav.agentActivity', icon: icons.chat, permission: 'settings.manage' },
       {
         to: '/settings/structure-incrementors',
         labelKey: 'structureIncrementors.title',

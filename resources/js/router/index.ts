@@ -121,6 +121,11 @@ const routes: RouteRecordRaw[] = [
     meta: { layout: 'app', title: 'Document', breadcrumb: 'Détail' },
   },
   {
+    path: '/ventes/relances',
+    component: () => import('../pages/ventes/RelancesPaiement.vue'),
+    meta: { layout: 'app', title: 'Relances de paiement', breadcrumb: 'Relances' },
+  },
+  {
     path: '/ventes/messagerie',
     component: () => import('../pages/ventes/OrderMessaging.vue'),
     meta: { layout: 'app', title: 'Messagerie commandes', breadcrumb: 'Messagerie' },
@@ -128,6 +133,11 @@ const routes: RouteRecordRaw[] = [
 
   // Stock
 
+  {
+    path: '/stock/inventaire',
+    component: () => import('../pages/stock/Inventaire.vue'),
+    meta: { layout: 'app', title: 'Inventaire', breadcrumb: 'Inventaire' },
+  },
   {
     path: '/stock/mouvements',
     component: () => import('../pages/stock/MouvementsStock.vue'),
@@ -233,6 +243,11 @@ const routes: RouteRecordRaw[] = [
     path: '/settings/users',
     component: () => import('../pages/settings/Users.vue'),
     meta: { layout: 'app', title: 'Users', breadcrumb: 'Utilisateurs', adminOnly: true },
+  },
+  {
+    path: '/settings/agents',
+    component: () => import('../pages/agents/AgentActivity.vue'),
+    meta: { layout: 'app', title: 'Activité des agents', breadcrumb: 'Activité des agents', adminOnly: true },
   },
   {
     path: '/settings/roles',
