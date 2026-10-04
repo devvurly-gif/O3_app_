@@ -11,6 +11,7 @@ use App\Models\ThirdPartner;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Écran « Activité des agents » : ce que le routeur a reçu et à qui il l'a confié.
@@ -102,7 +103,8 @@ class AgentActivityController extends Controller
     /** Un agent par domaine : actif ou non, compte rattaché, volume et dernière activité. */
     private function agents(): array
     {
-        $counts = AgentEvent::selectRaw('agent_id, count(*) as n, max(created_at) as last_at')->groupBy('agent_id')->get()->keyBy('agent_id');
+        // Requête brute : n et last_at sont des agrégats, pas des attributs du modèle.
+        $counts = DB::table('agent_events')->selectRaw('agent_id, count(*) as n, max(created_at) as last_at')->groupBy('agent_id')->get()->keyBy('agent_id');
         $users = User::whereIn('id', Agent::whereNotNull('user_id')->pluck('user_id'))->get(['id', 'name', 'email'])->keyBy('id');
 
         return Agent::orderBy('id')->get()->map(fn (Agent $a) => [

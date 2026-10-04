@@ -97,11 +97,16 @@ trait RunsForEachTenant
             return $tenant ? collect([$tenant]) : null;
         }
 
-        return Tenant::query()
-            ->where('is_active', true)
-            ->orderBy('id')
-            ->get()
-            ->filter(fn (Tenant $tenant) => $writes ? $tenant->canWrite() : $tenant->canRead())
-            ->values();
+        // Boucle plutôt que ->filter() : get() renvoie une TenantCollection (Collection<int|string, Model>)
+        // dont PHPStan ne peut pas affiner le type en Collection<int, Tenant>. Même ordre, même filtre.
+        $eligible = [];
+        foreach (Tenant::query()->where('is_active', true)->orderBy('id')->get() as $tenant) {
+            /** @var Tenant $tenant */
+            if ($writes ? $tenant->canWrite() : $tenant->canRead()) {
+                $eligible[] = $tenant;
+            }
+        }
+
+        return collect($eligible);
     }
 }
