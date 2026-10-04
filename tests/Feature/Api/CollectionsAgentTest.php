@@ -282,7 +282,7 @@ class CollectionsAgentTest extends TestCase
         $this->as($this->admin)->postJson('/api/ventes/relances/controle')->assertStatus(422);
 
         $this->assertSame(0, PaymentReminder::count());
-        $this->assertSame(AgentEvent::STATUS_TO_SORT, AgentEvent::sole()->status);
+        $this->assertSame(AgentEvent::STATUS_REJECTED, AgentEvent::sole()->status);   // refusé, pas « à trier »
     }
 
     public function test_validating_a_whatsapp_reminder_sends_it_and_logs_the_decision(): void

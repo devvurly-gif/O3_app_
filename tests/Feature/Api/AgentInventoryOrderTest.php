@@ -160,13 +160,14 @@ class AgentInventoryOrderTest extends TestCase
         $this->assertEquals(7, $row[4]);
     }
 
-    public function test_inactive_stocks_agent_refuses_the_order_and_leaves_it_to_sort(): void
+    public function test_inactive_stocks_agent_refuses_the_order_and_marks_it_rejected_not_to_sort(): void
     {
         Agent::where('domain', 'stocks')->update(['is_active' => false]);
 
         $this->order()->assertStatus(422);
 
-        $this->assertSame(AgentEvent::STATUS_TO_SORT, AgentEvent::sole()->status);
+        $this->assertSame(AgentEvent::STATUS_REJECTED, AgentEvent::sole()->status);   // refusé, pas « à trier »
+        $this->assertSame('order_refused', AgentEvent::sole()->payload['legacy_reason']);
         $this->assertSame(0, AgentAction::count());
     }
 

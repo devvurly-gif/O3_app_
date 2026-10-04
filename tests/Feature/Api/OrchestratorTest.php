@@ -212,6 +212,10 @@ class OrchestratorTest extends TestCase
         $this->assertTrue($r->json('reply.error'));
         $this->assertStringContainsString('inactif', $r->json('reply.body'));
         $this->assertSame(0, PaymentReminder::count());
+
+        // L'ordre refusé est « refusé », pas un message à classer : il ne pollue ni « à trier » ni l'état.
+        $this->assertStringContainsString('Rien à trier', $this->body('événements à trier'));
+        $this->assertStringContainsString('0 à trier, 1 refusé', $this->body('état des agents'));
     }
 
     // ── Session administrateur ───────────────────────────────────────

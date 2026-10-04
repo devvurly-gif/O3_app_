@@ -335,6 +335,7 @@ const REASON_LABELS: Record<string, string> = {
   rate_limited: 'Trop de messages',
   disabled: 'Canal désactivé',
   unknown_sender: 'Expéditeur inconnu',
+  order_refused: 'Ordre refusé (agent inactif)',
   ambiguous_sender: 'Expéditeur ambigu',
 }
 

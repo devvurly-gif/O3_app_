@@ -81,6 +81,13 @@ class AgentOrderService
         $this->router->route($event);
 
         if ($event->status !== AgentEvent::STATUS_ROUTED) {
+            // Un ordre que personne ne peut prendre (agent inactif, règle absente) est refusé : ce n'est
+            // pas un message à classer, il ne doit donc pas rester dans « à trier ».
+            $event->update([
+                'status'  => AgentEvent::STATUS_REJECTED,
+                'payload' => array_merge($event->payload ?? [], ['legacy_reason' => 'order_refused']),
+            ]);
+
             return ['ok' => false, 'event' => $event, 'http' => 422, 'message' => "L'ordre n'a pas pu être confié : {$refusal}"];
         }
 
