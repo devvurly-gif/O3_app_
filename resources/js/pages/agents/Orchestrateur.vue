@@ -149,6 +149,7 @@ interface ChatMessage {
   links: { label: string; to: string }[]
   suggestions?: { label: string; text: string }[]
   ai?: boolean
+  warning?: boolean
   error: boolean
   event_id: number | null
   created_at: string
@@ -190,6 +191,7 @@ async function toggleAi() {
 function bubbleClass(m: ChatMessage) {
   if (m.role === 'admin') return 'bg-[#7C5CFC] text-white'
   if (m.error) return 'bg-red-50 text-red-800 dark:bg-red-900/20 dark:text-red-200'
+  if (m.warning) return 'bg-amber-50 text-amber-900 dark:bg-amber-900/20 dark:text-amber-100'
   return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100'
 }
 

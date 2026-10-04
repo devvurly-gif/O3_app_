@@ -96,6 +96,7 @@ class OrchestratorController extends Controller
             'links'       => $m->meta['links'] ?? [],
             'suggestions' => $m->meta['suggestions'] ?? [],
             'ai'          => (bool) ($m->meta['ai'] ?? false),
+            'warning'     => (bool) ($m->meta['warning'] ?? false),
             'error'       => (bool) ($m->meta['error'] ?? false),
             'event_id'    => $m->meta['event_id'] ?? null,
             'created_at'  => $m->created_at,

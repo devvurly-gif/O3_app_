@@ -43,6 +43,14 @@ class OrchestratorInterpreter
         'hors_sujet'          => 'toute autre demande : question générale, conversation, ou demande que l\'orchestrateur ne sait pas traiter',
     ];
 
+    /** Cause de l'échec du dernier appel (français, sans secret) ; null s'il n'y a pas eu d'échec. */
+    private ?string $failure = null;
+
+    public function failure(): ?string
+    {
+        return $this->failure;
+    }
+
     public function configured(): bool
     {
         return $this->apiKey() !== null;
@@ -59,7 +67,14 @@ class OrchestratorInterpreter
      */
     public function interpret(string $text, array $warehouseTitles): ?array
     {
-        if (!$this->enabled() || !$this->underCap()) {
+        $this->failure = null;
+
+        if (!$this->enabled()) {
+            return null;   // désactivé : ce n'est pas un échec, l'aide habituelle s'affiche
+        }
+        if (!$this->underCap()) {
+            $this->failure = 'le plafond de ' . self::DAILY_CAP . ' appels par jour est atteint, il reprendra demain';
+
             return null;
         }
 
@@ -77,6 +92,7 @@ class OrchestratorInterpreter
 
             if (!$response->successful()) {
                 Log::warning("Orchestrateur IA : réponse {$response->status()} de l'API Anthropic.");
+                $this->failure = $this->describe($response->status(), (string) $response->json('error.message'));
 
                 return null;
             }
@@ -84,13 +100,33 @@ class OrchestratorInterpreter
             $input = collect($response->json('content', []))
                 ->first(fn ($b) => ($b['type'] ?? null) === 'tool_use' && ($b['name'] ?? null) === 'route_request')['input'] ?? null;
 
-            return is_array($input) ? $this->validated($input, $warehouseTitles) : null;
+            $validated = is_array($input) ? $this->validated($input, $warehouseTitles) : null;
+            $this->failure = $validated === null ? 'la réponse du modèle est inexploitable' : null;
+
+            return $validated;
         } catch (\Throwable $e) {
             // Jamais d'échec de l'orchestrateur à cause de l'IA : l'aide habituelle s'affiche.
             Log::warning('Orchestrateur IA : ' . $e->getMessage());
+            $this->failure = "le service d'Anthropic est injoignable ou trop lent";
 
             return null;
         }
+    }
+
+    /**
+     * Une cause lisible par l'administrateur. Jamais le texte brut de l'erreur ni la clé :
+     * seulement un libellé choisi ici.
+     */
+    private function describe(int $status, string $providerMessage): string
+    {
+        return match (true) {
+            $status === 401, $status === 403 => 'la clé API est refusée par Anthropic (invalide, révoquée ou sans droit) : remplacez-la dans Paramètres → Réglages → Messagerie',
+            $status === 400 && stripos($providerMessage, 'credit') !== false => 'le crédit du compte Anthropic est insuffisant : ajoutez des crédits dans Plans & Billing',
+            $status === 404 => 'le modèle demandé est introuvable chez Anthropic : vérifiez le réglage du modèle',
+            $status === 429 => "la limite de débit d'Anthropic est atteinte : réessayez dans un instant",
+            $status >= 500 => "le service d'Anthropic est momentanément indisponible",
+            default => "la demande a été refusée par Anthropic (code {$status})",
+        };
     }
 
     /** @return array{intent: string, warehouse: ?string, scope: string}|null */

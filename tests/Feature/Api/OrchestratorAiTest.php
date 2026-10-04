@@ -174,23 +174,83 @@ class OrchestratorAiTest extends TestCase
 
     // ── Robustesse ───────────────────────────────────────────────────
 
-    public function test_out_of_scope_invalid_or_failed_answers_fall_back_to_the_help(): void
+    public function test_an_out_of_scope_request_gets_the_usual_help_not_a_failure_warning(): void
     {
         $this->enableAi();
-
         $this->aiReplies(['intent' => 'hors_sujet']);
-        $this->assertStringContainsString("Je n'ai pas compris", $this->say('quelle est la capitale du Maroc ?')->json('reply.body'));
 
-        $this->aiReplies(['intent' => 'supprimer_toutes_les_donnees']);
-        $this->assertStringContainsString("Je n'ai pas compris", $this->say(self::FREE_STATUS)->json('reply.body'));
+        $r = $this->say('quelle est la capitale du Maroc ?');
 
-        Http::fake(['api.anthropic.com/*' => Http::response('erreur', 500)]);
-        $this->assertStringContainsString("Je n'ai pas compris", $this->say(self::FREE_STATUS)->json('reply.body'));
-
-        Http::fake(fn () => throw new ConnectionException('délai dépassé'));
-        $this->assertStringContainsString("Je n'ai pas compris", $this->say(self::FREE_STATUS)->json('reply.body'));
-
+        $this->assertStringContainsString("Je n'ai pas compris", $r->json('reply.body'));
+        $this->assertStringNotContainsString('indisponible', $r->json('reply.body'));
+        $this->assertFalse($r->json('reply.warning'));
         $this->assertSame(0, AgentEvent::count());
+    }
+
+    // ── Échecs de l'IA : dits clairement à l'administrateur ──────────
+
+    /** @return array<string, array{0: callable, 1: string}> */
+    public static function failures(): array
+    {
+        $status = fn (int $code, array $body = []) => fn () => Http::fake(['api.anthropic.com/*' => Http::response($body ?: 'erreur', $code)]);
+
+        return [
+            'clé refusée (401)'        => [$status(401, ['error' => ['type' => 'authentication_error', 'message' => 'invalid x-api-key']]), 'la clé API est refusée par Anthropic'],
+            'droits insuffisants (403)' => [$status(403, ['error' => ['message' => 'forbidden']]), 'la clé API est refusée par Anthropic'],
+            'crédit insuffisant (400)' => [$status(400, ['error' => ['type' => 'invalid_request_error', 'message' => 'Your credit balance is too low to access the Anthropic API.']]), 'le crédit du compte Anthropic est insuffisant'],
+            'modèle introuvable (404)' => [$status(404, ['error' => ['message' => 'model: nope']]), 'le modèle demandé est introuvable'],
+            'limite de débit (429)'    => [$status(429, ['error' => ['message' => 'rate limited']]), 'la limite de débit'],
+            'service en panne (500)'   => [$status(500), "momentanément indisponible"],
+            'service surchargé (529)'  => [$status(529), "momentanément indisponible"],
+            'autre refus (400)'        => [$status(400, ['error' => ['message' => 'bad request']]), 'refusée par Anthropic (code 400)'],
+            'délai dépassé'            => [fn () => Http::fake(fn () => throw new ConnectionException('timeout')), 'injoignable ou trop lent'],
+            'réponse inexploitable'    => [fn () => Http::fake(['api.anthropic.com/*' => Http::response(['content' => [['type' => 'tool_use', 'name' => 'route_request', 'input' => ['intent' => 'supprimer_toutes_les_donnees']]]])]), 'réponse du modèle est inexploitable'],
+        ];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('failures')]
+    public function test_a_failed_call_tells_the_admin_why_and_still_offers_the_help(callable $fake, string $expected): void
+    {
+        $this->enableAi();
+        $fake();
+
+        $r = $this->say(self::FREE_STATUS);
+
+        $body = $r->json('reply.body');
+        $this->assertStringContainsString('La compréhension avancée est indisponible', $body);
+        $this->assertStringContainsString($expected, $body);
+        $this->assertStringContainsString('« état des agents »', $body);          // l'aide reste là
+        $this->assertTrue($r->json('reply.warning'));
+        $this->assertFalse($r->json('reply.ai'));
+        // Ni la clé, ni le texte brut de l'erreur du fournisseur ne sont repris.
+        $this->assertStringNotContainsString('sk-test-cle', $body);
+        $this->assertStringNotContainsString('x-api-key', $body);
+        $this->assertSame(0, AgentEvent::count());
+    }
+
+    public function test_the_daily_cap_is_announced(): void
+    {
+        $this->enableAi();
+        $this->aiReplies(['intent' => 'etat']);
+        $interpreter = app(OrchestratorInterpreter::class);
+        for ($i = 0; $i < OrchestratorInterpreter::DAILY_CAP; $i++) {
+            $interpreter->interpret(self::FREE_STATUS, []);
+        }
+
+        $body = $this->say(self::FREE_STATUS)->json('reply.body');
+
+        $this->assertStringContainsString('le plafond de ' . OrchestratorInterpreter::DAILY_CAP . ' appels par jour est atteint', $body);
+    }
+
+    public function test_the_warning_comes_back_with_the_history(): void
+    {
+        $this->enableAi();
+        Http::fake(['api.anthropic.com/*' => Http::response('erreur', 500)]);
+        $this->say(self::FREE_STATUS);
+
+        $messages = $this->actingAs($this->admin, 'sanctum')->getJson('/api/agents/orchestrateur')->json('messages');
+
+        $this->assertTrue(collect($messages)->firstWhere('role', 'orchestrator')['warning']);
     }
 
     public function test_the_daily_cap_stops_the_calls(): void

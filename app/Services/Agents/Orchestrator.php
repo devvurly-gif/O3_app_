@@ -80,7 +80,10 @@ class Orchestrator
         $r = $this->interpreter->interpret($text, $titles);
 
         if ($r === null) {
-            return $this->help(false);
+            $why = $this->interpreter->failure();
+
+            // IA activée mais en échec : on le dit (la phrase n'est pas « incomprise », elle n'a pas pu être lue).
+            return $why ? $this->help(false, "La compréhension avancée est indisponible : {$why}.") : $this->help(false);
         }
 
         $answer = match ($r['intent']) {
@@ -115,11 +118,13 @@ class Orchestrator
 
     // ── Demandes ─────────────────────────────────────────────────────
 
-    private function help(bool $greeting): array
+    private function help(bool $greeting, ?string $warning = null): array
     {
-        $intro = $greeting
-            ? "Bonjour. Je suis l'orchestrateur : je reçois vos demandes et je les confie aux agents. Voici ce que je sais faire."
-            : "Je n'ai pas compris cette demande. Voici ce que je sais faire.";
+        $intro = $warning !== null
+            ? "{$warning}\nJe ne peux donc traiter que ce que je comprends sans elle :"
+            : ($greeting
+                ? "Bonjour. Je suis l'orchestrateur : je reçois vos demandes et je les confie aux agents. Voici ce que je sais faire."
+                : "Je n'ai pas compris cette demande. Voici ce que je sais faire.");
 
         return $this->reply(
             "{$intro}\n\n"
@@ -130,6 +135,7 @@ class Orchestrator
             . "• « relances à valider » : ce qui attend votre validation\n\n"
             . "Les agents préparent des brouillons. Rien n'est modifié ni envoyé sans votre validation, dans l'écran concerné.",
             'help',
+            warning: $warning !== null,
         );
     }
 
@@ -303,7 +309,7 @@ class Orchestrator
      * @param array<int, array{label: string, text: string}> $suggestions boutons proposés : le texte est envoyé tel quel en cas de clic
      * @return array{body: string, meta: array<string, mixed>}
      */
-    private function reply(string $body, string $intent, array $links = [], bool $error = false, ?int $eventId = null, array $suggestions = []): array
+    private function reply(string $body, string $intent, array $links = [], bool $error = false, ?int $eventId = null, array $suggestions = [], bool $warning = false): array
     {
         return ['body' => $body, 'meta' => array_filter([
             'intent'   => $intent,
@@ -311,6 +317,7 @@ class Orchestrator
             'error'    => $error ?: null,
             'event_id'    => $eventId,
             'suggestions' => $suggestions ?: null,
+            'warning'     => $warning ?: null,
         ], fn ($v) => $v !== null)];
     }
 }
