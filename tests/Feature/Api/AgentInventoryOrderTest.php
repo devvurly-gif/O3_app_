@@ -92,6 +92,10 @@ class AgentInventoryOrderTest extends TestCase
         $this->assertSame('prepare_inventory_sheet', $action->action);
         $this->assertSame('approval', $action->level);
 
+        // Un ordre manuel sans client n'ouvre pas de dossier.
+        $this->assertNull($event->case_id);
+        $this->assertSame(0, \App\Models\AgentCase::count());
+
         // Rien n'a bougé dans le stock.
         $this->assertEquals($before, WarehouseHasStock::pluck('stockLevel', 'id')->all());
         $this->assertSame(0, StockMouvement::count());

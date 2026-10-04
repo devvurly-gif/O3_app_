@@ -38,7 +38,7 @@ class EventRouter
         $event->update([
             'type'     => $rule->event_type,
             'agent_id' => $agent->id,
-            'case_id'  => $event->case_id ?? $this->attachToCase($event)->id,
+            'case_id'  => $event->case_id ?? $this->attachToCase($event)?->id,
             'priority' => $rule->priority,
             'status'   => AgentEvent::STATUS_ROUTED,
         ]);
@@ -84,10 +84,18 @@ class EventRouter
         return true;
     }
 
-    /** Dossier ouvert du client si connu, sinon nouveau dossier. */
-    private function attachToCase(AgentEvent $event): AgentCase
+    /**
+     * Dossier ouvert du client si connu, sinon nouveau dossier. Un ordre manuel donné à un
+     * agent (source `manual`) sans client n'ouvre aucun dossier : un dossier regroupe les
+     * échanges d'une affaire, et ces ordres n'en ont pas (ils s'accumulaient sans client).
+     */
+    private function attachToCase(AgentEvent $event): ?AgentCase
     {
         $partnerId = $event->entities['third_partner_id'] ?? null;
+
+        if ($event->source === 'manual' && !$partnerId) {
+            return null;
+        }
 
         if ($partnerId) {
             $open = AgentCase::where('third_partner_id', $partnerId)->where('status', 'open')->latest('id')->first();

@@ -107,6 +107,32 @@ class AgentFoundationTest extends TestCase
         $this->assertSame('demande_devis', $sms->fresh()->type);
     }
 
+    public function test_a_manual_order_without_a_client_opens_no_case(): void
+    {
+        $order = $this->event(['source' => 'manual', 'type' => 'inventaire_demande', 'payload' => ['text' => 'Inventaire demandé']]);
+
+        app(EventRouter::class)->route($order);
+
+        $order->refresh();
+        $this->assertSame(AgentEvent::STATUS_ROUTED, $order->status);   // bien confié à l'agent Stocks
+        $this->assertSame('stocks', $order->agent->domain);
+        $this->assertNull($order->case_id);                             // mais aucun dossier
+        $this->assertSame(0, AgentCase::count());
+    }
+
+    public function test_a_manual_event_about_a_client_still_gets_that_client_case(): void
+    {
+        $a = $this->event(['source' => 'manual', 'type' => 'inventaire_demande', 'entities' => ['third_partner_id' => 7]]);
+        $b = $this->event(['source' => 'manual', 'type' => 'inventaire_demande', 'entities' => ['third_partner_id' => 7]]);
+
+        app(EventRouter::class)->route($a);
+        app(EventRouter::class)->route($b);
+
+        $this->assertNotNull($a->fresh()->case_id);
+        $this->assertSame($a->fresh()->case_id, $b->fresh()->case_id);
+        $this->assertSame(1, AgentCase::count());
+    }
+
     public function test_events_of_same_client_share_the_open_case(): void
     {
         $a = $this->event(['source' => 'whatsapp', 'payload' => ['text' => 'devis svp'], 'entities' => ['third_partner_id' => 7]]);
