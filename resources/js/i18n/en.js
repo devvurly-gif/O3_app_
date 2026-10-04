@@ -238,6 +238,7 @@ export default {
     orderMessaging: 'Order messaging',
     paymentReminders: 'Payment reminders',
     agentActivity: 'Agent activity',
+    orchestrator: 'Orchestrator',
     newSalesInvoice: 'New sales invoice',
     newCreditNote: 'New credit note',
     // ── Section Achats du menu ──

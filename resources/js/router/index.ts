@@ -245,6 +245,11 @@ const routes: RouteRecordRaw[] = [
     meta: { layout: 'app', title: 'Users', breadcrumb: 'Utilisateurs', adminOnly: true },
   },
   {
+    path: '/settings/orchestrateur',
+    component: () => import('../pages/agents/Orchestrateur.vue'),
+    meta: { layout: 'app', title: 'Orchestrateur', breadcrumb: 'Orchestrateur', adminOnly: true },
+  },
+  {
     path: '/settings/agents',
     component: () => import('../pages/agents/AgentActivity.vue'),
     meta: { layout: 'app', title: 'Activité des agents', breadcrumb: 'Activité des agents', adminOnly: true },

@@ -417,6 +417,14 @@ Route::middleware(['auth:sanctum', 'tenant.active'])->group(function () {
                 ->whereNumber('event');
         });
 
+        // Session administrateur ↔ orchestrateur des agents (règles, sans modèle de langage).
+        Route::middleware(['permission:settings.manage', 'throttle:30,1,orchestrateur'])->prefix('agents/orchestrateur')->group(function () {
+            $c = \App\Http\Controllers\Api\Agents\OrchestratorController::class;
+            Route::get('/',    [$c, 'index']);
+            Route::post('/',   [$c, 'send']);
+            Route::delete('/', [$c, 'clear']);
+        });
+
         // Relances de paiement : contrôle des encaissements par l'agent Recouvrement, brouillons validés par un humain.
         Route::middleware(['role:admin,manager', 'throttle:30,1,relances'])->prefix('ventes/relances')->group(function () {
             $c = \App\Http\Controllers\Api\Ventes\PaymentReminderController::class;

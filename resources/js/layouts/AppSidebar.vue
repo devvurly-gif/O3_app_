@@ -922,6 +922,8 @@ const tenantGroups: SidebarGroup[] = [
       { to: '/settings/roles', labelKey: 'nav.roles', icon: icons.roles, permission: 'settings.manage' },
       // Événements routés vers les agents IA (lecture seule).
       { to: '/settings/agents', labelKey: 'nav.agentActivity', icon: icons.chat, permission: 'settings.manage' },
+      // Session administrateur : discussion avec l'orchestrateur des agents.
+      { to: '/settings/orchestrateur', labelKey: 'nav.orchestrator', icon: icons.chat, permission: 'settings.manage' },
       {
         to: '/settings/structure-incrementors',
         labelKey: 'structureIncrementors.title',
