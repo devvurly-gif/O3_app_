@@ -19,7 +19,8 @@ use Maatwebsite\Excel\Facades\Excel;
  *   scope        : all (tous les articles en stock) | attention (seulement ceux à vérifier)
  *
  * « À vérifier » : stock négatif, stock nul, mouvement de stock en attente,
- * article inactif, ou article dormant (stock > 0 sans mouvement depuis DORMANT_DAYS jours).
+ * ou article dormant (stock > 0 sans mouvement depuis DORMANT_DAYS jours). Un article
+ * inactif est compté comme les autres, sans être signalé pour cela.
  */
 class StockInventoryAgent
 {
@@ -70,11 +71,12 @@ class StockInventoryAgent
             ->join('warehouses as w', 'w.id', '=', 's.warehouse_id')
             ->leftJoin('categories as c', 'c.id', '=', 'p.category_id')
             // Pas de filtre sur p_status : un article inactif qui a du stock existe physiquement,
-            // il doit être compté (et il est signalé « Article inactif »).
+            // il doit être compté. Il n'est pas non plus signalé pour ce seul motif : l'import crée
+            // les produits inactifs (fiche à compléter), donc c'est l'état normal du catalogue.
             ->whereNull('p.deleted_at')
             ->where('w.wh_status', true)
             ->when($warehouseId, fn ($q) => $q->where('s.warehouse_id', $warehouseId))
-            ->get(['w.wh_title', 's.warehouse_id', 'p.id as product_id', 'p.p_sku', 'p.p_title', 'p.p_status', 'c.ctg_title', 's.stockLevel']);
+            ->get(['w.wh_title', 's.warehouse_id', 'p.id as product_id', 'p.p_sku', 'p.p_title', 'c.ctg_title', 's.stockLevel']);
 
         $pending = DB::table('stock_mouvements')
             ->where('status', 'pending')
@@ -105,9 +107,6 @@ class StockInventoryAgent
             }
             if ($net != 0.0) {
                 $flags[] = 'Mouvement en attente';
-            }
-            if (!$s->p_status) {
-                $flags[] = 'Article inactif';
             }
             if ($level > 0 && (!$lastAt || $lastAt < $dormantBefore->toDateTimeString())) {
                 $flags[] = 'Dormant ' . self::DORMANT_DAYS . ' j';

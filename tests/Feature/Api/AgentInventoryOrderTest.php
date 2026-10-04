@@ -143,7 +143,7 @@ class AgentInventoryOrderTest extends TestCase
         $this->assertEquals(6, $row[5]);
     }
 
-    public function test_an_inactive_article_with_stock_is_counted_and_flagged(): void
+    public function test_an_inactive_article_with_stock_is_counted_but_not_flagged_for_being_inactive(): void
     {
         $inactive = $this->stock('IMPORTED-1', $this->main, 7);
         $inactive->update(['p_status' => false]);
@@ -152,7 +152,7 @@ class AgentInventoryOrderTest extends TestCase
 
         $row = collect($this->sheet($name))->firstWhere(1, 'IMPORTED-1');
         $this->assertNotNull($row);
-        $this->assertStringContainsString('Article inactif', $row[7]);
+        $this->assertStringNotContainsString('inactif', (string) $row[7]);   // l'import crée les produits inactifs : pas un signal
         $this->assertEquals(7, $row[4]);
     }
 
