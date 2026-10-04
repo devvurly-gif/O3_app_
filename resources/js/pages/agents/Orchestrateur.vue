@@ -11,14 +11,33 @@
           demandes et les confie aux agents. Les agents préparent des brouillons, la validation reste la vôtre.
         </p>
       </div>
-      <button
-        v-if="messages.length"
-        class="px-3 py-2 text-sm rounded-[11px] border border-[#ECEEF2] dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-        :disabled="sending"
-        @click="clearSession"
-      >
-        Effacer la conversation
-      </button>
+      <div class="flex items-center gap-2 flex-wrap">
+        <button
+          class="px-3 py-2 text-sm rounded-[11px] border bg-white dark:bg-gray-800 transition disabled:opacity-50"
+          :class="
+            ai.enabled
+              ? 'border-emerald-300 text-emerald-700 dark:text-emerald-300'
+              : 'border-[#ECEEF2] dark:border-gray-700 text-gray-600 dark:text-gray-300'
+          "
+          :disabled="togglingAi || (!ai.configured && !ai.enabled)"
+          :title="
+            ai.configured
+              ? 'Le modèle ne fait que ranger vos phrases libres dans une demande connue : il ne voit aucune donnée de l\'entreprise et n\'exécute rien.'
+              : 'Saisissez d\'abord la clé API Anthropic dans Paramètres → Réglages → Messagerie.'
+          "
+          @click="toggleAi"
+        >
+          Compréhension avancée (IA) : {{ ai.enabled ? 'activée' : 'désactivée' }}
+        </button>
+        <button
+          v-if="messages.length"
+          class="px-3 py-2 text-sm rounded-[11px] border border-[#ECEEF2] dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+          :disabled="sending"
+          @click="clearSession"
+        >
+          Effacer la conversation
+        </button>
+      </div>
     </div>
 
     <!-- Conversation -->
@@ -49,9 +68,21 @@
                 {{ l.label }} →
               </router-link>
             </div>
+            <div v-if="m.suggestions?.length" class="flex flex-wrap gap-2 mt-2">
+              <button
+                v-for="s in m.suggestions"
+                :key="s.text"
+                class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#7C5CFC] text-white hover:bg-[#6A49F0] transition disabled:opacity-50"
+                :disabled="sending"
+                @click="send(s.text)"
+              >
+                {{ s.label }}
+              </button>
+            </div>
             <p class="text-[10px] mt-1.5 opacity-60">
               {{ m.role === 'admin' ? auth.userName : 'Orchestrateur' }} · {{ formatTime(m.created_at) }}
               <span v-if="m.event_id"> · événement #{{ m.event_id }}</span>
+              <span v-if="m.ai"> · compris par IA</span>
             </p>
           </div>
         </div>
@@ -105,11 +136,19 @@ import { nextTick, onMounted, ref } from 'vue'
 import http from '@/services/http'
 import { useAuthStore } from '@/stores/authStore'
 
+interface AiState {
+  configured: boolean
+  enabled: boolean
+  model: string
+}
+
 interface ChatMessage {
   id: number
   role: 'admin' | 'orchestrator'
   body: string
   links: { label: string; to: string }[]
+  suggestions?: { label: string; text: string }[]
+  ai?: boolean
   error: boolean
   event_id: number | null
   created_at: string
@@ -131,6 +170,22 @@ const loading = ref(false)
 const sending = ref(false)
 const error = ref('')
 const scroller = ref<HTMLElement | null>(null)
+const ai = ref<AiState>({ configured: false, enabled: false, model: '' })
+const togglingAi = ref(false)
+
+async function toggleAi() {
+  togglingAi.value = true
+  error.value = ''
+  try {
+    const { data } = await http.put<AiState>('/agents/orchestrateur/ia', { enabled: !ai.value.enabled })
+    ai.value = data
+  } catch (e: unknown) {
+    const err = e as { response?: { data?: { message?: string } } }
+    error.value = err.response?.data?.message ?? "La compréhension avancée n'a pas pu être modifiée."
+  } finally {
+    togglingAi.value = false
+  }
+}
 
 function bubbleClass(m: ChatMessage) {
   if (m.role === 'admin') return 'bg-[#7C5CFC] text-white'
@@ -155,8 +210,9 @@ async function scrollToEnd() {
 async function load() {
   loading.value = true
   try {
-    const { data } = await http.get<{ messages: ChatMessage[] }>('/agents/orchestrateur')
+    const { data } = await http.get<{ messages: ChatMessage[]; ai: AiState }>('/agents/orchestrateur')
     messages.value = data.messages
+    ai.value = data.ai
     await scrollToEnd()
   } catch {
     /* Erreur déjà affichée par l'intercepteur http. */

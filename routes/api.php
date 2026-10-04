@@ -423,6 +423,7 @@ Route::middleware(['auth:sanctum', 'tenant.active'])->group(function () {
             Route::get('/',    [$c, 'index']);
             Route::post('/',   [$c, 'send']);
             Route::delete('/', [$c, 'clear']);
+            Route::put('ia',   [$c, 'toggleAi']);
         });
 
         // Relances de paiement : contrôle des encaissements par l'agent Recouvrement, brouillons validés par un humain.

@@ -28,7 +28,7 @@ use Illuminate\Support\Str;
  */
 class Orchestrator
 {
-    public function __construct(private AgentOrderService $orders)
+    public function __construct(private AgentOrderService $orders, private OrchestratorInterpreter $interpreter)
     {
     }
 
@@ -62,8 +62,55 @@ class Orchestrator
             (bool) preg_match('/\ba trier\b|non classe|evenement|messages? recus?/', $n)          => $this->toSort(),
             (bool) preg_match('/\b(etat|statut|situation|bilan|resume|point|agents?|orchestr|ou en)\b/', $n) => $this->status(),
             (bool) preg_match('/\b(aide|help|bonjour|salut|bonsoir|coucou|que peux|que sais|commandes?)\b/', $n) => $this->help(true),
-            default                                                                               => $this->help(false),
+            default                                                                               => $this->freeText($admin, $text),
         };
+    }
+
+    // ── Phrase libre (renfort par un modèle de langage, si activé) ───
+
+    /**
+     * Les règles n'ont rien compris. Si la compréhension avancée est activée, le modèle range la
+     * phrase dans une demande connue ; sinon (ou en cas d'échec) l'aide habituelle s'affiche.
+     * Une demande de lecture est traitée directement ; un ordre est seulement PROPOSÉ : il ne part
+     * que sur le clic de l'administrateur, qui envoie la phrase canonique traitée par les règles.
+     */
+    private function freeText(User $admin, string $text): array
+    {
+        $titles = Warehouse::where('wh_status', true)->pluck('wh_title')->all();
+        $r = $this->interpreter->interpret($text, $titles);
+
+        if ($r === null) {
+            return $this->help(false);
+        }
+
+        $answer = match ($r['intent']) {
+            'etat'            => $this->status(),
+            'a_trier'         => $this->toSort(),
+            'inventaire_etat' => $this->inventory($admin, '', false),
+            'relances_etat'   => $this->collections($admin, '', false),
+            'inventaire_ordre' => $this->propose(
+                'préparer un inventaire' . ($r['warehouse'] ? " de l'entrepôt « {$r['warehouse']} »" : ' de tous les entrepôts') . ($r['scope'] === 'attention' ? ', limité aux articles à vérifier' : ''),
+                'inventory',
+                'prépare un inventaire' . ($r['warehouse'] ? " du {$r['warehouse']}" : '') . ($r['scope'] === 'attention' ? ' des articles à vérifier' : ''),
+            ),
+            'encaissements_ordre' => $this->propose('contrôler les encaissements et préparer les relances', 'collections', 'contrôle les encaissements'),
+            'aide'            => $this->help(true),
+            default           => $this->help(false),
+        };
+
+        $answer['meta']['ai'] = true;
+
+        return $answer;
+    }
+
+    /** Un ordre déduit d'une phrase libre n'est jamais lancé seul : on propose, l'administrateur confirme. */
+    private function propose(string $what, string $intent, string $command): array
+    {
+        return $this->reply(
+            "J'ai compris que vous voulez {$what}. Un ordre ne part que sur une demande explicite : le confirmez-vous ?",
+            $intent . '_proposal',
+            suggestions: [['label' => 'Oui, ' . $command, 'text' => $command]],
+        );
     }
 
     // ── Demandes ─────────────────────────────────────────────────────
@@ -253,15 +300,17 @@ class Orchestrator
 
     /**
      * @param array<int, array{label: string, to: string}> $links
+     * @param array<int, array{label: string, text: string}> $suggestions boutons proposés : le texte est envoyé tel quel en cas de clic
      * @return array{body: string, meta: array<string, mixed>}
      */
-    private function reply(string $body, string $intent, array $links = [], bool $error = false, ?int $eventId = null): array
+    private function reply(string $body, string $intent, array $links = [], bool $error = false, ?int $eventId = null, array $suggestions = []): array
     {
         return ['body' => $body, 'meta' => array_filter([
             'intent'   => $intent,
             'links'    => $links ?: null,
             'error'    => $error ?: null,
-            'event_id' => $eventId,
+            'event_id'    => $eventId,
+            'suggestions' => $suggestions ?: null,
         ], fn ($v) => $v !== null)];
     }
 }

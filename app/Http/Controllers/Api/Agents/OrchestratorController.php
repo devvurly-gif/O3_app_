@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Api\Agents;
 
 use App\Http\Controllers\Controller;
 use App\Models\OrchestratorMessage;
+use App\Models\Setting;
 use App\Services\Agents\Orchestrator;
+use App\Services\Agents\OrchestratorInterpreter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -16,7 +18,7 @@ class OrchestratorController extends Controller
 {
     private const HISTORY = 60;
 
-    public function __construct(private Orchestrator $orchestrator)
+    public function __construct(private Orchestrator $orchestrator, private OrchestratorInterpreter $interpreter)
     {
     }
 
@@ -28,7 +30,10 @@ class OrchestratorController extends Controller
         $messages = OrchestratorMessage::where('user_id', $request->user()->id)
             ->latest('id')->limit(self::HISTORY)->get()->reverse()->values();
 
-        return response()->json(['messages' => $messages->map(fn (OrchestratorMessage $m) => $this->present($m))]);
+        return response()->json([
+            'messages' => $messages->map(fn (OrchestratorMessage $m) => $this->present($m)),
+            'ai'       => $this->aiState(),
+        ]);
     }
 
     /** POST /api/agents/orchestrateur — l'administrateur écrit, l'orchestrateur répond. */
@@ -46,6 +51,22 @@ class OrchestratorController extends Controller
         ], 201);
     }
 
+    /** PUT /api/agents/orchestrateur/ia — active ou coupe la compréhension avancée (modèle de langage). */
+    public function toggleAi(Request $request): JsonResponse
+    {
+        $this->ensureInteractiveUser($request);
+
+        $data = $request->validate(['enabled' => ['required', 'boolean']]);
+
+        if ($data['enabled'] && !$this->interpreter->configured()) {
+            return response()->json(['message' => "Aucune clé API Anthropic n'est enregistrée : saisissez-la dans Paramètres → Réglages → Messagerie."], 422);
+        }
+
+        Setting::set('agents', 'orchestrator_ai_enabled', $data['enabled'] ? 'true' : 'false');
+
+        return response()->json($this->aiState());
+    }
+
     /** DELETE /api/agents/orchestrateur — efface l'historique de la session (pas les ordres déjà donnés). */
     public function clear(Request $request): JsonResponse
     {
@@ -56,16 +77,28 @@ class OrchestratorController extends Controller
         return response()->json(null, 204);
     }
 
+    /** @return array{configured: bool, enabled: bool, model: string} */
+    private function aiState(): array
+    {
+        return [
+            'configured' => $this->interpreter->configured(),
+            'enabled'    => $this->interpreter->enabled(),
+            'model'      => Setting::get('agents', 'orchestrator_ai_model') ?: OrchestratorInterpreter::DEFAULT_MODEL,
+        ];
+    }
+
     private function present(OrchestratorMessage $m): array
     {
         return [
-            'id'         => $m->id,
-            'role'       => $m->role,
-            'body'       => $m->body,
-            'links'      => $m->meta['links'] ?? [],
-            'error'      => (bool) ($m->meta['error'] ?? false),
-            'event_id'   => $m->meta['event_id'] ?? null,
-            'created_at' => $m->created_at,
+            'id'          => $m->id,
+            'role'        => $m->role,
+            'body'        => $m->body,
+            'links'       => $m->meta['links'] ?? [],
+            'suggestions' => $m->meta['suggestions'] ?? [],
+            'ai'          => (bool) ($m->meta['ai'] ?? false),
+            'error'       => (bool) ($m->meta['error'] ?? false),
+            'event_id'    => $m->meta['event_id'] ?? null,
+            'created_at'  => $m->created_at,
         ];
     }
 
