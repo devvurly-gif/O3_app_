@@ -728,6 +728,7 @@ export default {
     subtitle: 'Global configuration for the application',
     loading: 'Loading settings…',
     saved: 'Settings saved.',
+    noChanges: 'No changes to save.',
     company: 'Company',
     companyName: 'Company Name',
     localization: 'Localization',

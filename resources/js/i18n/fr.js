@@ -728,6 +728,7 @@ export default {
     subtitle: "Configuration globale de l'application",
     loading: 'Chargement des paramètres…',
     saved: 'Paramètres enregistrés.',
+    noChanges: 'Aucune modification à enregistrer.',
     company: 'Société',
     companyName: 'Nom de la société',
     localization: 'Localisation',

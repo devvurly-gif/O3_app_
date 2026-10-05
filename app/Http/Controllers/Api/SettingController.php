@@ -72,6 +72,22 @@ class SettingController extends Controller
         'whatsapp'  => ['infobip_api_key'],
     ];
 
+    /**
+     * Forme attendue de certains secrets, vérifiée AVANT d'écrire quoi que ce soit : une clé
+     * collée de travers (tronquée, avec des espaces, venue d'un autre service) serait sinon
+     * enregistrée sans erreur, puis refusée par le fournisseur à chaque appel, et envoyée à un
+     * tiers qui n'est pas le sien. Une clé Anthropic commence par « sk-ant- » et ne contient que
+     * des lettres, chiffres, tirets et soulignés.
+     */
+    private const SECRET_FORMATS = [
+        'messaging' => [
+            'anthropic_api_key' => [
+                'pattern' => '/^sk-ant-[A-Za-z0-9_\-]{30,}$/',
+                'message' => "La clé Anthropic n'a pas la bonne forme : elle commence par « sk-ant- », ne contient ni espace ni guillemet et fait plusieurs dizaines de caractères. Copiez la clé complète depuis la console Anthropic (API keys).",
+            ],
+        ],
+    ];
+
     public function __construct(private SettingRepositoryInterface $settings)
     {
     }
@@ -117,6 +133,18 @@ class SettingController extends Controller
         }
 
         $secrets = self::SECRET_SETTINGS[$data['domain']] ?? [];
+
+        // Tout ou rien : on contrôle la forme des secrets avant la première écriture, pour qu'une clé
+        // refusée n'entraîne pas l'enregistrement partiel des autres champs du même envoi.
+        foreach (self::SECRET_FORMATS[$data['domain']] ?? [] as $key => $format) {
+            $candidate = $data['settings'][$key] ?? null;
+            if (filled($candidate) && !preg_match($format['pattern'], trim($candidate))) {
+                return response()->json([
+                    'message' => $format['message'],
+                    'errors'  => [$key => [$format['message']]],
+                ], 422);
+            }
+        }
 
         foreach ($data['settings'] as $key => $value) {
             if (in_array($key, $secrets, true)) {

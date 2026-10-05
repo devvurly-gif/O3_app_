@@ -1704,6 +1704,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue'
+import { ANTHROPIC_KEY_HELP, changedFields, isAnthropicKeyFormat } from '@/utils/settingsForm'
 import { useI18n } from 'vue-i18n'
 import { useSettingStore } from '@/stores/setting'
 import { useVariantOptionsStore } from '@/stores/useVariantOptionsStore'
@@ -1909,51 +1910,81 @@ const toggleClass =
  * back on save — the backend whitelist would reject them with 422
  * "Unknown setting keys for this domain."
  */
+// Base de départ de chaque groupe : la valeur que le serveur avait au chargement, ou la valeur par défaut
+// du formulaire pour une clé que le serveur n'a pas encore. Un enregistrement n'envoie que les champs qui
+// diffèrent de cette base (voir changedFields) : une page périmée ne réécrit plus un réglage qu'on n'a pas touché.
+const baseline: Record<string, Record<string, unknown>> = {}
+
 function mergeKnownKeys<T extends Record<string, unknown>>(
   target: T,
   source: Record<string, unknown> | null | undefined,
+  domain: string,
 ): void {
+  if (!baseline[domain]) baseline[domain] = { ...target }
   if (!source) return
   for (const key of Object.keys(target)) {
     if (key in source && source[key] != null) {
       ;(target as Record<string, unknown>)[key] = source[key]
+      baseline[domain][key] = source[key]
     }
   }
 }
 
 function applySettings() {
   const s = store.settings
-  mergeKnownKeys(company, s.company)
-  mergeKnownKeys(locale, s.locale)
-  mergeKnownKeys(invoice, s.invoice)
-  mergeKnownKeys(stock, s.stock)
-  mergeKnownKeys(ventes, s.ventes)
-  mergeKnownKeys(pos, s.pos)
-  mergeKnownKeys(whatsapp, s.whatsapp)
-  mergeKnownKeys(messaging, s.messaging)
-  mergeKnownKeys(ecommerce, s.ecommerce)
-  mergeKnownKeys(email, s.email)
-  mergeKnownKeys(display, s.display)
+  mergeKnownKeys(company, s.company, 'company')
+  mergeKnownKeys(locale, s.locale, 'locale')
+  mergeKnownKeys(invoice, s.invoice, 'invoice')
+  mergeKnownKeys(stock, s.stock, 'stock')
+  mergeKnownKeys(ventes, s.ventes, 'ventes')
+  mergeKnownKeys(pos, s.pos, 'pos')
+  mergeKnownKeys(whatsapp, s.whatsapp, 'whatsapp')
+  mergeKnownKeys(messaging, s.messaging, 'messaging')
+  mergeKnownKeys(ecommerce, s.ecommerce, 'ecommerce')
+  mergeKnownKeys(email, s.email, 'email')
+  mergeKnownKeys(display, s.display, 'display')
 }
 
 watch(() => store.settings, applySettings, { deep: true })
 
 async function saveSection(domain: string, values: Record<string, string>) {
+  const payload = changedFields(baseline[domain], values)
+  if (Object.keys(payload).length === 0) {
+    toast.value?.notify(t('appSettings.noChanges'), 'success')
+    return
+  }
+
   saving[domain] = true
   try {
-    await store.save(domain, { ...values })
+    await store.save(domain, payload)
     toast.value?.notify(t('appSettings.saved'), 'success')
-  } catch {
-    toast.value?.notify(t('common.failedSave'), 'error')
+  } catch (e: unknown) {
+    toast.value?.notify(serverMessage(e) ?? t('common.failedSave'), 'error')
   } finally {
     saving[domain] = false
   }
 }
 
+/** Le message d'un refus du serveur (ex. clé mal formée), s'il en donne un. */
+function serverMessage(e: unknown): string | null {
+  const message = (e as { response?: { data?: { message?: string } } })?.response?.data?.message
+  return typeof message === 'string' && message !== '' ? message : null
+}
+
 async function saveMessaging() {
   const { anthropic_api_key_set: _set, anthropic_api_key: key, ...values } = messaging
-  const payload: Record<string, string> = { ...values }
+  // Une clé mal collée est refusée tout de suite : elle serait sinon enregistrée puis rejetée par Anthropic.
+  if (key.trim() && !isAnthropicKeyFormat(key)) {
+    toast.value?.notify(ANTHROPIC_KEY_HELP, 'error')
+    return
+  }
+  // Seuls les champs réellement modifiés partent : une page périmée n'écrase plus un autre réglage.
+  const payload: Record<string, string> = changedFields(baseline.messaging, values)
   if (key.trim()) payload.anthropic_api_key = key.trim()
+  if (Object.keys(payload).length === 0) {
+    toast.value?.notify(t('appSettings.noChanges'), 'success')
+    return
+  }
 
   saving.messaging = true
   try {
@@ -1967,8 +1998,8 @@ async function saveMessaging() {
     messaging.anthropic_api_key = ''
     if (key.trim()) messaging.anthropic_api_key_set = 'true'
     toast.value?.notify(t('appSettings.saved'), 'success')
-  } catch {
-    toast.value?.notify(t('common.failedSave'), 'error')
+  } catch (e: unknown) {
+    toast.value?.notify(serverMessage(e) ?? t('common.failedSave'), 'error')
   } finally {
     saving.messaging = false
   }
@@ -1976,8 +2007,12 @@ async function saveMessaging() {
 
 async function saveWhatsapp() {
   const { infobip_api_key_set: _set, infobip_api_key: key, ...values } = whatsapp
-  const payload: Record<string, string> = { ...values }
+  const payload: Record<string, string> = changedFields(baseline.whatsapp, values)
   if (key.trim()) payload.infobip_api_key = key.trim()
+  if (Object.keys(payload).length === 0) {
+    toast.value?.notify(t('appSettings.noChanges'), 'success')
+    return
+  }
 
   saving.whatsapp = true
   try {
@@ -1991,8 +2026,8 @@ async function saveWhatsapp() {
     whatsapp.infobip_api_key = ''
     if (key.trim()) whatsapp.infobip_api_key_set = 'true'
     toast.value?.notify(t('appSettings.saved'), 'success')
-  } catch {
-    toast.value?.notify(t('common.failedSave'), 'error')
+  } catch (e: unknown) {
+    toast.value?.notify(serverMessage(e) ?? t('common.failedSave'), 'error')
   } finally {
     saving.whatsapp = false
   }

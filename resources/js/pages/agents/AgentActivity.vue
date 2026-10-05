@@ -324,6 +324,7 @@ const TYPE_LABELS: Record<string, string> = {
   ecriture_a_passer: 'Écriture à passer',
   campagne_demandee: 'Campagne demandée',
   inventaire_demande: "Demande d'inventaire",
+  controle_encaissements: 'Contrôle des encaissements',
 }
 
 const REASON_LABELS: Record<string, string> = {

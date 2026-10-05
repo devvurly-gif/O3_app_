@@ -199,12 +199,12 @@ class OrderMessagingTest extends TestCase
     {
         $this->actingAs($this->admin, 'sanctum')->postJson('/api/settings', [
             'domain'   => 'messaging',
-            'settings' => ['ai_enabled' => 'true', 'anthropic_api_key' => 'sk-ant-secret'],
+            'settings' => ['ai_enabled' => 'true', 'anthropic_api_key' => 'sk-ant-api03-SecretKeyForTests0123456789_abcdefghijklmnopqrstuvwxyz'],
         ])->assertOk();
 
         $stored = Setting::get('messaging', 'anthropic_api_key');
-        $this->assertNotSame('sk-ant-secret', $stored);
-        $this->assertSame('sk-ant-secret', decrypt($stored));
+        $this->assertNotSame('sk-ant-api03-SecretKeyForTests0123456789_abcdefghijklmnopqrstuvwxyz', $stored);
+        $this->assertSame('sk-ant-api03-SecretKeyForTests0123456789_abcdefghijklmnopqrstuvwxyz', decrypt($stored));
 
         $settings = $this->actingAs($this->admin, 'sanctum')->getJson('/api/settings')->json('messaging');
         $this->assertArrayNotHasKey('anthropic_api_key', $settings);
@@ -215,6 +215,6 @@ class OrderMessagingTest extends TestCase
             'domain'   => 'messaging',
             'settings' => ['anthropic_api_key' => ''],
         ])->assertOk();
-        $this->assertSame('sk-ant-secret', decrypt(Setting::get('messaging', 'anthropic_api_key')));
+        $this->assertSame('sk-ant-api03-SecretKeyForTests0123456789_abcdefghijklmnopqrstuvwxyz', decrypt(Setting::get('messaging', 'anthropic_api_key')));
     }
 }
