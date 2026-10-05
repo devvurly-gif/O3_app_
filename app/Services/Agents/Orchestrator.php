@@ -83,7 +83,7 @@ class Orchestrator
             $why = $this->interpreter->failure();
 
             // IA activée mais en échec : on le dit (la phrase n'est pas « incomprise », elle n'a pas pu être lue).
-            return $why ? $this->help(false, "La compréhension avancée est indisponible : {$why}.") : $this->help(false);
+            return $why ? $this->help(false, "La compréhension avancée est indisponible : {$why}.") : $this->help(false, null, $text);
         }
 
         $answer = match ($r['intent']) {
@@ -98,7 +98,7 @@ class Orchestrator
             ),
             'encaissements_ordre' => $this->propose('contrôler les encaissements et préparer les relances', 'collections', 'contrôle les encaissements'),
             'aide'            => $this->help(true),
-            default           => $this->help(false),
+            default           => $this->help(false, null, $text),
         };
 
         $answer['meta']['ai'] = true;
@@ -118,13 +118,16 @@ class Orchestrator
 
     // ── Demandes ─────────────────────────────────────────────────────
 
-    private function help(bool $greeting, ?string $warning = null): array
+    private function help(bool $greeting, ?string $warning = null, ?string $text = null): array
     {
+        $topic = $text !== null ? $this->unsupportedTopic($this->normalize($text)) : null;
         $intro = $warning !== null
             ? "{$warning}\nJe ne peux donc traiter que ce que je comprends sans elle :"
             : ($greeting
                 ? "Bonjour. Je suis l'orchestrateur : je reçois vos demandes et je les confie aux agents. Voici ce que je sais faire."
-                : "Je n'ai pas compris cette demande. Voici ce que je sais faire.");
+                : ($topic !== null
+                    ? "Je ne sais pas encore {$topic} : aucun agent n'en est chargé pour le moment. Voici ce que je sais faire."
+                    : "Je n'ai pas compris cette demande. Voici ce que je sais faire."));
 
         return $this->reply(
             "{$intro}\n\n"
@@ -137,6 +140,18 @@ class Orchestrator
             'help',
             warning: $warning !== null,
         );
+    }
+
+    /** Un sujet que l'utilisateur nomme clairement mais qu'aucun agent ne gère : on le dit au lieu de feindre de ne pas comprendre. */
+    private function unsupportedTopic(string $n): ?string
+    {
+        return match (true) {
+            (bool) preg_match('/fiches?|produits?|prouits?|catalogue|references?|articles?|descriptions?|photos?/', $n) && (bool) preg_match('/updat|mett|modif|change|corrig|complet|actualis|jour|enrichi|ajout|creer|cree/', $n)
+                => 'mettre à jour les fiches produits',
+            (bool) preg_match('/prix|tarifs?/', $n) && (bool) preg_match('/updat|mett|modif|change|corrig|jour|augment|baiss/', $n)
+                => 'modifier les prix',
+            default => null,
+        };
     }
 
     private function status(): array

@@ -68,6 +68,22 @@ class OrchestratorTest extends TestCase
         $this->assertSame(0, AgentEvent::count());   // comprendre ou non, rien n'est déclenché
     }
 
+    public function test_a_named_but_unsupported_topic_is_said_so_instead_of_pretending_not_to_understand(): void
+    {
+        foreach (['  update fiche prouits ', 'mets à jour les fiches produits', 'modifier les prix'] as $text) {
+            $body = $this->say($text)->assertCreated()->json('reply.body');
+
+            $this->assertStringContainsString("Je ne sais pas encore", $body);
+            $this->assertStringContainsString("aucun agent n'en est chargé", $body);
+            $this->assertStringNotContainsString("Je n'ai pas compris", $body);
+            $this->assertStringContainsString('contrôle les encaissements', $body); // l'aide reste affichée
+        }
+
+        // Un sujet produit sans verbe de modification reste « non compris » : pas de faux diagnostic.
+        $this->assertStringContainsString("Je n'ai pas compris", $this->say('les produits')->json('reply.body'));
+        $this->assertSame(0, AgentEvent::count());
+    }
+
     public function test_status_summarises_agents_events_and_pending_validations(): void
     {
         AgentEvent::create(['source' => 'whatsapp', 'status' => 'to_sort', 'payload' => ['text' => 'bonjour']]);
