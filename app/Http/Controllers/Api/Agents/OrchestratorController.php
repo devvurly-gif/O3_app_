@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api\Agents;
 use App\Http\Controllers\Controller;
 use App\Models\OrchestratorMessage;
 use App\Models\Setting;
+use App\Services\Agents\DocumentIntake;
+use App\Services\Agents\DocumentReader;
 use App\Services\Agents\Orchestrator;
 use App\Services\Agents\OrchestratorInterpreter;
 use Illuminate\Http\JsonResponse;
@@ -51,7 +53,33 @@ class OrchestratorController extends Controller
         ], 201);
     }
 
-    /** PUT /api/agents/orchestrateur/ia — active ou coupe la compréhension avancée (modèle de langage). */
+    /**
+     * POST /api/agents/orchestrateur/fichiers — l'administrateur dépose des photos ou des PDF ; l'orchestrateur
+     * les lit, dit ce que c'est et propose la suite. Rien n'est créé à la réception.
+     */
+    public function upload(Request $request, DocumentIntake $intake): JsonResponse
+    {
+        $this->ensureInteractiveUser($request);
+
+        $data = $request->validate([
+            'message'   => ['nullable', 'string', 'max:1000'],
+            'files'     => ['required', 'array', 'min:1', 'max:' . DocumentIntake::MAX_FILES],
+            'files.*'   => ['file', 'max:10240', 'mimetypes:' . implode(',', DocumentReader::MIMES)],
+        ], [
+            'files.max'       => 'Trois fichiers au maximum à la fois.',
+            'files.*.max'     => 'Un fichier dépasse 10 Mo.',
+            'files.*.mimetypes' => 'Seules les photos (JPEG, PNG, WebP, GIF) et les PDF sont acceptés.',
+        ]);
+
+        $exchange = $intake->receive($request->user(), $request->file('files'), trim((string) ($data['message'] ?? '')));
+
+        return response()->json([
+            'user'  => $this->present($exchange['user']),
+            'reply' => $this->present($exchange['reply']),
+        ], 201);
+    }
+
+    /** PUT /api/agents/orchestrateur/ia— active ou coupe la compréhension avancée (modèle de langage). */
     public function toggleAi(Request $request): JsonResponse
     {
         $this->ensureInteractiveUser($request);
@@ -99,6 +127,7 @@ class OrchestratorController extends Controller
             'warning'     => (bool) ($m->meta['warning'] ?? false),
             'error'       => (bool) ($m->meta['error'] ?? false),
             'event_id'    => $m->meta['event_id'] ?? null,
+            'attachments' => $m->meta['attachments'] ?? [],
             'created_at'  => $m->created_at,
         ];
     }

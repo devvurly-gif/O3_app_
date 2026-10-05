@@ -28,7 +28,7 @@ use Illuminate\Support\Str;
  */
 class Orchestrator
 {
-    public function __construct(private AgentOrderService $orders, private OrchestratorInterpreter $interpreter)
+    public function __construct(private AgentOrderService $orders, private OrchestratorInterpreter $interpreter, private DocumentIntake $intake)
     {
     }
 
@@ -57,6 +57,8 @@ class Orchestrator
         $action = $this->wantsAction($n);
 
         return match (true) {
+            // Un document déposé (« prépare le brouillon d'achat du document #12 », « ignore le document #12 »…).
+            (bool) preg_match('/\bdocuments?\s*#?\s*(\d+)/', $n, $doc)                            => $this->intake->act($admin, (int) $doc[1], $n),
             (bool) preg_match('/inventaire|comptage/', $n)                                        => $this->inventory($admin, $n, $action),
             (bool) preg_match('/encaissement|impaye|recouvrement|relance|paiements? en retard/', $n) => $this->collections($admin, $n, $action),
             (bool) preg_match('/\ba trier\b|non classe|evenement|messages? recus?/', $n)          => $this->toSort(),
@@ -141,6 +143,7 @@ class Orchestrator
             . "• « prépare un inventaire » : l'agent Stocks prépare la feuille à compter (ajoutez un nom d'entrepôt, ou « articles à vérifier » pour cibler)\n"
             . "• « contrôle les encaissements » : l'agent Recouvrement contrôle les paiements et prépare les relances\n"
             . "• « relances à valider » : ce qui attend votre validation\n"
+            . "• déposez une photo ou un PDF (trombone, ou glissez-le ici) : je lis le document, dis ce que c'est et propose la suite\n"
             . "• « que peut-on faire dans O3 » : tous les domaines de l'application ; ou nommez un écran (« les fiches produits », « créer une facture ») et je vous y envoie\n\n"
             . "Les agents préparent des brouillons. Rien n'est modifié ni envoyé sans votre validation, dans l'écran concerné.",
             'help',

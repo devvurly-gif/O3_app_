@@ -424,6 +424,8 @@ Route::middleware(['auth:sanctum', 'tenant.active'])->group(function () {
             Route::post('/',   [$c, 'send']);
             Route::delete('/', [$c, 'clear']);
             Route::put('ia',   [$c, 'toggleAi']);
+            // Dépôt de photos / PDF : lus par l'IA (coûteux), donc limités plus strictement.
+            Route::post('fichiers', [$c, 'upload'])->middleware('throttle:10,1,orchestrateur-fichiers');
         });
 
         // Relances de paiement : contrôle des encaissements par l'agent Recouvrement, brouillons validés par un humain.

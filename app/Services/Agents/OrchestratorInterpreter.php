@@ -119,7 +119,7 @@ class OrchestratorInterpreter
      * Une cause lisible par l'administrateur. Jamais le texte brut de l'erreur ni la clé :
      * seulement un libellé choisi ici.
      */
-    private function describe(int $status, string $providerMessage): string
+    public function describe(int $status, string $providerMessage): string
     {
         return match (true) {
             $status === 401, $status === 403 => 'la clé API est refusée par Anthropic (invalide, révoquée ou sans droit) : remplacez-la dans Paramètres → Réglages → Messagerie',
@@ -198,7 +198,7 @@ class OrchestratorInterpreter
     }
 
     /** Clé stockée chiffrée (SettingController) ; null si absente ou illisible. */
-    private function apiKey(): ?string
+    public function apiKey(): ?string
     {
         $stored = Setting::get('messaging', 'anthropic_api_key');
         if (!$stored) {

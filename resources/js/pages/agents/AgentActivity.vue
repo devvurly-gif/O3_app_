@@ -23,12 +23,6 @@
           Routeur {{ summary?.router_on ? 'activé' : 'désactivé' }}
         </span>
         <button
-          class="px-3 py-2 text-sm font-semibold rounded-[11px] bg-[#7C5CFC] text-white hover:bg-[#6A49F0] transition"
-          @click="showChat ? (showChat = false) : openChat()"
-        >
-          Parler à l'orchestrateur
-        </button>
-        <button
           class="px-3 py-2 text-sm font-medium rounded-[11px] border border-[#ECEEF2] dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-50"
           :disabled="loading"
           @click="load()"

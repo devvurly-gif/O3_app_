@@ -12,7 +12,7 @@
         :disabled="togglingAi || (!ai.configured && !ai.enabled)"
         :title="
           ai.configured
-            ? 'Le modèle ne fait que ranger vos phrases libres dans une demande connue : il ne voit aucune donnée de l\'entreprise et n\'exécute rien.'
+            ? 'Le modèle range vos phrases libres dans une demande connue (il ne voit aucune donnée de l\'entreprise) et lit les photos et PDF que vous déposez (leur contenu est envoyé à Anthropic). Il n\'exécute rien : chaque création attend votre clic.'
             : 'Saisissez d\'abord la clé API Anthropic dans Paramètres → Réglages → Messagerie.'
         "
         @click="toggleAi"
@@ -29,11 +29,23 @@
       </button>
     </div>
 
-    <!-- Conversation -->
+    <!-- Conversation (on peut y glisser des photos ou des PDF) -->
     <div
-      class="bg-white dark:bg-gray-800 border border-[#ECEEF2] dark:border-gray-700 rounded-2xl flex flex-col min-h-[360px]"
-      :class="heightClass"
+      class="relative bg-white dark:bg-gray-800 border rounded-2xl flex flex-col min-h-[360px]"
+      :class="[
+        heightClass,
+        dragging ? 'border-[#7C5CFC] ring-2 ring-[#7C5CFC]/30' : 'border-[#ECEEF2] dark:border-gray-700',
+      ]"
+      @dragover.prevent="dragging = true"
+      @dragleave.prevent="dragging = false"
+      @drop.prevent="onDrop"
     >
+      <div
+        v-if="dragging"
+        class="absolute inset-0 z-10 rounded-2xl bg-[#F6F3FF]/90 dark:bg-gray-800/90 flex items-center justify-center text-sm font-semibold text-[#7C5CFC] pointer-events-none"
+      >
+        Déposez vos photos ou PDF ici
+      </div>
       <div ref="scroller" class="flex-1 overflow-y-auto px-4 py-4 space-y-3">
         <p v-if="!messages.length && !loading" class="text-center text-sm text-gray-400 py-10">
           Aucun échange pour l'instant. Écrivez « aide » pour voir ce que je sais faire, ou utilisez un raccourci
@@ -48,6 +60,9 @@
         >
           <div class="max-w-[85%] rounded-2xl px-4 py-2.5 text-sm" :class="bubbleClass(m)">
             <p class="whitespace-pre-line break-words">{{ m.body }}</p>
+            <ul v-if="m.attachments?.length" class="mt-1.5 space-y-0.5 text-xs opacity-90">
+              <li v-for="(a, i) in m.attachments" :key="i" class="break-all">📎 {{ a.name }}</li>
+            </ul>
             <div v-if="m.links.length" class="flex flex-wrap gap-2 mt-2">
               <router-link
                 v-for="l in m.links"
@@ -65,7 +80,7 @@
                 :key="s.text"
                 class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#7C5CFC] text-white hover:bg-[#6A49F0] transition disabled:opacity-50"
                 :disabled="sending"
-                @click="send(s.text)"
+                @click="send(s.text, false)"
               >
                 {{ s.label }}
               </button>
@@ -92,32 +107,81 @@
           :key="s.text"
           class="text-xs font-semibold px-3 py-1.5 rounded-full border border-[#E4DEFF] dark:border-gray-600 text-[#7C5CFC] hover:bg-[#F6F3FF] dark:hover:bg-gray-700 transition disabled:opacity-50"
           :disabled="sending"
-          @click="send(s.text)"
+          @click="send(s.text, false)"
         >
           {{ s.label }}
         </button>
       </div>
 
+      <!-- Fichiers en attente d'envoi -->
+      <ul v-if="files.length" class="flex flex-wrap gap-2 px-4 pt-3">
+        <li
+          v-for="(f, i) in files"
+          :key="f.name + i"
+          class="flex items-center gap-1.5 max-w-full text-xs px-2.5 py-1 rounded-full bg-[#F6F3FF] dark:bg-gray-700 text-[#5B3FD6] dark:text-gray-100 border border-[#E4DEFF] dark:border-gray-600"
+        >
+          <span class="truncate max-w-[200px]">📎 {{ f.name }}</span>
+          <button
+            type="button"
+            class="font-bold hover:text-red-600"
+            :aria-label="`Retirer ${f.name}`"
+            :disabled="sending"
+            @click="files.splice(i, 1)"
+          >
+            ×
+          </button>
+        </li>
+      </ul>
+
       <!-- Saisie -->
       <form class="flex items-end gap-2 p-4" @submit.prevent="send(draft)">
+        <input
+          ref="fileInput"
+          type="file"
+          class="hidden"
+          multiple
+          accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
+          @change="onPick"
+        />
+        <button
+          type="button"
+          class="px-3 py-2.5 text-base rounded-[11px] border border-[#ECEEF2] dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-50"
+          :disabled="sending || !ai.enabled"
+          :title="
+            ai.enabled
+              ? 'Joindre des photos ou des PDF (3 maximum, 10 Mo chacun) : l\'IA d\'Anthropic les lit, vous dit ce que c\'est et propose la suite. Rien n\'est créé sans votre clic.'
+              : 'Activez d\'abord la compréhension avancée (IA) pour que je puisse lire des photos et des PDF.'
+          "
+          aria-label="Joindre des photos ou des PDF"
+          @click="fileInput?.click()"
+        >
+          📎
+        </button>
         <textarea
           ref="input"
           v-model="draft"
           rows="2"
           maxlength="1000"
           class="field flex-1 resize-none"
-          placeholder="Écrivez à l'orchestrateur… (Entrée pour envoyer, Maj+Entrée pour un retour à la ligne)"
+          :placeholder="
+            files.length
+              ? 'Ajoutez une précision si besoin, puis envoyez…'
+              : 'Écrivez à l\'orchestrateur… (Entrée pour envoyer, Maj+Entrée pour un retour à la ligne)'
+          "
           :disabled="sending"
           @keydown.enter.exact.prevent="send(draft)"
         ></textarea>
         <button
           type="submit"
           class="px-4 py-2.5 text-sm font-semibold rounded-[11px] bg-[#7C5CFC] text-white hover:bg-[#6A49F0] transition disabled:opacity-50"
-          :disabled="sending || !draft.trim()"
+          :disabled="sending || (!draft.trim() && !files.length)"
         >
           Envoyer
         </button>
       </form>
+      <p v-if="ai.enabled" class="px-4 pb-3 -mt-2 text-[11px] text-gray-400">
+        Photos et PDF : lus par l'IA d'Anthropic (leur contenu lui est envoyé). Rien n'est créé sans votre clic.
+      </p>
     </div>
     <p v-if="error" class="text-sm text-red-600">{{ error }}</p>
   </div>
@@ -135,6 +199,7 @@
 import { nextTick, onMounted, ref } from 'vue'
 import http from '@/services/http'
 import { useAuthStore } from '@/stores/authStore'
+import { addFiles } from '@/utils/orchestratorFiles'
 
 withDefaults(defineProps<{ heightClass?: string }>(), { heightClass: 'h-[62vh]' })
 
@@ -152,6 +217,7 @@ interface ChatMessage {
   body: string
   links: { label: string; to: string }[]
   suggestions?: { label: string; text: string }[]
+  attachments?: { name: string; mime?: string; size?: number }[]
   ai?: boolean
   warning?: boolean
   error: boolean
@@ -179,6 +245,31 @@ const scroller = ref<HTMLElement | null>(null)
 const input = ref<HTMLTextAreaElement | null>(null)
 const ai = ref<AiState>({ configured: false, enabled: false, model: '' })
 const togglingAi = ref(false)
+const files = ref<File[]>([])
+const dragging = ref(false)
+const fileInput = ref<HTMLInputElement | null>(null)
+
+function takeFiles(list: FileList | File[] | null | undefined) {
+  if (!list || !ai.value.enabled) return
+  const r = addFiles(files.value, Array.from(list))
+  files.value = r.files
+  error.value = r.error
+}
+
+function onPick(e: Event) {
+  const el = e.target as HTMLInputElement
+  takeFiles(el.files)
+  el.value = '' // permet de re-choisir le même fichier
+}
+
+function onDrop(e: DragEvent) {
+  dragging.value = false
+  if (!ai.value.enabled) {
+    error.value = "Activez d'abord la compréhension avancée (IA) pour que je puisse lire des photos et des PDF."
+    return
+  }
+  takeFiles(e.dataTransfer?.files)
+}
 
 async function toggleAi() {
   togglingAi.value = true
@@ -229,17 +320,20 @@ async function load() {
   }
 }
 
-async function send(text: string) {
+async function send(text: string, withFiles = true) {
   const message = text.trim()
-  if (!message || sending.value) return
+  const sentFiles = withFiles ? [...files.value] : []
+  if ((!message && !sentFiles.length) || sending.value) return
   sending.value = true
   error.value = ''
-  draft.value = ''
+  draft.value = withFiles ? '' : draft.value
+  if (withFiles) files.value = []
   // Affichage immédiat du message de l'administrateur ; il est remplacé par la version enregistrée.
   const pending: ChatMessage = {
     id: -Date.now(),
     role: 'admin',
-    body: message,
+    body: message || (sentFiles.length > 1 ? 'Documents déposés' : 'Document déposé'),
+    attachments: sentFiles.map((f) => ({ name: f.name })),
     links: [],
     error: false,
     event_id: null,
@@ -248,12 +342,26 @@ async function send(text: string) {
   messages.value.push(pending)
   await scrollToEnd()
   try {
-    const { data } = await http.post<{ user: ChatMessage; reply: ChatMessage }>('/agents/orchestrateur', { message })
+    let data: { user: ChatMessage; reply: ChatMessage }
+    if (sentFiles.length) {
+      const form = new FormData()
+      if (message) form.append('message', message)
+      sentFiles.forEach((f) => form.append('files[]', f))
+      // La lecture par l'IA peut prendre quelques secondes par fichier.
+      ;({ data } = await http.post<{ user: ChatMessage; reply: ChatMessage }>('/agents/orchestrateur/fichiers', form, {
+        timeout: 180000,
+      }))
+    } else {
+      ;({ data } = await http.post<{ user: ChatMessage; reply: ChatMessage }>('/agents/orchestrateur', { message }))
+    }
     messages.value.splice(messages.value.indexOf(pending), 1, data.user, data.reply)
-    if (data.reply.event_id) emit('ordered')
+    if (data.reply.event_id || sentFiles.length) emit('ordered')
   } catch (e: unknown) {
     messages.value.splice(messages.value.indexOf(pending), 1)
-    draft.value = message
+    if (withFiles) {
+      draft.value = message
+      files.value = sentFiles
+    }
     const err = e as { response?: { data?: { message?: string } } }
     error.value = err.response?.data?.message ?? "Le message n'a pas pu être envoyé."
   } finally {
