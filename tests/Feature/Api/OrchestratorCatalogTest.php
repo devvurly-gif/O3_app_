@@ -191,6 +191,52 @@ class OrchestratorCatalogTest extends TestCase
         $this->assertStringContainsString('Disque à tronçonner de 115 mm', $this->bare->fresh()->p_description);
     }
 
+    public function test_one_click_applies_a_lot_and_prepares_the_next_one_which_still_needs_validation(): void
+    {
+        // 11 fiches à catégoriser : un lot de 10, puis un second lot d'une fiche.
+        $others = collect(range(1, 10))->map(fn (int $i) => Product::factory()->create([
+            'p_title' => "Article {$i}", 'p_sku' => "ART{$i}", 'p_description' => "Article {$i} de test", 'category_id' => $this->uncategorized->id,
+        ]));
+        $this->enableAi();
+        $reply = fn (array $rows) => Http::response(['content' => [['type' => 'tool_use', 'name' => 'complete_products', 'input' => ['products' => $rows]]]]);
+        $lot1 = array_merge([['id' => $this->bare->id, 'category_id' => $this->tools->id]], $others->take(9)->map(fn ($p) => ['id' => $p->id, 'category_id' => $this->tools->id])->all());
+        Http::fake(['api.anthropic.com/*' => Http::sequence()
+            ->pushResponse($reply($lot1))
+            ->pushResponse($reply([['id' => $others->last()->id, 'new_category' => 'Divers de chantier']]))]);
+
+        $first = $this->say('complète les descriptions et catégories des fiches produits');
+        $firstEvent = AgentEvent::where('type', 'catalogue_completion')->firstOrFail();
+        $texts = array_column($first->json('reply.suggestions'), 'text');
+        $this->assertContains("applique les propositions du lot #{$firstEvent->id} et prépare le lot suivant", $texts);
+
+        $both = $this->say("applique les propositions du lot #{$firstEvent->id} et prépare le lot suivant");
+
+        $this->assertSame('done', $firstEvent->fresh()->status);
+        $this->assertSame($this->tools->id, $this->bare->fresh()->category_id);
+        $this->assertStringContainsString("Lot #{$firstEvent->id} appliqué", $both->json('reply.body'));
+        $this->assertStringContainsString('— Lot suivant —', $both->json('reply.body'));
+        $secondEvent = AgentEvent::where('type', 'catalogue_completion')->where('id', '>', $firstEvent->id)->firstOrFail();
+        $this->assertSame('routed', $secondEvent->status);                      // le suivant attend toujours votre clic
+        $this->assertSame($this->uncategorized->id, $others->last()->fresh()->category_id);
+        $this->assertSame(0, Category::where('ctg_title', 'Divers de chantier')->count());
+        $this->assertContains("applique les propositions du lot #{$secondEvent->id}", array_column($both->json('reply.suggestions'), 'text'));
+        $this->assertNotContains("applique les propositions du lot #{$secondEvent->id} et prépare le lot suivant", array_column($both->json('reply.suggestions'), 'text')); // dernier lot
+    }
+
+    public function test_a_plain_apply_offers_a_button_for_the_next_lot_only_while_fiches_remain(): void
+    {
+        // Seule la catégorie manque à cette fiche : une fois le lot appliqué, il ne reste plus rien à compléter.
+        $this->bare->update(['p_description' => 'Disque abrasif de 115 mm pour tronçonner le métal']);
+        $this->modelCompletes([['id' => $this->bare->id, 'category_id' => $this->tools->id]]);
+        $this->say('complète les descriptions et catégories des fiches produits');
+        $event = AgentEvent::where('type', 'catalogue_completion')->firstOrFail();
+
+        $done = $this->say("applique les propositions du lot #{$event->id}");
+
+        // Plus aucune fiche à compléter : pas de bouton « lot suivant ».
+        $this->assertSame([], $done->json('reply.suggestions'));
+    }
+
     public function test_a_proposal_can_be_ignored_and_nothing_changes(): void
     {
         $this->modelCompletes([['id' => $this->bare->id, 'description' => 'Disque abrasif de 115 mm pour tronçonner le métal.', 'category_id' => $this->tools->id]]);

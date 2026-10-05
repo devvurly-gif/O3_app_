@@ -138,10 +138,12 @@ class CatalogAssistant
             . "\n\nÀ l'application, seul ce qui manque encore est rempli : une description ou une vraie catégorie déjà saisie n'est jamais écrasée."
             . ($rest > 0 ? "\n{$rest} autre(s) fiche(s) restent à traiter : redemandez après avoir appliqué ce lot." : ''),
             links: [['label' => 'Produits', 'to' => '/products']],
-            suggestions: [
+            suggestions: array_values(array_filter([
                 ['label' => 'Appliquer ces propositions', 'text' => "applique les propositions du lot #{$event->id}"],
+                // Un clic par lot : applique celui-ci puis prépare le suivant (qui reste à valider).
+                $rest > 0 ? ['label' => 'Appliquer et préparer le suivant', 'text' => "applique les propositions du lot #{$event->id} et prépare le lot suivant"] : null,
                 ['label' => 'Ignorer', 'text' => "ignore le lot #{$event->id}"],
-            ],
+            ])),
             eventId: $event->id,
         );
     }
@@ -228,7 +230,25 @@ class CatalogAssistant
         }
 
         try {
-            return $event->type === 'catalogue_completion' ? $this->applyCompletion($event) : $this->applyPrices($event);
+            if ($event->type !== 'catalogue_completion') {
+                return $this->applyPrices($event);
+            }
+
+            $applied = $this->applyCompletion($event);
+            if (!preg_match('/suivant/', $n) || ($applied['meta']['error'] ?? false)) {
+                return $applied;
+            }
+
+            // « … et prépare le lot suivant » : le lot appliqué, puis la proposition suivante — toujours à valider.
+            $next = $this->complete($admin);
+
+            return ['body' => $applied['body'] . "\n\n— Lot suivant —\n" . $next['body'], 'meta' => array_filter([
+                'intent'      => 'catalog',
+                'links'       => array_values(collect(array_merge($applied['meta']['links'] ?? [], $next['meta']['links'] ?? []))->unique('to')->all()) ?: null,
+                'error'       => $next['meta']['error'] ?? null,
+                'event_id'    => $next['meta']['event_id'] ?? $eventId,
+                'suggestions' => $next['meta']['suggestions'] ?? null,
+            ], fn ($v) => $v !== null)];
         } catch (\Throwable $e) {
             Log::error("Lot #{$eventId} : application échouée : {$e->getMessage()}");
 
@@ -283,7 +303,10 @@ class CatalogAssistant
         $event->update(['status' => AgentEvent::STATUS_DONE, 'payload' => array_merge($event->payload ?? [], ['result' => $result])]);
         $this->log($event, 'catalog_completion_applied', $result);
 
-        return $this->reply("Lot #{$event->id} appliqué : {$descriptions} description(s) et {$categories} catégorie(s) renseignées" . ($created > 0 ? " ({$created} catégorie(s) créée(s))" : '') . ". Ce qui était déjà saisi n'a pas été touché.", links: [['label' => 'Produits', 'to' => '/products'], ['label' => 'Catégories', 'to' => '/categories']], eventId: $event->id);
+        return $this->reply("Lot #{$event->id} appliqué : {$descriptions} description(s) et {$categories} catégorie(s) renseignées" . ($created > 0 ? " ({$created} catégorie(s) créée(s))" : '') . ". Ce qui était déjà saisi n'a pas été touché.", links: [['label' => 'Produits', 'to' => '/products'], ['label' => 'Catégories', 'to' => '/categories']], eventId: $event->id,
+            suggestions: $this->remainingToComplete() > 0 && $this->enricher->enabled()
+                ? [['label' => 'Préparer le lot suivant', 'text' => 'complète les descriptions et catégories des fiches produits']]
+                : []);
     }
 
     private function applyPrices(AgentEvent $event): array
@@ -307,6 +330,15 @@ class CatalogAssistant
     }
 
     // ── Outils ───────────────────────────────────────────────────────
+
+    /** Combien de fiches attendent encore une description ou une vraie catégorie. */
+    private function remainingToComplete(): int
+    {
+        return count(array_unique(array_merge(
+            $this->audit->query('no_description')->pluck('id')->all(),
+            $this->audit->query('no_category')->pluck('id')->all(),
+        )));
+    }
 
     private function record(string $type, string $status, string $text, array $payload): AgentEvent
     {
