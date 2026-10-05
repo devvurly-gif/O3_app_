@@ -21,6 +21,8 @@ class Kernel extends ConsoleKernel
         $schedule->command('notify:due-invoices --days=0')->dailyAt('09:00');
         // Brouillons de relance seulement (aucun client contacté) ; ignoré tant que l'agent est inactif.
         $schedule->command('recouvrement:prepare')->dailyAt('09:15');
+        // Routines planifiées depuis l'orchestrateur : lectures et brouillons seulement, compte rendu dans le chat.
+        $schedule->command('agents:run-routines')->everyFifteenMinutes()->withoutOverlapping();
         $schedule->command('billing:generate-periodic-invoices')->dailyAt('01:00');
         $schedule->command('tenants:sync-feature-flags')->dailyAt('02:00');
         $schedule->command('treasury:generate')->dailyAt('03:00');

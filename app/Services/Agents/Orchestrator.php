@@ -33,7 +33,19 @@ class Orchestrator
         private OrchestratorInterpreter $interpreter,
         private DocumentIntake $intake,
         private CatalogAssistant $catalog,
+        private AgentStudio $studio,
     ) {
+    }
+
+    /**
+     * Exécute une demande connue pour le compte d'un administrateur, sans écrire dans sa conversation : c'est ce
+     * qu'utilisent les routines planifiées. Les mêmes règles, les mêmes garde-fous que le chat.
+     *
+     * @return array{body: string, meta: array<string, mixed>}
+     */
+    public function runCommand(User $admin, string $text): array
+    {
+        return $this->answer($admin, trim($text));
     }
 
     /** @return array{user: OrchestratorMessage, reply: OrchestratorMessage} */
@@ -63,6 +75,8 @@ class Orchestrator
         return match (true) {
             // Un document déposé (« prépare le brouillon d'achat du document #12 », « ignore le document #12 »…).
             (bool) preg_match('/\bdocuments?\s*#?\s*(\d+)/', $n, $doc)                            => $this->intake->act($admin, (int) $doc[1], $n),
+            // Atelier des agents : recruter, planifier des routines, retenir des consignes, catalogue des tâches.
+            ($studio = $this->studioIntent($n)) !== null                                          => $this->studioAnswer($admin, $studio, $text, $n),
             (bool) preg_match('/inventaire|comptage/', $n)                                        => $this->inventory($admin, $n, $action),
             (bool) preg_match('/encaissement|impaye|recouvrement|relance|paiements? en retard/', $n) => $this->collections($admin, $n, $action),
             // Fiches produits : contrôle, propositions (IA, prix, photos) et leur validation (« lot #12 »).
@@ -151,12 +165,94 @@ class Orchestrator
             . "• « contrôle les encaissements » : l'agent Recouvrement contrôle les paiements et prépare les relances\n"
             . "• « relances à valider » : ce qui attend votre validation\n"
             . "• « mettre à jour les fiches produits » : je contrôle les fiches (photos, descriptions, catégories, marques, prix, codes-barres) et je propose des corrections à valider ; « prépare les fiches pour l'utilisation » enchaîne toutes les étapes jusqu'à l'activation\n"
+            . "• « que sait faire chaque agent » : le catalogue des tâches ; « recrute un agent qui… » ; « chaque lundi à 8 h, contrôle les encaissements » (routine) ; « retiens : … » (consigne) ; « demande de développement : … » pour une tâche qui manque\n"
             . "• déposez une photo ou un PDF (trombone, ou glissez-le ici) : je lis le document, dis ce que c'est et propose la suite\n"
             . "• « que peut-on faire dans O3 » : tous les domaines de l'application ; ou nommez un écran (« les fiches produits », « créer une facture ») et je vous y envoie\n\n"
             . "Les agents préparent des brouillons. Rien n'est modifié ni envoyé sans votre validation, dans l'écran concerné.",
             'help',
             warning: $warning !== null,
         );
+    }
+
+    // ── Atelier des agents ───────────────────────────────────────────
+
+    /** @return array{0: string, 1: ?int}|null l'intention de l'atelier et un éventuel numéro ; null si la phrase n'en relève pas */
+    private function studioIntent(string $n): ?array
+    {
+        $id = fn (string $word) => preg_match('/\b' . $word . '\s*#\s*(\d+)/', $n, $m) ? (int) $m[1] : null;
+
+        if (($e = $id('proposition')) !== null) {
+            return ['act', $e];
+        }
+        if (($r = $id('routine')) !== null) {
+            return match (true) {
+                (bool) preg_match('/suspend|pause|arrete/', $n)    => ['routine_pause', $r],
+                (bool) preg_match('/supprim|efface|retire/', $n)   => ['routine_delete', $r],
+                (bool) preg_match('/reprend|reactiv|relance/', $n) => ['routine_resume', $r],
+                (bool) preg_match('/lance|execut|demarre/', $n)    => ['routine_run', $r],
+                default                                            => null,
+            };
+        }
+        if (($a = $id('agent')) !== null) {
+            return match (true) {
+                (bool) preg_match('/desactiv|arrete|suspend|pause/', $n) => ['agent_off', $a],
+                (bool) preg_match('/\bactiv/', $n)                       => ['agent_on', $a],
+                (bool) preg_match('/lance|execut|travaille|demande/', $n) => ['agent_run', $a],
+                default                                                  => null,
+            };
+        }
+        if (($d = $id('consigne')) !== null && preg_match('/oubli|supprim|retir|efface/', $n)) {
+            return ['directive_remove', $d];
+        }
+        if (($q = $id('demande')) !== null && preg_match('/faite|traitee|terminee|close/', $n)) {
+            return ['dev_done', $q];
+        }
+
+        return match (true) {
+            (bool) preg_match('/^(retiens|souviens|consigne|regle de la maison|desormais|note que|n oublie pas)\b/', $n) => ['directive_new', null],
+            (bool) preg_match('/\bconsignes\b/', $n) && (bool) preg_match('/\b(mes|quelles|liste|les|affiche)\b|^consignes/', $n) => ['directive_list', null],
+            (bool) preg_match('/demandes? de developpement/', $n) && (bool) preg_match('/\b(mes|quelles|liste|ouvertes|affiche)\b/', $n) => ['dev_list', null],
+            (bool) preg_match('/demande de developpement|nouvelle (tache|fonction|capacite)|il faudrait que tu saches/', $n) => ['dev_new', null],
+            (bool) preg_match('/catalogue des taches|taches connues|que (sait|savent|peut|peuvent)\b.*\bagents?|ce que (sait|savent).*agents?/', $n) => ['catalogue', null],
+            (bool) preg_match('/\bmes agents\b|\bagents? (recrutes|personnalises)\b|liste des agents/', $n) => ['agents', null],
+            (bool) preg_match('/\b(recrut|embauch|engage)\w*|\bnouvel agent\b/', $n) || ((bool) preg_match('/\b(cree|creer|ajoute|ajouter)\b/', $n) && (bool) preg_match('/\bagent\b/', $n)) => ['recruit', null],
+            (bool) preg_match('/\broutines?\b/', $n) && (bool) preg_match('/\b(mes|quelles|liste|les|affiche)\b/', $n) && !$this->hasScheduleWords($n) => ['routines', null],
+            $this->hasScheduleWords($n) && (bool) preg_match('/\b(control|prepar|lance|verifi|fais|met|rappor|surveill|genere|inventaire|etat)\w*/', $n) => ['routine_new', null],
+            default => null,
+        };
+    }
+
+    private function hasScheduleWords(string $n): bool
+    {
+        return (bool) preg_match('/\b(chaque|quotidien\w*|hebdomadaire\w*|mensuel\w*|planifi\w*|programm\w*|routine)\b|\btous les (jours|matins|lundis|mardis|mercredis|jeudis|vendredis|samedis|dimanches|mois)\b|\btoutes les semaines\b/', $n);
+    }
+
+    /** @param array{0: string, 1: ?int} $intent */
+    private function studioAnswer(User $admin, array $intent, string $text, string $n): array
+    {
+        [$what, $id] = $intent;
+
+        return match ($what) {
+            'act'              => $this->studio->act($admin, (int) $id, $n),
+            'routine_pause'    => $this->studio->routineAction($admin, (int) $id, 'pause'),
+            'routine_delete'   => $this->studio->routineAction($admin, (int) $id, 'delete'),
+            'routine_resume'   => $this->studio->routineAction($admin, (int) $id, 'resume'),
+            'routine_run'      => $this->studio->routineAction($admin, (int) $id, 'run'),
+            'agent_off'        => $this->studio->toggleAgent($admin, (int) $id, false),
+            'agent_on'         => $this->studio->toggleAgent($admin, (int) $id, true),
+            'agent_run'        => $this->studio->runAgent($admin, (int) $id, $text),
+            'directive_remove' => $this->studio->directiveRemove($admin, (int) $id),
+            'dev_done'         => $this->studio->devRequestDone((int) $id),
+            'directive_new'    => $this->studio->directiveNew($admin, $text),
+            'directive_list'   => $this->studio->directives(),
+            'dev_list'         => $this->studio->devRequests(),
+            'dev_new'          => $this->studio->devRequest($admin, $text),
+            'catalogue'        => $this->studio->catalogue(),
+            'agents'           => $this->studio->agents(),
+            'recruit'          => $this->studio->recruit($admin, $text),
+            'routines'         => $this->studio->routines(),
+            default            => $this->studio->routineNew($admin, $text),
+        };
     }
 
     // ── Fiches produits ──────────────────────────────────────────────

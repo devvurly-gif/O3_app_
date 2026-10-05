@@ -10,7 +10,13 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Agent extends Model
 {
-    protected $fillable = ['domain', 'name', 'user_id', 'ability', 'default_level', 'is_active'];
+    protected $fillable = ['domain', 'name', 'kind', 'mission', 'scopes', 'created_by', 'user_id', 'ability', 'default_level', 'is_active'];
 
-    protected $casts = ['is_active' => 'boolean'];
+    protected $casts = ['is_active' => 'boolean', 'scopes' => 'array'];
+
+    /** Un agent recruté depuis le chat (par opposition aux agents du socle). */
+    public function isCustom(): bool
+    {
+        return $this->kind === 'custom';
+    }
 }
