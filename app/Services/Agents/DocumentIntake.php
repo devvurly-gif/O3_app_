@@ -508,7 +508,8 @@ class DocumentIntake
         $this->images->upload($product, new UploadedFile($path, $file['name'], $file['mime'], null, true));
         $this->update($event, AgentEvent::STATUS_DONE, ['result' => ['product_id' => $product->id]]);
 
-        return $this->reply("Photo rattachée à « {$product->p_title} ». Vous pouvez la retirer ou la définir comme principale dans la fiche produit.", links: [['label' => 'Produits', 'to' => '/products']], eventId: $event->id);
+        return $this->reply("Photo rattachée à « {$product->p_title} ». Vous pouvez la retirer ou la définir comme principale dans la fiche produit.", links: [['label' => 'Produits', 'to' => '/products']], eventId: $event->id,
+            suggestions: [['label' => 'Produits suivants sans photo', 'text' => 'quels produits sont sans photo']]);
     }
 
     // ── Outils ───────────────────────────────────────────────────────
@@ -556,14 +557,18 @@ class DocumentIntake
         return array_values(collect($links)->unique('to')->all());
     }
 
-    /** @return array{body: string, meta: array<string, mixed>} */
-    private function reply(string $body, array $links = [], bool $error = false, ?int $eventId = null): array
+    /**
+     * @param array<int, array{label: string, text: string}> $suggestions
+     * @return array{body: string, meta: array<string, mixed>}
+     */
+    private function reply(string $body, array $links = [], bool $error = false, ?int $eventId = null, array $suggestions = []): array
     {
         return ['body' => $body, 'meta' => array_filter([
-            'intent'   => 'documents',
-            'links'    => $links ?: null,
-            'error'    => $error ?: null,
-            'event_id' => $eventId,
+            'intent'      => 'documents',
+            'links'       => $links ?: null,
+            'error'       => $error ?: null,
+            'event_id'    => $eventId,
+            'suggestions' => $suggestions ?: null,
         ], fn ($v) => $v !== null)];
     }
 }

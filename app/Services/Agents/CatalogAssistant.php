@@ -5,6 +5,7 @@ namespace App\Services\Agents;
 use App\Models\Agent;
 use App\Models\AgentAction;
 use App\Models\AgentEvent;
+use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\User;
@@ -31,6 +32,7 @@ class CatalogAssistant
 {
     private const SHOWN = 10;
     private const ACTIVATION_BATCH = 100;
+    private const BARCODE_BATCH = 200;
 
     public function __construct(
         private CatalogAudit $audit,
@@ -66,11 +68,17 @@ class CatalogAssistant
                 : "{$flagged} fiche(s) à corriger. Je prépare des propositions, vous validez : rien n'est modifié sans votre clic.");
 
         $suggestions = [];
-        $needsText = count(array_unique(array_merge($r['issues']['no_description'], $r['issues']['no_category'])));
+        $needsText = count($this->toComplete());
+        if ($flagged > 0) {
+            $suggestions[] = ['label' => 'Préparer les fiches pour l\'utilisation', 'text' => "prépare les fiches pour l'utilisation"];
+        }
         if ($needsText > 0 && $this->enricher->enabled()) {
-            $suggestions[] = ['label' => 'Compléter descriptions et catégories (IA)', 'text' => 'complète les descriptions et catégories des fiches produits'];
+            $suggestions[] = ['label' => 'Compléter descriptions, catégories et marques (IA)', 'text' => 'complète les descriptions, catégories et marques des fiches produits'];
         } elseif ($needsText > 0) {
-            $body .= "\n\nPour que je propose descriptions et catégories, activez la compréhension avancée (IA) sur cet écran.";
+            $body .= "\n\nPour que je propose descriptions, catégories et marques, activez la compréhension avancée (IA) sur cet écran.";
+        }
+        if ($count('no_barcode') > 0) {
+            $suggestions[] = ['label' => 'Attribuer des codes-barres', 'text' => 'attribue des codes-barres aux fiches produits'];
         }
         if ($count('no_photo') > 0) {
             $suggestions[] = ['label' => 'Voir les produits sans photo', 'text' => 'quels produits sont sans photo'];
@@ -88,14 +96,17 @@ class CatalogAssistant
 
     public function photos(): array
     {
-        $ids = $this->audit->query('no_photo')->orderBy('id')->pluck('id')->all();
+        // File d'attente par priorité : d'abord les articles qui ont du stock (ceux qu'on vend), puis le reste.
+        $ids = $this->audit->query('no_photo')->withSum('warehouseStocks as stock_qty', 'stockLevel')
+            ->orderByDesc('stock_qty')->orderBy('id')->pluck('id')->all();
         if ($ids === []) {
             return $this->reply('Tous les produits ont au moins une photo.');
         }
 
-        $products = Product::whereIn('id', array_slice($ids, 0, 15))->get(['id', 'p_title', 'p_sku']);
+        $firstIds = array_slice($ids, 0, 15);
+        $products = Product::whereIn('id', $firstIds)->get(['id', 'p_title', 'p_sku'])->sortBy(fn (Product $p) => array_search($p->id, $firstIds, true));
         $jadever = $this->audit->query('no_photo')->where('p_sku', 'like', 'JD%')->count();
-        $body = count($ids) . " produit(s) sans photo. Les premiers :\n\n"
+        $body = count($ids) . " produit(s) sans photo, par priorité (articles en stock d'abord). Les premiers :\n\n"
             . $products->map(fn (Product $p) => "• {$p->p_title} ({$p->p_sku})")->implode("\n")
             . (count($ids) > 15 ? "\n… et " . (count($ids) - 15) . ' autre(s).' : '')
             . "\n\nDéposez une photo ici (trombone ou glisser-déposer) : je la lis, je propose le produit correspondant et je la rattache après votre clic."
@@ -106,12 +117,9 @@ class CatalogAssistant
 
     public function complete(User $admin): array
     {
-        $ids = array_values(array_unique(array_merge(
-            $this->audit->query('no_description')->orderBy('id')->pluck('id')->all(),
-            $this->audit->query('no_category')->orderBy('id')->pluck('id')->all(),
-        )));
+        $ids = $this->toComplete();
         if ($ids === []) {
-            return $this->reply('Aucune fiche ne manque de description ni de catégorie.');
+            return $this->reply('Aucune fiche ne manque de description, de catégorie ni de marque.');
         }
 
         $batch = array_slice($ids, 0, CatalogEnricher::BATCH);
@@ -123,7 +131,7 @@ class CatalogAssistant
             return $this->reply("Je n'ai pas pu proposer de description ou de catégorie fiable pour ces " . count($batch) . " fiche(s) : leurs titres ne suffisent pas. Complétez-les dans l'écran Produits.", links: [['label' => 'Produits', 'to' => '/products']]);
         }
 
-        $event = $this->record('catalogue_completion', AgentEvent::STATUS_ROUTED, 'Propositions de descriptions et catégories', [
+        $event = $this->record('catalogue_completion', AgentEvent::STATUS_ROUTED, 'Propositions de descriptions, catégories et marques', [
             'proposals' => $proposals, 'requested_by' => $admin->name,
         ]);
 
@@ -131,16 +139,20 @@ class CatalogAssistant
             $parts = [];
             $p['description'] !== null && $parts[] = '« ' . mb_strimwidth($p['description'], 0, 140, '…') . ' »';
             $p['category'] !== null && $parts[] = "catégorie {$p['category']}" . (($p['new_category'] ?? null) !== null ? ' (à créer)' : '');
+            ($p['brand'] ?? null) !== null && $parts[] = "marque {$p['brand']}" . (($p['new_brand'] ?? null) !== null ? ' (à créer)' : '');
+            ($p['long_description'] ?? null) !== null && $parts[] = 'description longue (' . mb_strlen($p['long_description']) . ' caractères)';
 
             return "• {$p['title']} : " . implode(' · ', $parts);
         }, $proposals);
         $rest = count($ids) - count($batch);
         $toCreate = array_values(array_unique(array_filter(array_column($proposals, 'new_category'))));
+        $brandsToCreate = array_values(array_unique(array_filter(array_column($proposals, 'new_brand'))));
 
         return $this->reply(
             'Propositions pour ' . count($proposals) . " fiche(s) (lot #{$event->id}) :\n\n" . implode("\n", $lines)
             . ($toCreate ? "\n\nCatégories qui seraient créées : " . implode(', ', $toCreate) . '.' : '')
-            . "\n\nÀ l'application, seul ce qui manque encore est rempli : une description ou une vraie catégorie déjà saisie n'est jamais écrasée."
+            . ($brandsToCreate ? "\n\nMarques qui seraient créées : " . implode(', ', $brandsToCreate) . '.' : '')
+            . "\n\nÀ l'application, seul ce qui manque encore est rempli : une description, une vraie catégorie ou une vraie marque déjà saisie n'est jamais écrasée."
             . ($rest > 0 ? "\n{$rest} autre(s) fiche(s) restent à traiter : redemandez après avoir appliqué ce lot." : ''),
             links: [['label' => 'Produits', 'to' => '/products']],
             suggestions: array_values(array_filter([
@@ -276,7 +288,7 @@ class CatalogAssistant
     /** « applique les propositions du lot #12 », « ignore le lot #12 ». @return array{body: string, meta: array<string, mixed>} */
     public function act(User $admin, int $eventId, string $n): array
     {
-        $event = AgentEvent::whereIn('type', ['catalogue_completion', 'catalogue_prix', 'catalogue_activation'])->find($eventId);
+        $event = AgentEvent::whereIn('type', ['catalogue_completion', 'catalogue_prix', 'catalogue_activation', 'catalogue_codes_barres'])->find($eventId);
         if (!$event) {
             return $this->reply("Je ne trouve pas le lot #{$eventId}.", error: true);
         }
@@ -286,23 +298,24 @@ class CatalogAssistant
         if (preg_match('/ignor|annul|abandon/', $n)) {
             $event->update(['status' => AgentEvent::STATUS_REJECTED, 'payload' => array_merge($event->payload ?? [], ['dismissed_by' => $admin->name])]);
 
-            return $this->reply("C'est noté : le lot #{$eventId} est ignoré, aucune fiche n'a été modifiée.", eventId: $eventId);
+            return $this->withNextStep($this->reply("C'est noté : le lot #{$eventId} est ignoré, aucune fiche n'a été modifiée.", eventId: $eventId));
         }
         if (!preg_match('/appliqu|confirm|valid|lance/', $n)) {
             return $this->reply("Lot #{$eventId} en attente : dites « applique … du lot #{$eventId} » ou « ignore le lot #{$eventId} ».", eventId: $eventId);
         }
 
         try {
-            if ($event->type === 'catalogue_activation') {
-                return $this->applyActivation($event);
-            }
             if ($event->type !== 'catalogue_completion') {
-                return $this->applyPrices($event);
+                return $this->withNextStep(match ($event->type) {
+                    'catalogue_activation'   => $this->applyActivation($event),
+                    'catalogue_codes_barres' => $this->applyBarcodes($event),
+                    default                  => $this->applyPrices($event),
+                });
             }
 
             $applied = $this->applyCompletion($event);
             if (!preg_match('/suivant/', $n) || ($applied['meta']['error'] ?? false)) {
-                return $applied;
+                return $this->withNextStep($applied);
             }
 
             // « … et prépare le lot suivant » : le lot appliqué, puis la proposition suivante — toujours à valider.
@@ -322,12 +335,26 @@ class CatalogAssistant
         }
     }
 
+    /** Après une application : s'il reste des fiches à préparer, propose l'étape suivante du parcours. */
+    private function withNextStep(array $reply): array
+    {
+        $text = "prépare les fiches pour l'utilisation";
+        $suggestions = $reply['meta']['suggestions'] ?? [];
+        if (($reply['meta']['error'] ?? false) || in_array($text, array_column($suggestions, 'text'), true) || count($this->audit->run()['flagged']) === 0) {
+            return $reply;
+        }
+        $suggestions[] = ['label' => 'Étape suivante', 'text' => $text];
+        $reply['meta']['suggestions'] = $suggestions;
+
+        return $reply;
+    }
+
     private function applyCompletion(AgentEvent $event): array
     {
-        $descriptions = $categories = $created = 0;
-        $byName = [];   // une catégorie à créer n'est créée qu'une fois, même proposée pour plusieurs fiches
+        $descriptions = $long = $categories = $brands = $createdCategories = $createdBrands = 0;
+        $categoryByName = $brandByName = [];   // une catégorie ou marque à créer n'est créée qu'une fois, même proposée pour plusieurs fiches
 
-        DB::transaction(function () use ($event, &$descriptions, &$categories, &$created, &$byName) {
+        DB::transaction(function () use ($event, &$descriptions, &$long, &$categories, &$brands, &$createdCategories, &$createdBrands, &$categoryByName, &$brandByName) {
             foreach ($event->payload['proposals'] ?? [] as $p) {
                 $product = Product::find($p['product_id'] ?? 0);
                 if (!$product) {
@@ -340,39 +367,103 @@ class CatalogAssistant
                     $descriptions++;
                     $changed = true;
                 }
+                if (($p['long_description'] ?? null) !== null && $this->enricher->needsLongDescription($product)) {
+                    $product->p_long_description = $p['long_description'];
+                    $long++;
+                    $changed = true;
+                }
                 if ($this->enricher->needsCategory($product)) {
-                    $categoryId = $p['category_id'] ?? null;
-                    if ($categoryId !== null && !Category::whereKey($categoryId)->exists()) {
-                        $categoryId = null;
-                    }
-                    if ($categoryId === null && ($p['new_category'] ?? null) !== null) {
-                        $key = $this->enricher->fold($p['new_category']);
-                        $categoryId = $byName[$key] ?? Category::all(['id', 'ctg_title'])->first(fn (Category $c) => $this->enricher->fold($c->ctg_title) === $key)?->id;
-                        if ($categoryId === null) {
-                            $categoryId = Category::create(['ctg_title' => $p['new_category'], 'ctg_status' => true])->id;
-                            $created++;
-                        }
-                        $byName[$key] = $categoryId;
-                    }
+                    $categoryId = $this->resolveCategory($p, $categoryByName, $createdCategories);
                     if ($categoryId !== null) {
                         $product->category_id = $categoryId;
                         $categories++;
                         $changed = true;
                     }
                 }
+                if ($this->enricher->needsBrand($product)) {
+                    $brandId = $this->resolveBrand($p, $brandByName, $createdBrands);
+                    if ($brandId !== null) {
+                        $product->brand_id = $brandId;
+                        $brands++;
+                        $changed = true;
+                    }
+                }
                 $changed && $product->save();
             }
         });
-        $created > 0 && CacheService::flushCategories();
+        $createdCategories > 0 && CacheService::flushCategories();
+        $createdBrands > 0 && CacheService::flushBrands();
 
-        $result = ['descriptions' => $descriptions, 'categories' => $categories, 'categories_created' => $created];
+        $result = [
+            'descriptions' => $descriptions, 'long_descriptions' => $long, 'categories' => $categories, 'categories_created' => $createdCategories,
+            'brands' => $brands, 'brands_created' => $createdBrands,
+        ];
         $event->update(['status' => AgentEvent::STATUS_DONE, 'payload' => array_merge($event->payload ?? [], ['result' => $result])]);
         $this->log($event, 'catalog_completion_applied', $result);
 
-        return $this->reply("Lot #{$event->id} appliqué : {$descriptions} description(s) et {$categories} catégorie(s) renseignées" . ($created > 0 ? " ({$created} catégorie(s) créée(s))" : '') . ". Ce qui était déjà saisi n'a pas été touché.", links: [['label' => 'Produits', 'to' => '/products'], ['label' => 'Catégories', 'to' => '/categories']], eventId: $event->id,
+        $parts = ["{$descriptions} description(s)"];
+        $long > 0 && $parts[] = "{$long} description(s) longue(s)";
+        $parts[] = "{$categories} catégorie(s)" . ($createdCategories > 0 ? " ({$createdCategories} créée(s))" : '');
+        $parts[] = "{$brands} marque(s)" . ($createdBrands > 0 ? " ({$createdBrands} créée(s))" : '');
+
+        return $this->reply(
+            "Lot #{$event->id} appliqué : " . implode(', ', $parts) . " renseignée(s). Ce qui était déjà saisi n'a pas été touché.",
+            links: [['label' => 'Produits', 'to' => '/products'], ['label' => 'Catégories', 'to' => '/categories'], ['label' => 'Marques', 'to' => '/brands']],
+            eventId: $event->id,
             suggestions: $this->remainingToComplete() > 0 && $this->enricher->enabled()
-                ? [['label' => 'Préparer le lot suivant', 'text' => 'complète les descriptions et catégories des fiches produits']]
-                : []);
+                ? [['label' => 'Préparer le lot suivant', 'text' => 'complète les descriptions, catégories et marques des fiches produits']]
+                : [],
+        );
+    }
+
+    /** La catégorie à donner : celle proposée si elle existe encore, sinon la nouvelle (créée une seule fois, ou retrouvée si elle existe déjà). */
+    private function resolveCategory(array $p, array &$byName, int &$created): ?int
+    {
+        $id = $p['category_id'] ?? null;
+        if ($id !== null && Category::whereKey($id)->exists()) {
+            return (int) $id;
+        }
+        if (($p['new_category'] ?? null) === null) {
+            return null;
+        }
+        $key = $this->enricher->fold($p['new_category']);
+        $found = $byName[$key] ?? Category::all(['id', 'ctg_title'])->first(fn (Category $c) => $this->enricher->fold($c->ctg_title) === $key)?->id;
+        if ($found === null) {
+            $found = Category::create(['ctg_title' => $p['new_category'], 'ctg_status' => true])->id;
+            $created++;
+        }
+
+        return $byName[$key] = (int) $found;
+    }
+
+    private function resolveBrand(array $p, array &$byName, int &$created): ?int
+    {
+        $id = $p['brand_id'] ?? null;
+        if ($id !== null && Brand::whereKey($id)->exists()) {
+            return (int) $id;
+        }
+        if (($p['new_brand'] ?? null) === null) {
+            return null;
+        }
+        $key = $this->enricher->fold($p['new_brand']);
+        $found = $byName[$key] ?? Brand::all(['id', 'br_title'])->first(fn (Brand $b) => $this->enricher->fold($b->br_title) === $key)?->id;
+        if ($found === null) {
+            $found = Brand::create(['br_title' => $p['new_brand'], 'br_status' => true])->id;
+            $created++;
+        }
+
+        return $byName[$key] = (int) $found;
+    }
+
+    /** Les fiches qui attendent une description, une vraie catégorie, une vraie marque ou (boutique en ligne) une description longue. @return array<int, int> */
+    private function toComplete(): array
+    {
+        return array_values(array_unique(array_merge(
+            $this->audit->query('no_description')->orderBy('id')->pluck('id')->all(),
+            $this->audit->query('no_category')->orderBy('id')->pluck('id')->all(),
+            $this->audit->query('no_brand')->orderBy('id')->pluck('id')->all(),
+            $this->audit->query('no_long_description')->orderBy('id')->pluck('id')->all(),
+        )));
     }
 
     private function applyActivation(AgentEvent $event): array
@@ -418,15 +509,129 @@ class CatalogAssistant
         return $this->reply("Lot #{$event->id} appliqué : {$updated} prix de vente mis à jour. Les changements sont dans la piste d'audit.", links: [['label' => 'Produits', 'to' => '/products']], eventId: $event->id);
     }
 
+    // ── Codes-barres, parcours « fiches prêtes » ─────────────────────
+
+    /**
+     * Propose un code-barres INTERNE (préfixe 29, voir InternalEan13) aux fiches qui n'en ont pas. Jamais un code
+     * de fournisseur ou de fabricant : l'IA n'intervient pas, le code est calculé.
+     */
+    public function barcodes(User $admin): array
+    {
+        $ids = $this->audit->query('no_barcode')->orderBy('id')->pluck('id')->all();
+        if ($ids === []) {
+            return $this->reply('Toutes les fiches ont un code-barres.');
+        }
+
+        $batch = array_slice($ids, 0, self::BARCODE_BATCH);
+        $products = Product::whereIn('id', $batch)->orderBy('id')->get(['id', 'p_title', 'p_sku']);
+        $assigned = [];
+        foreach ($products as $p) {
+            $code = InternalEan13::forProduct($p->id);
+            if (!Product::where('p_ean13', $code)->exists()) {
+                $assigned[$p->id] = $code;
+            }
+        }
+        if ($assigned === []) {
+            return $this->reply("Je n'ai pu calculer aucun code libre pour ces fiches : saisissez-les dans l'écran Produits.", links: [['label' => 'Produits', 'to' => '/products']]);
+        }
+
+        $event = $this->record('catalogue_codes_barres', AgentEvent::STATUS_ROUTED, 'Proposition de codes-barres internes pour ' . count($assigned) . ' fiche(s)', [
+            'codes' => $assigned, 'requested_by' => $admin->name,
+        ]);
+
+        $examples = $products->filter(fn (Product $p) => isset($assigned[$p->id]))->take(self::SHOWN)->map(fn (Product $p) => "• {$p->p_title} : {$assigned[$p->id]}")->implode("\n");
+        $rest = count($ids) - count($assigned);
+
+        return $this->reply(
+            "Codes-barres pour " . count($assigned) . " fiche(s) (lot #{$event->id}) :\n\n{$examples}"
+            . (count($assigned) > self::SHOWN ? "\n… et " . (count($assigned) - self::SHOWN) . ' autre(s).' : '')
+            . "\n\nCe sont des codes INTERNES (préfixe 29, clé de contrôle valide) : ils servent à la caisse et aux étiquettes produits, ce ne sont pas des codes de fabricant. Une fiche qui a déjà un code n'est jamais modifiée."
+            . ($rest > 0 ? "\n{$rest} autre(s) fiche(s) restent à traiter : redemandez après avoir appliqué ce lot." : ''),
+            links: [['label' => 'Produits', 'to' => '/products'], ['label' => 'Étiquettes produits', 'to' => '/products/labels']],
+            suggestions: [
+                ['label' => 'Appliquer ces codes-barres', 'text' => "applique les codes-barres du lot #{$event->id}"],
+                ['label' => 'Ignorer', 'text' => "ignore le lot #{$event->id}"],
+            ],
+            eventId: $event->id,
+        );
+    }
+
+    private function applyBarcodes(AgentEvent $event): array
+    {
+        $applied = $skipped = 0;
+        DB::transaction(function () use ($event, &$applied, &$skipped) {
+            foreach ($event->payload['codes'] ?? [] as $productId => $code) {
+                $product = Product::find($productId);
+                // Seulement si la fiche n'a toujours pas de code et que ce code est libre et valide.
+                if (!$product || trim((string) $product->p_ean13) !== '' || !InternalEan13::isValid((string) $code) || Product::where('p_ean13', $code)->exists()) {
+                    $skipped++;
+                    continue;
+                }
+                $product->p_ean13 = $code;
+                $product->save();
+                $applied++;
+            }
+        });
+
+        $result = ['applied' => $applied, 'skipped' => $skipped];
+        $event->update(['status' => AgentEvent::STATUS_DONE, 'payload' => array_merge($event->payload ?? [], ['result' => $result])]);
+        $this->log($event, 'catalog_barcodes_applied', $result);
+
+        return $this->reply("Lot #{$event->id} appliqué : {$applied} code(s)-barres attribué(s)" . ($skipped > 0 ? ", {$skipped} fiche(s) laissée(s) telles quelles (déjà un code, ou code devenu indisponible)" : '') . '.', links: [['label' => 'Étiquettes produits', 'to' => '/products/labels']], eventId: $event->id);
+    }
+
+    /**
+     * Le parcours « fiches prêtes à l'emploi » : où en est le catalogue, et la prochaine étape à valider.
+     * Ordre : descriptions, catégories et marques (IA) → prix → codes-barres → activation → photos.
+     * Chaque étape reste une proposition à valider ; cette demande ne fait que choisir la première qui a du travail.
+     */
+    public function prepare(User $admin): array
+    {
+        $r = $this->audit->run();
+        if ($r['total'] === 0) {
+            return $this->reply("Le catalogue est vide : il n'y a aucune fiche à préparer.", links: [['label' => 'Produits', 'to' => '/products']]);
+        }
+
+        $count = fn (string $check) => count($r['issues'][$check]);
+        $inactiveReady = Product::where('p_status', false)->get()->filter(fn (Product $p) => $this->notReadyBecause($p) === [])->count();
+        $needsText = count($this->toComplete());
+
+        // Chaque étape : [libellé, travail restant, méthode]. Les étapes sans travail sont affichées « terminées ».
+        $steps = [
+            ['Descriptions, catégories et marques', $needsText, fn () => $this->enricher->enabled() ? $this->complete($admin) : $this->reply("Cette étape demande la compréhension avancée (IA) : activez-la sur cet écran, puis redemandez.", error: true)],
+            ['Prix de vente', $count('no_sale_price') + $count('below_cost'), fn () => $this->pricing($admin, '')],
+            ['Codes-barres', $count('no_barcode'), fn () => $this->barcodes($admin)],
+            ['Activation des fiches prêtes', $inactiveReady, fn () => $this->activation($admin)],
+            ['Photos', $count('no_photo'), fn () => $this->photos()],
+        ];
+
+        $lines = [];
+        $todo = null;
+        foreach ($steps as $i => [$label, $remaining, $run]) {
+            $lines[] = ($remaining === 0 ? '✓ ' : '→ ') . 'Étape ' . ($i + 1) . ' — ' . $label . ($remaining === 0 ? ' : terminée' : " : {$remaining} fiche(s)");
+            if ($remaining > 0 && $todo === null) {
+                $todo = [$label, $run];
+            }
+        }
+
+        $ready = $r['total'] - count($r['flagged']);
+        $header = "Préparation des fiches pour l'utilisation — {$ready} fiche(s) prête(s) sur {$r['total']} (catégorie, marque, prix, description, photo et code-barres" . ($count('no_long_description') > 0 ? ', description longue' : '') . ").\n\n" . implode("\n", $lines);
+        if ($todo === null) {
+            return $this->reply($header . "\n\nToutes les étapes sont terminées : les fiches sont prêtes à l'emploi.", links: [['label' => 'Produits', 'to' => '/products']]);
+        }
+
+        // Les photos ne se proposent pas : on les liste (la dernière étape) puis on laisse l'administrateur déposer.
+        $step = ($todo[1])();
+
+        return ['body' => $header . "\n\n— Prochaine étape : {$todo[0]} —\n" . $step['body'], 'meta' => $step['meta']];
+    }
+
     // ── Outils ───────────────────────────────────────────────────────
 
-    /** Combien de fiches attendent encore une description ou une vraie catégorie. */
+    /** Combien de fiches attendent encore une description, une vraie catégorie ou une vraie marque. */
     private function remainingToComplete(): int
     {
-        return count(array_unique(array_merge(
-            $this->audit->query('no_description')->pluck('id')->all(),
-            $this->audit->query('no_category')->pluck('id')->all(),
-        )));
+        return count($this->toComplete());
     }
 
     private function record(string $type, string $status, string $text, array $payload): AgentEvent

@@ -150,7 +150,7 @@ class Orchestrator
             . "• « prépare un inventaire » : l'agent Stocks prépare la feuille à compter (ajoutez un nom d'entrepôt, ou « articles à vérifier » pour cibler)\n"
             . "• « contrôle les encaissements » : l'agent Recouvrement contrôle les paiements et prépare les relances\n"
             . "• « relances à valider » : ce qui attend votre validation\n"
-            . "• « mettre à jour les fiches produits » : je contrôle les fiches (photos, descriptions, catégories, prix) et je propose des corrections à valider\n"
+            . "• « mettre à jour les fiches produits » : je contrôle les fiches (photos, descriptions, catégories, marques, prix, codes-barres) et je propose des corrections à valider ; « prépare les fiches pour l'utilisation » enchaîne toutes les étapes jusqu'à l'activation\n"
             . "• déposez une photo ou un PDF (trombone, ou glissez-le ici) : je lis le document, dis ce que c'est et propose la suite\n"
             . "• « que peut-on faire dans O3 » : tous les domaines de l'application ; ou nommez un écran (« les fiches produits », « créer une facture ») et je vous y envoie\n\n"
             . "Les agents préparent des brouillons. Rien n'est modifié ni envoyé sans votre validation, dans l'écran concerné.",
@@ -173,7 +173,9 @@ class Orchestrator
             (bool) preg_match('/\bprix\b|tarifs?/', $n) && (bool) preg_match('/revis|propos|marge|calcul/', $n) && ($about || str_contains($n, 'marge')) => 'pricing',
             (bool) preg_match('/sans photos?|photos? manquantes?|manque de photos?|pas de photos?|sans image/', $n) => 'photos',
             $about && (bool) preg_match('/\b(activ(?:e|er|ons|ation)|reactiv\w*|mett\w* en service)\b/', $n) => 'activation',
-            $about && (bool) preg_match('/descriptions?|categor/', $n) && (bool) preg_match('/complet|enrichi|redige|genere|ajout|propos/', $n) => 'complete',
+            (bool) preg_match('/codes?[- ]?barres?|\bean\b/', $n) && (bool) preg_match('/attribu|genere|propos|cree|ajout|complet|calcul|manquant/', $n) => 'barcodes',
+            $about && (bool) preg_match('/utilisation|a l.emploi|\bpret|utilisables?/', $n) => 'prepare',
+            $about && (bool) preg_match('/descriptions?|categor|marques?/', $n) && (bool) preg_match('/complet|enrichi|redige|genere|ajout|propos/', $n) => 'complete',
             $about && (bool) preg_match('/updat|m(?:et|ett)\w* a jour|mise a jour|incomplet|verifi|control|audit|qualite|manquant|\betat\b/', $n) => 'audit',
             default => null,
         };
@@ -186,6 +188,8 @@ class Orchestrator
             'pricing'  => $this->catalog->pricing($admin, $n),
             'photos'   => $this->catalog->photos(),
             'activation' => $this->catalog->activation($admin),
+            'barcodes' => $this->catalog->barcodes($admin),
+            'prepare'  => $this->catalog->prepare($admin),
             'complete' => $this->catalog->complete($admin),
             default    => $this->catalog->audit($admin),
         };

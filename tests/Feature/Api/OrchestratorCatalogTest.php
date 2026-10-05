@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Models\Warehouse;
 use App\Models\WarehouseHasStock;
 use App\Services\Agents\CatalogEnricher;
+use App\Services\Agents\InternalEan13;
 use App\Services\BulkSalePriceUpdater;
 use Database\Seeders\AgentFoundationSeeder;
 use Illuminate\Support\Facades\Http;
@@ -113,11 +114,11 @@ class OrchestratorCatalogTest extends TestCase
     {
         $off = $this->say('mettre à jour les fiches produits');
         $this->assertStringContainsString('activez la compréhension avancée', $off->json('reply.body'));
-        $this->assertNotContains('complète les descriptions et catégories des fiches produits', array_column($off->json('reply.suggestions'), 'text'));
+        $this->assertNotContains('complète les descriptions, catégories et marques des fiches produits', array_column($off->json('reply.suggestions'), 'text'));
 
         $this->enableAi();
         $on = $this->say('mettre à jour les fiches produits');
-        $this->assertContains('complète les descriptions et catégories des fiches produits', array_column($on->json('reply.suggestions'), 'text'));
+        $this->assertContains('complète les descriptions, catégories et marques des fiches produits', array_column($on->json('reply.suggestions'), 'text'));
         $this->assertContains('révise les prix des fiches produits avec une marge de 25 %', array_column($on->json('reply.suggestions'), 'text'));
     }
 
@@ -154,7 +155,7 @@ class OrchestratorCatalogTest extends TestCase
 
         $done = $this->say("applique les propositions du lot #{$event->id}");
 
-        $this->assertStringContainsString('0 description(s) et 1 catégorie(s)', $done->json('reply.body'));
+        $this->assertStringContainsString('0 description(s), 1 catégorie(s)', $done->json('reply.body'));
         $this->assertSame('Description saisie à la main', $this->bare->fresh()->p_description);
         $this->assertSame($this->tools->id, $this->bare->fresh()->category_id);
         $this->assertSame('Perceuse sans fil 18 volts', $this->complete->fresh()->p_description);
@@ -183,7 +184,7 @@ class OrchestratorCatalogTest extends TestCase
 
         $done = $this->say("applique les propositions du lot #{$event->id}");
 
-        $this->assertStringContainsString('1 catégorie(s) créée(s)', $done->json('reply.body'));
+        $this->assertStringContainsString('(1 créée(s))', $done->json('reply.body'));
         $this->assertSame(1, Category::where('ctg_title', 'Abrasifs et disques')->count());
         $newId = Category::where('ctg_title', 'Abrasifs et disques')->value('id');
         $this->assertSame($newId, $this->bare->fresh()->category_id);
@@ -233,8 +234,143 @@ class OrchestratorCatalogTest extends TestCase
 
         $done = $this->say("applique les propositions du lot #{$event->id}");
 
-        // Plus aucune fiche à compléter : pas de bouton « lot suivant ».
-        $this->assertSame([], $done->json('reply.suggestions'));
+        // Plus aucune fiche à compléter : pas de bouton « lot suivant » ; il reste d'autres étapes (photo, activation…).
+        $texts = array_column($done->json('reply.suggestions'), 'text');
+        $this->assertNotContains('complète les descriptions, catégories et marques des fiches produits', $texts);
+        $this->assertContains("prépare les fiches pour l'utilisation", $texts);
+    }
+
+    // ── Marques, description longue, codes-barres, parcours ──────────
+
+    public function test_brands_are_proposed_from_existing_or_new_names_and_the_default_brand_is_never_a_choice(): void
+    {
+        $default = \App\Models\Brand::factory()->create(['br_title' => 'Marque inconnue']);
+        $jadever = \App\Models\Brand::factory()->create(['br_title' => 'Jadever']);
+        $this->bare->update(['brand_id' => $default->id, 'p_sku' => 'JD0001', 'category_id' => $this->tools->id]);
+        $second = Product::factory()->create(['p_title' => 'Perceuse sans fil', 'p_sku' => 'JD0002', 'brand_id' => null, 'category_id' => $this->tools->id, 'p_description' => 'Perceuse sans fil 20 volts']);
+        ProductImage::create(['product_id' => $second->id, 'url' => '/storage/products/p.jpg', 'title' => 'p', 'isPrimary' => true]);
+        $this->modelCompletes([
+            ['id' => $this->bare->id, 'brand_id' => $jadever->id],
+            ['id' => $second->id, 'new_brand' => 'marque Inventée'],
+        ]);
+
+        $audit = $this->say('mettre à jour les fiches produits')->json('reply.body');
+        $this->assertStringContainsString('• Sans marque : 2', $audit);                    // « Marque inconnue » compte comme sans marque
+
+        $r = $this->say('complète les descriptions, catégories et marques des fiches produits');
+
+        $event = AgentEvent::where('type', 'catalogue_completion')->firstOrFail();
+        $this->assertStringContainsString('marque Jadever', $r->json('reply.body'));
+        $this->assertStringContainsString('marque Marque Inventée (à créer)', $r->json('reply.body'));
+        $this->assertStringContainsString('Marques qui seraient créées : Marque Inventée', $r->json('reply.body'));
+        $this->assertSame($default->id, $this->bare->fresh()->brand_id);        // rien avant le clic
+
+        $this->say("applique les propositions du lot #{$event->id}");
+
+        $this->assertSame($jadever->id, $this->bare->fresh()->brand_id);
+        $newBrand = \App\Models\Brand::where('br_title', 'Marque Inventée')->firstOrFail();
+        $this->assertSame($newBrand->id, $second->fresh()->brand_id);
+        // La marque par défaut et un nom « par défaut » ne sont jamais proposés.
+        $enricher = app(CatalogEnricher::class);
+        $this->assertSame([], $enricher->clean(['products' => [['id' => $this->complete->id, 'new_brand' => 'Marque inconnue']]], [$this->complete], [], []));
+    }
+
+    public function test_a_long_description_is_proposed_only_for_online_shop_fiches_and_the_slug_is_not_invented(): void
+    {
+        $shop = Product::factory()->create(['p_title' => 'Perceuse 20V', 'p_sku' => 'PRC20', 'p_description' => 'Perceuse sans fil 20 volts', 'is_ecom' => true, 'p_long_description' => null, 'category_id' => $this->tools->id]);
+        $this->modelCompletes([
+            ['id' => $shop->id, 'long_description' => 'Perceuse sans fil de 20 volts, pensée pour les travaux courants de perçage et de vissage. Une fiche sobre, sans promesse que le fabricant ne fait pas.'],
+            ['id' => $this->complete->id, 'long_description' => 'Cette description longue ne doit jamais être retenue : la fiche n\'est pas destinée à la boutique en ligne.'],
+        ]);
+
+        $audit = $this->say('mettre à jour les fiches produits')->json('reply.body');
+        $this->assertStringContainsString('• Boutique en ligne sans description longue : 1', $audit);
+
+        $r = $this->say('complète les descriptions, catégories et marques des fiches produits');
+        $event = AgentEvent::where('type', 'catalogue_completion')->firstOrFail();
+        $this->assertStringContainsString('description longue (', $r->json('reply.body'));
+        $this->assertNull($shop->fresh()->p_long_description);                 // rien avant le clic
+
+        $this->say("applique les propositions du lot #{$event->id}");
+
+        $this->assertStringContainsString('Perceuse sans fil de 20 volts', $shop->fresh()->p_long_description);
+        $this->assertTrue(blank($this->complete->fresh()->p_long_description));
+    }
+
+    public function test_internal_barcodes_are_valid_unique_and_never_overwrite_an_existing_code(): void
+    {
+        $this->assertSame(13, strlen(InternalEan13::forProduct(7)));
+        $this->assertTrue(InternalEan13::isValid(InternalEan13::forProduct(7)));
+        $this->assertSame(InternalEan13::forProduct(7), InternalEan13::forProduct(7));
+        $this->assertNotSame(InternalEan13::forProduct(7), InternalEan13::forProduct(8));
+        $this->assertTrue(str_starts_with(InternalEan13::forProduct(123456), '29'));
+        $this->assertFalse(InternalEan13::isValid('2900000000071'));              // mauvaise clé de contrôle
+        $this->assertFalse(InternalEan13::isValid('abc'));
+
+        $this->bare->update(['p_ean13' => null]);
+        $this->cheap->update(['p_ean13' => '']);
+        $keep = $this->complete->p_ean13;
+
+        $r = $this->say('attribue des codes-barres aux fiches produits');
+
+        $event = AgentEvent::where('type', 'catalogue_codes_barres')->firstOrFail();
+        $this->assertSame([$this->bare->id, $this->cheap->id], array_map('intval', array_keys($event->payload['codes'])));
+        $this->assertStringContainsString('codes INTERNES', $r->json('reply.body'));
+        $this->assertNull($this->bare->fresh()->p_ean13);                          // rien avant le clic
+
+        // Entre la proposition et le clic, quelqu'un saisit le code d'une des fiches : il est respecté.
+        $this->cheap->update(['p_ean13' => '3760001234567']);
+
+        $done = $this->say("applique les codes-barres du lot #{$event->id}");
+
+        $this->assertSame(InternalEan13::forProduct($this->bare->id), $this->bare->fresh()->p_ean13);
+        $this->assertSame('3760001234567', $this->cheap->fresh()->p_ean13);
+        $this->assertSame($keep, $this->complete->fresh()->p_ean13);
+        $this->assertStringContainsString('1 code(s)-barres attribué(s), 1 fiche(s) laissée(s) telles quelles', $done->json('reply.body'));
+        $this->assertSame('catalog_barcodes_applied', AgentAction::where('event_id', $event->id)->firstOrFail()->action);
+    }
+
+    public function test_the_preparation_path_picks_the_first_step_with_work_and_chains_to_the_next_one(): void
+    {
+        $this->enableAi();
+        Http::fake(['api.anthropic.com/*' => Http::response(['content' => [['type' => 'tool_use', 'name' => 'complete_products', 'input' => ['products' => [
+            ['id' => $this->bare->id, 'category_id' => $this->tools->id],
+        ]]]]])]);
+        $this->bare->update(['p_salePrice' => 70, 'p_ean13' => InternalEan13::forProduct($this->bare->id)]);
+        ProductImage::create(['product_id' => $this->bare->id, 'url' => '/storage/products/z.jpg', 'title' => 'z', 'isPrimary' => true]);
+        $this->cheap->update(['p_salePrice' => 120]);
+
+        // Étape 1 : la seule fiche à compléter est « bare » (catégorie par défaut).
+        $first = $this->say("prépare les fiches pour l'utilisation");
+        $body = $first->json('reply.body');
+        $this->assertStringContainsString("Préparation des fiches pour l'utilisation — 2 fiche(s) prête(s) sur 3", $body);
+        $this->assertStringContainsString('→ Étape 1 — Descriptions, catégories et marques : 1 fiche(s)', $body);
+        $this->assertStringContainsString('✓ Étape 2 — Prix de vente : terminée', $body);
+        $this->assertStringContainsString('Prochaine étape : Descriptions, catégories et marques', $body);
+        $event = AgentEvent::where('type', 'catalogue_completion')->firstOrFail();
+
+        // Après l'application, le bouton « Étape suivante » apparaît tant qu'il reste du travail.
+        $done = $this->say("applique les propositions du lot #{$event->id}");
+        $this->assertSame($this->tools->id, $this->bare->fresh()->category_id);
+
+        // Tout est prêt : le parcours le dit.
+        $this->bare->update(['p_description' => 'Disque abrasif de 115 mm pour tronçonner le métal']);
+        $this->complete->update(['p_ean13' => $this->complete->p_ean13 ?: '3760001234567']);
+        $final = $this->say("prépare les fiches pour l'utilisation");
+        $this->assertStringContainsString('✓ Étape 1', $final->json('reply.body'));
+        // Après l'application du lot, l'étape suivante était proposée (des étapes restaient : photo de « cheap », code…).
+        $this->assertNotNull($done->json('reply.suggestions'));
+    }
+
+    public function test_the_photo_queue_puts_products_in_stock_first(): void
+    {
+        $noStock = Product::factory()->create(['p_title' => 'Sans stock', 'p_sku' => 'NOSTOCK1', 'category_id' => $this->tools->id]);
+        $this->assertGreaterThan(0, WarehouseHasStock::where('product_id', $this->bare->id)->count());   // « bare » a du stock (setUp)
+
+        $body = $this->say('quels produits sont sans photo ?')->json('reply.body');
+
+        $this->assertStringContainsString('par priorité', $body);
+        $this->assertLessThan(strpos($body, 'NOSTOCK1'), strpos($body, 'DISQ115'));   // le produit en stock passe avant
     }
 
     // ── Activation des fiches ────────────────────────────────────────
