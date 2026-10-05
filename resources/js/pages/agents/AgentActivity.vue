@@ -23,6 +23,12 @@
           Routeur {{ summary?.router_on ? 'activé' : 'désactivé' }}
         </span>
         <button
+          class="px-3 py-2 text-sm font-semibold rounded-[11px] bg-[#7C5CFC] text-white hover:bg-[#6A49F0] transition"
+          @click="showChat = true"
+        >
+          Parler à l'orchestrateur
+        </button>
+        <button
           class="px-3 py-2 text-sm font-medium rounded-[11px] border border-[#ECEEF2] dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-50"
           :disabled="loading"
           @click="load()"
@@ -242,12 +248,23 @@
         </div>
       </div>
     </div>
+
+    <!-- Orchestrateur : on lui parle sans quitter la page. Fermer la fenêtre actualise l'activité. -->
+    <BaseModal v-model="showChat" title="Orchestrateur : le chef des agents" size="xl">
+      <p class="text-sm text-[#8A8F9C] dark:text-gray-400 mb-3">
+        Il comprend une liste de demandes et les confie aux agents. Les agents préparent des brouillons, la validation
+        reste la vôtre.
+      </p>
+      <OrchestratorChat height-class="h-[52vh]" @ordered="chatOrdered = true" @navigate="showChat = false" />
+    </BaseModal>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import http from '@/services/http'
+import BaseModal from '@/components/BaseModal.vue'
+import OrchestratorChat from '@/components/agents/OrchestratorChat.vue'
 
 interface Summary {
   total: number
@@ -387,6 +404,16 @@ const cards = computed(() => [
   },
   { label: 'Dossiers ouverts', value: summary.value?.open_cases ?? 0, tone: 'text-gray-900 dark:text-white' },
 ])
+
+const showChat = ref(false)
+/** Un ordre a été donné pendant que la fenêtre était ouverte : l'activité se rafraîchit à sa fermeture. */
+const chatOrdered = ref(false)
+
+watch(showChat, (open) => {
+  if (open || !chatOrdered.value) return
+  chatOrdered.value = false
+  load()
+})
 
 async function load(page = meta.current_page) {
   loading.value = true
