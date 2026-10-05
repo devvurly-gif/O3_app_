@@ -98,8 +98,8 @@ class OrchestratorStudioTest extends TestCase
         $this->assertNull(RoutineSchedule::sanitize(['frequency' => 'monthly', 'day' => 31, 'time' => '08:00'])); // 28 au plus
         $this->assertSame(['frequency' => 'weekly', 'time' => '08:00', 'weekday' => 1], RoutineSchedule::sanitize(['frequency' => 'weekly', 'weekday' => 1, 'time' => '8:00']));
 
-        Setting::set('locale', 'timezone', 'Africa/Casablanca');
-        Carbon::setTestNow(Carbon::parse('2026-10-06 06:00:00', 'UTC'));   // mardi 06/10, 07:00 à Casablanca (UTC+1)
+        Setting::set('locale', 'timezone', 'Etc/GMT-1');   // UTC+1 fixe : indépendant des règles d'heure d'été de la base de fuseaux
+        Carbon::setTestNow(Carbon::parse('2026-10-06 06:00:00', 'UTC'));   // mardi 06/10, 07:00 en UTC+1
 
         $monday = RoutineSchedule::next(['frequency' => 'weekly', 'weekday' => 1, 'time' => '08:00']);
         $this->assertSame('2026-10-12 07:00:00', $monday->format('Y-m-d H:i:s'));                       // lundi prochain 08:00 local = 07:00 UTC
