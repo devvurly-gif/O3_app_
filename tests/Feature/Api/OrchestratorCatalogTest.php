@@ -237,6 +237,85 @@ class OrchestratorCatalogTest extends TestCase
         $this->assertSame([], $done->json('reply.suggestions'));
     }
 
+    // ── Activation des fiches ────────────────────────────────────────
+
+    private function inactive(array $over = []): Product
+    {
+        return Product::factory()->create(array_merge([
+            'p_status' => false, 'p_description' => 'Description saisie à la main', 'p_salePrice' => 50, 'p_purchasePrice' => 30, 'category_id' => $this->tools->id,
+        ], $over));
+    }
+
+    public function test_activation_is_proposed_for_ready_fiches_only_and_applied_after_a_click(): void
+    {
+        $ready = $this->inactive(['p_title' => 'Fiche prête']);
+        $noCategory = $this->inactive(['p_title' => 'Sans catégorie', 'category_id' => $this->uncategorized->id]);
+        $noPrice = $this->inactive(['p_title' => 'Sans prix', 'p_salePrice' => 0]);
+
+        $r = $this->say('active les fiches produits');
+
+        $event = AgentEvent::where('type', 'catalogue_activation')->firstOrFail();
+        $this->assertSame([$ready->id], $event->payload['product_ids']);
+        $this->assertStringContainsString('3 fiche(s) inactive(s) : 1 prête(s)', $r->json('reply.body'));
+        $this->assertStringContainsString('2 incomplète(s) laissée(s) inactive(s)', $r->json('reply.body'));
+        $this->assertStringContainsString("Aucune n'est marquée « boutique en ligne »", $r->json('reply.body'));
+        $this->assertSame("applique l'activation des fiches du lot #{$event->id}", $r->json('reply.suggestions.0.text'));
+        $this->assertFalse((bool) $ready->fresh()->p_status);              // proposition seulement
+
+        $done = $this->say("applique l'activation des fiches du lot #{$event->id}");
+
+        $this->assertStringContainsString('1 fiche(s) activée(s)', $done->json('reply.body'));
+        $this->assertTrue((bool) $ready->fresh()->p_status);
+        $this->assertFalse((bool) $noCategory->fresh()->p_status);
+        $this->assertFalse((bool) $noPrice->fresh()->p_status);
+        $this->assertSame('done', $event->fresh()->status);
+        $this->assertSame('catalog_activation_applied', AgentAction::where('event_id', $event->id)->firstOrFail()->action);
+        $this->assertStringContainsString('déjà été traité', $this->say("applique l'activation des fiches du lot #{$event->id}")->json('reply.body'));
+    }
+
+    public function test_a_fiche_that_became_incomplete_since_the_proposal_is_not_activated(): void
+    {
+        $ready = $this->inactive();
+        $this->say('active les fiches produits');
+        $event = AgentEvent::where('type', 'catalogue_activation')->firstOrFail();
+
+        $ready->update(['p_salePrice' => 0]);   // le prix a été retiré entre la proposition et le clic
+
+        $done = $this->say("applique l'activation des fiches du lot #{$event->id}");
+
+        $this->assertStringContainsString('0 fiche(s) activée(s), 1 laissée(s) inactive(s)', $done->json('reply.body'));
+        $this->assertFalse((bool) $ready->fresh()->p_status);
+    }
+
+    public function test_activation_says_so_when_nothing_is_inactive_or_nothing_is_ready_and_can_be_ignored(): void
+    {
+        $this->assertStringContainsString('toutes les fiches sont déjà actives', $this->say('active les fiches produits')->json('reply.body'));
+
+        $notReady = $this->inactive(['category_id' => $this->uncategorized->id]);
+        $this->assertStringContainsString("aucune n'est prête", $this->say('activer les produits')->json('reply.body'));
+        $this->assertSame(0, AgentEvent::where('type', 'catalogue_activation')->count());
+
+        $ready = $this->inactive();
+        $this->say('active les fiches produits');
+        $event = AgentEvent::where('type', 'catalogue_activation')->firstOrFail();
+        $this->say("ignore le lot #{$event->id}");
+        $this->assertSame('rejected', $event->fresh()->status);
+        $this->assertFalse((bool) $ready->fresh()->p_status);
+        $this->assertFalse((bool) $notReady->fresh()->p_status);
+    }
+
+    public function test_the_audit_offers_the_activation_and_words_like_activity_do_not_trigger_it(): void
+    {
+        $this->inactive();
+
+        $audit = $this->say('mettre à jour les fiches produits');
+        $this->assertContains('active les fiches produits', array_column($audit->json('reply.suggestions'), 'text'));
+
+        $this->say("l'activité des fiches produits");
+        $this->say('les fiches inactives');
+        $this->assertSame(0, AgentEvent::where('type', 'catalogue_activation')->count());
+    }
+
     public function test_a_proposal_can_be_ignored_and_nothing_changes(): void
     {
         $this->modelCompletes([['id' => $this->bare->id, 'description' => 'Disque abrasif de 115 mm pour tronçonner le métal.', 'category_id' => $this->tools->id]]);

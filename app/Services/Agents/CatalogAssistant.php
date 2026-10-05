@@ -30,6 +30,7 @@ use Illuminate\Support\Facades\Log;
 class CatalogAssistant
 {
     private const SHOWN = 10;
+    private const ACTIVATION_BATCH = 100;
 
     public function __construct(
         private CatalogAudit $audit,
@@ -76,6 +77,10 @@ class CatalogAssistant
         }
         if ($count('no_sale_price') + $count('below_cost') > 0) {
             $suggestions[] = ['label' => 'Proposer des prix (25 % sur le prix d\'achat)', 'text' => 'révise les prix des fiches produits avec une marge de 25 %'];
+        }
+
+        if ($r['inactive'] > 0) {
+            $suggestions[] = ['label' => "Préparer l'activation des fiches", 'text' => 'active les fiches produits'];
         }
 
         return $this->reply($body, links: [['label' => 'Produits', 'to' => '/products'], ['label' => 'Révision des prix', 'to' => '/settings/bulk-prices']], suggestions: $suggestions);
@@ -148,6 +153,64 @@ class CatalogAssistant
         );
     }
 
+    /**
+     * Propose d'activer les fiches inactives qui sont prêtes : vraie catégorie, prix de vente et description.
+     * Une fiche sans photo reste activable (signalé). L'activation ne change que le statut de la fiche.
+     */
+    public function activation(User $admin): array
+    {
+        $inactive = Product::where('p_status', false)->get();
+        if ($inactive->isEmpty()) {
+            return $this->reply('Aucune fiche inactive : toutes les fiches sont déjà actives.');
+        }
+
+        $ready = $missing = [];
+        foreach ($inactive as $p) {
+            $why = $this->notReadyBecause($p);
+            $why === [] ? $ready[] = $p : $missing[$p->id] = $why;
+        }
+        if ($ready === []) {
+            return $this->reply("{$inactive->count()} fiche(s) inactive(s), mais aucune n'est prête : il manque une vraie catégorie, un prix de vente ou une description. Lancez d'abord le contrôle (« mettre à jour les fiches produits »).", links: [['label' => 'Produits', 'to' => '/products']]);
+        }
+
+        $ids = array_map(fn (Product $p) => $p->id, array_slice($ready, 0, self::ACTIVATION_BATCH));
+        $noPhoto = Product::whereIn('id', $ids)->whereDoesntHave('images')->count();
+        $ecom = Product::whereIn('id', $ids)->where('is_ecom', true)->count();
+
+        $event = $this->record('catalogue_activation', AgentEvent::STATUS_ROUTED, "Proposition d'activation de " . count($ids) . ' fiche(s)', [
+            'product_ids' => $ids, 'requested_by' => $admin->name,
+        ]);
+
+        $body = "{$inactive->count()} fiche(s) inactive(s) : " . count($ready) . ' prête(s) (vraie catégorie, prix de vente, description)'
+            . ($missing ? ', ' . count($missing) . ' incomplète(s) laissée(s) inactive(s)' : '') . ".\n\n"
+            . 'Lot #' . $event->id . ' : activer ' . count($ids) . ' fiche(s)'
+            . (count($ready) > count($ids) ? ' (les ' . self::ACTIVATION_BATCH . ' premières, redemandez pour la suite)' : '') . '.'
+            . ($noPhoto > 0 ? "\n• {$noPhoto} sans photo : activables quand même, les photos peuvent venir après." : '')
+            . "\n• " . ($ecom > 0 ? "{$ecom} marquée(s) « boutique en ligne » : elles y seraient publiées." : "Aucune n'est marquée « boutique en ligne » : rien ne sera publié sur la boutique.")
+            . "\n• L'activation ne change que le statut de la fiche (inscrit à la piste d'audit). Pour revenir en arrière, désactivez les fiches dans l'écran Produits.";
+
+        return $this->reply(
+            $body,
+            links: [['label' => 'Produits', 'to' => '/products']],
+            suggestions: [
+                ['label' => 'Activer ces ' . count($ids) . ' fiches', 'text' => "applique l'activation des fiches du lot #{$event->id}"],
+                ['label' => 'Ignorer', 'text' => "ignore le lot #{$event->id}"],
+            ],
+            eventId: $event->id,
+        );
+    }
+
+    /** @return array<int, string> ce qui manque à la fiche pour être activée ; vide si elle est prête */
+    private function notReadyBecause(Product $p): array
+    {
+        $why = [];
+        $this->enricher->needsCategory($p) && $why[] = 'catégorie';
+        ((float) $p->p_salePrice) <= 0 && $why[] = 'prix de vente';
+        $this->enricher->needsDescription($p) && $why[] = 'description';
+
+        return $why;
+    }
+
     /** @param string $n phrase normalisée (sans accent, minuscules) */
     public function pricing(User $admin, string $n): array
     {
@@ -213,7 +276,7 @@ class CatalogAssistant
     /** « applique les propositions du lot #12 », « ignore le lot #12 ». @return array{body: string, meta: array<string, mixed>} */
     public function act(User $admin, int $eventId, string $n): array
     {
-        $event = AgentEvent::whereIn('type', ['catalogue_completion', 'catalogue_prix'])->find($eventId);
+        $event = AgentEvent::whereIn('type', ['catalogue_completion', 'catalogue_prix', 'catalogue_activation'])->find($eventId);
         if (!$event) {
             return $this->reply("Je ne trouve pas le lot #{$eventId}.", error: true);
         }
@@ -230,6 +293,9 @@ class CatalogAssistant
         }
 
         try {
+            if ($event->type === 'catalogue_activation') {
+                return $this->applyActivation($event);
+            }
             if ($event->type !== 'catalogue_completion') {
                 return $this->applyPrices($event);
             }
@@ -307,6 +373,29 @@ class CatalogAssistant
             suggestions: $this->remainingToComplete() > 0 && $this->enricher->enabled()
                 ? [['label' => 'Préparer le lot suivant', 'text' => 'complète les descriptions et catégories des fiches produits']]
                 : []);
+    }
+
+    private function applyActivation(AgentEvent $event): array
+    {
+        $activated = $skipped = 0;
+        DB::transaction(function () use ($event, &$activated, &$skipped) {
+            foreach (Product::whereIn('id', $event->payload['product_ids'] ?? [])->get() as $product) {
+                // Une fiche déjà active, ou redevenue incomplète depuis la proposition, n'est pas activée.
+                if ($product->p_status || $this->notReadyBecause($product) !== []) {
+                    $skipped++;
+                    continue;
+                }
+                $product->p_status = true;
+                $product->save();
+                $activated++;
+            }
+        });
+
+        $result = ['activated' => $activated, 'skipped' => $skipped];
+        $event->update(['status' => AgentEvent::STATUS_DONE, 'payload' => array_merge($event->payload ?? [], ['result' => $result])]);
+        $this->log($event, 'catalog_activation_applied', $result);
+
+        return $this->reply("Lot #{$event->id} appliqué : {$activated} fiche(s) activée(s)" . ($skipped > 0 ? ", {$skipped} laissée(s) inactive(s) (déjà actives ou devenues incomplètes depuis la proposition)" : '') . '.', links: [['label' => 'Produits', 'to' => '/products']], eventId: $event->id);
     }
 
     private function applyPrices(AgentEvent $event): array

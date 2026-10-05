@@ -172,6 +172,7 @@ class Orchestrator
         return match (true) {
             (bool) preg_match('/\bprix\b|tarifs?/', $n) && (bool) preg_match('/revis|propos|marge|calcul/', $n) && ($about || str_contains($n, 'marge')) => 'pricing',
             (bool) preg_match('/sans photos?|photos? manquantes?|manque de photos?|pas de photos?|sans image/', $n) => 'photos',
+            $about && (bool) preg_match('/\b(activ(?:e|er|ons|ation)|reactiv\w*|mett\w* en service)\b/', $n) => 'activation',
             $about && (bool) preg_match('/descriptions?|categor/', $n) && (bool) preg_match('/complet|enrichi|redige|genere|ajout|propos/', $n) => 'complete',
             $about && (bool) preg_match('/updat|m(?:et|ett)\w* a jour|mise a jour|incomplet|verifi|control|audit|qualite|manquant|\betat\b/', $n) => 'audit',
             default => null,
@@ -184,6 +185,7 @@ class Orchestrator
             'act'      => preg_match('/\blot\s*#\s*(\d+)/', $n, $m) ? $this->catalog->act($admin, (int) $m[1], $n) : $this->catalog->audit($admin),
             'pricing'  => $this->catalog->pricing($admin, $n),
             'photos'   => $this->catalog->photos(),
+            'activation' => $this->catalog->activation($admin),
             'complete' => $this->catalog->complete($admin),
             default    => $this->catalog->audit($admin),
         };
