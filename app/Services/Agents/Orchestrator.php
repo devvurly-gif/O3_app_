@@ -28,8 +28,12 @@ use Illuminate\Support\Str;
  */
 class Orchestrator
 {
-    public function __construct(private AgentOrderService $orders, private OrchestratorInterpreter $interpreter, private DocumentIntake $intake)
-    {
+    public function __construct(
+        private AgentOrderService $orders,
+        private OrchestratorInterpreter $interpreter,
+        private DocumentIntake $intake,
+        private CatalogAssistant $catalog,
+    ) {
     }
 
     /** @return array{user: OrchestratorMessage, reply: OrchestratorMessage} */
@@ -61,6 +65,8 @@ class Orchestrator
             (bool) preg_match('/\bdocuments?\s*#?\s*(\d+)/', $n, $doc)                            => $this->intake->act($admin, (int) $doc[1], $n),
             (bool) preg_match('/inventaire|comptage/', $n)                                        => $this->inventory($admin, $n, $action),
             (bool) preg_match('/encaissement|impaye|recouvrement|relance|paiements? en retard/', $n) => $this->collections($admin, $n, $action),
+            // Fiches produits : contrôle, propositions (IA, prix, photos) et leur validation (« lot #12 »).
+            ($fiches = $this->catalogIntent($n)) !== null                                         => $this->catalogAnswer($admin, $fiches, $n),
             (bool) preg_match('/\ba trier\b|non classe|evenement|messages? recus?/', $n)          => $this->toSort(),
             (bool) preg_match('/que (peut|peu)[- ]on|fonctionnalites?|\bfonctions?\b|\bmodules?\b|\becrans?\b|\bmenu\b|dans o3|possibilites/', $n) => $this->capabilities(),
             AppCatalog::match($n) !== [] && $this->looksLikeNavigation($n)                       => $this->navigate($n, AppCatalog::match($n)),
@@ -107,6 +113,7 @@ class Orchestrator
             'encaissements_ordre' => $this->propose('contrôler les encaissements et préparer les relances', 'collections', 'contrôle les encaissements'),
             'aide'            => $this->help(true),
             'fonctions'       => $this->capabilities(),
+            'fiches_controle' => $this->catalog->audit($admin),
             'ecran'           => $r['screen'] ? $this->navigate($this->normalize($text), [$r['screen']]) : $this->understood($text),
             default           => $this->understood($text),
         };
@@ -143,12 +150,43 @@ class Orchestrator
             . "• « prépare un inventaire » : l'agent Stocks prépare la feuille à compter (ajoutez un nom d'entrepôt, ou « articles à vérifier » pour cibler)\n"
             . "• « contrôle les encaissements » : l'agent Recouvrement contrôle les paiements et prépare les relances\n"
             . "• « relances à valider » : ce qui attend votre validation\n"
+            . "• « mettre à jour les fiches produits » : je contrôle les fiches (photos, descriptions, catégories, prix) et je propose des corrections à valider\n"
             . "• déposez une photo ou un PDF (trombone, ou glissez-le ici) : je lis le document, dis ce que c'est et propose la suite\n"
             . "• « que peut-on faire dans O3 » : tous les domaines de l'application ; ou nommez un écran (« les fiches produits », « créer une facture ») et je vous y envoie\n\n"
             . "Les agents préparent des brouillons. Rien n'est modifié ni envoyé sans votre validation, dans l'écran concerné.",
             'help',
             warning: $warning !== null,
         );
+    }
+
+    // ── Fiches produits ──────────────────────────────────────────────
+
+    /** Quelle demande sur les fiches produits la phrase exprime-t-elle ? null si aucune. */
+    private function catalogIntent(string $n): ?string
+    {
+        if (preg_match('/\blot\s*#\s*\d+/', $n)) {
+            return 'act';
+        }
+        $about = (bool) preg_match('/fiches?|produits?|prouits?|catalogue|articles?/', $n);
+
+        return match (true) {
+            (bool) preg_match('/\bprix\b|tarifs?/', $n) && (bool) preg_match('/revis|propos|marge|calcul/', $n) && ($about || str_contains($n, 'marge')) => 'pricing',
+            (bool) preg_match('/sans photos?|photos? manquantes?|manque de photos?|pas de photos?|sans image/', $n) => 'photos',
+            $about && (bool) preg_match('/descriptions?|categor/', $n) && (bool) preg_match('/complet|enrichi|redige|genere|ajout|propos/', $n) => 'complete',
+            $about && (bool) preg_match('/updat|m(?:et|ett)\w* a jour|mise a jour|incomplet|verifi|control|audit|qualite|manquant|\betat\b/', $n) => 'audit',
+            default => null,
+        };
+    }
+
+    private function catalogAnswer(User $admin, string $intent, string $n): array
+    {
+        return match ($intent) {
+            'act'      => preg_match('/\blot\s*#\s*(\d+)/', $n, $m) ? $this->catalog->act($admin, (int) $m[1], $n) : $this->catalog->audit($admin),
+            'pricing'  => $this->catalog->pricing($admin, $n),
+            'photos'   => $this->catalog->photos(),
+            'complete' => $this->catalog->complete($admin),
+            default    => $this->catalog->audit($admin),
+        };
     }
 
     // ── Orientation dans l'application (lecture seule) ───────────────

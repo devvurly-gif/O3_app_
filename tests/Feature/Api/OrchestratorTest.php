@@ -70,14 +70,11 @@ class OrchestratorTest extends TestCase
 
     public function test_a_named_screen_is_described_and_linked_and_a_modification_is_not_pretended(): void
     {
-        // Demande de modification : aucun agent ne la fait, on le dit franchement et on envoie à l'écran.
-        foreach (['  update fiche prouits ', 'mets à jour les fiches produits'] as $text) {
-            $reply = $this->say($text)->assertCreated()->json('reply');
+        // Les fiches produits ont leur agent (voir OrchestratorCatalogTest) ; on cherche ici seulement leur écran.
+        $screen = $this->say('la page des fiches produits')->assertCreated()->json('reply');
+        $this->assertSame('/products', $screen['links'][0]['to']);
 
-            $this->assertStringContainsString('Je ne sais pas encore le faire', $reply['body']);
-            $this->assertStringContainsString("aucun agent n'en est chargé", $reply['body']);
-            $this->assertSame('/products', $reply['links'][0]['to']);
-        }
+        // Demande de modification sans agent : on le dit franchement et on envoie à l'écran.
         $prices = $this->say('modifier les prix')->assertCreated()->json('reply');
         $this->assertStringContainsString("aucun agent n'en est chargé", $prices['body']);
         $this->assertSame('/settings/bulk-prices', $prices['links'][0]['to']);

@@ -40,6 +40,7 @@ class OrchestratorInterpreter
         'relances_etat'       => 'demander quelles relances de paiement attendent une validation',
         'encaissements_ordre' => 'demander de CONTRÔLER les encaissements et de préparer les relances de paiement',
         'aide'                => 'demander ce que sait faire l\'orchestrateur',
+        'fiches_controle'     => 'demander de contrôler, mettre à jour ou compléter les fiches produits du catalogue (photos, descriptions, catégories, prix manquants)',
         'fonctions'           => "demander ce que l'on peut faire dans l'application, ses modules ou ses fonctionnalités en général",
         'ecran'               => "chercher où faire quelque chose dans l'application (créer une facture, gérer les produits, les clients, les prix, les utilisateurs…) : renseigner screen",
         'hors_sujet'          => 'toute autre demande : question générale, conversation, ou demande que l\'orchestrateur ne sait pas traiter',
