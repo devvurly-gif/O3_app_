@@ -161,6 +161,29 @@ class OrchestratorDocumentsTest extends TestCase
         $this->assertSame(1, DocumentHeader::where('document_type', 'InvoicePurchase')->count());
     }
 
+    public function test_a_missing_line_vat_rate_is_taken_from_the_printed_totals_only_when_they_give_a_legal_rate(): void
+    {
+        ThirdPartner::factory()->create(['tp_title' => 'LEADER STAR', 'tp_Role' => 'supplier', 'tp_Ice_Number' => '003303692000061']);
+
+        // Deux lectures successives du modèle (Http::fake garde le premier stub : on passe par une séquence).
+        $this->enableAi();
+        $read = fn (array $input) => Http::response(['content' => [['type' => 'tool_use', 'name' => 'read_document', 'input' => $input]]]);
+        Http::fake(['api.anthropic.com/*' => Http::sequence()
+            // TVA 20 / HT 100 = 20 % exact : le taux manquant des lignes est complété, le contrôle d'import passe.
+            ->pushResponse($read($this->invoice([], ['vat_rate' => null])))->pushResponse(
+                // 15 % n'est pas un taux légal : rien n'est deviné, l'import bloque (la TVA recalculée est nulle).
+                $read($this->invoice(['reference' => 'FA-124', 'totals' => ['ht' => 100.0, 'tva' => 15.0, 'ttc' => 115.0]], ['vat_rate' => null]))
+            )]);
+
+        $ok = $this->deposit()->assertCreated();
+        $this->assertStringContainsString('Contrôle à blanc réussi', $ok->json('reply.body'));
+        $this->assertCount(2, $ok->json('reply.suggestions'));
+
+        $blocked = $this->deposit()->assertCreated();
+        $this->assertStringContainsString('bloqué par les contrôles', $blocked->json('reply.body'));
+        $this->assertSame([], $blocked->json('reply.suggestions'));
+    }
+
     public function test_an_invoice_with_unreadable_fields_is_not_proposed_and_says_what_is_missing(): void
     {
         $this->modelReads($this->invoice(['reference' => null], ['sku' => null]));

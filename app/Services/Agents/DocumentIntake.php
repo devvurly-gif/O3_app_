@@ -178,6 +178,8 @@ class DocumentIntake
         $noSku && $missing[] = "la référence de {$noSku} ligne(s)";
         $noPrice && $missing[] = "le prix de {$noPrice} ligne(s)";
 
+        $d['lines'] = $this->withUniformVatRate($d);
+
         $links = [['label' => 'Import facture OCR', 'to' => '/achats/ocr-import'], ['label' => "Documents d'achat", 'to' => '/achats/documents']];
         if ($missing) {
             return ['action' => 'none', 'links' => $links, 'suggestions' => [],
@@ -224,6 +226,32 @@ class DocumentIntake
             'action' => 'purchase', 'text' => $text, 'links' => $links, 'data' => ['payload' => $payload],
             'suggestions' => [['label' => "Oui, préparer le brouillon d'achat", 'text' => "prépare le brouillon d'achat du document #{$event->id}"]],
         ];
+    }
+
+    /**
+     * Quand le modèle n'a lu aucun taux de TVA sur les lignes mais que les totaux imprimés en donnent un
+     * sans ambiguïté (TVA ÷ HT = un taux légal exact), tous les articles ont ce taux. Ce n'est pas une
+     * supposition : c'est ce que dit le pied de facture. Un seul taux lu sur une ligne, ou un rapport qui
+     * ne tombe pas sur un taux légal (facture à taux mixtes), et rien n'est complété — le contrôle
+     * d'import, qui recalcule les totaux, tranche alors.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function withUniformVatRate(array $d): array
+    {
+        $lines = $d['lines'];
+        $ht = $d['totals']['ht'];
+        $tva = $d['totals']['tva'];
+        if ($lines === [] || $ht === null || $ht <= 0 || $tva === null || count(array_filter($lines, fn ($l) => $l['vat_rate'] !== null)) > 0) {
+            return $lines;
+        }
+
+        $rate = round($tva / $ht * 100, 1);
+        if (!in_array($rate, [0.0, 7.0, 10.0, 14.0, 20.0], true)) {
+            return $lines;
+        }
+
+        return array_map(fn ($l) => ['vat_rate' => (int) $rate] + $l, $lines);
     }
 
     private function proposeSale(AgentEvent $event, array $d, User $admin): array
