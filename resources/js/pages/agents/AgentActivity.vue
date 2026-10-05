@@ -24,7 +24,7 @@
         </span>
         <button
           class="px-3 py-2 text-sm font-semibold rounded-[11px] bg-[#7C5CFC] text-white hover:bg-[#6A49F0] transition"
-          @click="showChat = true"
+          @click="showChat ? (showChat = false) : openChat()"
         >
           Parler à l'orchestrateur
         </button>
@@ -249,21 +249,63 @@
       </div>
     </div>
 
-    <!-- Orchestrateur : on lui parle sans quitter la page. Fermer la fenêtre actualise l'activité. -->
-    <BaseModal v-model="showChat" title="Orchestrateur : le chef des agents" size="xl">
-      <p class="text-sm text-[#8A8F9C] dark:text-gray-400 mb-3">
-        Il comprend une liste de demandes et les confie aux agents. Les agents préparent des brouillons, la validation
-        reste la vôtre.
-      </p>
-      <OrchestratorChat height-class="h-[52vh]" @ordered="chatOrdered = true" @navigate="showChat = false" />
-    </BaseModal>
+    <!--
+      Orchestrateur : un panneau ancré en bas à droite, sans fond ni flou, pour lui parler sans quitter la page
+      qui reste utilisable derrière. Réduit, il laisse une pastille toujours visible. La conversation reste
+      montée une fois ouverte (v-show) : réduire le panneau ne perd ni l'historique ni la saisie en cours.
+    -->
+    <Teleport to="body">
+      <button
+        v-show="!showChat"
+        type="button"
+        class="fixed bottom-4 right-4 z-40 flex items-center gap-2 px-4 py-3 rounded-full bg-[#7C5CFC] text-white text-sm font-semibold shadow-lg hover:bg-[#6A49F0] transition"
+        @click="openChat"
+      >
+        <span class="w-2 h-2 rounded-full bg-emerald-300" aria-hidden="true"></span>
+        Orchestrateur
+      </button>
+
+      <section
+        v-if="chatMounted"
+        v-show="showChat"
+        role="dialog"
+        aria-label="Orchestrateur : le chef des agents"
+        class="fixed bottom-4 right-4 z-40 w-[min(440px,calc(100vw-2rem))] max-h-[calc(100vh-2rem)] flex flex-col bg-white dark:bg-gray-800 border border-[#ECEEF2] dark:border-gray-700 rounded-2xl shadow-2xl"
+        @keydown.esc="showChat = false"
+      >
+        <header
+          class="flex items-center justify-between gap-2 px-4 py-2.5 border-b border-[#ECEEF2] dark:border-gray-700 shrink-0"
+        >
+          <h3 class="text-sm font-bold text-gray-800 dark:text-gray-100">Orchestrateur · chef des agents</h3>
+          <button
+            type="button"
+            aria-label="Réduire l'orchestrateur"
+            class="w-7 h-7 flex items-center justify-center rounded-md text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 transition"
+            @click="showChat = false"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14" />
+            </svg>
+          </button>
+        </header>
+        <div class="px-3 py-3 overflow-y-auto">
+          <OrchestratorChat height-class="h-[min(48vh,420px)]" @ordered="load()" />
+        </div>
+      </section>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import http from '@/services/http'
-import BaseModal from '@/components/BaseModal.vue'
 import OrchestratorChat from '@/components/agents/OrchestratorChat.vue'
 
 interface Summary {
@@ -406,14 +448,13 @@ const cards = computed(() => [
 ])
 
 const showChat = ref(false)
-/** Un ordre a été donné pendant que la fenêtre était ouverte : l'activité se rafraîchit à sa fermeture. */
-const chatOrdered = ref(false)
+/** Monté à la première ouverture seulement : pas d'appel à l'API tant qu'on n'a pas parlé au chef. */
+const chatMounted = ref(false)
 
-watch(showChat, (open) => {
-  if (open || !chatOrdered.value) return
-  chatOrdered.value = false
-  load()
-})
+function openChat() {
+  chatMounted.value = true
+  showChat.value = true
+}
 
 async function load(page = meta.current_page) {
   loading.value = true
