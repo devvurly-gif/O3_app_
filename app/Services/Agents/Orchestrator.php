@@ -60,6 +60,8 @@ class Orchestrator
             (bool) preg_match('/inventaire|comptage/', $n)                                        => $this->inventory($admin, $n, $action),
             (bool) preg_match('/encaissement|impaye|recouvrement|relance|paiements? en retard/', $n) => $this->collections($admin, $n, $action),
             (bool) preg_match('/\ba trier\b|non classe|evenement|messages? recus?/', $n)          => $this->toSort(),
+            (bool) preg_match('/que (peut|peu)[- ]on|fonctionnalites?|\bfonctions?\b|\bmodules?\b|\becrans?\b|\bmenu\b|dans o3|possibilites/', $n) => $this->capabilities(),
+            AppCatalog::match($n) !== [] && $this->looksLikeNavigation($n)                       => $this->navigate($n, AppCatalog::match($n)),
             (bool) preg_match('/\b(etat|statut|situation|bilan|resume|point|agents?|orchestr|ou en)\b/', $n) => $this->status(),
             (bool) preg_match('/\b(aide|help|bonjour|salut|bonsoir|coucou|que peux|que sais|commandes?)\b/', $n) => $this->help(true),
             default                                                                               => $this->freeText($admin, $text),
@@ -83,7 +85,11 @@ class Orchestrator
             $why = $this->interpreter->failure();
 
             // IA activée mais en échec : on le dit (la phrase n'est pas « incomprise », elle n'a pas pu être lue).
-            return $why ? $this->help(false, "La compréhension avancée est indisponible : {$why}.") : $this->help(false, null, $text);
+            if ($why) {
+                return $this->help(false, "La compréhension avancée est indisponible : {$why}.");
+            }
+
+            return $this->understood($text);
         }
 
         $answer = match ($r['intent']) {
@@ -98,7 +104,9 @@ class Orchestrator
             ),
             'encaissements_ordre' => $this->propose('contrôler les encaissements et préparer les relances', 'collections', 'contrôle les encaissements'),
             'aide'            => $this->help(true),
-            default           => $this->help(false, null, $text),
+            'fonctions'       => $this->capabilities(),
+            'ecran'           => $r['screen'] ? $this->navigate($this->normalize($text), [$r['screen']]) : $this->understood($text),
+            default           => $this->understood($text),
         };
 
         $answer['meta']['ai'] = true;
@@ -118,16 +126,13 @@ class Orchestrator
 
     // ── Demandes ─────────────────────────────────────────────────────
 
-    private function help(bool $greeting, ?string $warning = null, ?string $text = null): array
+    private function help(bool $greeting, ?string $warning = null): array
     {
-        $topic = $text !== null ? $this->unsupportedTopic($this->normalize($text)) : null;
         $intro = $warning !== null
             ? "{$warning}\nJe ne peux donc traiter que ce que je comprends sans elle :"
             : ($greeting
                 ? "Bonjour. Je suis l'orchestrateur : je reçois vos demandes et je les confie aux agents. Voici ce que je sais faire."
-                : ($topic !== null
-                    ? "Je ne sais pas encore {$topic} : aucun agent n'en est chargé pour le moment. Voici ce que je sais faire."
-                    : "Je n'ai pas compris cette demande. Voici ce que je sais faire."));
+                : "Je n'ai pas compris cette demande. Voici ce que je sais faire.");
 
         return $this->reply(
             "{$intro}\n\n"
@@ -135,23 +140,87 @@ class Orchestrator
             . "• « événements à trier » : les messages que le routeur n'a su confier à personne\n"
             . "• « prépare un inventaire » : l'agent Stocks prépare la feuille à compter (ajoutez un nom d'entrepôt, ou « articles à vérifier » pour cibler)\n"
             . "• « contrôle les encaissements » : l'agent Recouvrement contrôle les paiements et prépare les relances\n"
-            . "• « relances à valider » : ce qui attend votre validation\n\n"
+            . "• « relances à valider » : ce qui attend votre validation\n"
+            . "• « que peut-on faire dans O3 » : tous les domaines de l'application ; ou nommez un écran (« les fiches produits », « créer une facture ») et je vous y envoie\n\n"
             . "Les agents préparent des brouillons. Rien n'est modifié ni envoyé sans votre validation, dans l'écran concerné.",
             'help',
             warning: $warning !== null,
         );
     }
 
-    /** Un sujet que l'utilisateur nomme clairement mais qu'aucun agent ne gère : on le dit au lieu de feindre de ne pas comprendre. */
-    private function unsupportedTopic(string $n): ?string
+    // ── Orientation dans l'application (lecture seule) ───────────────
+
+    /**
+     * Les règles ne rendent la main à l'orientation que si la phrase ressemble à une recherche d'écran
+     * (question « où / comment », verbe de navigation, demande de modification) ou si elle est courte,
+     * donc probablement juste le nom de l'écran. Une longue phrase qui cite un mot du catalogue
+     * (« recompter tout ce qu'il y a au dépôt ») reste pour la compréhension avancée.
+     */
+    private function looksLikeNavigation(string $n): bool
     {
-        return match (true) {
-            (bool) preg_match('/fiches?|produits?|prouits?|catalogue|references?|articles?|descriptions?|photos?/', $n) && (bool) preg_match('/updat|mett|modif|change|corrig|complet|actualis|jour|enrichi|ajout|creer|cree/', $n)
-                => 'mettre à jour les fiches produits',
-            (bool) preg_match('/prix|tarifs?/', $n) && (bool) preg_match('/updat|mett|modif|change|corrig|jour|augment|baiss/', $n)
-                => 'modifier les prix',
-            default => null,
-        };
+        return str_word_count($n) <= 4
+            || (bool) preg_match('/\bou (est|se|puis|peut|trouv\w*|fait|faire|creer|voir)\b|\b(comment|ouvre|ouvrir|aller|va|acceder|montre|affiche|afficher|voir|trouve|trouver|page)\b|updat|mets?\b|mett|modif|chang|corrig|ajout|creer|cree|supprim/', $n);
+    }
+
+    /** Ni règle ni IA n'ont rangé la phrase : si elle nomme un écran du catalogue on y renvoie, sinon l'aide. */
+    private function understood(string $text): array
+    {
+        $n = $this->normalize($text);
+        $screens = AppCatalog::match($n);
+
+        return $screens !== [] ? $this->navigate($n, $screens) : $this->help(false);
+    }
+
+    /** Tout ce que l'on peut faire dans O3, par domaine. Rien n'est exécuté : on décrit et on oriente. */
+    private function capabilities(): array
+    {
+        $lines = [];
+        foreach (AppCatalog::grouped() as $group => $screens) {
+            $lines[] = '• ' . $group . ' : ' . collect($screens)->pluck('title')->implode(', ');
+        }
+
+        return $this->reply(
+            "Voici ce que l'on peut faire dans O3 App, par domaine :\n\n" . implode("\n", $lines)
+            . "\n\nDites le nom de ce que vous cherchez (ex. « les fiches produits », « créer une facture », « la corbeille ») et je vous indique le bon écran."
+            . "\n\nCe que je peux lancer moi-même, par les agents : préparer un inventaire, contrôler les encaissements et préparer les relances. Le reste se fait dans les écrans, par vous.",
+            'capabilities',
+            links: [['label' => 'Activité des agents', 'to' => '/settings/agents']],
+        );
+    }
+
+    /**
+     * L'utilisateur nomme un écran de l'application. On le décrit et on y renvoie. Si la phrase demande
+     * de MODIFIER quelque chose, on dit franchement qu'aucun agent ne le fait encore : rien n'est exécuté.
+     *
+     * @param array<int, string> $keys écrans désignés, du mieux placé au moins bien placé
+     */
+    private function navigate(string $n, array $keys): array
+    {
+        $screens = AppCatalog::screens();
+        $keys = array_slice($keys, 0, 3);
+        // « Où créer une facture ? » est une question de localisation, pas une demande de le faire à sa place.
+        $asksWhere = (bool) preg_match('/\bou (est|se|puis|peut|trouv\w*|fait|faire|creer|voir)\b|\bcomment\b/', $n);
+        $edits = !$asksWhere && (bool) preg_match('/updat|mets?|mett|jour|modif|chang|corrig|complet|actualis|enrichi|ajout|cree|creer|supprim|augment|baiss/', $n);
+
+        $body = $edits
+            ? "Je ne sais pas encore le faire à votre place : aucun agent n'en est chargé pour le moment. Cela se fait dans "
+            : 'Cela se passe dans ';
+        $body .= count($keys) > 1 ? "ces écrans :\n" : "l'écran :\n";
+
+        $links = [];
+        foreach ($keys as $key) {
+            $screen = $screens[$key];
+            $body .= "\n• {$screen['title']} : {$screen['does']}";
+            if (isset($screen['feature']) && tenant() && !tenant()->hasModule($screen['feature'])) {
+                $body .= ' (non inclus dans votre formule actuelle)';
+            }
+            if (isset($screen['agent'])) {
+                $body .= " — l'agent {$screen['agent']} en automatise une partie";
+            }
+            $links[] = ['label' => $screen['title'], 'to' => $screen['path']];
+        }
+
+        return $this->reply($body, 'navigate', links: $links);
     }
 
     private function status(): array

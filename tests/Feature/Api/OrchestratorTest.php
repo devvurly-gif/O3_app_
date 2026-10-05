@@ -68,20 +68,53 @@ class OrchestratorTest extends TestCase
         $this->assertSame(0, AgentEvent::count());   // comprendre ou non, rien n'est déclenché
     }
 
-    public function test_a_named_but_unsupported_topic_is_said_so_instead_of_pretending_not_to_understand(): void
+    public function test_a_named_screen_is_described_and_linked_and_a_modification_is_not_pretended(): void
     {
-        foreach (['  update fiche prouits ', 'mets à jour les fiches produits', 'modifier les prix'] as $text) {
-            $body = $this->say($text)->assertCreated()->json('reply.body');
+        // Demande de modification : aucun agent ne la fait, on le dit franchement et on envoie à l'écran.
+        foreach (['  update fiche prouits ', 'mets à jour les fiches produits'] as $text) {
+            $reply = $this->say($text)->assertCreated()->json('reply');
 
-            $this->assertStringContainsString("Je ne sais pas encore", $body);
-            $this->assertStringContainsString("aucun agent n'en est chargé", $body);
-            $this->assertStringNotContainsString("Je n'ai pas compris", $body);
-            $this->assertStringContainsString('contrôle les encaissements', $body); // l'aide reste affichée
+            $this->assertStringContainsString('Je ne sais pas encore le faire', $reply['body']);
+            $this->assertStringContainsString("aucun agent n'en est chargé", $reply['body']);
+            $this->assertSame('/products', $reply['links'][0]['to']);
         }
+        $prices = $this->say('modifier les prix')->assertCreated()->json('reply');
+        $this->assertStringContainsString("aucun agent n'en est chargé", $prices['body']);
+        $this->assertSame('/settings/bulk-prices', $prices['links'][0]['to']);
 
-        // Un sujet produit sans verbe de modification reste « non compris » : pas de faux diagnostic.
-        $this->assertStringContainsString("Je n'ai pas compris", $this->say('les produits')->json('reply.body'));
-        $this->assertSame(0, AgentEvent::count());
+        // Simple question de localisation : on oriente, sans prétendre ne pas savoir faire.
+        $where = $this->say('où créer une facture ?')->assertCreated()->json('reply');
+        $this->assertStringStartsWith("Cela se passe dans l'écran", $where['body']);
+        $this->assertSame('/ventes/documents/create', $where['links'][0]['to']);
+
+        $this->assertSame('/products/trashed', $this->say('la corbeille')->json('reply.links.0.to'));
+        $this->assertSame(0, AgentEvent::count());   // orientation seule : rien n'est déclenché
+    }
+
+    public function test_what_can_be_done_in_the_app_lists_every_domain_and_says_what_agents_can_run(): void
+    {
+        $body = $this->say('que peut-on faire dans O3 ?')->assertCreated()->json('reply.body');
+
+        foreach (['Catalogue', 'Ventes', 'Achats', 'Stock', 'Finances', 'Administration', 'Agents'] as $domain) {
+            $this->assertStringContainsString("• {$domain} :", $body);
+        }
+        $this->assertStringContainsString('Produits', $body);
+        $this->assertStringContainsString('Révision des prix', $body);
+        $this->assertStringContainsString('préparer un inventaire, contrôler les encaissements', $body);
+    }
+
+    public function test_every_screen_in_the_catalog_points_to_a_real_frontend_route(): void
+    {
+        $router = file_get_contents(base_path('resources/js/router/index.ts'));
+
+        foreach (\App\Services\Agents\AppCatalog::screens() as $key => $screen) {
+            $this->assertStringContainsString("path: '{$screen['path']}'", $router, "L'écran « {$key} » pointe vers une route inexistante.");
+        }
+    }
+
+    public function test_the_help_lists_the_navigation_requests(): void
+    {
+        $this->assertStringContainsString('que peut-on faire dans O3', $this->say('aide')->json('reply.body'));
     }
 
     public function test_status_summarises_agents_events_and_pending_validations(): void
