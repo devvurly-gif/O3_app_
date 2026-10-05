@@ -132,6 +132,7 @@ class DocumentIntake
         $proposal = match ($doc['type']) {
             'facture_fournisseur' => $this->proposePurchase($event, $doc, $admin, $name),
             'bon_commande_client' => $this->proposeSale($event, $doc, $admin),
+            'document_emis'       => $this->describeIssued($doc),
             'paiement'            => $this->proposePayment($event, $doc),
             'photo_produit'       => $this->proposePhoto($event, $doc, $mime),
             default               => ['text' => "Je ne sais pas quoi en faire automatiquement : il est classé à trier.", 'suggestions' => [], 'links' => [], 'action' => 'none'],
@@ -140,7 +141,8 @@ class DocumentIntake
         $keep = in_array($proposal['action'], ['purchase', 'sale', 'photo', 'payment'], true);
         $this->update(
             $event,
-            $keep ? AgentEvent::STATUS_ROUTED : AgentEvent::STATUS_TO_SORT,
+            // « known » : un document émis qui existe déjà dans O3, il n'y a rien à faire.
+            $keep ? AgentEvent::STATUS_ROUTED : ($proposal['action'] === 'known' ? AgentEvent::STATUS_DONE : AgentEvent::STATUS_TO_SORT),
             ['reading' => $doc, 'proposal' => ['action' => $proposal['action']] + ($proposal['data'] ?? [])],
             $keep ? $this->agentFor($proposal['action']) : null,
         );
@@ -301,6 +303,26 @@ class DocumentIntake
             'action' => 'sale', 'text' => $text, 'links' => $links, 'data' => ['payload' => $payload, 'customer_id' => $customer->id],
             'suggestions' => [['label' => 'Oui, préparer le brouillon de livraison', 'text' => "prépare le brouillon de livraison du document #{$event->id}"]],
         ];
+    }
+
+    /**
+     * Un document établi par l'entreprise elle-même (bon de livraison, facture de vente, devis) n'est pas une
+     * commande à traiter : on regarde s'il existe déjà dans O3 sous cette référence, et on ne le recrée jamais.
+     */
+    private function describeIssued(array $d): array
+    {
+        $links = [['label' => 'Documents de vente', 'to' => '/ventes/documents']];
+        $ref = $d['reference'];
+        $found = $ref ? DocumentHeader::where('reference', $ref)->first() : null;
+
+        if ($found) {
+            return ['action' => 'known', 'suggestions' => [], 'links' => [['label' => "Ouvrir {$found->reference}", 'to' => "/ventes/documents/{$found->id}"]],
+                'text' => "C'est un document que vous avez émis, et il existe déjà dans O3 : {$found->reference} (statut {$found->status}). Il n'y a rien à faire."];
+        }
+
+        return ['action' => 'none', 'suggestions' => [], 'links' => $links,
+            'text' => "C'est un document émis par votre entreprise" . ($ref ? " ({$ref})" : '') . ", pas une commande reçue : je ne le recrée pas à partir d'un PDF."
+                . ($ref ? " Je ne le trouve pas dans O3 sous cette référence ; s'il manque, saisissez-le dans Documents de vente." : '')];
     }
 
     private function proposePayment(AgentEvent $event, array $d): array

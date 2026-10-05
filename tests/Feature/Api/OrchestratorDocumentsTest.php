@@ -59,6 +59,17 @@ class OrchestratorDocumentsTest extends TestCase
         Http::fake(['api.anthropic.com/*' => Http::response(['content' => [['type' => 'tool_use', 'name' => 'read_document', 'input' => $input]]])]);
     }
 
+    /** Plusieurs lectures successives du modèle (Http::fake garde le premier stub : on passe par une séquence). */
+    private function modelReadsInOrder(array ...$inputs): void
+    {
+        $this->enableAi();
+        $sequence = Http::sequence();
+        foreach ($inputs as $input) {
+            $sequence->pushResponse(Http::response(['content' => [['type' => 'tool_use', 'name' => 'read_document', 'input' => $input]]]));
+        }
+        Http::fake(['api.anthropic.com/*' => $sequence]);
+    }
+
     private function deposit(string $name = 'document.pdf', string $mime = 'application/pdf', string $message = ''): \Illuminate\Testing\TestResponse
     {
         return $this->actingAs($this->admin, 'sanctum')->post('/api/agents/orchestrateur/fichiers', [
@@ -247,6 +258,32 @@ class OrchestratorDocumentsTest extends TestCase
         $this->assertStringContainsString('introuvable parmi vos clients', $r->json('reply.body'));
         $this->assertSame([], $r->json('reply.suggestions'));
         $this->assertSame(0, ThirdPartner::count());
+    }
+
+    // ── Document émis par l'entreprise ───────────────────────────────
+
+    public function test_a_document_issued_by_the_company_is_never_taken_for_a_customer_order(): void
+    {
+        $customer = ThirdPartner::factory()->customer()->create(['tp_title' => 'Quincaillerie Atlas', 'tp_code' => 'C0012']);
+        $issued = DocumentHeader::factory()->create(['document_type' => 'DeliveryNote', 'reference' => 'BL-26-10-0001', 'thirdPartner_id' => $customer->id, 'status' => 'confirmed']);
+        $this->modelReadsInOrder(
+            ['type' => 'document_emis', 'confidence' => 0.95, 'summary' => 'Bon de livraison de Jadema pour Atlas.',
+                'party' => ['name' => 'Quincaillerie Atlas'], 'reference' => 'BL-26-10-0001', 'lines' => [['designation' => 'Perceuse 18V', 'quantity' => 6]]],
+            ['type' => 'document_emis', 'confidence' => 0.9, 'summary' => 'Bon de livraison.', 'reference' => 'BL-99-99-9999'],
+        );
+
+        // Il existe déjà : rien à faire, traité.
+        $known = $this->deposit('bl.pdf')->assertCreated();
+        $this->assertStringContainsString('il existe déjà dans O3 : BL-26-10-0001', $known->json('reply.body'));
+        $this->assertSame("/ventes/documents/{$issued->id}", $known->json('reply.links.0.to'));
+        $this->assertSame([], $known->json('reply.suggestions'));
+        $this->assertSame(AgentEvent::STATUS_DONE, AgentEvent::firstOrFail()->status);
+
+        // Il n'existe pas : on le dit, on ne le recrée pas.
+        $unknown = $this->deposit('bl2.pdf')->assertCreated();
+        $this->assertStringContainsString('pas une commande reçue', $unknown->json('reply.body'));
+        $this->assertSame([], $unknown->json('reply.suggestions'));
+        $this->assertSame(1, DocumentHeader::count());                        // aucun document créé
     }
 
     // ── Paiement ─────────────────────────────────────────────────────
