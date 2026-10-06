@@ -229,6 +229,8 @@ class Orchestrator
             (bool) preg_match('/\bdocuments?\s*#?\s*(\d+)/', $n, $doc)                            => $this->intake->act($admin, (int) $doc[1], $n),
             // Atelier des agents : recruter, planifier des routines, retenir des consignes, catalogue des tâches.
             ($studio = $this->studioIntent($n)) !== null                                          => $this->studioAnswer($admin, $studio, $text, $n),
+            // Sites autorisés pour la recherche de photos : lister, proposer d'en ajouter un, en retirer un.
+            ($site = $this->photoSitesIntent($n)) !== null                                       => $this->photoSitesAnswer($admin, $site, $text),
             // « Comment tu calcules la marge ? », « c'est quoi un produit dormant ? » : la définition du chiffre, pas le chiffre.
             GlossaryAssistant::asks($this->plain($n)) && ($def = $this->glossary->answer($n)) !== null  => $def,
             // Questions courantes formulées naturellement (« qui me doit de l'argent ? », « stock faible », « ça va ? ») : lectures.
@@ -339,7 +341,7 @@ class Orchestrator
             . "• « mettre à jour les fiches produits » : je contrôle les fiches (photos, descriptions, catégories, marques, prix, codes-barres) et je propose des corrections à valider ; « prépare les fiches pour l'utilisation » enchaîne toutes les étapes jusqu'à l'activation\n"
             . "• « que sait faire chaque agent » : le catalogue des tâches ; « recrute un agent qui… » ; « chaque lundi à 8 h, contrôle les encaissements » (routine) ; « retiens : … » (consigne) ; « crée les comptes des agents » ; « demande de développement : … » pour une tâche qui manque\n"
             . "• déposez une photo ou un PDF (trombone, ou glissez-le ici) : je lis le document, dis ce que c'est et propose la suite\n"
-            . "• lectures sur l'activité : « résume la journée », « que dois-je valider ? », « chiffre d'affaires du mois », « factures échues », « devis sans suite depuis 10 jours », « bons de livraison non facturés », « encaissements du jour », « solde de chaque compte de trésorerie », « sessions de caisse », « valeur du stock », « produits dormants », « transferts en attente », « pertes du mois », « doublons de produits », « marge par catégorie », « produits jamais vendus », « clients inactifs depuis 60 jours », « clients qui dépassent leur seuil de crédit », « achats du mois par fournisseur », « factures fournisseurs à payer », « bons de commande en attente », « prix d'achat en hausse », « remises accordées ce mois », « dépenses du mois par catégorie », « dépenses sans justificatif », « activité récente », « promotions actives », « top 10 des produits vendus », « ventes du mois par vendeur », « meilleurs clients du trimestre », « qui a modifié la facture FV-001 », « codes-barres invalides », « actions des agents aujourd'hui », « fiche du produit PRC1 », « fiche du client Atlas », « montre la facture FV-001 », « marge réalisée du mois », « panier moyen », « évolution du chiffre d'affaires sur 6 mois », « produits bientôt en rupture », « prévision de trésorerie à 30 jours », « cherche perceuse », « factures du client Atlas », « mouvements du produit PRC1 », « brouillons anciens », « compare ce mois au mois dernier », « nouveaux clients du mois », « ventes par jour de la semaine », « permissions du rôle manager », « relances de paiement du mois », « commandes WhatsApp du jour », « comment tu calcules la marge ? » (la définition de chaque chiffre), « chèques et effets reçus ce mois », « produits de la promotion rentrée », « règles de routage », « mes notifications non lues », « mes entrepôts », « listes de prix » ; ou posez simplement la question, par exemple « combien j'ai vendu hier ? » (chiffres lus directement dans la base, rien n'est modifié)
+            . "• lectures sur l'activité : « résume la journée », « que dois-je valider ? », « chiffre d'affaires du mois », « factures échues », « devis sans suite depuis 10 jours », « bons de livraison non facturés », « encaissements du jour », « solde de chaque compte de trésorerie », « sessions de caisse », « valeur du stock », « produits dormants », « transferts en attente », « pertes du mois », « doublons de produits », « marge par catégorie », « produits jamais vendus », « clients inactifs depuis 60 jours », « clients qui dépassent leur seuil de crédit », « achats du mois par fournisseur », « factures fournisseurs à payer », « bons de commande en attente », « prix d'achat en hausse », « remises accordées ce mois », « dépenses du mois par catégorie », « dépenses sans justificatif », « activité récente », « promotions actives », « top 10 des produits vendus », « ventes du mois par vendeur », « meilleurs clients du trimestre », « qui a modifié la facture FV-001 », « codes-barres invalides », « actions des agents aujourd'hui », « fiche du produit PRC1 », « fiche du client Atlas », « montre la facture FV-001 », « marge réalisée du mois », « panier moyen », « évolution du chiffre d'affaires sur 6 mois », « produits bientôt en rupture », « prévision de trésorerie à 30 jours », « cherche perceuse », « factures du client Atlas », « mouvements du produit PRC1 », « brouillons anciens », « compare ce mois au mois dernier », « nouveaux clients du mois », « ventes par jour de la semaine », « permissions du rôle manager », « relances de paiement du mois », « commandes WhatsApp du jour », « comment tu calcules la marge ? » (la définition de chaque chiffre), « sites autorisés pour les photos » et « autorise le site https://exemple.ma/recherche?q={ref} », « chèques et effets reçus ce mois », « produits de la promotion rentrée », « règles de routage », « mes notifications non lues », « mes entrepôts », « listes de prix » ; ou posez simplement la question, par exemple « combien j'ai vendu hier ? » (chiffres lus directement dans la base, rien n'est modifié)
 "
             . "• « que peut-on faire dans O3 » : tous les domaines de l'application ; ou nommez un écran (« les fiches produits », « créer une facture ») et je vous y envoie\n\n"
             . "Les agents préparent des brouillons. Rien n'est modifié ni envoyé sans votre validation, dans l'écran concerné.",
@@ -900,6 +902,27 @@ class Orchestrator
 
         return null;
     }
+    /** Gestion des sites autorisés pour les photos. null si la phrase n'en relève pas. @param string $n phrase normalisée */
+    private function photoSitesIntent(string $n): ?string
+    {
+        $about = (bool) preg_match('/\b(sites?|domaines?|urls?|adresses?)\b|https?:\/\//', $n);
+
+        return match (true) {
+            $about && (bool) preg_match('/\b(retire\w*|supprim\w*|enleve\w*|desactive\w*|interdi\w*|bloque\w*)\b/', $n) => 'remove',
+            $about && (bool) preg_match('/\b(autorise|ajoute|accepte|permets|permet)\b/', $n) && !preg_match('/\b(mes|liste|quels|lesquels)\b/', $n) => 'add',
+            (bool) preg_match('/\bsites?\b/', $n) && (bool) preg_match('/\bautorises?\b|photos?|images?/', $n) && (bool) preg_match('/\b(mes|liste|quels|lesquels|sites autorises|autorises)\b/', $n) => 'list',
+            default => null,
+        };
+    }
+
+    private function photoSitesAnswer(User $admin, string $intent, string $text): array
+    {
+        return match ($intent) {
+            'add'    => $this->catalog->sitesPropose($admin, $text),
+            'remove' => $this->catalog->sitesRemove($admin, $text),
+            default  => $this->catalog->sitesList(),
+        };
+    }
     // ── Fiches produits ──────────────────────────────────────────────
 
     /** Quelle demande sur les fiches produits la phrase exprime-t-elle ? null si aucune. */
@@ -912,7 +935,7 @@ class Orchestrator
 
         return match (true) {
             // « cherche les photos Jadever » : le serveur va les chercher sur le site autorisé (aperçu, puis clic).
-            (bool) preg_match('/\b(photos?|images?)\b/', $n) && (bool) preg_match('/\b(cherch|trouv|recuper|telecharg|import|rattach|rapport|ajout)\w*/', $n) && (bool) preg_match('/jadever|officiel|site|automatique|toi.meme|arriere/', $n) => 'photos_fetch',
+            (bool) preg_match('/\b(photos?|images?)\b/', $n) && (bool) preg_match('/\b(cherch|trouv|recuper|telecharg)\w*/', $n) && !preg_match('/\b(quels?|quelles?|liste|combien|montre)\b/', $n) => 'photos_fetch',
             // « publier les produits dans le website » : l'agent Marketing propose la mise en boutique en ligne.
             (bool) preg_match('/\b(publi\w*|mise? en ligne|mett\w* en ligne)/', $n) && (bool) preg_match('/produits?|fiches?|articles?|catalogue/', $n) && (bool) preg_match('/website|web site|site web|\bsite\b|boutique|e-?commerce|en ligne|internet/', $n) => 'publication',
             (bool) preg_match('/\bprix\b|tarifs?/', $n) && (bool) preg_match('/revis|propos|marge|calcul/', $n) && ($about || str_contains($n, 'marge')) => 'pricing',

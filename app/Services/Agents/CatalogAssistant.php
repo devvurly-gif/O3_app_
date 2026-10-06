@@ -45,6 +45,8 @@ class CatalogAssistant
         private BulkSalePriceUpdater $prices,
         private JadeverPhotoSource $jadever,
         private ProductImageService $images,
+        private PhotoFinder $finder,
+        private PhotoSitesAssistant $siteChat,
     ) {
     }
 
@@ -123,8 +125,9 @@ class CatalogAssistant
     }
 
     /**
-     * « Cherche les photos Jadever » : pour les produits Jadever sans photo, trouve la photo officielle sur le site
-     * autorisé (par référence), la télécharge et la vérifie, puis la MONTRE. Rien n'est rattaché avant le clic.
+     * « Cherche les photos » : pour les produits sans photo, trouve l'image sur un site autorisé (le site officiel
+     * Jadever pour les références JD…, puis les sites ajoutés par l'administrateur), la télécharge et la vérifie, puis
+     * la MONTRE. Rien n'est rattaché avant le clic.
      */
     public function fetchPhotos(User $admin): array
     {
@@ -134,42 +137,44 @@ class CatalogAssistant
         /** @var \Illuminate\Support\Collection<int, Product> $all */
         $all = $this->audit->query('no_photo')->withSum('warehouseStocks as stock_qty', 'stockLevel')
             ->orderByDesc('stock_qty')->orderBy('id')->get(['id', 'p_title', 'p_sku']);
-        $candidates = $all->filter(fn (Product $p) => JadeverPhotoSource::isJadeverSku($p->p_sku) && !in_array($p->id, $pending, true));
+        $others = $this->finder->hasCustomSites();   // sans site ajouté, seuls les produits Jadever ont une source
+        $candidates = $all->filter(fn (Product $p) => ($others || JadeverPhotoSource::isJadeverSku($p->p_sku)) && !in_array($p->id, $pending, true));
         if ($candidates->isEmpty()) {
             return $this->reply($pending !== []
                 ? 'Les photos trouvées attendent déjà votre validation (proposition en cours) : appliquez-la ou ignorez-la d\'abord.'
-                : 'Aucun produit Jadever sans photo : rien à chercher.');
+                : ($others ? 'Aucun produit sans photo : rien à chercher.' : 'Aucun produit Jadever sans photo : rien à chercher.'));
         }
 
-        $event = $this->record('catalogue_photos', AgentEvent::STATUS_ROUTED, 'Photos officielles Jadever à valider', ['items' => [], 'requested_by' => $admin->name, 'source' => JadeverPhotoSource::SITE]);
+        $event = $this->record('catalogue_photos', AgentEvent::STATUS_ROUTED, 'Photos à valider', ['items' => [], 'requested_by' => $admin->name]);
         $items = [];
         $notFound = [];
         $failed = [];
         $batch = $candidates->take(self::PHOTO_BATCH);
         foreach ($batch->values() as $i => $product) {
-            $i > 0 && usleep(250_000);   // une requête à la fois, sans surcharger le site
-            $found = $this->jadever->find($product->p_sku);
+            $i > 0 && usleep(250_000);   // une requête à la fois, sans surcharger les sites
+            $found = $this->finder->find($product);
             if ($found === null) {
-                $this->jadever->failure() !== null ? $failed[] = "{$product->p_sku} ({$this->jadever->failure()})" : $notFound[] = $product->p_sku;
-                if ($this->jadever->failure() !== null && count($failed) >= 2 && $items === []) {
+                $this->finder->failure() !== null ? $failed[] = "{$product->p_sku} ({$this->finder->failure()})" : $notFound[] = $product->p_sku;
+                if ($this->finder->failure() !== null && count($failed) >= 2 && $items === []) {
                     break;   // le site refuse : inutile d'insister
                 }
                 continue;
             }
-            $image = $this->jadever->download($found['url']);
+            $image = $this->finder->download($found);
             if ($image === null) {
-                $failed[] = "{$product->p_sku} ({$this->jadever->failure()})";
+                $failed[] = "{$product->p_sku} ({$this->finder->failure()})";
                 continue;
             }
             $path = "agent-photos/{$event->id}/{$product->id}.{$image['ext']}";
             Storage::disk('local')->put($path, $image['bytes']);
-            $items[] = ['product_id' => $product->id, 'sku' => $product->p_sku, 'title' => $product->p_title, 'site_name' => $found['name'], 'source' => $found['url'], 'path' => $path, 'mime' => $image['mime'], 'width' => $image['width'], 'height' => $image['height']];
+            $items[] = ['product_id' => $product->id, 'sku' => $product->p_sku, 'title' => $product->p_title, 'site_name' => $found['name'], 'source' => $found['url'], 'site' => $found['source'], 'method' => $found['method'],
+                'path' => $path, 'mime' => $image['mime'], 'width' => $image['width'], 'height' => $image['height']];
         }
 
         $rest = $candidates->count() - $batch->count();
-        $notes = ($notFound !== [] ? "\nSans photo sur le site : " . implode(', ', $notFound) . '.' : '')
+        $notes = ($notFound !== [] ? "\nSans photo sur les sites autorisés : " . implode(', ', $notFound) . '.' : '')
             . ($failed !== [] ? "\nNon récupérées : " . implode(' ; ', array_slice($failed, 0, 4)) . '.' : '')
-            . ($rest > 0 ? "\n{$rest} autre(s) produit(s) Jadever restent : redemandez après validation." : '');
+            . ($rest > 0 ? "\n{$rest} autre(s) produit(s) restent : redemandez après validation." : '');
 
         if ($items === []) {
             $event->update(['status' => AgentEvent::STATUS_REJECTED]);
@@ -179,10 +184,13 @@ class CatalogAssistant
 
         $event->update(['payload' => array_merge($event->payload, ['items' => $items])]);
         $this->log($event, 'catalog_photos_fetched', ['found' => count($items), 'not_found' => count($notFound), 'failed' => count($failed)]);
+        $official = collect($items)->every(fn (array $it) => $it['method'] === 'jadever');
+        $sites = collect($items)->pluck('site')->filter()->unique()->implode(', ');
 
         return $this->reply(
-            count($items) . ' photo(s) officielle(s) trouvée(s) sur ' . JadeverPhotoSource::SITE . " (lot #{$event->id}). Vérifiez les aperçus ci-dessous : rien n'est rattaché avant votre clic."
-            . "\n\n" . collect($items)->map(fn (array $it) => "• {$it['title']} ({$it['sku']}) — {$it['width']}×{$it['height']}")->implode("\n") . $notes,
+            count($items) . ' photo(s) ' . ($official ? 'officielle(s) ' : '') . "trouvée(s) sur {$sites} (lot #{$event->id}). Vérifiez les aperçus ci-dessous : rien n'est rattaché avant votre clic."
+            . "\n\n" . collect($items)->map(fn (array $it) => "• {$it['title']} ({$it['sku']}) — {$it['width']}×{$it['height']}" . ($it['method'] === 'jadever' ? '' : " — {$it['site']} (" . ($it['method'] === 'ia' ? 'trouvée par IA' : "modèle d'adresse") . ')'))->implode("\n") . $notes
+            . ($official ? '' : "\nSur un site ajouté, la correspondance se fait par la référence du produit : regardez bien chaque image avant de rattacher."),
             eventId: $event->id,
             suggestions: [
                 ['label' => 'Rattacher ces photos', 'text' => "applique le lot #{$event->id}"],
@@ -192,6 +200,21 @@ class CatalogAssistant
         );
     }
 
+    /** Les sites autorisés : lister, proposer d'en ajouter un, en retirer un. */
+    public function sitesList(): array
+    {
+        return $this->siteChat->list();
+    }
+
+    public function sitesPropose(User $admin, string $text): array
+    {
+        return $this->siteChat->propose($admin, $text);
+    }
+
+    public function sitesRemove(User $admin, string $text): array
+    {
+        return $this->siteChat->remove($admin, $text);
+    }
     /** Le fichier d'aperçu d'une photo proposée (lot en attente seulement). */
     public function previewPath(int $eventId, int $productId): ?string
     {
@@ -476,7 +499,7 @@ class CatalogAssistant
     /** « applique les propositions du lot #12 », « ignore le lot #12 ». @return array{body: string, meta: array<string, mixed>} */
     public function act(User $admin, int $eventId, string $n): array
     {
-        $event = AgentEvent::whereIn('type', ['catalogue_completion', 'catalogue_prix', 'catalogue_activation', 'catalogue_codes_barres', 'catalogue_photos', 'catalogue_publication'])->find($eventId);
+        $event = AgentEvent::whereIn('type', ['catalogue_completion', 'catalogue_prix', 'catalogue_activation', 'catalogue_codes_barres', 'catalogue_photos', 'catalogue_publication', 'catalogue_site'])->find($eventId);
         if (!$event) {
             return $this->reply("Je ne trouve pas le lot #{$eventId}.", error: true);
         }
@@ -500,6 +523,7 @@ class CatalogAssistant
                     'catalogue_codes_barres' => $this->applyBarcodes($event),
                     'catalogue_photos'       => $this->applyPhotos($admin, $event),
                     'catalogue_publication'  => $this->applyPublication($event),
+                    'catalogue_site'         => $this->siteChat->apply($admin, $event),
                     default                  => $this->applyPrices($event),
                 });
             }
