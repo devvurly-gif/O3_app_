@@ -408,6 +408,28 @@ class OrchestratorStudioTest extends TestCase
         $this->assertSame(0, AgentRoutine::count());
     }
 
+    public function test_a_schedule_with_an_agent_number_is_a_routine_to_plan_not_an_immediate_run(): void
+    {
+        $agent = $this->stockAgent();
+        $this->modelSays([$this->toolUse('design_routine', [
+            'feasible' => true, 'name' => 'Veille quotidienne', 'steps' => ["agent:{$agent->id}"],
+            'schedule' => ['frequency' => 'daily', 'time' => '08:00'],
+        ])]);
+
+        $r = $this->say("tous les jours à 8 h, lance l'agent #{$agent->id}");
+
+        $this->assertStringContainsString('Routine proposée : « Veille quotidienne »', $r->json('reply.body'));
+        $this->assertSame(1, AgentEvent::where('type', 'routine_proposition')->count());
+        $this->assertSame(0, AgentEvent::where('type', 'agent_perso_rapport')->count());   // l'agent n'a pas travaillé
+        $this->assertSame(0, AgentRoutine::count());                                        // proposition seulement
+        Http::assertSentCount(1);                                                           // une seule conception, aucun lancement
+
+        // Sans horaire, « lance l'agent #N » reste un lancement immédiat.
+        $this->modelSays([$this->toolUse('submit_report', ['report' => 'Rien à signaler.', 'level' => 'ok'])]);
+        $this->assertStringContainsString('Agent « Veille stock » — rapport', $this->say("lance l'agent #{$agent->id}")->json('reply.body'));
+        $this->assertSame(1, AgentEvent::where('type', 'agent_perso_rapport')->count());
+    }
+
     public function test_only_known_safe_steps_can_be_scheduled_and_nothing_can_be_applied_by_a_routine(): void
     {
         $custom = $this->stockAgent();

@@ -193,6 +193,10 @@ class Orchestrator
                 default                                            => null,
             };
         }
+        // « tous les jours à 8 h, lance l'agent #8 » est une routine à planifier, pas un lancement immédiat.
+        if ($this->hasScheduleWords($n) && preg_match('/\bagent\s*#\s*\d+/', $n) && preg_match('/\b(lance|execut|control|prepar|surveill|verifi|fais|demande)\w*/', $n)) {
+            return ['routine_new', null];
+        }
         if (($a = $id('agent')) !== null) {
             return match (true) {
                 (bool) preg_match('/desactiv|arrete|suspend|pause/', $n) => ['agent_off', $a],
