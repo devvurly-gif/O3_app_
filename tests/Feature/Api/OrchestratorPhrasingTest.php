@@ -178,6 +178,20 @@ class OrchestratorPhrasingTest extends TestCase
         $this->assertStringNotContainsString('PRC18', $this->say('quel est le prix de la licorne'));
     }
 
+    public function test_every_phrase_of_the_ai_catalogue_is_understood_by_the_rules(): void
+    {
+        // Le catalogue donné au renfort par IA ne doit contenir que des phrases que les règles comprennent vraiment :
+        // sinon le modèle reformulerait une question vers une phrase qui retombe sur l'aide.
+        $lost = [];
+        foreach (array_values(array_unique(\App\Services\Agents\ReadCommands::EXAMPLES)) as $p) {
+            $body = $this->say($p);
+            if (str_starts_with($body, "Je n'ai pas compris") || str_contains($body, 'Cela se passe dans l')) {
+                $lost[] = $p;
+            }
+        }
+
+        $this->assertSame([], $lost, 'Phrases du catalogue non comprises : ' . implode(' | ', $lost));
+    }
     public function test_common_phrasings_are_understood_without_the_ai(): void
     {
         $phrases = [

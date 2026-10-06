@@ -179,6 +179,7 @@ class OrchestratorOversightTest extends TestCase
         DB::table('price_list_items')->insert(['price_list_id' => $list, 'product_id' => $p->id, 'price_ht' => 80, 'price_ttc' => 96, 'min_qty' => 1, 'created_at' => now(), 'updated_at' => now()]);
         DB::table('third_partners')->where('id', $this->atlas->id)->update(['price_list_id' => $list]);
         $this->assertStringContainsString('Revendeur (all) — 1 produit(s), 1 client(s) rattaché(s)', $this->say('mes listes de prix'));
+        $this->assertStringContainsString('Revendeur (all)', $this->say('listes de prix'));                      // la forme la plus courte aussi
     }
 
     public function test_orders_and_earlier_commands_are_not_swallowed(): void

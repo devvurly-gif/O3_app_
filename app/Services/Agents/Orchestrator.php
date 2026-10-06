@@ -784,7 +784,7 @@ class Orchestrator
             (bool) preg_match('/livraisons?/', $n) && (bool) preg_match('/par ville|\bvilles?\b/', $n) && !preg_match('/commandes? clients?/', $n) => 'deliveries',
             (bool) preg_match('/\b(entrepots?|depots?|magasins?)\b/', $n) && (bool) preg_match('/\b(mes|liste|quels|combien|tous les)\b/', $n) && !preg_match('/stock|valeur|mouvement|transfert|inventaire|produit/', $n) => 'warehouses',
             (bool) preg_match('/categories?/', $n) && (bool) preg_match('/tresorerie|depenses?|caisse/', $n) && (bool) preg_match('/\b(mes|liste|quelles|combien|toutes)\b/', $n) => 'cash_categories',
-            (bool) preg_match('/listes? (de prix|tarifaires?)/', $n) && (bool) preg_match('/\b(mes|liste|quelles|combien|clients?|resume)\b/', $n) && !preg_match('/absents?|manquants?|\bsans\b|pas dans|par liste/', $n) => 'price_lists',
+            (bool) preg_match('/listes? (de prix|tarifaires?)/', $n) && !preg_match('/absents?|manquants?|\bsans\b|pas dans|par liste|produits?|articles?|\bprix (du|de la|de l)/', $n) => 'price_lists',
             default => null,
         };
     }
