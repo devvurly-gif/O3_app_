@@ -36,6 +36,7 @@ class Orchestrator
         private AgentStudio $studio,
         private AgentInterview $interview,
         private BusinessAssistant $business,
+        private InsightsAssistant $insights,
     ) {
     }
 
@@ -104,6 +105,7 @@ class Orchestrator
             ($studio = $this->studioIntent($n)) !== null                                          => $this->studioAnswer($admin, $studio, $text, $n),
             // Lectures sur l'activité de l'entreprise (ventes, factures échues, trésorerie, caisse…) : aucun modèle de langage.
             ($biz = $this->businessIntent($n)) !== null                                           => $this->businessAnswer($biz, $n),
+            ($ins = $this->insightsIntent($n)) !== null                                          => $this->insightsAnswer($ins, $n),
             (bool) preg_match('/inventaire|comptage/', $n)                                        => $this->inventory($admin, $n, $action),
             (bool) preg_match('/encaissement|impaye|recouvrement|relance|paiements? en retard/', $n) => $this->collections($admin, $n, $action),
             // Fiches produits : contrôle, propositions (IA, prix, photos) et leur validation (« lot #12 »).
@@ -194,7 +196,7 @@ class Orchestrator
             . "• « mettre à jour les fiches produits » : je contrôle les fiches (photos, descriptions, catégories, marques, prix, codes-barres) et je propose des corrections à valider ; « prépare les fiches pour l'utilisation » enchaîne toutes les étapes jusqu'à l'activation\n"
             . "• « que sait faire chaque agent » : le catalogue des tâches ; « recrute un agent qui… » ; « chaque lundi à 8 h, contrôle les encaissements » (routine) ; « retiens : … » (consigne) ; « crée les comptes des agents » ; « demande de développement : … » pour une tâche qui manque\n"
             . "• déposez une photo ou un PDF (trombone, ou glissez-le ici) : je lis le document, dis ce que c'est et propose la suite\n"
-            . "• lectures sur l'activité : « résume la journée », « que dois-je valider ? », « chiffre d'affaires du mois », « factures échues », « devis sans suite depuis 10 jours », « bons de livraison non facturés », « encaissements du jour », « solde de chaque compte de trésorerie », « sessions de caisse » (chiffres lus directement dans la base, rien n'est modifié)
+            . "• lectures sur l'activité : « résume la journée », « que dois-je valider ? », « chiffre d'affaires du mois », « factures échues », « devis sans suite depuis 10 jours », « bons de livraison non facturés », « encaissements du jour », « solde de chaque compte de trésorerie », « sessions de caisse », « valeur du stock », « produits dormants », « transferts en attente », « pertes du mois », « doublons de produits », « marge par catégorie », « produits jamais vendus », « clients inactifs depuis 60 jours », « clients qui dépassent leur seuil de crédit » (chiffres lus directement dans la base, rien n'est modifié)
 "
             . "• « que peut-on faire dans O3 » : tous les domaines de l'application ; ou nommez un écran (« les fiches produits », « créer une facture ») et je vous y envoie\n\n"
             . "Les agents préparent des brouillons. Rien n'est modifié ni envoyé sans votre validation, dans l'écran concerné.",
@@ -327,6 +329,48 @@ class Orchestrator
             'income'     => $this->business->income($n),
             'balances'   => $this->business->balances(),
             default      => $this->business->cashSessions(),
+        };
+    }
+    /** Quelle lecture sur le stock, le catalogue ou les tiers la phrase demande-t-elle ? null si aucune. @param string $n phrase normalisée */
+    private function insightsIntent(string $n): ?string
+    {
+        if (preg_match('/\b(controle\w*|prepar\w*|relanc\w*|recrut\w*|routine|agent|lance\w*|revis\w*|attribu\w*|active\w*)\b/', $n)) {
+            return null;
+        }
+        $third = (bool) preg_match('/\b(clients?|fournisseurs?|tiers)\b/', $n);
+
+        return match (true) {
+            $third && (bool) preg_match('/inactifs?|dormants?|sans achat|(n.ont|ont) pas (achete|commande)|plus commande|pas commande/', $n) => 'inactive_customers',
+            (bool) preg_match('/seuils? de credit|depass\w* (leur|le) (seuil|plafond)|plafond de credit/', $n) => 'credit',
+            $third && (bool) preg_match('/doublons?/', $n) => 'dup_third',
+            $third && (bool) preg_match('/sans (telephone|e-?mail|mail|ice)|(telephone|e-?mail|ice) manquants?|fiches? (incompletes?|a completer)/', $n) => 'incomplete_third',
+            (bool) preg_match('/valeur du stock|stock valorise|valorisation du stock/', $n) => 'stock_value',
+            (bool) preg_match('/stocks? negatifs?|quantites? negatives?|produits? (a|en) stock negatif/', $n) => 'negative',
+            (bool) preg_match('/\bdormants?\b|sans mouvement|sans rotation/', $n) => 'dormant',
+            (bool) preg_match('/transferts?/', $n) && (bool) preg_match('/attente|en cours|non (valide|recu|termine)/', $n) => 'transfers',
+            (bool) preg_match('/mouvements? de stock|\bpertes?\b|\bcasse\b/', $n) => 'movements',
+            (bool) preg_match('/doublons?/', $n) && (bool) preg_match('/produits?|articles?|fiches?|codes?|sku/', $n) => 'dup_products',
+            (bool) preg_match('/\bmarges?\b/', $n) && (bool) preg_match('/\bpar (categorie|marque)|categories|marques/', $n) => 'margins',
+            (bool) preg_match('/jamais vendus?|pas vendus?|ne se vendent pas|sans vente/', $n) => 'never_sold',
+            default => null,
+        };
+    }
+
+    private function insightsAnswer(string $intent, string $n): array
+    {
+        return match ($intent) {
+            'inactive_customers' => $this->insights->inactiveCustomers($n),
+            'credit'             => $this->insights->creditLimits(),
+            'dup_third'          => $this->insights->duplicateThirdParties(),
+            'incomplete_third'   => $this->insights->incompleteThirdParties($n),
+            'stock_value'        => $this->insights->stockValue(),
+            'negative'           => $this->insights->negativeStock(),
+            'dormant'            => $this->insights->dormantStock($n),
+            'transfers'          => $this->insights->pendingTransfers(),
+            'movements'          => $this->insights->movements($n),
+            'dup_products'       => $this->insights->duplicateProducts(),
+            'margins'            => $this->insights->margins($n),
+            default              => $this->insights->neverSold($n),
         };
     }
     // ── Fiches produits ──────────────────────────────────────────────
