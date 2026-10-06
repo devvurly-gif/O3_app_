@@ -35,6 +35,7 @@ class Orchestrator
         private CatalogAssistant $catalog,
         private AgentStudio $studio,
         private AgentInterview $interview,
+        private BusinessAssistant $business,
     ) {
     }
 
@@ -101,6 +102,8 @@ class Orchestrator
             (bool) preg_match('/\bdocuments?\s*#?\s*(\d+)/', $n, $doc)                            => $this->intake->act($admin, (int) $doc[1], $n),
             // Atelier des agents : recruter, planifier des routines, retenir des consignes, catalogue des tâches.
             ($studio = $this->studioIntent($n)) !== null                                          => $this->studioAnswer($admin, $studio, $text, $n),
+            // Lectures sur l'activité de l'entreprise (ventes, factures échues, trésorerie, caisse…) : aucun modèle de langage.
+            ($biz = $this->businessIntent($n)) !== null                                           => $this->businessAnswer($biz, $n),
             (bool) preg_match('/inventaire|comptage/', $n)                                        => $this->inventory($admin, $n, $action),
             (bool) preg_match('/encaissement|impaye|recouvrement|relance|paiements? en retard/', $n) => $this->collections($admin, $n, $action),
             // Fiches produits : contrôle, propositions (IA, prix, photos) et leur validation (« lot #12 »).
@@ -191,6 +194,8 @@ class Orchestrator
             . "• « mettre à jour les fiches produits » : je contrôle les fiches (photos, descriptions, catégories, marques, prix, codes-barres) et je propose des corrections à valider ; « prépare les fiches pour l'utilisation » enchaîne toutes les étapes jusqu'à l'activation\n"
             . "• « que sait faire chaque agent » : le catalogue des tâches ; « recrute un agent qui… » ; « chaque lundi à 8 h, contrôle les encaissements » (routine) ; « retiens : … » (consigne) ; « crée les comptes des agents » ; « demande de développement : … » pour une tâche qui manque\n"
             . "• déposez une photo ou un PDF (trombone, ou glissez-le ici) : je lis le document, dis ce que c'est et propose la suite\n"
+            . "• lectures sur l'activité : « résume la journée », « que dois-je valider ? », « chiffre d'affaires du mois », « factures échues », « devis sans suite depuis 10 jours », « bons de livraison non facturés », « encaissements du jour », « solde de chaque compte de trésorerie », « sessions de caisse » (chiffres lus directement dans la base, rien n'est modifié)
+"
             . "• « que peut-on faire dans O3 » : tous les domaines de l'application ; ou nommez un écran (« les fiches produits », « créer une facture ») et je vous y envoie\n\n"
             . "Les agents préparent des brouillons. Rien n'est modifié ni envoyé sans votre validation, dans l'écran concerné.",
             'help',
@@ -288,6 +293,42 @@ class Orchestrator
         };
     }
 
+    // ── Lectures sur l'activité (BusinessAssistant) ──────────────────
+
+    /** Quelle lecture la phrase demande-t-elle ? null si aucune. @param string $n phrase normalisée */
+    private function businessIntent(string $n): ?string
+    {
+        $period = (bool) preg_match('/\b(jour|journee|aujourd\w*|semaine|mois|hier|annee)\b|derniers? jours|\d+\s*jours/', $n);
+        $order = (bool) preg_match('/\b(controle\w*|prepar\w*|relanc\w*|recrut\w*|routine|agent|lance\w*)\b/', $n);
+
+        return match (true) {
+            (bool) preg_match('/\b(resume\w*|bilan|point|etat)\b.*\b(journee|du jour|aujourd\w*)|^(le )?point (du jour|de la journee)|ma journee/', $n) => 'day',
+            (bool) preg_match('/que dois[- ]je valider|ce que je dois valider|en attente de validation|propositions? en attente|\ba valider\b/', $n) && !preg_match('/relance|document/', $n) => 'pending',
+            !$order && (bool) preg_match('/chiffre d.affaires|\bca\b/', $n) || (!$order && $period && (bool) preg_match('/\bventes?\b|combien .*vendu/', $n)) => 'sales',
+            !$order && (bool) preg_match('/factures? (clients? )?(echue|en retard|impayee)s?|echeances? depassee|impayes? depuis|factures? depassant/', $n) => 'overdue',
+            (bool) preg_match('/\bdevis\b/', $n) && (bool) preg_match('/sans suite|sans reponse|en attente|non (transforme|converti)|ouverts?/', $n) => 'quotes',
+            (bool) preg_match('/bons? de livraison|\bbl\b/', $n) && (bool) preg_match('/non factur|pas (encore )?factur|a facturer|sans facture/', $n) => 'deliveries',
+            !$order && $period && (bool) preg_match('/encaissements?|paiements? recus?|combien .*encaisse/', $n) => 'income',
+            (bool) preg_match('/\bsoldes?\b/', $n) && (bool) preg_match('/tresorerie|caisse|banque|comptes?/', $n) => 'balances',
+            (bool) preg_match('/sessions? de caisse|caisses? ouvertes?|ecarts? de caisse/', $n) => 'sessions',
+            default => null,
+        };
+    }
+
+    private function businessAnswer(string $intent, string $n): array
+    {
+        return match ($intent) {
+            'day'        => $this->business->daySummary(),
+            'pending'    => $this->business->pendingValidations(),
+            'sales'      => $this->business->sales($n),
+            'overdue'    => $this->business->overdueInvoices($n),
+            'quotes'     => $this->business->staleQuotes($n),
+            'deliveries' => $this->business->unbilledDeliveries(),
+            'income'     => $this->business->income($n),
+            'balances'   => $this->business->balances(),
+            default      => $this->business->cashSessions(),
+        };
+    }
     // ── Fiches produits ──────────────────────────────────────────────
 
     /** Quelle demande sur les fiches produits la phrase exprime-t-elle ? null si aucune. */
