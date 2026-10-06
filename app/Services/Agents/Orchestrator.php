@@ -39,6 +39,7 @@ class Orchestrator
         private InsightsAssistant $insights,
         private OperationsAssistant $operations,
         private AnalysisAssistant $analysis,
+        private DeepDiveAssistant $deepDive,
     ) {
     }
 
@@ -105,6 +106,8 @@ class Orchestrator
             (bool) preg_match('/\bdocuments?\s*#?\s*(\d+)/', $n, $doc)                            => $this->intake->act($admin, (int) $doc[1], $n),
             // Atelier des agents : recruter, planifier des routines, retenir des consignes, catalogue des tâches.
             ($studio = $this->studioIntent($n)) !== null                                          => $this->studioAnswer($admin, $studio, $text, $n),
+            // Fiches (produit, tiers, document), marge réalisée, tendances, prévisions : lectures, aucun modèle de langage.
+            ($dd = $this->deepDiveIntent($n)) !== null                                           => $this->deepDiveAnswer($dd, $n),
             // Classements, qualité du catalogue, historique d'une fiche, actions des agents : lectures, aucun modèle de langage.
             ($ana = $this->analysisIntent($n)) !== null                                           => $this->analysisAnswer($ana, $n),
             // Lectures sur l'activité de l'entreprise (ventes, factures échues, trésorerie, caisse…) : aucun modèle de langage.
@@ -201,7 +204,7 @@ class Orchestrator
             . "• « mettre à jour les fiches produits » : je contrôle les fiches (photos, descriptions, catégories, marques, prix, codes-barres) et je propose des corrections à valider ; « prépare les fiches pour l'utilisation » enchaîne toutes les étapes jusqu'à l'activation\n"
             . "• « que sait faire chaque agent » : le catalogue des tâches ; « recrute un agent qui… » ; « chaque lundi à 8 h, contrôle les encaissements » (routine) ; « retiens : … » (consigne) ; « crée les comptes des agents » ; « demande de développement : … » pour une tâche qui manque\n"
             . "• déposez une photo ou un PDF (trombone, ou glissez-le ici) : je lis le document, dis ce que c'est et propose la suite\n"
-            . "• lectures sur l'activité : « résume la journée », « que dois-je valider ? », « chiffre d'affaires du mois », « factures échues », « devis sans suite depuis 10 jours », « bons de livraison non facturés », « encaissements du jour », « solde de chaque compte de trésorerie », « sessions de caisse », « valeur du stock », « produits dormants », « transferts en attente », « pertes du mois », « doublons de produits », « marge par catégorie », « produits jamais vendus », « clients inactifs depuis 60 jours », « clients qui dépassent leur seuil de crédit », « achats du mois par fournisseur », « factures fournisseurs à payer », « bons de commande en attente », « prix d'achat en hausse », « remises accordées ce mois », « dépenses du mois par catégorie », « dépenses sans justificatif », « activité récente », « promotions actives », « top 10 des produits vendus », « ventes du mois par vendeur », « meilleurs clients du trimestre », « qui a modifié la facture FV-001 », « codes-barres invalides », « actions des agents aujourd'hui » (chiffres lus directement dans la base, rien n'est modifié)
+            . "• lectures sur l'activité : « résume la journée », « que dois-je valider ? », « chiffre d'affaires du mois », « factures échues », « devis sans suite depuis 10 jours », « bons de livraison non facturés », « encaissements du jour », « solde de chaque compte de trésorerie », « sessions de caisse », « valeur du stock », « produits dormants », « transferts en attente », « pertes du mois », « doublons de produits », « marge par catégorie », « produits jamais vendus », « clients inactifs depuis 60 jours », « clients qui dépassent leur seuil de crédit », « achats du mois par fournisseur », « factures fournisseurs à payer », « bons de commande en attente », « prix d'achat en hausse », « remises accordées ce mois », « dépenses du mois par catégorie », « dépenses sans justificatif », « activité récente », « promotions actives », « top 10 des produits vendus », « ventes du mois par vendeur », « meilleurs clients du trimestre », « qui a modifié la facture FV-001 », « codes-barres invalides », « actions des agents aujourd'hui », « fiche du produit PRC1 », « fiche du client Atlas », « montre la facture FV-001 », « marge réalisée du mois », « panier moyen », « évolution du chiffre d'affaires sur 6 mois », « produits bientôt en rupture », « prévision de trésorerie à 30 jours » (chiffres lus directement dans la base, rien n'est modifié)
 "
             . "• « que peut-on faire dans O3 » : tous les domaines de l'application ; ou nommez un écran (« les fiches produits », « créer une facture ») et je vous y envoie\n\n"
             . "Les agents préparent des brouillons. Rien n'est modifié ni envoyé sans votre validation, dans l'écran concerné.",
@@ -473,6 +476,52 @@ class Orchestrator
             'pricelist_gap'      => $this->analysis->priceListGaps($n),
             'pending_moves'      => $this->analysis->pendingMovements(),
             default              => $this->analysis->inventoryAdjustments($n),
+        };
+    }
+    /** Quelle fiche, quel indicateur ou quelle prévision la phrase demande-t-elle ? null si aucun. @param string $n phrase normalisée */
+    private function deepDiveIntent(string $n): ?string
+    {
+        if (preg_match('/\b(controle\w*|prepar\w*|relanc\w*|recrut\w*|lance\w*|revis\w*|attribu\w*|active(?:r|z|ons)?|publi\w*)\b/', $n)) {
+            return null;
+        }
+        $sales = (bool) preg_match('/\bventes?\b|chiffre d.affaires|\bca\b/', $n);
+
+        return match (true) {
+            (bool) preg_match('/\b(montre|affiche|ouvre|detail|voir|donne)\w*\b.*\b(facture|devis|bon de \w+|commande|avoir|ticket|retour)\s+(?:n°\s*|no\s*|numero\s*)?[a-z0-9\-\/_.]*[0-9][a-z0-9\-\/_.]*\s*$/', $n) => 'doc_card',
+            (bool) preg_match('/\b(fiche|solde|situation|infos?)\s+(du |de la |de l.|des )?(client|fournisseur)\s+\S/', $n) => 'third_card',
+            (bool) preg_match('/\b(fiche|infos?|details?|stock|prix)\s+(du produit|de l.article|de la reference|du produit)\s+\S|^(quel est |donne[- ]moi |montre[- ]moi )?(le )?stock (de|du|d.)\s*(?!chaque|tous|toutes|l.entrepot|entrepot|depot|magasin|mon|ma|mes|la caisse)\S/', $n) => 'product_card',
+            (bool) preg_match('/\bmarges?\b/', $n) && (bool) preg_match('/realisee?s?|reelles?|brutes?|globale|totale|du mois|de la semaine|de l.annee|du trimestre/', $n) && !preg_match('/par (categorie|marque)|\bprix\b/', $n) => 'margin',
+            (bool) preg_match('/panier moyen|ticket moyen|montant moyen (d.une |des )?(vente|facture|ticket)s?/', $n) => 'basket',
+            $sales && (bool) preg_match('/evolution|tendance|courbe|mois par mois|historique/', $n) => 'trend',
+            $sales && (bool) preg_match('/par (categorie|marque)/', $n) => 'sales_group',
+            (bool) preg_match('/devis/', $n) && (bool) preg_match('/transform|conversion|taux|convertis?|acceptes?|signes?/', $n) => 'quote_conversion',
+            (bool) preg_match('/commandes? clients?/', $n) && (bool) preg_match('/attente|livrer|en cours|non livrees?/', $n) => 'customer_orders',
+            (bool) preg_match('/\bretours?\b|\bavoirs?\b/', $n) && (bool) preg_match('/\b(mois|semaine|annee|trimestre|aujourd\w*|hier)\b|combien|liste/', $n) => 'returns',
+            (bool) preg_match('/rupture/', $n) && (bool) preg_match('/bientot|prochains? jours|dans \d+ ?j|prevision|va manquer|vont manquer|menace|risque|couverture/', $n) => 'runout',
+            (bool) preg_match('/tickets?/', $n) && (bool) preg_match('/annule/', $n) => 'cancelled_tickets',
+            (bool) preg_match('/\bflux\b/', $n) && (bool) preg_match('/tresorerie|cash|argent/', $n) => 'cash_flow',
+            (bool) preg_match('/prevision|projection|previsionnel|anticip/', $n) && (bool) preg_match('/tresorerie|cash|solde|argent/', $n) => 'cash_forecast',
+            default => null,
+        };
+    }
+
+    private function deepDiveAnswer(string $intent, string $n): array
+    {
+        return match ($intent) {
+            'doc_card'         => $this->deepDive->documentCard($n),
+            'third_card'       => $this->deepDive->thirdPartyCard($n),
+            'product_card'     => $this->deepDive->productCard($n),
+            'margin'           => $this->deepDive->realizedMargin($n),
+            'basket'           => $this->deepDive->averageBasket($n),
+            'trend'            => $this->deepDive->monthlyTrend($n),
+            'sales_group'      => $this->deepDive->salesByGroup($n),
+            'quote_conversion' => $this->deepDive->quoteConversion($n),
+            'customer_orders'  => $this->deepDive->pendingCustomerOrders(),
+            'returns'          => $this->deepDive->returns($n),
+            'runout'           => $this->deepDive->runoutSoon($n),
+            'cancelled_tickets' => $this->deepDive->cancelledTickets($n),
+            'cash_flow'        => $this->deepDive->cashFlow($n),
+            default            => $this->deepDive->cashForecast(),
         };
     }
     // ── Fiches produits ──────────────────────────────────────────────
