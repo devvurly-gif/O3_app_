@@ -32,6 +32,13 @@ class AuthService
             ]);
         }
 
+        // Le compte technique d'un agent IA ne se connecte jamais à l'interface (même message que des identifiants faux).
+        if ($user->role?->name === \App\Services\Agents\AgentRegistry::ROLE) {
+            throw ValidationException::withMessages([
+                'email' => ['The provided credentials are incorrect.'],
+            ]);
+        }
+
         if (!$user->is_active) {
             throw ValidationException::withMessages([
                 'email' => ['Your account has been deactivated.'],

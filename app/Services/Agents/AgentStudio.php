@@ -28,6 +28,7 @@ class AgentStudio
         private AgentDesigner $designer,
         private CustomAgentRunner $runner,
         private RoutineRunner $routines,
+        private AgentRegistry $registry,
     ) {
     }
 
@@ -107,10 +108,12 @@ class AgentStudio
         }
 
         $agent->update(['is_active' => $activate]);
+        $this->registry->syncAccountState($agent);   // le compte suit l'agent : pas de compte actif pour un agent arrêté
         // Les routines de l'agent suivent son état : elles ne tournent que lorsqu'il est actif.
         foreach (AgentRoutine::where('agent_id', $agent->id)->get() as $routine) {
-            $routine->update(['is_active' => $activate, 'next_run_at' => $activate ? RoutineSchedule::next($routine->schedule) : null]);
+            $routine->update(['is_active' => $activate, 'next_run_at' => $activate ? $routine->nextScheduledRun() : null]);
         }
+        AgentTriggers::forgetListeners();
         $this->log($agent->id, $activate ? 'agent_activated' : 'agent_deactivated', ['by' => $admin->name]);
 
         return $this->reply(
@@ -193,7 +196,7 @@ class AgentStudio
             return $this->reply("Aucune routine planifiée. Dites par exemple « chaque lundi à 8 h, contrôle les encaissements et prépare les relances ».");
         }
 
-        $lines = $routines->map(fn (AgentRoutine $r) => "• #{$r->id} « {$r->name} » — " . RoutineSchedule::describe($r->schedule) . ' — ' . ($r->is_active ? 'active' : 'en pause')
+        $lines = $routines->map(fn (AgentRoutine $r) => "• #{$r->id} « {$r->name} » — " . ($r->isEventDriven() ? AgentTriggers::describe($r->trigger) : RoutineSchedule::describe($r->schedule)) . ' — ' . ($r->is_active ? 'active' : 'en pause')
             . ($r->is_active && $r->next_run_at ? ', prochaine : ' . RoutineSchedule::display($r->next_run_at) : '')
             . ($r->last_run_at ? ', dernière : ' . $r->last_run_at->format('d/m H:i') . " ({$r->last_status})" : '')
             . "\n   " . collect($r->steps)->map(fn ($s) => RoutineSteps::label($s))->implode(' → '))->implode("\n");
@@ -222,17 +225,21 @@ class AgentStudio
                 return $this->reply($out['body'], error: $out['status'] === 'error');
             case 'pause':
                 $routine->update(['is_active' => false, 'next_run_at' => null]);
+                AgentTriggers::forgetListeners();
                 $this->log($routine->agent_id, 'routine_paused', ['routine' => $id, 'by' => $admin->name]);
 
                 return $this->reply("Routine « {$routine->name} » mise en pause.", suggestions: [['label' => 'Reprendre', 'text' => "reprends la routine #{$id}"]]);
             case 'resume':
-                $routine->update(['is_active' => true, 'next_run_at' => RoutineSchedule::next($routine->schedule)]);
+                // Une routine à l'événement reprend à partir de maintenant : les événements passés pendant la pause sont ignorés.
+                $routine->update(['is_active' => true, 'next_run_at' => $routine->nextScheduledRun(), 'last_event_id' => $routine->isEventDriven() ? (int) AgentEvent::max('id') : $routine->last_event_id]);
+                AgentTriggers::forgetListeners();
                 $this->log($routine->agent_id, 'routine_resumed', ['routine' => $id, 'by' => $admin->name]);
 
-                return $this->reply("Routine « {$routine->name} » reprise : prochaine exécution " . RoutineSchedule::display($routine->next_run_at) . '.');
+                return $this->reply("Routine « {$routine->name} » reprise : " . ($routine->isEventDriven() ? 'elle se déclenchera au prochain événement.' : 'prochaine exécution ' . RoutineSchedule::display($routine->next_run_at) . '.'));
             default:
                 $name = $routine->name;
                 $routine->delete();
+                AgentTriggers::forgetListeners();
                 $this->log($routine->agent_id, 'routine_deleted', ['routine' => $id, 'name' => $name, 'by' => $admin->name]);
 
                 return $this->reply("Routine « {$name} » supprimée.");
@@ -383,7 +390,7 @@ class AgentStudio
     /** « applique la proposition #12 », « ignore la proposition #12 ». @param string $n phrase normalisée */
     public function act(User $admin, int $eventId, string $n): array
     {
-        $event = AgentEvent::whereIn('type', ['agent_recrutement', 'routine_proposition', 'consigne_proposition'])->find($eventId);
+        $event = AgentEvent::whereIn('type', ['agent_recrutement', 'routine_proposition', 'consigne_proposition', 'comptes_agents'])->find($eventId);
         if (!$event) {
             return $this->reply("Je ne trouve pas la proposition #{$eventId}.", error: true);
         }
@@ -403,6 +410,7 @@ class AgentStudio
         $reply = match ($event->type) {
             'agent_recrutement'   => $this->createAgent($admin, $event, $payload['spec'] ?? []),
             'routine_proposition' => $this->createRoutine($admin, $event, $payload['spec'] ?? []),
+            'comptes_agents'      => $this->createAccounts($admin, $event),
             default               => $this->createDirective($admin, $event, (string) ($payload['body'] ?? '')),
         };
         if (!($reply['meta']['error'] ?? false)) {
@@ -430,6 +438,9 @@ class AgentStudio
             'created_by' => $admin->id, 'default_level' => 'approval', 'is_active' => false,
         ]);
         $this->log($agent->id, 'agent_recruited', ['by' => $admin->name, 'scopes' => $scopes, 'event' => $event->id]);
+        // Chaque agent recruté a son propre compte, dès son recrutement (inactif comme lui).
+        $account = $this->registry->ensureAccount($agent);
+        $account && $this->log($agent->id, 'agent_account_created', ['email' => $account->email, 'by' => $admin->name]);
 
         $routineNote = '';
         if (!empty($spec['schedule'])) {
@@ -477,6 +488,70 @@ class AgentStudio
         $this->log(null, 'directive_added', ['directive' => $d->id, 'by' => $admin->name]);
 
         return $this->reply("Consigne #{$d->id} retenue : « {$body} ».", eventId: $event->id);
+    }
+
+    // ── Comptes utilisateurs des agents ──────────────────────────────
+
+    /** « crée les comptes des agents » : propose un compte pour chaque agent qui n'en a pas. */
+    public function accountsNew(User $admin): array
+    {
+        $missing = $this->registry->agentsWithoutAccount();
+        if ($missing->isEmpty()) {
+            return $this->accounts('Tous les agents ont déjà leur compte.');
+        }
+
+        $event = $this->record('comptes_agents', 'Proposition de création de ' . $missing->count() . " compte(s) d'agents", [
+            'agent_ids' => $missing->pluck('id')->all(), 'requested_by' => $admin->name,
+        ]);
+        $lines = $missing->map(fn (Agent $a) => "• {$a->name} — " . AgentRegistry::emailFor($a) . ' — ' . ($a->is_active ? 'compte actif' : 'compte inactif (agent inactif)'))->implode("\n");
+
+        return $this->reply(
+            $missing->count() . " compte(s) à créer (proposition #{$event->id}) :\n\n{$lines}\n\n"
+            . "Chaque agent a son propre compte, indépendant des autres. Le rôle « Agent IA » n'a aucune permission ; le mot de passe est aléatoire et personne ne le connaît : le compte ne peut pas se connecter à l'interface. Aucun jeton n'est émis : un jeton ne se crée que si un agent externe en a besoin.",
+            suggestions: [
+                ['label' => 'Créer ces comptes', 'text' => "applique la proposition #{$event->id}"],
+                ['label' => 'Ignorer', 'text' => "ignore la proposition #{$event->id}"],
+            ],
+            eventId: $event->id,
+        );
+    }
+
+    /** « quels agents ont un compte ? » */
+    public function accountsList(): array
+    {
+        $agents = Agent::orderBy('id')->get();
+        $users = User::withTrashed()->with('role:id,name')->whereIn('id', $agents->pluck('user_id')->filter())->get()->keyBy('id');
+        $lines = $agents->map(function (Agent $a) use ($users) {
+            $u = $a->user_id ? $users->get($a->user_id) : null;
+
+            return "• {$a->name} — " . ($u ? "{$u->email} (rôle " . ($u->role?->name ?? '?') . ($u->is_active ? ', actif' : ', inactif') . ')' : 'aucun compte');
+        })->implode("\n");
+
+        return $this->accounts("Comptes des agents :\n\n{$lines}");
+    }
+
+    private function accounts(string $body): array
+    {
+        $missing = $this->registry->agentsWithoutAccount();
+
+        return $this->reply($body, suggestions: $missing->isEmpty() ? [] : [['label' => 'Créer les comptes manquants', 'text' => 'crée les comptes des agents']]);
+    }
+
+    private function createAccounts(User $admin, AgentEvent $event): array
+    {
+        $created = [];
+        foreach (Agent::whereIn('id', $event->payload['agent_ids'] ?? [])->whereNull('user_id')->orderBy('id')->get() as $agent) {
+            $user = $this->registry->ensureAccount($agent);
+            if ($user) {
+                $created[] = "• {$agent->name} — {$user->email}";
+                $this->log($agent->id, 'agent_account_created', ['email' => $user->email, 'by' => $admin->name]);
+            }
+        }
+
+        return $this->reply(
+            $created === [] ? 'Aucun compte à créer : les agents concernés en ont déjà un.' : count($created) . " compte(s) créé(s) :\n\n" . implode("\n", $created) . "\n\nAucun jeton n'a été émis et aucun mot de passe n'est connu : ces comptes servent d'identité aux agents (journal, audit), pas à se connecter.",
+            eventId: $event->id,
+        );
     }
 
     // ── Outils ───────────────────────────────────────────────────────

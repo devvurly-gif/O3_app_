@@ -5,10 +5,12 @@ namespace App\Providers;
 use App\Mail\Transport\ResendTransport;
 use App\Models\DocumentHeader;
 use App\Models\Payment;
+use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\ProductDocument;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Observers\AgentTriggerObserver;
 use App\Observers\DocumentAchatObserver;
 use App\Observers\DocumentHeaderObserver;
 use App\Observers\DocumentNotificationObserver;
@@ -42,6 +44,10 @@ class AppServiceProvider extends ServiceProvider
         DocumentHeader::observe(DocumentNotificationObserver::class);
         DocumentHeader::observe(DocumentHeaderObserver::class);
         Payment::observe(PaymentObserver::class);
+        // Événements internes pouvant déclencher une routine de l'orchestrateur (sans effet tant qu'aucune n'écoute).
+        Product::observe(AgentTriggerObserver::class);
+        Payment::observe(AgentTriggerObserver::class);
+        DocumentHeader::observe(AgentTriggerObserver::class);
         ProductImage::observe(ProductImageObserver::class);
         ProductDocument::observe(ProductDocumentObserver::class);
         DatabaseNotification::observe(NotificationObserver::class);

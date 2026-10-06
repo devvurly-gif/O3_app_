@@ -80,6 +80,7 @@ class RoutineSchedule
     public static function describe(array $schedule): string
     {
         return match ($schedule['frequency']) {
+            'event'  => "à chaque événement",
             'daily'  => "tous les jours à {$schedule['time']}",
             'weekly' => 'chaque ' . self::WEEKDAYS[$schedule['weekday']] . " à {$schedule['time']}",
             default  => "le {$schedule['day']} de chaque mois à {$schedule['time']}",

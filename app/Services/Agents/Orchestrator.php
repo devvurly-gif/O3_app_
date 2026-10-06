@@ -165,7 +165,7 @@ class Orchestrator
             . "• « contrôle les encaissements » : l'agent Recouvrement contrôle les paiements et prépare les relances\n"
             . "• « relances à valider » : ce qui attend votre validation\n"
             . "• « mettre à jour les fiches produits » : je contrôle les fiches (photos, descriptions, catégories, marques, prix, codes-barres) et je propose des corrections à valider ; « prépare les fiches pour l'utilisation » enchaîne toutes les étapes jusqu'à l'activation\n"
-            . "• « que sait faire chaque agent » : le catalogue des tâches ; « recrute un agent qui… » ; « chaque lundi à 8 h, contrôle les encaissements » (routine) ; « retiens : … » (consigne) ; « demande de développement : … » pour une tâche qui manque\n"
+            . "• « que sait faire chaque agent » : le catalogue des tâches ; « recrute un agent qui… » ; « chaque lundi à 8 h, contrôle les encaissements » (routine) ; « retiens : … » (consigne) ; « crée les comptes des agents » ; « demande de développement : … » pour une tâche qui manque\n"
             . "• déposez une photo ou un PDF (trombone, ou glissez-le ici) : je lis le document, dis ce que c'est et propose la suite\n"
             . "• « que peut-on faire dans O3 » : tous les domaines de l'application ; ou nommez un écran (« les fiches produits », « créer une facture ») et je vous y envoie\n\n"
             . "Les agents préparent des brouillons. Rien n'est modifié ni envoyé sans votre validation, dans l'écran concerné.",
@@ -218,6 +218,9 @@ class Orchestrator
             (bool) preg_match('/demandes? de developpement/', $n) && (bool) preg_match('/\b(mes|quelles|liste|ouvertes|affiche)\b/', $n) => ['dev_list', null],
             (bool) preg_match('/demande de developpement|nouvelle (tache|fonction|capacite)|il faudrait que tu saches/', $n) => ['dev_new', null],
             (bool) preg_match('/catalogue des taches|taches connues|que (sait|savent|peut|peuvent)\b.*\bagents?|ce que (sait|savent).*agents?/', $n) => ['catalogue', null],
+            // Comptes utilisateurs des agents (avant le recrutement : « crée les comptes des agents » n'est pas un recrutement).
+            (bool) preg_match('/\bcomptes?\b/', $n) && (bool) preg_match('/\bagents?\b/', $n) && (bool) preg_match('/\b(cree|creer|ajoute|ajouter|etablis|etablir|prepare|preparer|donne|fournis|genere|generer)\b/', $n) => ['accounts_new', null],
+            (bool) preg_match('/\bcomptes?\b/', $n) && (bool) preg_match('/\bagents?\b/', $n) => ['accounts_list', null],
             (bool) preg_match('/\bmes agents\b|\bagents? (recrutes|personnalises)\b|liste des agents/', $n) => ['agents', null],
             (bool) preg_match('/\b(recrut|embauch|engage)\w*|\bnouvel agent\b/', $n) || ((bool) preg_match('/\b(cree|creer|ajoute|ajouter)\b/', $n) && (bool) preg_match('/\bagent\b/', $n)) => ['recruit', null],
             (bool) preg_match('/\broutines?\b/', $n) && (bool) preg_match('/\b(mes|quelles|liste|les|affiche)\b/', $n) && !$this->hasScheduleWords($n) => ['routines', null],
@@ -253,6 +256,8 @@ class Orchestrator
             'dev_new'          => $this->studio->devRequest($admin, $text),
             'catalogue'        => $this->studio->catalogue(),
             'agents'           => $this->studio->agents(),
+            'accounts_new'     => $this->studio->accountsNew($admin),
+            'accounts_list'    => $this->studio->accountsList(),
             'recruit'          => $this->studio->recruit($admin, $text),
             'routines'         => $this->studio->routines(),
             default            => $this->studio->routineNew($admin, $text),

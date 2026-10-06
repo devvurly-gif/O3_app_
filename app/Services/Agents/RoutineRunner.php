@@ -50,6 +50,48 @@ class RoutineRunner
             $onRun && $onRun($routine, $out['status']);
         }
 
+        return $ran + $this->runTriggered($onRun);
+    }
+
+    /**
+     * Les routines déclenchées par un événement interne d'O3 : pour chacune, les événements arrivés depuis son
+     * dernier passage et qui satisfont ses conditions. Chaque événement n'est traité qu'une fois (le curseur
+     * `last_event_id` est avancé AVANT l'exécution, par une mise à jour conditionnelle) et, après une
+     * exécution, la routine attend son délai (`cooldown_minutes`) avant de se relancer : un afflux
+     * d'événements donne un seul compte rendu qui les regroupe.
+     *
+     * @param callable(AgentRoutine, string): void|null $onRun
+     */
+    private function runTriggered(?callable $onRun): int
+    {
+        $ran = 0;
+        foreach (AgentRoutine::where('is_active', true)->whereNotNull('trigger')->orderBy('id')->get() as $routine) {
+            $trigger = $routine->trigger;
+            if ($routine->last_run_at && $routine->last_run_at->gt(now()->subMinutes((int) ($trigger['cooldown_minutes'] ?? 60)))) {
+                continue;   // encore dans le délai : les événements s'accumulent pour le prochain passage
+            }
+
+            $since = (int) ($routine->last_event_id ?? 0);
+            $events = AgentEvent::where('type', $trigger['event_type'])->where('id', '>', $since)->orderBy('id')->limit(100)->get();
+            if ($events->isEmpty()) {
+                continue;
+            }
+
+            $claimed = AgentRoutine::whereKey($routine->id)->where('is_active', true)
+                ->where(fn ($q) => $since === 0 ? $q->whereNull('last_event_id')->orWhere('last_event_id', 0) : $q->where('last_event_id', $since))
+                ->update(['last_event_id' => $events->max('id')]);
+            $matching = $events->filter(fn (AgentEvent $e) => AgentTriggers::matches($trigger, $e));
+            if ($claimed === 0 || $matching->isEmpty()) {
+                continue;
+            }
+
+            $context = $matching->take(10)->map(fn (AgentEvent $e) => '• ' . AgentTriggers::contextLine($e))->implode("\n")
+                . ($matching->count() > 10 ? "\n• … et " . ($matching->count() - 10) . ' autre(s).' : '');
+            $out = $this->run($routine->fresh(), $matching->count() > 1 ? "déclenchée par {$matching->count()} événements" : 'déclenchée par un événement', $context);
+            $ran++;
+            $onRun && $onRun($routine, $out['status']);
+        }
+
         return $ran;
     }
 
@@ -57,7 +99,7 @@ class RoutineRunner
      * @param string $trigger « planifiée » ou « lancée à la demande »
      * @return array{status: string, body: string}
      */
-    public function run(AgentRoutine $routine, string $trigger = 'planifiée'): array
+    public function run(AgentRoutine $routine, string $trigger = 'planifiée', ?string $context = null): array
     {
         $creator = User::find($routine->created_by);
         if (!$creator || !$creator->is_active) {
@@ -82,7 +124,7 @@ class RoutineRunner
                     $suggestions = array_merge($suggestions, $answer['meta']['suggestions'] ?? []);
                     $links = array_merge($links, $answer['meta']['links'] ?? []);
                 } else {
-                    [$body, $error, $more] = $this->runAgent($step);
+                    [$body, $error, $more] = $this->runAgent($step, $context);
                     $suggestions = array_merge($suggestions, $more);
                 }
             } catch (\Throwable $e) {
@@ -95,7 +137,7 @@ class RoutineRunner
         }
 
         $status = $failed === 0 ? 'ok' : ($failed < count($routine->steps) ? 'partial' : 'error');
-        $body = "Routine « {$routine->name} » ({$trigger}) :\n\n" . implode("\n\n", $sections)
+        $body = "Routine « {$routine->name} » ({$trigger}) :\n\n" . ($context !== null ? "Événements :\n{$context}\n\n" : '') . implode("\n\n", $sections)
             . "\n\nRien n'a été appliqué : les étapes préparent des brouillons ou lisent seulement, vous validez ce qui demande une décision.";
 
         return $this->finish($routine, $status, $body, $creator, [
@@ -105,14 +147,15 @@ class RoutineRunner
     }
 
     /** @return array{0: string, 1: bool, 2: array<int, array{label: string, text: string}>} */
-    private function runAgent(string $step): array
+    private function runAgent(string $step, ?string $context = null): array
     {
         $agent = preg_match('/^agent:(\d+)$/', $step, $m) ? Agent::where('kind', 'custom')->find((int) $m[1]) : null;
         if (!$agent || !$agent->is_active) {
             return ["L'agent est inactif ou n'existe plus : activez-le pour que la routine l'utilise.", true, []];
         }
 
-        $result = $this->agents->run($agent, $agent->mission ?? $agent->name);
+        $task = ($agent->mission ?? $agent->name) . ($context !== null ? "\n\nÉvénements qui ont déclenché cette exécution :\n{$context}" : '');
+        $result = $this->agents->run($agent, $task);
         if ($result === null) {
             return ["L'agent n'a pas pu travailler : " . ($this->agents->failure() ?? 'erreur') . '.', true, []];
         }
@@ -127,7 +170,7 @@ class RoutineRunner
     {
         $routine->update([
             'last_run_at'  => now(),
-            'next_run_at'  => $routine->is_active ? RoutineSchedule::next($routine->schedule) : null,
+            'next_run_at'  => $routine->is_active ? $routine->nextScheduledRun() : null,
             'last_status'  => $status,
             'last_summary' => mb_substr($body, 0, 1500),
         ]);

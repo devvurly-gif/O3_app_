@@ -62,7 +62,7 @@ class CustomAgentRunner
 
         $scopes = $agent->scopes ?? [];
         $definitions = array_merge($this->tools->definitions($scopes), [$this->reportTool()]);
-        $messages = [['role' => 'user', 'content' => "<tache>\n" . mb_substr($task, 0, 600) . "\n</tache>"]];
+        $messages = [['role' => 'user', 'content' => "<tache>\n" . mb_substr($task, 0, 1800) . "\n</tache>"]];
         $used = [];
 
         try {

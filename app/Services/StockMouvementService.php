@@ -557,6 +557,12 @@ class StockMouvementService
                 return;
             }
 
+            // Signal pour les routines de l'orchestrateur (une fois par produit et par jour ; sans effet si personne n'écoute).
+            \App\Services\Agents\AgentTriggers::emit('stock_bas', [
+                'product_id' => $productId, 'title' => $product->p_title, 'sku' => $product->p_sku,
+                'warehouse' => $warehouse->wh_title, 'qty' => $stockAfter,
+            ], dedupeHours: 24, entityKey: 'product_id');
+
             $recipients = User::whereHas('role', fn ($q) => $q->whereIn('name', ['admin', 'manager', 'warehouse']))
                 ->where('is_active', true)
                 ->get();
