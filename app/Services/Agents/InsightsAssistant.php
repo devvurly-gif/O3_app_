@@ -17,7 +17,6 @@ use Illuminate\Support\Facades\DB;
  */
 class InsightsAssistant
 {
-    private const LIST = 10;
     private const SALES_TYPES = ['InvoiceSale', 'TicketSale'];
 
     // ── Stock ────────────────────────────────────────────────────────
@@ -45,8 +44,8 @@ class InsightsAssistant
         }
 
         return $this->reply(
-            "{$rows->count()} produit(s) à stock négatif (ventes ou sorties enregistrées avant l'entrée en stock, ou erreur de saisie) :\n\n" . $this->productLines($rows->take(self::LIST), 'quantite')
-            . ($rows->count() > self::LIST ? "\n… et " . ($rows->count() - self::LIST) . ' autre(s).' : '') . "\n\nUn inventaire permet de corriger.",
+            "{$rows->count()} produit(s) à stock négatif (ventes ou sorties enregistrées avant l'entrée en stock, ou erreur de saisie) :\n\n" . $this->productLines($rows->take(ListLimit::get()), 'quantite')
+            . ($rows->count() > ListLimit::get() ? "\n… et " . ($rows->count() - ListLimit::get()) . ' autre(s).' : '') . "\n\nUn inventaire permet de corriger.",
             [['label' => 'Préparer un inventaire', 'text' => 'prépare un inventaire']],
         );
     }
@@ -65,7 +64,7 @@ class InsightsAssistant
 
         return $this->reply(
             "{$rows->count()} produit(s) en stock sans aucun mouvement depuis {$days} jour(s), pour " . $this->money((float) $rows->sum('valeur')) . " immobilisés. Les plus chers d'abord :\n\n"
-            . $this->productLines($rows->take(self::LIST), 'quantite', true) . ($rows->count() > self::LIST ? "\n… et " . ($rows->count() - self::LIST) . ' autre(s).' : ''),
+            . $this->productLines($rows->take(ListLimit::get()), 'quantite', true) . ($rows->count() > ListLimit::get() ? "\n… et " . ($rows->count() - ListLimit::get()) . ' autre(s).' : ''),
         );
     }
 
@@ -77,8 +76,8 @@ class InsightsAssistant
             return $this->reply('Aucun transfert de stock en attente.');
         }
 
-        return $this->reply("{$rows->count()} transfert(s) en attente :\n\n" . $rows->take(self::LIST)->map(fn ($r) => "• #{$r->id} — {$r->p_title} ({$r->p_sku}) × " . $this->qty((float) $r->quantity) . " : {$r->de} → {$r->vers}, demandé le " . Carbon::parse($r->created_at)->format('d/m/Y'))->implode("\n")
-            . ($rows->count() > self::LIST ? "\n… et " . ($rows->count() - self::LIST) . ' autre(s).' : ''));
+        return $this->reply("{$rows->count()} transfert(s) en attente :\n\n" . $rows->take(ListLimit::get())->map(fn ($r) => "• #{$r->id} — {$r->p_title} ({$r->p_sku}) × " . $this->qty((float) $r->quantity) . " : {$r->de} → {$r->vers}, demandé le " . Carbon::parse($r->created_at)->format('d/m/Y'))->implode("\n")
+            . ($rows->count() > ListLimit::get() ? "\n… et " . ($rows->count() - ListLimit::get()) . ' autre(s).' : ''));
     }
 
     /** « mouvements de stock du mois », « pertes du mois ». @param string $n phrase normalisée */
@@ -121,7 +120,7 @@ class InsightsAssistant
             $skus = DB::table('products')->whereNull('deleted_at')->where('p_ean13', $g->cle)->limit(6)->pluck('p_sku')->implode(', ');
             $lines[] = "• Code-barres {$g->cle} partagé par {$g->n} produits : {$skus}";
         }
-        foreach ($byTitle->take(self::LIST - count($lines)) as $g) {
+        foreach ($byTitle->take(ListLimit::get() - count($lines)) as $g) {
             $skus = DB::table('products')->whereNull('deleted_at')->whereRaw('LOWER(TRIM(p_title)) = ?', [$g->cle])->limit(6)->pluck('p_sku')->implode(', ');
             $lines[] = "• Titre « {$g->cle} » : {$g->n} produits ({$skus})";
         }
@@ -146,7 +145,7 @@ class InsightsAssistant
         $q = $brand
             ? $base()->leftJoin('brands as g', 'g.id', '=', 'p.brand_id')->groupBy('g.id', 'g.br_title')->selectRaw('COALESCE(g.br_title, \'Sans marque\') AS groupe')
             : $base()->leftJoin('categories as g', 'g.id', '=', 'p.category_id')->groupBy('g.id', 'g.ctg_title')->selectRaw('COALESCE(g.ctg_title, \'Sans catégorie\') AS groupe');
-        $rows = $q->selectRaw('COUNT(*) AS n, AVG((p.p_salePrice - p.p_purchasePrice) / p.p_salePrice * 100) AS marge')->orderBy('marge')->limit(self::LIST)->get();
+        $rows = $q->selectRaw('COUNT(*) AS n, AVG((p.p_salePrice - p.p_purchasePrice) / p.p_salePrice * 100) AS marge')->orderBy('marge')->limit(ListLimit::get())->get();
 
         return $this->reply(
             'Marge brute moyenne ' . ($brand ? 'par marque' : 'par catégorie') . ' (prix de vente moins prix d\'achat, en % du prix de vente, tels que saisis dans les fiches) : ' . round((float) $all->marge, 1) . " % sur {$all->n} produit(s) actif(s)"
@@ -172,7 +171,7 @@ class InsightsAssistant
 
         return $this->reply(
             "{$rows->count()} produit(s) actif(s) sans aucune vente depuis {$days} jour(s). Ceux qui ont le plus de stock d'abord :\n\n"
-            . $rows->take(self::LIST)->map(fn ($r) => "• {$r->p_title} ({$r->p_sku}) — stock " . $this->qty((float) ($r->qty ?? 0)))->implode("\n") . ($rows->count() > self::LIST ? "\n… et " . ($rows->count() - self::LIST) . ' autre(s).' : ''),
+            . $rows->take(ListLimit::get())->map(fn ($r) => "• {$r->p_title} ({$r->p_sku}) — stock " . $this->qty((float) ($r->qty ?? 0)))->implode("\n") . ($rows->count() > ListLimit::get() ? "\n… et " . ($rows->count() - ListLimit::get()) . ' autre(s).' : ''),
         );
     }
 
@@ -195,7 +194,7 @@ class InsightsAssistant
 
         return $this->reply(
             "{$rows->count()} client(s) actif(s) sans achat depuis {$days} jour(s)" . ($never > 0 ? " (dont {$never} sans aucun achat)" : '') . ". Les plus récents d'abord :\n\n"
-            . $rows->filter(fn ($r) => $r->derniere !== null)->take(self::LIST)->map(fn ($r) => "• {$r->tp_title} — dernier achat le " . Carbon::parse($r->derniere)->format('d/m/Y'))->implode("\n"),
+            . $rows->filter(fn ($r) => $r->derniere !== null)->take(ListLimit::get())->map(fn ($r) => "• {$r->tp_title} — dernier achat le " . Carbon::parse($r->derniere)->format('d/m/Y'))->implode("\n"),
         );
     }
 
@@ -207,7 +206,7 @@ class InsightsAssistant
             return $this->reply('Aucun client ne dépasse son seuil de crédit.');
         }
 
-        return $this->reply("{$rows->count()} client(s) au-dessus de leur seuil de crédit :\n\n" . $rows->take(self::LIST)->map(fn ($r) => "• {$r->tp_title} — encours " . $this->money((float) $r->encours_actuel) . ' pour un seuil de ' . $this->money((float) $r->seuil_credit) . ' (+' . $this->money((float) $r->encours_actuel - (float) $r->seuil_credit) . ')')->implode("\n"));
+        return $this->reply("{$rows->count()} client(s) au-dessus de leur seuil de crédit :\n\n" . $rows->take(ListLimit::get())->map(fn ($r) => "• {$r->tp_title} — encours " . $this->money((float) $r->encours_actuel) . ' pour un seuil de ' . $this->money((float) $r->seuil_credit) . ' (+' . $this->money((float) $r->encours_actuel - (float) $r->seuil_credit) . ')')->implode("\n"));
     }
 
     /** « clients sans téléphone, e-mail ou ICE ». @param string $n phrase normalisée */
@@ -225,7 +224,7 @@ class InsightsAssistant
             return $this->reply("Aucun {$who} actif.");
         }
 
-        $names = $base()->where(fn ($q) => $q->where($blank('tp_phone'))->orWhere($blank('tp_Ice_Number')))->orderBy('tp_title')->limit(self::LIST)->pluck('tp_title');
+        $names = $base()->where(fn ($q) => $q->where($blank('tp_phone'))->orWhere($blank('tp_Ice_Number')))->orderBy('tp_title')->limit(ListLimit::get())->pluck('tp_title');
 
         return $this->reply(
             "Fiches de {$total} {$who} actif(s) :\n\n• sans téléphone : {$noPhone}\n• sans e-mail : {$noEmail}\n• sans ICE : {$noIce}"
@@ -246,7 +245,7 @@ class InsightsAssistant
             return $this->reply('Aucun doublon : pas d\'ICE ni de téléphone partagé entre deux fiches.');
         }
 
-        return $this->reply(count($groups) . " doublon(s) possible(s) :\n\n" . implode("\n", array_slice($groups, 0, self::LIST)) . "\n\nÀ vérifier dans l'écran concerné : je ne fusionne ni ne supprime rien.");
+        return $this->reply(count($groups) . " doublon(s) possible(s) :\n\n" . implode("\n", array_slice($groups, 0, ListLimit::get())) . "\n\nÀ vérifier dans l'écran concerné : je ne fusionne ni ne supprime rien.");
     }
 
     // ── Questions courantes ──────────────────────────────────────────
@@ -261,8 +260,8 @@ class InsightsAssistant
         }
 
         return $this->reply("{$r['produits_concernes']} produit(s) à {$threshold} pièce(s) ou moins (seuil d'alerte du stock), dont {$r['en_rupture']} en rupture. Les plus bas :\n\n"
-            . collect($r['plus_bas'])->take(self::LIST)->map(fn ($p) => "• {$p['titre']} ({$p['reference']}) — " . $this->qty((float) $p['quantite']) . ' pièce(s)')->implode("\n")
-            . ($r['produits_concernes'] > self::LIST ? "\n… et " . ($r['produits_concernes'] - self::LIST) . ' autre(s).' : ''),
+            . collect($r['plus_bas'])->take(ListLimit::get())->map(fn ($p) => "• {$p['titre']} ({$p['reference']}) — " . $this->qty((float) $p['quantite']) . ' pièce(s)')->implode("\n")
+            . ($r['produits_concernes'] > ListLimit::get() ? "\n… et " . ($r['produits_concernes'] - ListLimit::get()) . ' autre(s).' : ''),
             [['label' => 'Produits bientôt en rupture', 'text' => 'produits bientôt en rupture'], ['label' => 'Préparer un inventaire', 'text' => 'prépare un inventaire']]);
     }
 
@@ -276,8 +275,8 @@ class InsightsAssistant
         }
 
         return $this->reply("{$rows->count()} produit(s) actif(s) dont le prix de vente est inférieur au prix d'achat (fiches produits) :\n\n"
-            . $rows->take(self::LIST)->map(fn ($r) => "• {$r->p_title} ({$r->p_sku}) — vendu " . $this->money((float) $r->p_salePrice) . ' pour un achat à ' . $this->money((float) $r->p_purchasePrice) . ' (-' . $this->money((float) $r->p_purchasePrice - (float) $r->p_salePrice) . ' par pièce)')->implode("\n")
-            . ($rows->count() > self::LIST ? "\n… et " . ($rows->count() - self::LIST) . ' autre(s).' : ''), [['label' => 'Proposer des prix (25 %)', 'text' => 'révise les prix des fiches produits avec une marge de 25 %']]);
+            . $rows->take(ListLimit::get())->map(fn ($r) => "• {$r->p_title} ({$r->p_sku}) — vendu " . $this->money((float) $r->p_salePrice) . ' pour un achat à ' . $this->money((float) $r->p_purchasePrice) . ' (-' . $this->money((float) $r->p_purchasePrice - (float) $r->p_salePrice) . ' par pièce)')->implode("\n")
+            . ($rows->count() > ListLimit::get() ? "\n… et " . ($rows->count() - ListLimit::get()) . ' autre(s).' : ''), [['label' => 'Proposer des prix (25 %)', 'text' => 'révise les prix des fiches produits avec une marge de 25 %']]);
     }
 
     /** « combien de clients j'ai », « combien de factures aujourd'hui », « quel est mon stock total ». @param string $n phrase normalisée */

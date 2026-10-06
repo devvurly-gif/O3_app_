@@ -18,7 +18,6 @@ use Illuminate\Support\Facades\DB;
  */
 class OperationsAssistant
 {
-    private const LIST = 10;
     private const SALES_TYPES = ['InvoiceSale', 'TicketSale'];
 
     // ── Achats ───────────────────────────────────────────────────────
@@ -35,7 +34,7 @@ class OperationsAssistant
         }
 
         return $this->reply("Achats {$label} : {$rows->sum('n')} facture(s), " . $this->money((float) $rows->sum('ttc')) . " TTC.\n\nPar fournisseur :\n"
-            . $rows->take(self::LIST)->map(fn ($r) => "• {$r->tiers} — {$r->n} facture(s), " . $this->money((float) $r->ttc))->implode("\n") . ($rows->count() > self::LIST ? "\n… et " . ($rows->count() - self::LIST) . ' autre(s).' : ''));
+            . $rows->take(ListLimit::get())->map(fn ($r) => "• {$r->tiers} — {$r->n} facture(s), " . $this->money((float) $r->ttc))->implode("\n") . ($rows->count() > ListLimit::get() ? "\n… et " . ($rows->count() - ListLimit::get()) . ' autre(s).' : ''));
     }
 
     public function pendingPurchaseOrders(): array
@@ -60,7 +59,7 @@ class OperationsAssistant
         $late = $rows->filter(fn ($r) => $r->due_at !== null && Carbon::parse($r->due_at)->lt($today))->count();
 
         return $this->reply("{$rows->count()} facture(s) fournisseur à payer" . ($week ? " d'ici 7 jours" : '') . ', ' . $this->money((float) $rows->sum('amount_due')) . " dus, dont {$late} échue(s). Les plus proches d'abord :\n\n"
-            . $rows->take(self::LIST)->map(fn ($r) => "• {$r->reference} — " . ($r->tiers ?? 'sans fournisseur') . ' — ' . ($r->due_at ? 'échéance ' . Carbon::parse($r->due_at)->format('d/m/Y') : 'sans échéance') . ' — ' . $this->money((float) $r->amount_due))->implode("\n"));
+            . $rows->take(ListLimit::get())->map(fn ($r) => "• {$r->reference} — " . ($r->tiers ?? 'sans fournisseur') . ' — ' . ($r->due_at ? 'échéance ' . Carbon::parse($r->due_at)->format('d/m/Y') : 'sans échéance') . ' — ' . $this->money((float) $r->amount_due))->implode("\n"));
     }
 
     public function purchasePriceIncreases(): array
@@ -77,7 +76,7 @@ class OperationsAssistant
         }
 
         return $this->reply("{$rows->count()} produit(s) dont le prix d'achat a augmenté de plus de 5 % (moyenne des factures des 30 derniers jours contre les 90 jours précédents) :\n\n"
-            . $rows->take(self::LIST)->map(fn ($r) => "• {$r->p_title} ({$r->p_sku}) — " . $this->money((float) $r->avant) . ' → ' . $this->money((float) $r->recent) . ' (+' . round(((float) $r->recent / (float) $r->avant - 1) * 100) . ' %)')->implode("\n"));
+            . $rows->take(ListLimit::get())->map(fn ($r) => "• {$r->p_title} ({$r->p_sku}) — " . $this->money((float) $r->avant) . ' → ' . $this->money((float) $r->recent) . ' (+' . round(((float) $r->recent / (float) $r->avant - 1) * 100) . ' %)')->implode("\n"));
     }
 
     public function productsWithoutSupplier(): array
@@ -89,7 +88,7 @@ class OperationsAssistant
         }
 
         return $this->reply("{$rows->count()} produit(s) actif(s) sans fournisseur référencé (impossible de préparer un bon de commande automatique pour eux) :\n\n"
-            . $rows->take(self::LIST)->map(fn ($r) => "• {$r->p_title} ({$r->p_sku})")->implode("\n") . ($rows->count() > self::LIST ? "\n… et " . ($rows->count() - self::LIST) . ' autre(s).' : ''));
+            . $rows->take(ListLimit::get())->map(fn ($r) => "• {$r->p_title} ({$r->p_sku})")->implode("\n") . ($rows->count() > ListLimit::get() ? "\n… et " . ($rows->count() - ListLimit::get()) . ' autre(s).' : ''));
     }
 
     /** « fournisseur le moins cher pour perceuse ». @param string $n phrase normalisée */
@@ -146,7 +145,7 @@ class OperationsAssistant
         }
 
         return $this->reply("{$rows->count()} ligne(s) vendue(s) sous le prix de référence {$label}, pour un manque à gagner de " . $this->money((float) $rows->sum(fn ($r) => ($r->reference_price - $r->unit_price) * $r->quantity)) . " :\n\n"
-            . $rows->take(self::LIST)->map(fn ($r) => "• {$r->reference} — " . ($r->client ?? 'sans client') . " — {$r->designation} : " . $this->money((float) $r->unit_price) . ' au lieu de ' . $this->money((float) $r->reference_price))->implode("\n"));
+            . $rows->take(ListLimit::get())->map(fn ($r) => "• {$r->reference} — " . ($r->client ?? 'sans client') . " — {$r->designation} : " . $this->money((float) $r->unit_price) . ' au lieu de ' . $this->money((float) $r->reference_price))->implode("\n"));
     }
 
     public function cancelledInvoices(string $n): array
@@ -160,7 +159,7 @@ class OperationsAssistant
         }
 
         return $this->reply("{$rows->count()} facture(s) de vente annulée(s) {$label}, pour " . $this->money((float) $rows->sum('total_ttc')) . " :\n\n"
-            . $rows->take(self::LIST)->map(fn ($r) => "• {$r->reference} — " . ($r->client ?? 'sans client') . ' — du ' . Carbon::parse($r->issued_at)->format('d/m/Y') . ' — ' . $this->money((float) $r->total_ttc) . ($r->par ? " — établie par {$r->par}" : ''))->implode("\n"));
+            . $rows->take(ListLimit::get())->map(fn ($r) => "• {$r->reference} — " . ($r->client ?? 'sans client') . ' — du ' . Carbon::parse($r->issued_at)->format('d/m/Y') . ' — ' . $this->money((float) $r->total_ttc) . ($r->par ? " — établie par {$r->par}" : ''))->implode("\n"));
     }
 
     // ── Trésorerie ───────────────────────────────────────────────────
@@ -176,7 +175,7 @@ class OperationsAssistant
         }
 
         return $this->reply("Dépenses {$label} : " . $this->money((float) $rows->sum('total')) . " ({$rows->sum('n')} opération(s)).\n\nPar catégorie :\n"
-            . $rows->take(self::LIST)->map(fn ($r) => "• {$r->categorie} — {$r->n} opération(s), " . $this->money((float) $r->total))->implode("\n"));
+            . $rows->take(ListLimit::get())->map(fn ($r) => "• {$r->categorie} — {$r->n} opération(s), " . $this->money((float) $r->total))->implode("\n"));
     }
 
     public function expensesWithoutReceipt(string $n): array
@@ -188,7 +187,7 @@ class OperationsAssistant
         }
 
         return $this->reply("{$rows->count()} dépense(s) sans justificatif {$label}, pour " . $this->money((float) $rows->sum('ct_amount')) . " :\n\n"
-            . $rows->take(self::LIST)->map(fn ($r) => '• ' . Carbon::parse($r->ct_date)->format('d/m/Y') . " — {$r->ct_label} — " . $this->money((float) $r->ct_amount))->implode("\n"));
+            . $rows->take(ListLimit::get())->map(fn ($r) => '• ' . Carbon::parse($r->ct_date)->format('d/m/Y') . " — {$r->ct_label} — " . $this->money((float) $r->ct_amount))->implode("\n"));
     }
 
     public function upcomingRecurrences(): array
@@ -203,7 +202,7 @@ class OperationsAssistant
         $in = (float) $rows->where('cr_direction', 'in')->sum('cr_amount');
 
         return $this->reply("{$rows->count()} opération(s) récurrente(s) dans les 30 prochains jours : " . $this->money($out) . ' à payer, ' . $this->money($in) . " à encaisser.\n\n"
-            . $rows->take(self::LIST)->map(fn ($r) => '• ' . Carbon::parse($r->cr_next_run_at)->format('d/m/Y') . " — {$r->cr_label} — " . ($r->cr_direction === 'out' ? '-' : '+') . $this->money((float) $r->cr_amount))->implode("\n"));
+            . $rows->take(ListLimit::get())->map(fn ($r) => '• ' . Carbon::parse($r->cr_next_run_at)->format('d/m/Y') . " — {$r->cr_label} — " . ($r->cr_direction === 'out' ? '-' : '+') . $this->money((float) $r->cr_amount))->implode("\n"));
     }
 
     // ── Activité, utilisateurs, boutique, promotions ─────────────────
@@ -214,7 +213,7 @@ class OperationsAssistant
         $who = preg_match('/activite (?:de|des|d.)\s*(.{2,40})$/', trim($n), $m) ? trim($m[1]) : null;
         $q = DB::table('activity_log as a')->leftJoin('users as u', fn ($j) => $j->on('u.id', '=', 'a.causer_id')->where('a.causer_type', 'like', '%User'))
             ->when($who !== null, fn ($w) => $w->whereRaw('LOWER(u.name) like ?', ['%' . str_replace(['%', '_'], ['\%', '\_'], $who) . '%']))
-            ->orderByDesc('a.id')->limit(self::LIST);
+            ->orderByDesc('a.id')->limit(ListLimit::get());
         $rows = $q->get(['a.created_at', 'a.description', 'a.event', 'a.subject_type', 'a.subject_id', 'u.name']);
         if ($rows->isEmpty()) {
             return $this->reply($who !== null ? "Aucune activité trouvée pour « {$who} »." : 'Le journal d\'activité est vide.');
@@ -228,7 +227,7 @@ class OperationsAssistant
     {
         $rows = DB::table('users as u')->leftJoin('roles as r', 'r.id', '=', 'u.role_id')->whereNull('u.deleted_at')->groupBy('r.id', 'r.display_name', 'r.name')
             ->selectRaw('COALESCE(r.display_name, r.name, \'Sans rôle\') AS role, COUNT(*) AS n, SUM(u.is_active) AS actifs')->orderByDesc('n')->get();
-        $inactive = DB::table('users')->whereNull('deleted_at')->where('is_active', false)->orderBy('name')->limit(self::LIST)->pluck('name');
+        $inactive = DB::table('users')->whereNull('deleted_at')->where('is_active', false)->orderBy('name')->limit(ListLimit::get())->pluck('name');
 
         return $this->reply("Utilisateurs par rôle :\n\n" . $rows->map(fn ($r) => "• {$r->role} — {$r->n} compte(s), {$r->actifs} actif(s)")->implode("\n")
             . ($inactive->isNotEmpty() ? "\n\nComptes inactifs :\n" . $inactive->map(fn ($t) => "• {$t}")->implode("\n") : "\n\nAucun compte inactif."));
@@ -264,7 +263,7 @@ class OperationsAssistant
         }
 
         return $this->reply($rows->count() . ' promotion(s) ' . ($ending ? 'qui se terminent dans les 7 jours' : 'active(s)') . " :\n\n"
-            . $rows->take(self::LIST)->map(fn ($r) => "• {$r->name} — " . ($r->type === 'percentage' ? round((float) $r->value, 1) . ' %' : $this->money((float) $r->value)) . ' — ' . ($r->ends_at ? "jusqu'au " . Carbon::parse($r->ends_at)->format('d/m/Y') : 'sans date de fin'))->implode("\n"));
+            . $rows->take(ListLimit::get())->map(fn ($r) => "• {$r->name} — " . ($r->type === 'percentage' ? round((float) $r->value, 1) . ' %' : $this->money((float) $r->value)) . ' — ' . ($r->ends_at ? "jusqu'au " . Carbon::parse($r->ends_at)->format('d/m/Y') : 'sans date de fin'))->implode("\n"));
     }
 
     // ── Outils ───────────────────────────────────────────────────────
@@ -290,8 +289,8 @@ class OperationsAssistant
         }
 
         return $this->reply("{$rows->count()} {$what}, pour " . $this->money((float) $rows->sum('total_ttc')) . " TTC. Les plus anciens :\n\n"
-            . $rows->take(self::LIST)->map(fn ($r) => "• {$r->reference} — " . ($r->client ?? 'sans tiers') . ' — du ' . Carbon::parse($r->issued_at)->format('d/m/Y') . ' — ' . $this->money((float) $r->total_ttc))->implode("\n")
-            . ($rows->count() > self::LIST ? "\n… et " . ($rows->count() - self::LIST) . ' autre(s).' : ''));
+            . $rows->take(ListLimit::get())->map(fn ($r) => "• {$r->reference} — " . ($r->client ?? 'sans tiers') . ' — du ' . Carbon::parse($r->issued_at)->format('d/m/Y') . ' — ' . $this->money((float) $r->total_ttc))->implode("\n")
+            . ($rows->count() > ListLimit::get() ? "\n… et " . ($rows->count() - ListLimit::get()) . ' autre(s).' : ''));
     }
 
     private function today(): Carbon

@@ -19,7 +19,6 @@ use Illuminate\Support\Facades\DB;
  */
 class AnalysisAssistant
 {
-    private const LIST = 10;
     private const SALES_TYPES = ['InvoiceSale', 'TicketSale'];
 
     // ── Classements de ventes ────────────────────────────────────────
@@ -28,7 +27,7 @@ class AnalysisAssistant
     public function topProducts(string $n): array
     {
         [$from, $to, $label] = $this->period($n, 'month');
-        $limit = preg_match('/top\s*(\d{1,2})|(\d{1,2})\s*(?:premiers|meilleurs|plus)/', $n, $m) ? max(1, min(25, (int) ($m[1] !== '' ? $m[1] : $m[2]))) : self::LIST;
+        $limit = preg_match('/top\s*(\d{1,2})|(\d{1,2})\s*(?:premiers|meilleurs|plus)/', $n, $m) ? max(1, min(25, (int) ($m[1] !== '' ? $m[1] : $m[2]))) : ListLimit::get();
         $rows = $this->saleLines($from, $to)->groupBy('l.product_id', 'l.designation')->selectRaw('l.designation AS produit, SUM(l.quantity) AS qte, SUM(l.total_ligne_ht) AS ht')->orderByDesc('ht')->limit($limit)->get();
         if ($rows->isEmpty()) {
             return $this->reply("Aucune vente {$label}.");
@@ -49,7 +48,7 @@ class AnalysisAssistant
         }
 
         return $this->reply("Ventes {$label} par utilisateur (celui qui a établi le document) : " . $this->money((float) $rows->sum('ttc')) . " TTC.\n\n"
-            . $rows->take(self::LIST)->map(fn ($r) => "• {$r->vendeur} — {$r->n} vente(s), " . $this->money((float) $r->ttc))->implode("\n"));
+            . $rows->take(ListLimit::get())->map(fn ($r) => "• {$r->vendeur} — {$r->n} vente(s), " . $this->money((float) $r->ttc))->implode("\n"));
     }
 
     /** « ventes du mois par caisse ». @param string $n phrase normalisée */
@@ -63,7 +62,7 @@ class AnalysisAssistant
         }
 
         return $this->reply("Ventes en caisse {$label} : {$rows->sum('n')} ticket(s) sur {$rows->count()} session(s), " . $this->money((float) $rows->sum('ttc')) . " TTC.\n\nDernières sessions :\n"
-            . $rows->take(self::LIST)->map(fn ($r) => "• Session #{$r->session} — {$r->caissier} — ouverte le " . Carbon::parse($r->opened_at)->format('d/m H:i') . " — {$r->n} ticket(s), " . $this->money((float) $r->ttc))->implode("\n"));
+            . $rows->take(ListLimit::get())->map(fn ($r) => "• Session #{$r->session} — {$r->caissier} — ouverte le " . Carbon::parse($r->opened_at)->format('d/m H:i') . " — {$r->n} ticket(s), " . $this->money((float) $r->ttc))->implode("\n"));
     }
 
     /** « meilleurs clients du trimestre ». @param string $n phrase normalisée */
@@ -78,7 +77,7 @@ class AnalysisAssistant
         $total = (float) $rows->sum('ttc');
 
         return $this->reply("Meilleurs clients {$label} (sur " . $this->money($total) . " TTC) :\n\n"
-            . $rows->take(self::LIST)->map(fn ($r, $i) => ($i + 1) . ". {$r->client} — {$r->n} vente(s), " . $this->money((float) $r->ttc) . ' (' . round((float) $r->ttc / max($total, 0.01) * 100) . ' %)')->implode("\n"));
+            . $rows->take(ListLimit::get())->map(fn ($r, $i) => ($i + 1) . ". {$r->client} — {$r->n} vente(s), " . $this->money((float) $r->ttc) . ' (' . round((float) $r->ttc / max($total, 0.01) * 100) . ' %)')->implode("\n"));
     }
 
     // ── Tiers ────────────────────────────────────────────────────────
@@ -100,8 +99,8 @@ class AnalysisAssistant
         }
 
         return $this->reply("{$rows->count()} fournisseur(s) actif(s) sans facture d'achat depuis {$days} jour(s) :\n\n"
-            . $rows->take(self::LIST)->map(fn ($r) => "• {$r->tp_title} — " . ($r->derniere ? 'dernière facture le ' . Carbon::parse($r->derniere)->format('d/m/Y') : 'jamais facturé'))->implode("\n")
-            . ($rows->count() > self::LIST ? "\n… et " . ($rows->count() - self::LIST) . ' autre(s).' : '') . "\n\nIls peuvent être désactivés dans l'écran concerné : je ne change rien.");
+            . $rows->take(ListLimit::get())->map(fn ($r) => "• {$r->tp_title} — " . ($r->derniere ? 'dernière facture le ' . Carbon::parse($r->derniere)->format('d/m/Y') : 'jamais facturé'))->implode("\n")
+            . ($rows->count() > ListLimit::get() ? "\n… et " . ($rows->count() - ListLimit::get()) . ' autre(s).' : '') . "\n\nIls peuvent être désactivés dans l'écran concerné : je ne change rien.");
     }
 
     public function accountCustomersToInvoice(): array
@@ -114,7 +113,7 @@ class AnalysisAssistant
         }
 
         return $this->reply("{$rows->count()} client(s) en compte avec des bons de livraison à facturer, pour " . $this->money((float) $rows->sum('ttc')) . " TTC :\n\n"
-            . $rows->take(self::LIST)->map(fn ($r) => "• {$r->client} — {$r->n} bon(s), " . $this->money((float) $r->ttc) . ' depuis le ' . Carbon::parse($r->premier)->format('d/m/Y') . ($r->frequence ? " (facturation {$r->frequence})" : ''))->implode("\n"));
+            . $rows->take(ListLimit::get())->map(fn ($r) => "• {$r->client} — {$r->n} bon(s), " . $this->money((float) $r->ttc) . ' depuis le ' . Carbon::parse($r->premier)->format('d/m/Y') . ($r->frequence ? " (facturation {$r->frequence})" : ''))->implode("\n"));
     }
 
     // ── Catalogue ────────────────────────────────────────────────────
@@ -154,8 +153,8 @@ class AnalysisAssistant
         }
 
         return $this->reply(count($bad) . " code(s)-barres invalide(s) sur {$total} (il faut 13 chiffres et une clé de contrôle correcte) :\n\n"
-            . implode("\n", array_map(fn ($p) => "• {$p->p_title} ({$p->p_sku}) — « {$p->p_ean13} »", array_slice($bad, 0, self::LIST)))
-            . (count($bad) > self::LIST ? "\n… et " . (count($bad) - self::LIST) . ' autre(s).' : '') . "\n\nÀ corriger dans l'écran Produits : je ne modifie aucun code.");
+            . implode("\n", array_map(fn ($p) => "• {$p->p_title} ({$p->p_sku}) — « {$p->p_ean13} »", array_slice($bad, 0, ListLimit::get())))
+            . (count($bad) > ListLimit::get() ? "\n… et " . (count($bad) - ListLimit::get()) . ' autre(s).' : '') . "\n\nÀ corriger dans l'écran Produits : je ne modifie aucun code.");
     }
 
     public function productsByCategory(): array
@@ -168,7 +167,7 @@ class AnalysisAssistant
         }
 
         return $this->reply('Produits par catégorie (' . $rows->sum('actifs') . ' actif(s), ' . $rows->sum('inactifs') . " inactif(s)) :\n\n"
-            . $rows->take(self::LIST)->map(fn ($r) => "• {$r->categorie} — {$r->actifs} actif(s), {$r->inactifs} inactif(s)")->implode("\n") . ($rows->count() > self::LIST ? "\n… et " . ($rows->count() - self::LIST) . ' autre(s) catégorie(s).' : ''));
+            . $rows->take(ListLimit::get())->map(fn ($r) => "• {$r->categorie} — {$r->actifs} actif(s), {$r->inactifs} inactif(s)")->implode("\n") . ($rows->count() > ListLimit::get() ? "\n… et " . ($rows->count() - ListLimit::get()) . ' autre(s) catégorie(s).' : ''));
     }
 
     public function productsWithoutBrand(): array
@@ -178,8 +177,8 @@ class AnalysisAssistant
             return $this->reply('Tous les produits actifs ont une marque.');
         }
 
-        return $this->reply("{$rows->count()} produit(s) actif(s) sans marque :\n\n" . $rows->take(self::LIST)->map(fn ($r) => "• {$r->p_title} ({$r->p_sku})")->implode("\n")
-            . ($rows->count() > self::LIST ? "\n… et " . ($rows->count() - self::LIST) . ' autre(s).' : ''), [['label' => 'Compléter marques et catégories (IA)', 'text' => 'complète les descriptions, catégories et marques des fiches produits']]);
+        return $this->reply("{$rows->count()} produit(s) actif(s) sans marque :\n\n" . $rows->take(ListLimit::get())->map(fn ($r) => "• {$r->p_title} ({$r->p_sku})")->implode("\n")
+            . ($rows->count() > ListLimit::get() ? "\n… et " . ($rows->count() - ListLimit::get()) . ' autre(s).' : ''), [['label' => 'Compléter marques et catégories (IA)', 'text' => 'complète les descriptions, catégories et marques des fiches produits']]);
     }
 
     /** « produits absents de la liste de prix revendeur ». @param string $n phrase normalisée */
@@ -201,8 +200,8 @@ class AnalysisAssistant
             return $this->reply("Tous les produits actifs figurent dans la liste « {$names[$id]} ».");
         }
 
-        return $this->reply("{$rows->count()} produit(s) actif(s) absent(s) de la liste « {$names[$id]} » :\n\n" . $rows->take(self::LIST)->map(fn ($r) => "• {$r->p_title} ({$r->p_sku})")->implode("\n")
-            . ($rows->count() > self::LIST ? "\n… et " . ($rows->count() - self::LIST) . ' autre(s).' : ''));
+        return $this->reply("{$rows->count()} produit(s) actif(s) absent(s) de la liste « {$names[$id]} » :\n\n" . $rows->take(ListLimit::get())->map(fn ($r) => "• {$r->p_title} ({$r->p_sku})")->implode("\n")
+            . ($rows->count() > ListLimit::get() ? "\n… et " . ($rows->count() - ListLimit::get()) . ' autre(s).' : ''));
     }
 
     // ── Stock ────────────────────────────────────────────────────────
@@ -215,7 +214,7 @@ class AnalysisAssistant
         }
 
         return $this->reply("{$rows->count()} mouvement(s) de stock en attente d'application, les plus anciens d'abord :\n\n"
-            . $rows->take(self::LIST)->map(fn ($r) => "• {$r->p_title} ({$r->p_sku}) — " . ($r->direction === 'in' ? 'entrée' : 'sortie') . ' de ' . $this->qty((float) $r->quantity) . " ({$r->reason}) — du " . Carbon::parse($r->created_at)->format('d/m/Y'))->implode("\n"));
+            . $rows->take(ListLimit::get())->map(fn ($r) => "• {$r->p_title} ({$r->p_sku}) — " . ($r->direction === 'in' ? 'entrée' : 'sortie') . ' de ' . $this->qty((float) $r->quantity) . " ({$r->reason}) — du " . Carbon::parse($r->created_at)->format('d/m/Y'))->implode("\n"));
     }
 
     /** « ajustements d'inventaire récents ». @param string $n phrase normalisée */
@@ -231,7 +230,7 @@ class AnalysisAssistant
         $byUser = $rows->groupBy(fn ($r) => $r->name ?? 'inconnu')->map->count()->sortDesc();
 
         return $this->reply("{$rows->count()} ajustement(s) de stock {$label}, par " . $byUser->map(fn ($c, $u) => "{$u} ({$c})")->implode(', ') . ".\n\nLes plus récents :\n"
-            . $rows->take(self::LIST)->map(fn ($r) => '• ' . Carbon::parse($r->created_at)->format('d/m H:i') . " — {$r->p_title} ({$r->p_sku}) — " . ($r->direction === 'in' ? '+' : '-') . $this->qty((float) $r->quantity) . ' — ' . ($r->name ?? 'inconnu'))->implode("\n"));
+            . $rows->take(ListLimit::get())->map(fn ($r) => '• ' . Carbon::parse($r->created_at)->format('d/m H:i') . " — {$r->p_title} ({$r->p_sku}) — " . ($r->direction === 'in' ? '+' : '-') . $this->qty((float) $r->quantity) . ' — ' . ($r->name ?? 'inconnu'))->implode("\n"));
     }
 
     // ── Historique et agents ─────────────────────────────────────────
@@ -258,7 +257,7 @@ class AnalysisAssistant
         }
 
         $rows = DB::table('activity_log as a')->leftJoin('users as u', fn ($j) => $j->on('u.id', '=', 'a.causer_id')->where('a.causer_type', 'like', '%User'))
-            ->where('a.subject_type', 'like', '%\\' . $subject[0])->where('a.subject_id', $subject[1])->orderByDesc('a.id')->limit(self::LIST)->get(['a.created_at', 'a.description', 'a.event', 'u.name']);
+            ->where('a.subject_type', 'like', '%\\' . $subject[0])->where('a.subject_id', $subject[1])->orderByDesc('a.id')->limit(ListLimit::get())->get(['a.created_at', 'a.description', 'a.event', 'u.name']);
 
         return $this->reply("Historique de {$subject[2]} ({$subject[3]}) :\n\n" . ($rows->isEmpty() ? 'Aucune modification enregistrée au journal.'
             : $rows->map(fn ($r) => '• ' . Carbon::parse($r->created_at)->format('d/m/Y H:i') . ' — ' . ($r->name ?? 'système') . ' — ' . ($r->description ?: ($r->event ?? '?')))->implode("\n")));
@@ -275,7 +274,7 @@ class AnalysisAssistant
         $by = $rows->groupBy(fn ($r) => $r->name ?? 'orchestrateur')->map->count()->sortDesc();
 
         return $this->reply("{$rows->count()} action(s) d'agents {$label} : " . $by->map(fn ($c, $a) => "{$a} ({$c})")->implode(', ') . ".\n\nLes plus récentes :\n"
-            . $rows->take(self::LIST)->map(fn ($r) => '• ' . Carbon::parse($r->created_at)->format('d/m H:i') . ' — ' . ($r->name ?? 'orchestrateur') . " — {$r->action}")->implode("\n"));
+            . $rows->take(ListLimit::get())->map(fn ($r) => '• ' . Carbon::parse($r->created_at)->format('d/m H:i') . ' — ' . ($r->name ?? 'orchestrateur') . " — {$r->action}")->implode("\n"));
     }
 
     // ── Outils ───────────────────────────────────────────────────────

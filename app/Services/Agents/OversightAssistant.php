@@ -18,7 +18,6 @@ use Illuminate\Support\Facades\DB;
  */
 class OversightAssistant
 {
-    private const LIST = 10;
     private const SALES_TYPES = ['InvoiceSale', 'TicketSale'];
 
     // ── Promotions ───────────────────────────────────────────────────
@@ -37,8 +36,8 @@ class OversightAssistant
         $rows = DB::table('promotion_product as pp')->join('products as p', 'p.id', '=', 'pp.product_id')->whereNull('p.deleted_at')->where('pp.promotion_id', $promo->id)->orderBy('p.p_title')->get(['p.p_title', 'p.p_sku', 'p.p_salePrice', 'pp.promo_price']);
 
         return $this->reply("Promotion « {$promo->name} » — " . ($promo->type === 'percentage' ? round((float) $promo->value, 1) . ' %' : $this->money((float) $promo->value)) . ($promo->is_active ? '' : ' (inactive)') . ($promo->ends_at ? " jusqu'au " . Carbon::parse($promo->ends_at)->format('d/m/Y') : '') . ".\n\n"
-            . ($rows->isEmpty() ? 'Aucun produit n\'y est rattaché.' : "{$rows->count()} produit(s) :\n" . $rows->take(self::LIST)->map(fn ($r) => "• {$r->p_title} ({$r->p_sku}) — " . $this->money((float) $r->p_salePrice) . ($r->promo_price !== null ? ' → ' . $this->money((float) $r->promo_price) : ''))->implode("\n")
-                . ($rows->count() > self::LIST ? "\n… et " . ($rows->count() - self::LIST) . ' autre(s).' : '')));
+            . ($rows->isEmpty() ? 'Aucun produit n\'y est rattaché.' : "{$rows->count()} produit(s) :\n" . $rows->take(ListLimit::get())->map(fn ($r) => "• {$r->p_title} ({$r->p_sku}) — " . $this->money((float) $r->p_salePrice) . ($r->promo_price !== null ? ' → ' . $this->money((float) $r->promo_price) : ''))->implode("\n")
+                . ($rows->count() > ListLimit::get() ? "\n… et " . ($rows->count() - ListLimit::get()) . ' autre(s).' : '')));
     }
 
     /** « promotions du produit PRC1 ». @param string $n phrase normalisée */
@@ -94,7 +93,7 @@ class OversightAssistant
         $byStatus = $rows->groupBy('status')->map(fn ($g) => (int) $g->sum('n'));
 
         return $this->reply("Événements des agents {$label} : " . $rows->sum('n') . ' (' . $byStatus->map(fn ($c, $s) => "{$s} : {$c}")->implode(', ') . ").\n\nPar type :\n"
-            . $rows->groupBy('type')->map(fn ($g, $t) => "• {$t} — " . (int) $g->sum('n') . ' (' . $g->map(fn ($r) => "{$r->status} {$r->n}")->implode(', ') . ')')->take(self::LIST)->implode("\n"));
+            . $rows->groupBy('type')->map(fn ($g, $t) => "• {$t} — " . (int) $g->sum('n') . ' (' . $g->map(fn ($r) => "{$r->status} {$r->n}")->implode(', ') . ')')->take(ListLimit::get())->implode("\n"));
     }
 
     // ── Notifications ────────────────────────────────────────────────
@@ -104,7 +103,7 @@ class OversightAssistant
     {
         $base = fn () => DB::table('notifications')->where('notifiable_id', $userId)->where('notifiable_type', 'like', '%User');
         $unread = $base()->whereNull('read_at')->count();
-        $rows = $base()->whereNull('read_at')->orderByDesc('created_at')->limit(self::LIST)->get(['created_at', 'data', 'type']);
+        $rows = $base()->whereNull('read_at')->orderByDesc('created_at')->limit(ListLimit::get())->get(['created_at', 'data', 'type']);
         if ($rows->isEmpty()) {
             return $this->reply('Aucune notification non lue.');
         }
@@ -126,7 +125,7 @@ class OversightAssistant
             return $this->reply('Aucun appareil n\'est abonné aux notifications.');
         }
 
-        return $this->reply("{$rows->sum('n')} appareil(s) abonné(s) aux notifications :\n\n" . $rows->take(self::LIST)->map(fn ($r) => "• {$r->nom} — {$r->n} appareil(s)")->implode("\n"));
+        return $this->reply("{$rows->sum('n')} appareil(s) abonné(s) aux notifications :\n\n" . $rows->take(ListLimit::get())->map(fn ($r) => "• {$r->nom} — {$r->n} appareil(s)")->implode("\n"));
     }
 
     // ── Documents et livraisons ──────────────────────────────────────
@@ -141,8 +140,8 @@ class OversightAssistant
         }
 
         return $this->reply("{$rows->count()} facture(s) des 60 derniers jours non envoyée(s) au client, pour " . $this->money((float) $rows->sum('total_ttc')) . " TTC. Les plus anciennes :\n\n"
-            . $rows->take(self::LIST)->map(fn ($r) => "• {$r->reference} — " . ($r->tp_title ?? 'sans client') . ' — du ' . Carbon::parse($r->issued_at)->format('d/m/Y') . ' — ' . $this->money((float) $r->total_ttc))->implode("\n")
-            . ($rows->count() > self::LIST ? "\n… et " . ($rows->count() - self::LIST) . ' autre(s).' : '') . "\n\n« Envoyée » est l'indicateur d'envoi enregistré sur la facture ; une facture remise autrement peut y figurer.");
+            . $rows->take(ListLimit::get())->map(fn ($r) => "• {$r->reference} — " . ($r->tp_title ?? 'sans client') . ' — du ' . Carbon::parse($r->issued_at)->format('d/m/Y') . ' — ' . $this->money((float) $r->total_ttc))->implode("\n")
+            . ($rows->count() > ListLimit::get() ? "\n… et " . ($rows->count() - ListLimit::get()) . ' autre(s).' : '') . "\n\n« Envoyée » est l'indicateur d'envoi enregistré sur la facture ; une facture remise autrement peut y figurer.");
     }
 
     /** « répartition des ventes par mode de paiement ». @param string $n phrase normalisée */
@@ -170,7 +169,7 @@ class OversightAssistant
         }
         $byCity = $rows->groupBy(fn ($r) => $r->ship_city ?: ($r->tp_city ?: 'Ville non renseignée'))->map->count()->sortDesc();
 
-        return $this->reply("{$rows->count()} livraison(s) ou commande(s) en attente, par ville de livraison :\n\n" . $byCity->take(self::LIST)->map(fn ($c, $v) => "• {$v} — {$c}")->implode("\n")
+        return $this->reply("{$rows->count()} livraison(s) ou commande(s) en attente, par ville de livraison :\n\n" . $byCity->take(ListLimit::get())->map(fn ($c, $v) => "• {$v} — {$c}")->implode("\n")
             . "\n\nLa ville est celle de l'adresse de livraison du document, à défaut celle du client.");
     }
 

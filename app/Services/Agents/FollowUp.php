@@ -60,6 +60,51 @@ final class FollowUp
         return null;
     }
 
+    /**
+     * « voir plus », « tout voir », « les 10 suivants », « les 30 premiers » : combien de lignes afficher cette fois.
+     * Null si la phrase n'est pas une demande de plus de lignes.
+     *
+     * @param string $n phrase normalisée
+     */
+    public static function more(string $n): ?int
+    {
+        $t = trim(preg_replace('/[^a-z0-9 ]+/', ' ', $n) ?? $n);
+        $t = trim(preg_replace('/\s+/', ' ', $t) ?? $t);
+
+        if (preg_match('/^(?:et )?(?:les |la )?(\d{1,2}) (?:suivants?|prochains?)$/', $t, $m)) {
+            return ListLimit::DEFAULT + (int) $m[1];
+        }
+        if (preg_match('/^(?:affiche |montre |donne moi )?(?:les |la )?(\d{1,2}) premiers?$/', $t, $m)) {
+            return (int) $m[1];
+        }
+        if (preg_match('/^(?:voir |en )?plus(?: de resultats| de lignes| de details)?$|^(?:la )?suite$|^(?:voir |affiche |montre |donne moi )?(?:tout|tous|toute la liste|la liste complete|tout le reste)$|^(?:tout voir|en voir plus|voir tout)$/', $t)) {
+            return 30;
+        }
+
+        return null;
+    }
+
+    /**
+     * Le nouveau sujet d'une suite sur un tiers ou un produit : « et pour Atlas ? » → « atlas ». Null si ce n'en est pas une.
+     *
+     * @param string $n phrase normalisée
+     */
+    public static function subject(string $n): ?string
+    {
+        $t = trim(preg_replace('/[^a-z0-9 ]+/', ' ', $n) ?? $n);
+        $t = trim(preg_replace('/\s+/', ' ', $t) ?? $t);
+
+        if (str_word_count($t) <= 6 && preg_match('/^(?:et )?(?:pour|chez|avec|concernant|et pour)\s+(?:le |la |les |l |un |une )?(?:client |fournisseur |produit |article )?(.{2,40})$/', $t, $m)) {
+            return trim($m[1]);
+        }
+        if (str_word_count($t) <= 4 && preg_match('/^et\s+(?:le |la |les |l )?(?:client |fournisseur |produit |article )?([a-z0-9][a-z0-9 ]{1,30})$/', $t, $m)
+            && !preg_match('/^(hier|aujourd|ce mois|le mois|la semaine|cette|par |les \d)/', trim($m[1]))) {
+            return trim($m[1]);
+        }
+
+        return null;
+    }
+
     /** La phrase sans son expression de période (« ventes du mois par vendeur » → « ventes par vendeur »). */
     private static function withoutPeriod(string $s): string
     {

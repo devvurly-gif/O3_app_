@@ -35,6 +35,18 @@ class MentionResolver
         return $best === null ? null : (object) ['id' => $best[1]->id, 'title' => $best[1]->tp_title, 'role' => $best[1]->tp_Role, 'name' => $best[2]];
     }
 
+    /** Le seul tiers actif dont le nom contient ce mot (« bati » → « Bati Matériaux ») ; null s'il y en a zéro ou plusieurs. */
+    public function thirdPartyLike(string $term): ?object
+    {
+        $like = '%' . str_replace(['%', '_'], ['\%', '\_'], $term) . '%';
+        $rows = DB::table('third_partners')->whereNull('deleted_at')->where('tp_status', true)->where('tp_title', 'like', $like)->limit(2)->get(['id', 'tp_title', 'tp_Role']);
+        if ($rows->count() !== 1) {
+            return null;
+        }
+        $t = $rows->first();
+
+        return (object) ['id' => $t->id, 'title' => $t->tp_title, 'role' => $t->tp_Role, 'name' => trim(preg_replace('/[^a-z0-9 ]+/', ' ', mb_strtolower(Str::ascii((string) $t->tp_title))) ?? '')];
+    }
     /** Le premier mot de la phrase qui désigne un produit (titre ou référence), ou null. @param string $n phrase normalisée */
     public function productWord(string $n): ?string
     {

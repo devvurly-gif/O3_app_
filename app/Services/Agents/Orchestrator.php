@@ -135,6 +135,26 @@ class Orchestrator
             return [$first, $n];
         }
 
+        // Plus de lignes (« voir plus », « les 10 suivants ») : la dernière lecture, avec une limite d'affichage relevée.
+        if ($this->conversational && ($last = $this->lastCommand($admin)) !== null && ($limit = FollowUp::more($n)) !== null) {
+            $second = ListLimit::with($limit, fn () => $this->dispatch($admin, $last, $last, false));
+            if (!$this->isFallback($second)) {
+                $second['body'] = "Suite : « {$last} », jusqu'à " . ListLimit::with($limit, fn () => ListLimit::get()) . " lignes.\n\n" . $second['body'];
+
+                return [$second, $last];
+            }
+        }
+
+        // Un autre client, fournisseur ou produit (« et pour Atlas ? ») : la dernière lecture sur ce nouveau sujet.
+        if ($this->conversational && ($last = $this->lastCommand($admin)) !== null && ($subject = FollowUp::subject($n)) !== null && ($follow = $this->withSubject($last, $subject)) !== null) {
+            $second = $this->dispatch($admin, $follow, $follow, false);
+            if (!$this->isFallback($second)) {
+                $second['body'] = "Suite de votre question : « {$follow} ».\n\n" . $second['body'];
+
+                return [$second, $follow];
+            }
+        }
+
         // Une suite (« et hier ? », « et par vendeur ? ») : la dernière lecture, avec la période ou le découpage demandé.
         if ($this->conversational && ($last = $this->lastCommand($admin)) !== null && ($follow = FollowUp::resolve($n, $last)) !== null) {
             $second = $this->dispatch($admin, $follow, $follow, false);
@@ -160,6 +180,20 @@ class Orchestrator
         return [($first['meta']['intent'] ?? null) === 'unmatched' ? $this->freeText($admin, $text) : $first, $n];
     }
 
+    /** La dernière lecture sur un client, un fournisseur ou un produit, refaite pour un autre. Null si le nouveau sujet n'existe pas. */
+    private function withSubject(string $last, string $subject): ?string
+    {
+        if (preg_match('/(?:client|fournisseur)\s+.+$/', $last) && (($t = $this->mentions->thirdParty($subject)) !== null || ($t = $this->mentions->thirdPartyLike($subject)) !== null)) {
+            $role = $t->role === 'supplier' ? 'fournisseur' : 'client';
+
+            return preg_replace('/(?:client|fournisseur)\s+.+$/', $role . ' ' . $t->name, $last);
+        }
+        if (preg_match('/((?:produit|article)\s+)(.+?)(\s+par liste.*)?$/', $last) && ($word = $this->mentions->productWord($subject)) !== null) {
+            return preg_replace('/((?:produit|article)\s+)(.+?)(\s+par liste.*)?$/', '${1}' . $word . '${3}', $last);
+        }
+
+        return null;
+    }
     /** La dernière lecture comprise dans cette conversation, si elle a moins d'une demi-heure. */
     private function lastCommand(User $admin): ?string
     {

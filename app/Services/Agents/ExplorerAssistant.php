@@ -20,7 +20,6 @@ use Illuminate\Support\Facades\DB;
  */
 class ExplorerAssistant
 {
-    private const LIST = 10;
     private const SALES_TYPES = ['InvoiceSale', 'TicketSale'];
     private const TYPES = [
         'InvoiceSale' => 'Facture', 'TicketSale' => 'Ticket', 'QuoteSale' => 'Devis', 'CustomerOrder' => 'Commande client', 'DeliveryNote' => 'Bon de livraison',
@@ -72,8 +71,8 @@ class ExplorerAssistant
         }
 
         return $this->reply(($unpaid ? "{$rows->count()} document(s) impayé(s) de {$t->tp_title}, " . $this->money((float) $rows->sum('amount_due')) . " dus" : "{$rows->count()} document(s) de {$t->tp_title}") . " (les plus récents d'abord) :\n\n"
-            . $rows->take(self::LIST)->map(fn ($r) => '• ' . (self::TYPES[$r->document_type] ?? $r->document_type) . " {$r->reference} — " . Carbon::parse($r->issued_at)->format('d/m/Y') . ' — ' . (self::STATUSES[$r->status] ?? $r->status) . ' — ' . $this->money((float) $r->total_ttc) . ((float) $r->amount_due > 0 ? ', reste ' . $this->money((float) $r->amount_due) : ''))->implode("\n")
-            . ($rows->count() > self::LIST ? "\n… et " . ($rows->count() - self::LIST) . ' autre(s).' : ''));
+            . $rows->take(ListLimit::get())->map(fn ($r) => '• ' . (self::TYPES[$r->document_type] ?? $r->document_type) . " {$r->reference} — " . Carbon::parse($r->issued_at)->format('d/m/Y') . ' — ' . (self::STATUSES[$r->status] ?? $r->status) . ' — ' . $this->money((float) $r->total_ttc) . ((float) $r->amount_due > 0 ? ', reste ' . $this->money((float) $r->amount_due) : ''))->implode("\n")
+            . ($rows->count() > ListLimit::get() ? "\n… et " . ($rows->count() - ListLimit::get()) . ' autre(s).' : ''));
     }
 
     /** « produits achetés par le client Atlas ». @param string $n phrase normalisée */
@@ -85,7 +84,7 @@ class ExplorerAssistant
         }
         $rows = DB::table('document_lignes as l')->join('document_headers as d', 'd.id', '=', 'l.document_header_id')->whereNull('d.deleted_at')->where('d.thirdPartner_id', $t->id)->whereIn('d.document_type', self::SALES_TYPES)
             ->whereNotIn('d.status', ['draft', 'cancelled'])->where('l.status', 'active')->where('l.line_type', 'product')->where('d.issued_at', '>=', $this->today()->copy()->subYear()->toDateString())
-            ->groupBy('l.product_id', 'l.designation')->selectRaw('l.designation AS produit, SUM(l.quantity) AS qte, SUM(l.total_ligne_ht) AS ht, MAX(d.issued_at) AS derniere')->orderByDesc('ht')->limit(self::LIST)->get();
+            ->groupBy('l.product_id', 'l.designation')->selectRaw('l.designation AS produit, SUM(l.quantity) AS qte, SUM(l.total_ligne_ht) AS ht, MAX(d.issued_at) AS derniere')->orderByDesc('ht')->limit(ListLimit::get())->get();
         if ($rows->isEmpty()) {
             return $this->reply("{$t->tp_title} n'a rien acheté sur les 12 derniers mois.");
         }
@@ -108,7 +107,7 @@ class ExplorerAssistant
             return $this->reply("Je ne trouve aucun produit correspondant à « {$term} ».", [], true);
         }
         $rows = DB::table('stock_mouvements as m')->leftJoin('users as u', 'u.id', '=', 'm.user_id')->leftJoin('warehouses as w', 'w.id', '=', 'm.warehouse_id')->where('m.product_id', $p->id)->where('m.status', '!=', 'cancelled')
-            ->orderByDesc('m.id')->limit(self::LIST)->get(['m.created_at', 'm.direction', 'm.reason', 'm.quantity', 'm.stock_after', 'm.document_reference', 'u.name', 'w.wh_title']);
+            ->orderByDesc('m.id')->limit(ListLimit::get())->get(['m.created_at', 'm.direction', 'm.reason', 'm.quantity', 'm.stock_after', 'm.document_reference', 'u.name', 'w.wh_title']);
         if ($rows->isEmpty()) {
             return $this->reply("Aucun mouvement de stock pour {$p->p_title} ({$p->p_sku}).");
         }
@@ -127,7 +126,7 @@ class ExplorerAssistant
         $total = max((float) $rows->sum('valeur'), 0.01);
 
         return $this->reply('Valeur du stock par catégorie (au coût moyen, ' . $this->money($total) . " au total) :\n\n"
-            . $rows->take(self::LIST)->map(fn ($r) => "• {$r->categorie} — " . $this->money((float) $r->valeur) . ' (' . round((float) $r->valeur / $total * 100) . " %), {$r->produits} produit(s)")->implode("\n") . ($rows->count() > self::LIST ? "\n… et " . ($rows->count() - self::LIST) . ' autre(s) catégorie(s).' : ''));
+            . $rows->take(ListLimit::get())->map(fn ($r) => "• {$r->categorie} — " . $this->money((float) $r->valeur) . ' (' . round((float) $r->valeur / $total * 100) . " %), {$r->produits} produit(s)")->implode("\n") . ($rows->count() > ListLimit::get() ? "\n… et " . ($rows->count() - ListLimit::get()) . ' autre(s) catégorie(s).' : ''));
     }
 
     // ── Documents ────────────────────────────────────────────────────
@@ -144,14 +143,14 @@ class ExplorerAssistant
         }
 
         return $this->reply("{$rows->count()} brouillon(s) de plus de {$days} jour(s), les plus anciens d'abord (à confirmer ou supprimer) :\n\n"
-            . $rows->take(self::LIST)->map(fn ($r) => '• ' . (self::TYPES[$r->document_type] ?? $r->document_type) . " {$r->reference} — créé le " . Carbon::parse($r->created_at)->format('d/m/Y') . ($r->tp_title ? " — {$r->tp_title}" : '') . ($r->par ? " — {$r->par}" : ''))->implode("\n")
-            . ($rows->count() > self::LIST ? "\n… et " . ($rows->count() - self::LIST) . ' autre(s).' : ''));
+            . $rows->take(ListLimit::get())->map(fn ($r) => '• ' . (self::TYPES[$r->document_type] ?? $r->document_type) . " {$r->reference} — créé le " . Carbon::parse($r->created_at)->format('d/m/Y') . ($r->tp_title ? " — {$r->tp_title}" : '') . ($r->par ? " — {$r->par}" : ''))->implode("\n")
+            . ($rows->count() > ListLimit::get() ? "\n… et " . ($rows->count() - ListLimit::get()) . ' autre(s).' : ''));
     }
 
     public function latestDocuments(): array
     {
         $rows = DB::table('document_headers as d')->leftJoin('document_footers as f', 'f.document_header_id', '=', 'd.id')->leftJoin('users as u', 'u.id', '=', 'd.user_id')->leftJoin('third_partners as t', 't.id', '=', 'd.thirdPartner_id')
-            ->whereNull('d.deleted_at')->orderByDesc('d.id')->limit(self::LIST)->get(['d.reference', 'd.document_type', 'd.status', 'd.created_at', 'u.name AS par', 't.tp_title', 'f.total_ttc']);
+            ->whereNull('d.deleted_at')->orderByDesc('d.id')->limit(ListLimit::get())->get(['d.reference', 'd.document_type', 'd.status', 'd.created_at', 'u.name AS par', 't.tp_title', 'f.total_ttc']);
         if ($rows->isEmpty()) {
             return $this->reply('Aucun document pour le moment.');
         }
@@ -176,8 +175,8 @@ class ExplorerAssistant
         }
         $roles = ['customer' => 'client', 'supplier' => 'fournisseur', 'both' => 'client et fournisseur'];
 
-        return $this->reply("{$rows->count()} nouveau(x) " . ($products ? 'produit(s)' : 'tiers') . " {$label} :\n\n" . $rows->take(self::LIST)->map(fn ($r) => "• {$r->nom} (" . ($products ? $r->ref : $roles[$r->ref]) . ')')->implode("\n")
-            . ($rows->count() > self::LIST ? "\n… et " . ($rows->count() - self::LIST) . ' autre(s).' : ''));
+        return $this->reply("{$rows->count()} nouveau(x) " . ($products ? 'produit(s)' : 'tiers') . " {$label} :\n\n" . $rows->take(ListLimit::get())->map(fn ($r) => "• {$r->nom} (" . ($products ? $r->ref : $roles[$r->ref]) . ')')->implode("\n")
+            . ($rows->count() > ListLimit::get() ? "\n… et " . ($rows->count() - ListLimit::get()) . ' autre(s).' : ''));
     }
 
     /** « compare ce mois au mois dernier », « compare cette semaine à la semaine dernière ». @param string $n phrase normalisée */
@@ -256,7 +255,7 @@ class ExplorerAssistant
             return $this->reply('Aucun tiers actif.');
         }
 
-        return $this->reply('Tiers actifs par ville (' . $rows->sum('n') . " au total) :\n\n" . $rows->take(self::LIST)->map(fn ($r) => "• {$r->ville} — {$r->n} ({$r->clients} client(s), {$r->fournisseurs} fournisseur(s))")->implode("\n") . ($rows->count() > self::LIST ? "\n… et " . ($rows->count() - self::LIST) . ' autre(s) ville(s).' : ''));
+        return $this->reply('Tiers actifs par ville (' . $rows->sum('n') . " au total) :\n\n" . $rows->take(ListLimit::get())->map(fn ($r) => "• {$r->ville} — {$r->n} ({$r->clients} client(s), {$r->fournisseurs} fournisseur(s))")->implode("\n") . ($rows->count() > ListLimit::get() ? "\n… et " . ($rows->count() - ListLimit::get()) . ' autre(s) ville(s).' : ''));
     }
 
     /** « dernières connexions » : la dernière utilisation d'un accès par utilisateur (jamais le jeton). */
@@ -268,7 +267,7 @@ class ExplorerAssistant
             return $this->reply('Aucun accès enregistré.');
         }
 
-        return $this->reply("Dernière utilisation de l'application par utilisateur :\n\n" . $rows->take(self::LIST)->map(fn ($r) => "• {$r->name} — " . ($r->derniere ? Carbon::parse($r->derniere)->format('d/m/Y H:i') : 'jamais utilisé') . ($r->is_active ? '' : ' (compte inactif)'))->implode("\n"));
+        return $this->reply("Dernière utilisation de l'application par utilisateur :\n\n" . $rows->take(ListLimit::get())->map(fn ($r) => "• {$r->name} — " . ($r->derniere ? Carbon::parse($r->derniere)->format('d/m/Y H:i') : 'jamais utilisé') . ($r->is_active ? '' : ' (compte inactif)'))->implode("\n"));
     }
 
     // ── Outils ───────────────────────────────────────────────────────
