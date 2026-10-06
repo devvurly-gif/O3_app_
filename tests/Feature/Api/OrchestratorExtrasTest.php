@@ -168,7 +168,7 @@ class OrchestratorExtrasTest extends TestCase
         DocumentFooter::factory()->create(['document_header_id' => $d->id, 'total_ht' => 500, 'total_ttc' => 600]);
         $this->enableAi(['intent' => 'lecture', 'phrase' => "ventes d'hier"]);
 
-        $reply = $this->reply("j'ai gagné combien d'argent hier ?");
+        $reply = $this->reply("comment s'est passée la veille côté recettes ?");
 
         $this->assertStringContainsString('1 facture(s) ou ticket(s)', $reply['body']);
         $this->assertTrue($reply['ai']);

@@ -164,12 +164,12 @@ class ExplorerAssistant
     /** « nouveaux clients du mois », « nouveaux produits de la semaine ». @param string $n phrase normalisée */
     public function newcomers(string $n): array
     {
-        [$from, , $label] = $this->period($n, 'month');
+        [$from, $to, $label] = $this->period($n, 'month');
         $products = (bool) preg_match('/produits?|articles?/', $n);
         if ($products) {
-            $rows = DB::table('products')->whereNull('deleted_at')->where('created_at', '>=', $from->toDateTimeString())->orderByDesc('id')->get(['p_title as nom', 'p_sku as ref']);
+            $rows = DB::table('products')->whereNull('deleted_at')->where('created_at', '>=', $from->toDateTimeString())->where('created_at', '<=', $to->copy()->endOfDay()->toDateTimeString())->orderByDesc('id')->get(['p_title as nom', 'p_sku as ref']);
         } else {
-            $rows = DB::table('third_partners')->whereNull('deleted_at')->where('created_at', '>=', $from->toDateTimeString())->orderByDesc('id')->get(['tp_title as nom', 'tp_Role as ref']);
+            $rows = DB::table('third_partners')->whereNull('deleted_at')->where('created_at', '>=', $from->toDateTimeString())->where('created_at', '<=', $to->copy()->endOfDay()->toDateTimeString())->orderByDesc('id')->get(['tp_title as nom', 'tp_Role as ref']);
         }
         if ($rows->isEmpty()) {
             return $this->reply('Aucun nouveau ' . ($products ? 'produit' : 'tiers') . " {$label}.");
@@ -320,14 +320,7 @@ class ExplorerAssistant
     /** @return array{0: Carbon, 1: Carbon, 2: string} début, fin (incluse), libellé */
     private function period(string $n, string $default): array
     {
-        $today = $this->today();
-
-        return match (true) {
-            (bool) preg_match('/semaine/', $n)  => [$today->copy()->startOfWeek(), $today, 'de la semaine (depuis lundi)'],
-            (bool) preg_match('/annee/', $n)    => [$today->copy()->startOfYear(), $today, "de l'année"],
-            (bool) preg_match('/aujourd/', $n)  => [$today, $today, "d'aujourd'hui"],
-            default                             => [$today->copy()->startOfMonth(), $today, 'du mois (depuis le ' . $today->copy()->startOfMonth()->format('d/m') . ')'],
-        };
+        return ReportPeriod::resolve($n, $default, $this->today());
     }
 
     private function qty(float $v): string

@@ -248,21 +248,7 @@ class BusinessAssistant
      */
     private function period(string $n, string $default): array
     {
-        $today = $this->today();
-
-        return match (true) {
-            (bool) preg_match('/\bhier\b/', $n)                                => [$today->copy()->subDay(), $today->copy()->subDay(), 'd\'hier'],
-            (bool) preg_match('/(\d{1,3})\s*derniers?\s*jours|(\d{1,3})\s*jours/', $n, $m) => (function () use ($m, $today) {
-                $d = max(1, min(366, (int) ($m[1] !== '' ? $m[1] : $m[2])));
-
-                return [$today->copy()->subDays($d - 1), $today, "des {$d} derniers jours"];
-            })(),
-            (bool) preg_match('/semaine/', $n)                                 => [$today->copy()->startOfWeek(), $today, 'de la semaine (depuis lundi)'],
-            (bool) preg_match('/\bmois\b/', $n)                                => [$today->copy()->startOfMonth(), $today, 'du mois (depuis le ' . $today->copy()->startOfMonth()->format('d/m') . ')'],
-            (bool) preg_match('/\ban(nee)?\b/', $n)                            => [$today->copy()->startOfYear(), $today, 'de l\'année'],
-            (bool) preg_match('/aujourd|du jour|journee|\bjour\b/', $n)        => [$today, $today, 'd\'aujourd\'hui'],
-            default => $default === 'month' ? [$today->copy()->startOfMonth(), $today, 'du mois (depuis le ' . $today->copy()->startOfMonth()->format('d/m') . ')'] : [$today, $today, 'd\'aujourd\'hui'],
-        };
+        return ReportPeriod::resolve($n, $default, $this->today());
     }
 
     /** @param array<int, string> $types */

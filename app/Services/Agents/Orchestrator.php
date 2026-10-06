@@ -43,6 +43,7 @@ class Orchestrator
         private ExplorerAssistant $explorer,
         private ExtrasAssistant $extras,
         private OversightAssistant $oversight,
+        private MentionResolver $mentions,
     ) {
     }
 
@@ -109,6 +110,8 @@ class Orchestrator
             (bool) preg_match('/\bdocuments?\s*#?\s*(\d+)/', $n, $doc)                            => $this->intake->act($admin, (int) $doc[1], $n),
             // Atelier des agents : recruter, planifier des routines, retenir des consignes, catalogue des tâches.
             ($studio = $this->studioIntent($n)) !== null                                          => $this->studioAnswer($admin, $studio, $text, $n),
+            // Questions courantes formulées naturellement (« qui me doit de l'argent ? », « stock faible », « ça va ? ») : lectures.
+            ($quick = $this->quickIntent($n)) !== null                                            => $this->quickAnswer($quick, $n),
             // Promotions d'un produit, règles et seuils des agents, notifications, entrepôts, listes de prix : lectures, aucun modèle de langage.
             ($ovs = $this->oversightIntent($n)) !== null                                          => $this->oversightAnswer($ovs, $n, $admin),
             // Messagerie, relances, droits, chèques, bannières, terminaux, variantes, prix par liste : lectures, aucun modèle de langage.
@@ -123,6 +126,7 @@ class Orchestrator
             ($biz = $this->businessIntent($n)) !== null                                           => $this->businessAnswer($biz, $n),
             ($ins = $this->insightsIntent($n)) !== null                                          => $this->insightsAnswer($ins, $n),
             ($ops = $this->operationsIntent($n)) !== null                                        => $this->operationsAnswer($ops, $n),
+            ($men = $this->mentionAnswer($n)) !== null                                            => $men,
             (bool) preg_match('/inventaire|comptage/', $n)                                        => $this->inventory($admin, $n, $action),
             (bool) preg_match('/encaissement|impaye|recouvrement|relance|paiements? en retard/', $n) => $this->collections($admin, $n, $action),
             // Fiches produits : contrôle, propositions (IA, prix, photos) et leur validation (« lot #12 »).
@@ -630,6 +634,7 @@ class Orchestrator
     private function readAnswer(string $n, User $admin): ?array
     {
         return match (true) {
+            ($i = $this->quickIntent($n)) !== null      => $this->quickAnswer($i, $n),
             ($i = $this->oversightIntent($n)) !== null  => $this->oversightAnswer($i, $n, $admin),
             ($i = $this->extrasIntent($n)) !== null    => $this->extrasAnswer($i, $n),
             ($i = $this->explorerIntent($n)) !== null  => $this->explorerAnswer($i, $n),
@@ -638,7 +643,7 @@ class Orchestrator
             ($i = $this->businessIntent($n)) !== null  => $this->businessAnswer($i, $n),
             ($i = $this->insightsIntent($n)) !== null  => $this->insightsAnswer($i, $n),
             ($i = $this->operationsIntent($n)) !== null => $this->operationsAnswer($i, $n),
-            default                                    => null,
+            default                                    => $this->mentionAnswer($n),
         };
     }
     /** Quelle lecture sur les promotions d'un produit, les agents, les notifications ou les référentiels ? null si aucune. @param string $n phrase normalisée */
@@ -683,6 +688,96 @@ class Orchestrator
             'cash_categories' => $this->oversight->cashCategories(),
             default          => $this->oversight->priceLists(),
         };
+    }
+    /** Les formulations naturelles des questions les plus courantes. null si aucune. @param string $n phrase normalisée */
+    private function quickIntent(string $n): ?string
+    {
+        if (preg_match('/\b(controle\w*|prepar\w*|relanc\w*|recrut\w*|lance\w*|revis\w*|attribu\w*|active(?:r|z|ons)?|publi\w*|supprim\w*|cree\w*|applique\w*)\b/', $n)) {
+            return null;
+        }
+        $bientot = (bool) preg_match('/bientot|prochains? jours|prevision|va manquer|vont manquer|couverture|valeur|dormant|negatif|mouvement/', $n);
+
+        return match (true) {
+            (bool) preg_match('/tout va bien|quoi de neuf|fais[- ]moi le point|^le point\b|^ca va\b|comment (ca )?va\b.*(aujourd|affaires|boutique|entreprise)|bilan de la journee/', $n) => 'day',
+            (bool) preg_match('/\ba perte\b|sous (le |leur )?(prix d.achat|cout)|perdent de l.argent|prix trop bas|prix inferieurs? au cout/', $n) => 'below_cost',
+            !$bientot && (bool) preg_match('/stocks? (bas|faible|critique|insuffisant)|rupture|epuise|manque\w* en stock|qu.est.ce qui manque|reapprovisionn\w*|a commander|quoi commander|dois commander|plus de stock|(a|=) ?(0|zero)\b/', $n) => 'low_stock',
+            (bool) preg_match('/benefice|rentabilite|combien j.ai gagne|ce que je gagne|\bma marge\b|produits? (les )?(plus|moins) rentables?/', $n) && !preg_match('/par (categorie|marque)/', $n) => 'margin',
+            (bool) preg_match('/\btva\b/', $n) && (bool) preg_match('/collectee|deductible|a payer|a declarer|du mois|du trimestre|de l.annee|declaration|montant|total/', $n) || (bool) preg_match('/total des taxes/', $n) => 'vat_summary',
+            (bool) preg_match('/qui (me doit|ne m.a pas paye|n.a pas paye|ne paie)|me doit (de l.argent|combien)|clients? .*(ne paient|n.ont pas paye|en retard de paiement|impayes?)|\bimpayes\b|argent (que )?(les clients|on me doit)|creances?/', $n) && !preg_match('/fournisseurs?/', $n) && $this->mentions->thirdParty($n) === null => 'overdue',
+            (bool) preg_match('/ce que je dois|je dois (payer|aux|a mes)|mes dettes|dois[- ]je payer|combien je dois/', $n) => 'supplier_due',
+            (bool) preg_match('/ma tresorerie|ou en est (la|ma) tresorerie|argent (en caisse|disponible|dispo)|combien d.argent|mon solde|solde (global|total)|cash disponible/', $n) => 'balances',
+            (bool) preg_match('/^chiffre (du jour|de la journee|d.hier)/', $n) => 'sales',
+            (bool) preg_match('/combien (de |d.)\s*(clients?|fournisseurs?|produits?|articles?|factures?|devis|tickets?|commandes?|utilisateurs?|entrepots?|bons? de livraison)\b|stock total|total du stock/', $n) => 'count',
+            (bool) preg_match('/dernieres? (factures?|ventes?|devis|commandes?|livraisons?)|derniers? (documents?|bons?)/', $n) => 'latest_docs',
+            (bool) preg_match('/derniers? (paiements?|encaissements?|reglements?)/', $n) => 'latest_payments',
+            (bool) preg_match('/derniers? (clients?|fournisseurs?)/', $n) => 'latest_customers',
+            (bool) preg_match('/clients? (vip|fideles?|les plus (rentables?|importants?|gros))|gros clients|client le plus rentable|clients? qui achet\w* (le )?plus|meilleur client/', $n) => 'best_customers',
+            (bool) preg_match('/livraisons? (en retard|a livrer|en cours|a faire)|commandes? (en cours|a livrer|non livrees?)/', $n) => 'orders',
+            (bool) preg_match('/(vends?|vendu|ventes?).*(plus|moins) (que|qu.)\s*(le mois dernier|la semaine derniere|l.annee derniere|l.an dernier)|(plus|moins) (que|qu.)\s*(le mois dernier|la semaine derniere)/', $n) => 'compare',
+            (bool) preg_match('/retours? (clients?|fournisseurs?)|produits? retournes?|\bretours\b/', $n) => 'returns',
+            (bool) preg_match('/fournisseur principal|principaux fournisseurs|meilleur fournisseur|fournisseurs? le plus/', $n) => 'top_supplier',
+            (bool) preg_match('/\bconnecte\b|connexions?/', $n) => 'logins',
+            (bool) preg_match('/caisse du jour|cloture de caisse|fermeture de caisse|ouverture de caisse/', $n) => 'cash_day',
+            (bool) preg_match('/ventes? (de|en) (la )?caisse/', $n) => 'register_sales',
+            (bool) preg_match('/qui a (fait|cree|modifie|supprime)\s+(cette|ce|le|la)\s+(facture|produit|devis|client|document)\s*$/', $n) => 'ask_reference',
+            default => null,
+        };
+    }
+
+    private function quickAnswer(string $intent, string $n): array
+    {
+        return match ($intent) {
+            'day'              => $this->business->daySummary(),
+            'below_cost'       => $this->insights->belowCost(),
+            'low_stock'        => $this->insights->lowStock(),
+            'margin'           => $this->deepDive->realizedMargin($n),
+            'vat_summary'      => $this->deepDive->vatSummary($n),
+            'overdue'          => $this->business->overdueInvoices($n),
+            'supplier_due'     => $this->operations->supplierInvoicesDue($n),
+            'balances'         => $this->business->balances(),
+            'sales'            => $this->business->sales($n),
+            'count'            => $this->insights->count($n),
+            'latest_docs'      => $this->explorer->latestDocuments(),
+            'latest_payments'  => $this->business->income('encaissements du mois'),
+            'latest_customers' => $this->explorer->newcomers('nouveaux ' . (str_contains($n, 'fournisseur') ? 'fournisseurs' : 'clients') . ' du mois'),
+            'best_customers'   => $this->analysis->bestCustomers($n),
+            'orders'           => $this->deepDive->pendingCustomerOrders(),
+            'compare'          => $this->explorer->comparePeriods($n),
+            'returns'          => $this->deepDive->returns($n),
+            'top_supplier'     => $this->operations->purchasesBySupplier("achats de l'annee par fournisseur"),
+            'logins'           => $this->explorer->lastLogins(),
+            'cash_day'         => $this->business->cashSessions(),
+            'register_sales'   => $this->analysis->salesByRegister($n),
+            default            => $this->reply('Quelle fiche ? Donnez la référence, par exemple « qui a modifié la facture FV-0001 » ou « historique du produit PRC1 ».', 'help', error: true),
+        };
+    }
+
+    /**
+     * Une phrase qui nomme un client, un fournisseur ou un produit sans que les autres règles l'aient comprise :
+     * « Atlas me doit combien ? », « dernière facture d'Atlas », « combien reste-t-il de perceuses ? ».
+     *
+     * @param string $n phrase normalisée
+     * @return array{body: string, meta: array<string, mixed>}|null
+     */
+    private function mentionAnswer(string $n): ?array
+    {
+        if (preg_match('/\b(controle\w*|prepar\w*|relanc\w*|recrut\w*|lance\w*|revis\w*|attribu\w*|active(?:r|z|ons)?|publi\w*|supprim\w*|cree\w*|applique\w*)\b/', $n)) {
+            return null;
+        }
+
+        if (preg_match('/doit|solde|impaye|reste|devoir|situation|factures?|achats?|historique|commandes?|devis|dernier|derniere|paiements?|livraisons?/', $n) && ($t = $this->mentions->thirdParty($n)) !== null) {
+            $role = $t->role === 'supplier' ? 'fournisseur' : 'client';
+
+            return preg_match('/doit|solde|impaye|reste|devoir|situation/', $n)
+                ? $this->deepDive->thirdPartyCard("fiche du {$role} {$t->name}")
+                : $this->explorer->thirdPartyDocuments("factures du {$role} {$t->name}" . (str_contains($n, 'impaye') ? ' impayees' : ''));
+        }
+
+        if (preg_match('/\bstock\b|\bprix\b|combien (il )?reste|combien en ai|ou (est|sont)|en stock|disponibles?|dispo/', $n) && ($word = $this->mentions->productWord($n)) !== null) {
+            return $this->deepDive->productCard("fiche du produit {$word}");
+        }
+
+        return null;
     }
     // ── Fiches produits ──────────────────────────────────────────────
 

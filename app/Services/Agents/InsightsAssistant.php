@@ -249,6 +249,65 @@ class InsightsAssistant
         return $this->reply(count($groups) . " doublon(s) possible(s) :\n\n" . implode("\n", array_slice($groups, 0, self::LIST)) . "\n\nÀ vérifier dans l'écran concerné : je ne fusionne ni ne supprime rien.");
     }
 
+    // ── Questions courantes ──────────────────────────────────────────
+
+    /** « stock faible », « qu'est-ce qui manque en stock », « quoi commander » : les produits au seuil d'alerte ou en dessous. */
+    public function lowStock(): array
+    {
+        $threshold = max(0, min(100, (int) Setting::get('stock', 'seuil_alerte_stock', '5')));
+        $r = (new AgentDataTools())->run('stock_bas', ['seuil' => $threshold], ['stock']);
+        if (($r['produits_concernes'] ?? 0) === 0) {
+            return $this->reply("Aucun produit n'est au seuil d'alerte ({$threshold} pièce(s)) ou en dessous : le stock est correct.");
+        }
+
+        return $this->reply("{$r['produits_concernes']} produit(s) à {$threshold} pièce(s) ou moins (seuil d'alerte du stock), dont {$r['en_rupture']} en rupture. Les plus bas :\n\n"
+            . collect($r['plus_bas'])->take(self::LIST)->map(fn ($p) => "• {$p['titre']} ({$p['reference']}) — " . $this->qty((float) $p['quantite']) . ' pièce(s)')->implode("\n")
+            . ($r['produits_concernes'] > self::LIST ? "\n… et " . ($r['produits_concernes'] - self::LIST) . ' autre(s).' : ''),
+            [['label' => 'Produits bientôt en rupture', 'text' => 'produits bientôt en rupture'], ['label' => 'Préparer un inventaire', 'text' => 'prépare un inventaire']]);
+    }
+
+    /** « articles vendus à perte », « prix trop bas » : les produits dont le prix de vente est inférieur au prix d'achat. */
+    public function belowCost(): array
+    {
+        $rows = DB::table('products')->whereNull('deleted_at')->where('p_status', true)->where('p_purchasePrice', '>', 0)->where('p_salePrice', '>', 0)->whereColumn('p_salePrice', '<', 'p_purchasePrice')
+            ->orderByRaw('p_purchasePrice - p_salePrice DESC')->get(['p_title', 'p_sku', 'p_salePrice', 'p_purchasePrice']);
+        if ($rows->isEmpty()) {
+            return $this->reply("Aucun produit actif n'est vendu sous son prix d'achat.");
+        }
+
+        return $this->reply("{$rows->count()} produit(s) actif(s) dont le prix de vente est inférieur au prix d'achat (fiches produits) :\n\n"
+            . $rows->take(self::LIST)->map(fn ($r) => "• {$r->p_title} ({$r->p_sku}) — vendu " . $this->money((float) $r->p_salePrice) . ' pour un achat à ' . $this->money((float) $r->p_purchasePrice) . ' (-' . $this->money((float) $r->p_purchasePrice - (float) $r->p_salePrice) . ' par pièce)')->implode("\n")
+            . ($rows->count() > self::LIST ? "\n… et " . ($rows->count() - self::LIST) . ' autre(s).' : ''), [['label' => 'Proposer des prix (25 %)', 'text' => 'révise les prix des fiches produits avec une marge de 25 %']]);
+    }
+
+    /** « combien de clients j'ai », « combien de factures aujourd'hui », « quel est mon stock total ». @param string $n phrase normalisée */
+    public function count(string $n): array
+    {
+        if (preg_match('/stock total|total du stock|quantite totale|combien de pieces/', $n)) {
+            $r = DB::table('warehouse_has_stock as s')->join('products as p', 'p.id', '=', 's.product_id')->whereNull('p.deleted_at')->where('s.stockLevel', '>', 0)->selectRaw('COUNT(DISTINCT s.product_id) AS produits, COALESCE(SUM(s.stockLevel), 0) AS pieces, COALESCE(SUM(s.stockLevel * s.wh_average), 0) AS valeur')->first();
+
+            return $this->reply("Stock total : {$r->produits} produit(s) en stock, " . $this->qty((float) $r->pieces) . ' pièce(s), ' . $this->money((float) $r->valeur) . ' au coût moyen.', [['label' => 'Valeur par entrepôt', 'text' => 'valeur du stock']]);
+        }
+
+        $noun = preg_match('/(clients?|fournisseurs?|produits?|articles?|factures?|devis|tickets?|commandes?|utilisateurs?|entrepots?|bons? de livraison)/', $n, $m) ? $m[1] : '';
+        $period = ReportPeriod::resolve($n, 'day', Carbon::now(Setting::get('locale', 'timezone') ?: config('app.timezone'))->startOfDay());
+        $docs = fn (array $types) => DB::table('document_headers')->whereNull('deleted_at')->whereIn('document_type', $types)->whereNotIn('status', ['draft', 'cancelled'])->whereBetween('issued_at', [$period[0]->toDateString(), $period[1]->toDateString()])->count();
+
+        return match (true) {
+            (bool) preg_match('/^clients?$/', $noun)       => $this->reply(($c = DB::table('third_partners')->whereNull('deleted_at')->whereIn('tp_Role', ['customer', 'both']))->count() . ' client(s), dont ' . (clone $c)->where('tp_status', true)->count() . ' actif(s).'),
+            (bool) preg_match('/^fournisseurs?$/', $noun)  => $this->reply(($c = DB::table('third_partners')->whereNull('deleted_at')->whereIn('tp_Role', ['supplier', 'both']))->count() . ' fournisseur(s), dont ' . (clone $c)->where('tp_status', true)->count() . ' actif(s).'),
+            (bool) preg_match('/^(produits?|articles?)$/', $noun) => $this->reply(($c = DB::table('products')->whereNull('deleted_at'))->count() . ' produit(s), dont ' . (clone $c)->where('p_status', true)->count() . ' actif(s) et '
+                . DB::table('products as p')->whereNull('p.deleted_at')->whereExists(fn ($q) => $q->selectRaw('1')->from('warehouse_has_stock as s')->whereColumn('s.product_id', 'p.id')->where('s.stockLevel', '>', 0))->count() . ' en stock.'),
+            (bool) preg_match('/^utilisateurs?$/', $noun)  => $this->reply(($c = DB::table('users')->whereNull('deleted_at'))->count() . ' utilisateur(s), dont ' . (clone $c)->where('is_active', true)->count() . ' actif(s).'),
+            (bool) preg_match('/^entrepots?$/', $noun)     => $this->reply(($c = DB::table('warehouses'))->count() . ' entrepôt(s), dont ' . (clone $c)->where('wh_status', true)->count() . ' actif(s).'),
+            (bool) preg_match('/^factures?$/', $noun)      => $this->reply($docs(['InvoiceSale']) . " facture(s) de vente {$period[2]}."),
+            (bool) preg_match('/^tickets?$/', $noun)       => $this->reply($docs(['TicketSale']) . " ticket(s) de caisse {$period[2]}."),
+            (bool) preg_match('/^devis$/', $noun)          => $this->reply($docs(['QuoteSale']) . " devis {$period[2]}."),
+            (bool) preg_match('/^commandes?$/', $noun)     => $this->reply($docs(['CustomerOrder']) . " commande(s) client {$period[2]}."),
+            (bool) preg_match('/^bons? de livraison$/', $noun) => $this->reply($docs(['DeliveryNote']) . " bon(s) de livraison {$period[2]}."),
+            default => $this->reply('Que dois-je compter ? Par exemple : « combien de clients », « combien de factures ce mois », « stock total ».', [], true),
+        };
+    }
     // ── Outils ───────────────────────────────────────────────────────
 
     private function stockByProduct(): Builder
@@ -301,8 +360,8 @@ class InsightsAssistant
      * @param array<int, array{label: string, text: string}> $suggestions
      * @return array{body: string, meta: array<string, mixed>}
      */
-    private function reply(string $body, array $suggestions = []): array
+    private function reply(string $body, array $suggestions = [], bool $error = false): array
     {
-        return ['body' => $body, 'meta' => array_filter(['intent' => 'insights', 'suggestions' => $suggestions ?: null], fn ($v) => $v !== null)];
+        return ['body' => $body, 'meta' => array_filter(['intent' => 'insights', 'suggestions' => $suggestions ?: null, 'error' => $error ?: null], fn ($v) => $v !== null)];
     }
 }

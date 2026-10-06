@@ -221,9 +221,9 @@ class AnalysisAssistant
     /** « ajustements d'inventaire récents ». @param string $n phrase normalisée */
     public function inventoryAdjustments(string $n): array
     {
-        [$from, , $label] = $this->period($n, 'month');
+        [$from, $to, $label] = $this->period($n, 'month');
         $rows = DB::table('stock_mouvements as m')->join('products as p', 'p.id', '=', 'm.product_id')->leftJoin('users as u', 'u.id', '=', 'm.user_id')->where('m.status', '!=', 'cancelled')
-            ->whereIn('m.reason', ['inventory_adjustment', 'adjustment_in', 'adjustment_out', 'stock_adjustment'])->where('m.created_at', '>=', $from->toDateTimeString())->orderByDesc('m.id')
+            ->whereIn('m.reason', ['inventory_adjustment', 'adjustment_in', 'adjustment_out', 'stock_adjustment'])->where('m.created_at', '>=', $from->toDateTimeString())->where('m.created_at', '<=', $to->copy()->endOfDay()->toDateTimeString())->orderByDesc('m.id')
             ->get(['p.p_title', 'p.p_sku', 'm.direction', 'm.quantity', 'm.created_at', 'u.name']);
         if ($rows->isEmpty()) {
             return $this->reply("Aucun ajustement de stock {$label}.");
@@ -267,8 +267,8 @@ class AnalysisAssistant
     /** « actions des agents aujourd'hui ». @param string $n phrase normalisée */
     public function agentActions(string $n): array
     {
-        [$from, , $label] = $this->period($n, 'day');
-        $rows = DB::table('agent_actions as a')->leftJoin('agents as g', 'g.id', '=', 'a.agent_id')->where('a.created_at', '>=', $from->toDateTimeString())->orderByDesc('a.id')->get(['a.created_at', 'a.action', 'a.level', 'g.name']);
+        [$from, $to, $label] = $this->period($n, 'day');
+        $rows = DB::table('agent_actions as a')->leftJoin('agents as g', 'g.id', '=', 'a.agent_id')->where('a.created_at', '>=', $from->toDateTimeString())->where('a.created_at', '<=', $to->copy()->endOfDay()->toDateTimeString())->orderByDesc('a.id')->get(['a.created_at', 'a.action', 'a.level', 'g.name']);
         if ($rows->isEmpty()) {
             return $this->reply("Aucune action d'agent {$label}.");
         }
@@ -314,19 +314,7 @@ class AnalysisAssistant
     /** @return array{0: Carbon, 1: Carbon, 2: string} début, fin (incluse), libellé */
     private function period(string $n, string $default): array
     {
-        $today = $this->today();
-
-        return match (true) {
-            (bool) preg_match('/\bhier\b/', $n)                 => [$today->copy()->subDay(), $today->copy()->subDay(), "d'hier"],
-            (bool) preg_match('/semaine/', $n)                  => [$today->copy()->startOfWeek(), $today, 'de la semaine (depuis lundi)'],
-            (bool) preg_match('/trimestre/', $n)                => [$today->copy()->startOfQuarter(), $today, 'du trimestre (depuis le ' . $today->copy()->startOfQuarter()->format('d/m') . ')'],
-            (bool) preg_match('/\bannee\b|\ban\b/', $n)         => [$today->copy()->startOfYear(), $today, "de l'année"],
-            (bool) preg_match('/\bmois\b/', $n)                 => [$today->copy()->startOfMonth(), $today, 'du mois (depuis le ' . $today->copy()->startOfMonth()->format('d/m') . ')'],
-            (bool) preg_match('/aujourd|du jour|journee/', $n)  => [$today, $today, "d'aujourd'hui"],
-            $default === 'quarter'                              => [$today->copy()->startOfQuarter(), $today, 'du trimestre (depuis le ' . $today->copy()->startOfQuarter()->format('d/m') . ')'],
-            $default === 'day'                                  => [$today, $today, "d'aujourd'hui"],
-            default                                             => [$today->copy()->startOfMonth(), $today, 'du mois (depuis le ' . $today->copy()->startOfMonth()->format('d/m') . ')'],
-        };
+        return ReportPeriod::resolve($n, $default, $this->today());
     }
 
     private function qty(float $v): string

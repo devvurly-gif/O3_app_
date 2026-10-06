@@ -86,8 +86,8 @@ class OversightAssistant
     /** « événements des agents du mois ». @param string $n phrase normalisée */
     public function agentEvents(string $n): array
     {
-        [$from, , $label] = $this->period($n, 'month');
-        $rows = DB::table('agent_events')->where('created_at', '>=', $from->toDateTimeString())->groupBy('type', 'status')->selectRaw('type, status, COUNT(*) AS n')->orderByDesc('n')->get();
+        [$from, $to, $label] = $this->period($n, 'month');
+        $rows = DB::table('agent_events')->where('created_at', '>=', $from->toDateTimeString())->where('created_at', '<=', $to->copy()->endOfDay()->toDateTimeString())->groupBy('type', 'status')->selectRaw('type, status, COUNT(*) AS n')->orderByDesc('n')->get();
         if ($rows->isEmpty()) {
             return $this->reply("Aucun événement d'agent {$label}.");
         }
@@ -237,15 +237,7 @@ class OversightAssistant
     /** @return array{0: Carbon, 1: Carbon, 2: string} début, fin (incluse), libellé */
     private function period(string $n, string $default): array
     {
-        $today = $this->today();
-
-        return match (true) {
-            (bool) preg_match('/\bhier\b/', $n)  => [$today->copy()->subDay(), $today->copy()->subDay(), "d'hier"],
-            (bool) preg_match('/semaine/', $n)   => [$today->copy()->startOfWeek(), $today, 'de la semaine (depuis lundi)'],
-            (bool) preg_match('/\bannee\b/', $n) => [$today->copy()->startOfYear(), $today, "de l'année"],
-            (bool) preg_match('/aujourd|du jour|journee/', $n) => [$today, $today, "d'aujourd'hui"],
-            default                              => [$today->copy()->startOfMonth(), $today, 'du mois (depuis le ' . $today->copy()->startOfMonth()->format('d/m') . ')'],
-        };
+        return ReportPeriod::resolve($n, $default, $this->today());
     }
 
     private function money(float $amount): string

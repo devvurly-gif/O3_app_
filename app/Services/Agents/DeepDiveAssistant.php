@@ -348,6 +348,22 @@ class DeepDiveAssistant
             . "\n\nNon compté : " . $this->money($inLate) . ' de factures clients déjà échues (encaissement incertain) et les ventes à venir. Estimation à partir des échéances saisies, pas une garantie.');
     }
 
+    /** « TVA collectée du mois », « TVA à payer » : la TVA des ventes, celle des achats et la différence (estimation). @param string $n phrase normalisée */
+    public function vatSummary(string $n): array
+    {
+        [$from, $to, $label] = $this->period($n, 'month');
+        $sum = fn (array $types, bool $credit = false) => (float) DB::table('document_headers as d')->join('document_footers as f', 'f.document_header_id', '=', 'd.id')->whereNull('d.deleted_at')->whereIn('d.document_type', $types)
+            ->whereNotIn('d.status', ['draft', 'cancelled'])->whereBetween('d.issued_at', [$from->toDateString(), $to->toDateString()])->sum('f.total_tax');
+        $collected = $sum(self::SALES_TYPES) - $sum(['CreditNoteSale']);
+        $deductible = $sum(['InvoicePurchase']) - $sum(['CreditNotePurchase']);
+        if ($collected == 0.0 && $deductible == 0.0) {
+            return $this->reply("Aucune TVA enregistrée {$label}.");
+        }
+
+        return $this->reply("TVA {$label} :\n\n• Collectée sur les ventes (factures et tickets, avoirs déduits) : " . $this->money($collected) . "\n• Déductible sur les achats (factures d'achat, avoirs déduits) : " . $this->money($deductible)
+            . "\n• Différence : " . $this->money($collected - $deductible) . ($collected - $deductible >= 0 ? ' à payer' : ' de crédit de TVA')
+            . "\n\nEstimation à partir des montants de TVA des documents ; ce n'est pas la déclaration (régime, prorata et opérations hors documents ne sont pas pris en compte).");
+    }
     // ── Outils ───────────────────────────────────────────────────────
 
     /** L'objet de la phrase (produit, tiers, référence…), nettoyé. @param string $n phrase normalisée */
@@ -387,18 +403,7 @@ class DeepDiveAssistant
     /** @return array{0: Carbon, 1: Carbon, 2: string} début, fin (incluse), libellé */
     private function period(string $n, string $default): array
     {
-        $today = $this->today();
-
-        return match (true) {
-            (bool) preg_match('/\bhier\b/', $n)                 => [$today->copy()->subDay(), $today->copy()->subDay(), "d'hier"],
-            (bool) preg_match('/semaine/', $n)                  => [$today->copy()->startOfWeek(), $today, 'de la semaine (depuis lundi)'],
-            (bool) preg_match('/trimestre/', $n)                => [$today->copy()->startOfQuarter(), $today, 'du trimestre (depuis le ' . $today->copy()->startOfQuarter()->format('d/m') . ')'],
-            (bool) preg_match('/\bannee\b|\ban\b/', $n)         => [$today->copy()->startOfYear(), $today, "de l'année"],
-            (bool) preg_match('/\bmois\b/', $n)                 => [$today->copy()->startOfMonth(), $today, 'du mois (depuis le ' . $today->copy()->startOfMonth()->format('d/m') . ')'],
-            (bool) preg_match('/aujourd|du jour|journee/', $n)  => [$today, $today, "d'aujourd'hui"],
-            $default === 'quarter'                              => [$today->copy()->startOfQuarter(), $today, 'du trimestre (depuis le ' . $today->copy()->startOfQuarter()->format('d/m') . ')'],
-            default                                             => [$today->copy()->startOfMonth(), $today, 'du mois (depuis le ' . $today->copy()->startOfMonth()->format('d/m') . ')'],
-        };
+        return ReportPeriod::resolve($n, $default, $this->today());
     }
 
     private function qty(float $v): string
