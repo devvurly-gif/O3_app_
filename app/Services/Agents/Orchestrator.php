@@ -41,6 +41,7 @@ class Orchestrator
         private AnalysisAssistant $analysis,
         private DeepDiveAssistant $deepDive,
         private ExplorerAssistant $explorer,
+        private ExtrasAssistant $extras,
     ) {
     }
 
@@ -107,6 +108,8 @@ class Orchestrator
             (bool) preg_match('/\bdocuments?\s*#?\s*(\d+)/', $n, $doc)                            => $this->intake->act($admin, (int) $doc[1], $n),
             // Atelier des agents : recruter, planifier des routines, retenir des consignes, catalogue des tâches.
             ($studio = $this->studioIntent($n)) !== null                                          => $this->studioAnswer($admin, $studio, $text, $n),
+            // Messagerie, relances, droits, chèques, bannières, terminaux, variantes, prix par liste : lectures, aucun modèle de langage.
+            ($ext = $this->extrasIntent($n)) !== null                                             => $this->extrasAnswer($ext, $n),
             // Recherche, documents d'un tiers, mouvements d'un produit, brouillons oubliés, comparaisons : lectures, aucun modèle de langage.
             ($exp = $this->explorerIntent($n)) !== null                                           => $this->explorerAnswer($exp, $n),
             // Fiches (produit, tiers, document), marge réalisée, tendances, prévisions : lectures, aucun modèle de langage.
@@ -168,6 +171,7 @@ class Orchestrator
             'aide'            => $this->help(true),
             'fonctions'       => $this->capabilities(),
             'fiches_controle' => $this->catalog->audit($admin),
+            'lecture'         => ($read = $r['phrase'] ? $this->readAnswer($this->normalize($r['phrase'])) : null) !== null ? $read : $this->understood($text),
             'ecran'           => $r['screen'] ? $this->navigate($this->normalize($text), [$r['screen']]) : $this->understood($text),
             default           => $this->understood($text),
         };
@@ -207,7 +211,7 @@ class Orchestrator
             . "• « mettre à jour les fiches produits » : je contrôle les fiches (photos, descriptions, catégories, marques, prix, codes-barres) et je propose des corrections à valider ; « prépare les fiches pour l'utilisation » enchaîne toutes les étapes jusqu'à l'activation\n"
             . "• « que sait faire chaque agent » : le catalogue des tâches ; « recrute un agent qui… » ; « chaque lundi à 8 h, contrôle les encaissements » (routine) ; « retiens : … » (consigne) ; « crée les comptes des agents » ; « demande de développement : … » pour une tâche qui manque\n"
             . "• déposez une photo ou un PDF (trombone, ou glissez-le ici) : je lis le document, dis ce que c'est et propose la suite\n"
-            . "• lectures sur l'activité : « résume la journée », « que dois-je valider ? », « chiffre d'affaires du mois », « factures échues », « devis sans suite depuis 10 jours », « bons de livraison non facturés », « encaissements du jour », « solde de chaque compte de trésorerie », « sessions de caisse », « valeur du stock », « produits dormants », « transferts en attente », « pertes du mois », « doublons de produits », « marge par catégorie », « produits jamais vendus », « clients inactifs depuis 60 jours », « clients qui dépassent leur seuil de crédit », « achats du mois par fournisseur », « factures fournisseurs à payer », « bons de commande en attente », « prix d'achat en hausse », « remises accordées ce mois », « dépenses du mois par catégorie », « dépenses sans justificatif », « activité récente », « promotions actives », « top 10 des produits vendus », « ventes du mois par vendeur », « meilleurs clients du trimestre », « qui a modifié la facture FV-001 », « codes-barres invalides », « actions des agents aujourd'hui », « fiche du produit PRC1 », « fiche du client Atlas », « montre la facture FV-001 », « marge réalisée du mois », « panier moyen », « évolution du chiffre d'affaires sur 6 mois », « produits bientôt en rupture », « prévision de trésorerie à 30 jours », « cherche perceuse », « factures du client Atlas », « mouvements du produit PRC1 », « brouillons anciens », « compare ce mois au mois dernier », « nouveaux clients du mois », « ventes par jour de la semaine » (chiffres lus directement dans la base, rien n'est modifié)
+            . "• lectures sur l'activité : « résume la journée », « que dois-je valider ? », « chiffre d'affaires du mois », « factures échues », « devis sans suite depuis 10 jours », « bons de livraison non facturés », « encaissements du jour », « solde de chaque compte de trésorerie », « sessions de caisse », « valeur du stock », « produits dormants », « transferts en attente », « pertes du mois », « doublons de produits », « marge par catégorie », « produits jamais vendus », « clients inactifs depuis 60 jours », « clients qui dépassent leur seuil de crédit », « achats du mois par fournisseur », « factures fournisseurs à payer », « bons de commande en attente », « prix d'achat en hausse », « remises accordées ce mois », « dépenses du mois par catégorie », « dépenses sans justificatif », « activité récente », « promotions actives », « top 10 des produits vendus », « ventes du mois par vendeur », « meilleurs clients du trimestre », « qui a modifié la facture FV-001 », « codes-barres invalides », « actions des agents aujourd'hui », « fiche du produit PRC1 », « fiche du client Atlas », « montre la facture FV-001 », « marge réalisée du mois », « panier moyen », « évolution du chiffre d'affaires sur 6 mois », « produits bientôt en rupture », « prévision de trésorerie à 30 jours », « cherche perceuse », « factures du client Atlas », « mouvements du produit PRC1 », « brouillons anciens », « compare ce mois au mois dernier », « nouveaux clients du mois », « ventes par jour de la semaine », « permissions du rôle manager », « relances de paiement du mois », « commandes WhatsApp du jour », « chèques et effets reçus ce mois » ; ou posez simplement la question, par exemple « combien j'ai vendu hier ? » (chiffres lus directement dans la base, rien n'est modifié)
 "
             . "• « que peut-on faire dans O3 » : tous les domaines de l'application ; ou nommez un écran (« les fiches produits », « créer une facture ») et je vous y envoie\n\n"
             . "Les agents préparent des brouillons. Rien n'est modifié ni envoyé sans votre validation, dans l'écran concerné.",
@@ -569,6 +573,68 @@ class Orchestrator
             'peak'        => $this->explorer->peakHours(),
             'by_city'     => $this->explorer->thirdPartiesByCity(),
             default       => $this->explorer->lastLogins(),
+        };
+    }
+    /** Quelle lecture sur les canaux, les droits, les paiements, le site ou la caisse ? null si aucune. @param string $n phrase normalisée */
+    private function extrasIntent(string $n): ?string
+    {
+        // « les relances envoyées ce mois » est une question ; « relance les clients » est un ordre.
+        if (preg_match('/\brelances?\b.*(envoyees?|echec|du mois|de la semaine|historique)|combien de relances/', $n) && !preg_match('/\b(controle\w*|prepar\w*|lance\w*)\b/', $n)) {
+            return 'reminders';
+        }
+        if (preg_match('/\b(controle\w*|prepar\w*|relanc\w*|recrut\w*|lance\w*|revis\w*|attribu\w*|active(?:r|z|ons)?|publi\w*|import(?:e|er|ez))\b/', $n)) {
+            return null;
+        }
+
+        return match (true) {
+            (bool) preg_match('/commandes?/', $n) && (bool) preg_match('/whatsapp|sms|messagerie|\bchat\b/', $n) => 'wa_orders',
+            (bool) preg_match('/importations?|\bimports?\b|(factures?|documents?) deposes?/', $n) && (bool) preg_match('/achat|fournisseur|deposes?/', $n) => 'purchase_imports',
+            (bool) preg_match('/dossiers?/', $n) && (bool) preg_match('/agents?|ouverts?/', $n) => 'cases',
+            (bool) preg_match('/permissions?|droits?|autorisations?|\broles?\b/', $n) => 'permissions',
+            (bool) preg_match('/cheques?|\beffets?\b/', $n) && (bool) preg_match('/recus?|encaisse|mois|semaine|liste|aujourd|hier/', $n) => 'cheques',
+            (bool) preg_match('/bannieres?|slides?|carrousel/', $n) => 'banners',
+            (bool) preg_match('/terminaux?/', $n) => 'terminals',
+            (bool) preg_match('/variantes?/', $n) => 'variants',
+            (bool) preg_match('/\bprix\b/', $n) && (bool) preg_match('/par liste|dans (les|chaque|toutes les) listes?|selon (les|la) listes?/', $n) => 'prices_by_list',
+            default => null,
+        };
+    }
+
+    private function extrasAnswer(string $intent, string $n): array
+    {
+        return match ($intent) {
+            'reminders'        => $this->extras->reminders($n),
+            'wa_orders'        => $this->extras->messagingOrders($n),
+            'purchase_imports' => $this->extras->purchaseImports(),
+            'cases'            => $this->extras->agentCases(),
+            'permissions'      => $this->extras->permissions($n),
+            'cheques'          => $this->extras->cheques($n),
+            'banners'          => $this->extras->banners(),
+            'terminals'        => $this->extras->terminals(),
+            'variants'         => $this->extras->variants(),
+            default            => $this->extras->pricesByList($n),
+        };
+    }
+
+    /**
+     * La réponse à une phrase qui est une LECTURE, ou null si les règles n'y voient pas une lecture. Sert au renfort par
+     * IA : la question libre de l'administrateur y est reformulée en une phrase connue, jamais exécutée telle quelle.
+     * Un ordre (« applique le lot 3 », « supprime… ») n'est reconnu par aucune de ces lectures : il ne passe donc pas.
+     *
+     * @param string $n phrase normalisée
+     * @return array{body: string, meta: array<string, mixed>}|null
+     */
+    private function readAnswer(string $n): ?array
+    {
+        return match (true) {
+            ($i = $this->extrasIntent($n)) !== null    => $this->extrasAnswer($i, $n),
+            ($i = $this->explorerIntent($n)) !== null  => $this->explorerAnswer($i, $n),
+            ($i = $this->deepDiveIntent($n)) !== null  => $this->deepDiveAnswer($i, $n),
+            ($i = $this->analysisIntent($n)) !== null  => $this->analysisAnswer($i, $n),
+            ($i = $this->businessIntent($n)) !== null  => $this->businessAnswer($i, $n),
+            ($i = $this->insightsIntent($n)) !== null  => $this->insightsAnswer($i, $n),
+            ($i = $this->operationsIntent($n)) !== null => $this->operationsAnswer($i, $n),
+            default                                    => null,
         };
     }
     // ── Fiches produits ──────────────────────────────────────────────
