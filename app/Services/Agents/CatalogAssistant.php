@@ -11,6 +11,9 @@ use App\Models\Product;
 use App\Models\User;
 use App\Services\BulkSalePriceUpdater;
 use App\Services\CacheService;
+use App\Services\ProductImageService;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -33,11 +36,14 @@ class CatalogAssistant
     private const SHOWN = 10;
     private const ACTIVATION_BATCH = 100;
     private const BARCODE_BATCH = 200;
+    private const PHOTO_BATCH = 12;
 
     public function __construct(
         private CatalogAudit $audit,
         private CatalogEnricher $enricher,
         private BulkSalePriceUpdater $prices,
+        private JadeverPhotoSource $jadever,
+        private ProductImageService $images,
     ) {
     }
 
@@ -110,9 +116,115 @@ class CatalogAssistant
             . $products->map(fn (Product $p) => "• {$p->p_title} ({$p->p_sku})")->implode("\n")
             . (count($ids) > 15 ? "\n… et " . (count($ids) - 15) . ' autre(s).' : '')
             . "\n\nDéposez une photo ici (trombone ou glisser-déposer) : je la lis, je propose le produit correspondant et je la rattache après votre clic."
-            . ($jadever > 0 ? "\nPour les {$jadever} produit(s) Jadever, les photos officielles se trouvent sur jadevermall.com/ma (recherche par référence) : je ne peux pas les télécharger moi-même, le site ne le permet pas." : '');
+            . ($jadever > 0 ? "\nPour les {$jadever} produit(s) Jadever, je peux chercher moi-même les photos officielles sur " . JadeverPhotoSource::SITE . ' (par référence) et vous les montrer avant de les rattacher.' : '');
 
-        return $this->reply($body, links: [['label' => 'Produits', 'to' => '/products'], ['label' => 'Galerie images', 'to' => '/storage/gallery']]);
+        return $this->reply($body, links: [['label' => 'Produits', 'to' => '/products'], ['label' => 'Galerie images', 'to' => '/storage/gallery']], suggestions: $jadever > 0 ? [['label' => 'Chercher les photos Jadever', 'text' => 'cherche les photos Jadever']] : []);
+    }
+
+    /**
+     * « Cherche les photos Jadever » : pour les produits Jadever sans photo, trouve la photo officielle sur le site
+     * autorisé (par référence), la télécharge et la vérifie, puis la MONTRE. Rien n'est rattaché avant le clic.
+     */
+    public function fetchPhotos(User $admin): array
+    {
+        $pending = AgentEvent::where('type', 'catalogue_photos')->where('status', AgentEvent::STATUS_ROUTED)->get()
+            ->flatMap(fn (AgentEvent $e) => array_column($e->payload['items'] ?? [], 'product_id'))->all();
+
+        /** @var \Illuminate\Support\Collection<int, Product> $all */
+        $all = $this->audit->query('no_photo')->withSum('warehouseStocks as stock_qty', 'stockLevel')
+            ->orderByDesc('stock_qty')->orderBy('id')->get(['id', 'p_title', 'p_sku']);
+        $candidates = $all->filter(fn (Product $p) => JadeverPhotoSource::isJadeverSku($p->p_sku) && !in_array($p->id, $pending, true));
+        if ($candidates->isEmpty()) {
+            return $this->reply($pending !== []
+                ? 'Les photos trouvées attendent déjà votre validation (proposition en cours) : appliquez-la ou ignorez-la d\'abord.'
+                : 'Aucun produit Jadever sans photo : rien à chercher.');
+        }
+
+        $event = $this->record('catalogue_photos', AgentEvent::STATUS_ROUTED, 'Photos officielles Jadever à valider', ['items' => [], 'requested_by' => $admin->name, 'source' => JadeverPhotoSource::SITE]);
+        $items = [];
+        $notFound = [];
+        $failed = [];
+        $batch = $candidates->take(self::PHOTO_BATCH);
+        foreach ($batch->values() as $i => $product) {
+            $i > 0 && usleep(250_000);   // une requête à la fois, sans surcharger le site
+            $found = $this->jadever->find($product->p_sku);
+            if ($found === null) {
+                $this->jadever->failure() !== null ? $failed[] = "{$product->p_sku} ({$this->jadever->failure()})" : $notFound[] = $product->p_sku;
+                if ($this->jadever->failure() !== null && count($failed) >= 2 && $items === []) {
+                    break;   // le site refuse : inutile d'insister
+                }
+                continue;
+            }
+            $image = $this->jadever->download($found['url']);
+            if ($image === null) {
+                $failed[] = "{$product->p_sku} ({$this->jadever->failure()})";
+                continue;
+            }
+            $path = "agent-photos/{$event->id}/{$product->id}.{$image['ext']}";
+            Storage::disk('local')->put($path, $image['bytes']);
+            $items[] = ['product_id' => $product->id, 'sku' => $product->p_sku, 'title' => $product->p_title, 'site_name' => $found['name'], 'source' => $found['url'], 'path' => $path, 'mime' => $image['mime'], 'width' => $image['width'], 'height' => $image['height']];
+        }
+
+        $rest = $candidates->count() - $batch->count();
+        $notes = ($notFound !== [] ? "\nSans photo sur le site : " . implode(', ', $notFound) . '.' : '')
+            . ($failed !== [] ? "\nNon récupérées : " . implode(' ; ', array_slice($failed, 0, 4)) . '.' : '')
+            . ($rest > 0 ? "\n{$rest} autre(s) produit(s) Jadever restent : redemandez après validation." : '');
+
+        if ($items === []) {
+            $event->update(['status' => AgentEvent::STATUS_REJECTED]);
+
+            return $this->reply('Je n\'ai récupéré aucune photo.' . $notes . ($failed !== [] ? "\nVous pouvez toujours déposer les photos ici (trombone)." : ''), error: $failed !== [], eventId: $event->id);
+        }
+
+        $event->update(['payload' => array_merge($event->payload, ['items' => $items])]);
+        $this->log($event, 'catalog_photos_fetched', ['found' => count($items), 'not_found' => count($notFound), 'failed' => count($failed)]);
+
+        return $this->reply(
+            count($items) . ' photo(s) officielle(s) trouvée(s) sur ' . JadeverPhotoSource::SITE . " (lot #{$event->id}). Vérifiez les aperçus ci-dessous : rien n'est rattaché avant votre clic."
+            . "\n\n" . collect($items)->map(fn (array $it) => "• {$it['title']} ({$it['sku']}) — {$it['width']}×{$it['height']}")->implode("\n") . $notes,
+            eventId: $event->id,
+            suggestions: [
+                ['label' => 'Rattacher ces photos', 'text' => "applique le lot #{$event->id}"],
+                ['label' => 'Ignorer', 'text' => "ignore le lot #{$event->id}"],
+            ],
+            images: array_map(fn (array $it) => ['label' => "{$it['sku']}", 'url' => "/agents/orchestrateur/photos/{$event->id}/{$it['product_id']}"], $items),
+        );
+    }
+
+    /** Le fichier d'aperçu d'une photo proposée (lot en attente seulement). */
+    public function previewPath(int $eventId, int $productId): ?string
+    {
+        $event = AgentEvent::where('type', 'catalogue_photos')->where('status', AgentEvent::STATUS_ROUTED)->find($eventId);
+        foreach ($event?->payload['items'] ?? [] as $it) {
+            if ((int) $it['product_id'] === $productId && Storage::disk('local')->exists($it['path'])) {
+                return Storage::disk('local')->path($it['path']);
+            }
+        }
+
+        return null;
+    }
+
+    private function applyPhotos(User $admin, AgentEvent $event): array
+    {
+        $applied = $skipped = 0;
+        foreach ($event->payload['items'] ?? [] as $it) {
+            $product = Product::find($it['product_id']);
+            // Seulement si la fiche n'a toujours pas de photo et que le fichier est encore là.
+            if (!$product || $product->images()->exists() || !Storage::disk('local')->exists($it['path'])) {
+                $skipped++;
+                continue;
+            }
+            $file = new UploadedFile(Storage::disk('local')->path($it['path']), $it['sku'] . '.' . pathinfo($it['path'], PATHINFO_EXTENSION), $it['mime'], null, true);
+            $this->images->upload($product, $file, $product->p_title, $product->p_title, true);
+            $applied++;
+        }
+        Storage::disk('local')->deleteDirectory("agent-photos/{$event->id}");
+
+        $result = ['applied' => $applied, 'skipped' => $skipped];
+        $event->update(['status' => AgentEvent::STATUS_DONE, 'payload' => array_merge($event->payload ?? [], ['result' => $result])]);
+        $this->log($event, 'catalog_photos_applied', $result);
+
+        return $this->reply("Lot #{$event->id} appliqué : {$applied} photo(s) rattachée(s)" . ($skipped > 0 ? ", {$skipped} produit(s) laissé(s) tels quels (photo déjà ajoutée entre-temps)" : '') . '.', links: [['label' => 'Produits', 'to' => '/products']], eventId: $event->id);
     }
 
     public function complete(User $admin): array
@@ -288,7 +400,7 @@ class CatalogAssistant
     /** « applique les propositions du lot #12 », « ignore le lot #12 ». @return array{body: string, meta: array<string, mixed>} */
     public function act(User $admin, int $eventId, string $n): array
     {
-        $event = AgentEvent::whereIn('type', ['catalogue_completion', 'catalogue_prix', 'catalogue_activation', 'catalogue_codes_barres'])->find($eventId);
+        $event = AgentEvent::whereIn('type', ['catalogue_completion', 'catalogue_prix', 'catalogue_activation', 'catalogue_codes_barres', 'catalogue_photos'])->find($eventId);
         if (!$event) {
             return $this->reply("Je ne trouve pas le lot #{$eventId}.", error: true);
         }
@@ -297,6 +409,7 @@ class CatalogAssistant
         }
         if (preg_match('/ignor|annul|abandon/', $n)) {
             $event->update(['status' => AgentEvent::STATUS_REJECTED, 'payload' => array_merge($event->payload ?? [], ['dismissed_by' => $admin->name])]);
+            $event->type === 'catalogue_photos' && Storage::disk('local')->deleteDirectory("agent-photos/{$event->id}");
 
             return $this->withNextStep($this->reply("C'est noté : le lot #{$eventId} est ignoré, aucune fiche n'a été modifiée.", eventId: $eventId));
         }
@@ -309,6 +422,7 @@ class CatalogAssistant
                 return $this->withNextStep(match ($event->type) {
                     'catalogue_activation'   => $this->applyActivation($event),
                     'catalogue_codes_barres' => $this->applyBarcodes($event),
+                    'catalogue_photos'       => $this->applyPhotos($admin, $event),
                     default                  => $this->applyPrices($event),
                 });
             }
@@ -665,9 +779,10 @@ class CatalogAssistant
     /**
      * @param array<int, array{label: string, to: string}> $links
      * @param array<int, array{label: string, text: string}> $suggestions
+     * @param array<int, array{label: string, url: string}> $images aperçus (servis par une route authentifiée)
      * @return array{body: string, meta: array<string, mixed>}
      */
-    private function reply(string $body, array $links = [], bool $error = false, ?int $eventId = null, array $suggestions = []): array
+    private function reply(string $body, array $links = [], bool $error = false, ?int $eventId = null, array $suggestions = [], array $images = []): array
     {
         return ['body' => $body, 'meta' => array_filter([
             'intent'      => 'catalog',
@@ -675,6 +790,7 @@ class CatalogAssistant
             'error'       => $error ?: null,
             'event_id'    => $eventId,
             'suggestions' => $suggestions ?: null,
+            'images'      => $images ?: null,
         ], fn ($v) => $v !== null)];
     }
 }

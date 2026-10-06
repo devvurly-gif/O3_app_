@@ -34,6 +34,7 @@ class Orchestrator
         private DocumentIntake $intake,
         private CatalogAssistant $catalog,
         private AgentStudio $studio,
+        private AgentInterview $interview,
     ) {
     }
 
@@ -54,7 +55,7 @@ class Orchestrator
         $text = trim($text);
         $user = OrchestratorMessage::create(['user_id' => $admin->id, 'role' => OrchestratorMessage::ROLE_ADMIN, 'body' => $text]);
 
-        $answer = $this->answer($admin, $text);
+        $answer = $this->interviewTurn($admin, $text) ?? $this->answer($admin, $text);
 
         $reply = OrchestratorMessage::create([
             'user_id' => $admin->id,
@@ -64,6 +65,29 @@ class Orchestrator
         ]);
 
         return ['user' => $user, 'reply' => $reply];
+    }
+
+    /**
+     * L'entretien de conception, s'il y en a un d'ouvert (la réponse de l'administrateur lui revient, sauf s'il
+     * valide ou ignore une proposition) ou si la phrase en ouvre un. Seulement dans le chat : les routines
+     * planifiées (runCommand) ne passent jamais par là.
+     *
+     * @return array{body: string, meta: array<string, mixed>}|null
+     */
+    private function interviewTurn(User $admin, string $text): ?array
+    {
+        $n = $this->normalize($text);
+        if (preg_match('/\b(proposition|lot|routine|agent|document|demande|consigne)\s*#\s*\d+/', $n)) {
+            return null;
+        }
+        if ($open = $this->interview->open($admin)) {
+            return $this->interview->answer($admin, $open, $text, $n);
+        }
+        if (preg_match('/^(discutons|parlons|on discute|aide moi a (definir|concevoir|creer|etablir|organiser)|j.ai une idee|ouvre (l.atelier|un entretien)|concois|j.aimerais automatiser|j.ai besoin d.automatiser|entretien de conception)\b/', $n)) {
+            return $this->interview->start($admin, $text);
+        }
+
+        return null;
     }
 
     /** @return array{body: string, meta: array<string, mixed>} */
@@ -275,6 +299,8 @@ class Orchestrator
         $about = (bool) preg_match('/fiches?|produits?|prouits?|catalogue|articles?/', $n);
 
         return match (true) {
+            // « cherche les photos Jadever » : le serveur va les chercher sur le site autorisé (aperçu, puis clic).
+            (bool) preg_match('/\b(photos?|images?)\b/', $n) && (bool) preg_match('/\b(cherch|trouv|recuper|telecharg|import|rattach|rapport|ajout)\w*/', $n) && (bool) preg_match('/jadever|officiel|site|automatique|toi.meme|arriere/', $n) => 'photos_fetch',
             (bool) preg_match('/\bprix\b|tarifs?/', $n) && (bool) preg_match('/revis|propos|marge|calcul/', $n) && ($about || str_contains($n, 'marge')) => 'pricing',
             (bool) preg_match('/sans photos?|photos? manquantes?|manque de photos?|pas de photos?|sans image/', $n) => 'photos',
             $about && (bool) preg_match('/\b(activ(?:e|er|ons|ation)|reactiv\w*|mett\w* en service)\b/', $n) => 'activation',
@@ -292,6 +318,7 @@ class Orchestrator
             'act'      => preg_match('/\blot\s*#\s*(\d+)/', $n, $m) ? $this->catalog->act($admin, (int) $m[1], $n) : $this->catalog->audit($admin),
             'pricing'  => $this->catalog->pricing($admin, $n),
             'photos'   => $this->catalog->photos(),
+            'photos_fetch' => $this->catalog->fetchPhotos($admin),
             'activation' => $this->catalog->activation($admin),
             'barcodes' => $this->catalog->barcodes($admin),
             'prepare'  => $this->catalog->prepare($admin),

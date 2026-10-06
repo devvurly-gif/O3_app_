@@ -20,6 +20,7 @@ class RoutineSteps
         'inventaire'    => ['label' => 'Préparer un inventaire', 'phrase' => 'prépare un inventaire', 'does' => 'une feuille de comptage en brouillon (aucun stock modifié)'],
         'encaissements' => ['label' => 'Contrôler les encaissements', 'phrase' => 'contrôle les encaissements', 'does' => 'des relances de paiement en brouillon (aucun client contacté)'],
         'relances'      => ['label' => 'Relances à valider', 'phrase' => 'relances à valider', 'does' => 'ce qui attend votre validation'],
+        'photos'        => ['label' => 'Chercher les photos Jadever', 'phrase' => 'cherche les photos Jadever', 'does' => 'les photos officielles des produits Jadever sans photo, en aperçu à valider (aucune photo rattachée)'],
         'fiches'        => ['label' => 'Contrôler les fiches produits', 'phrase' => 'mettre à jour les fiches produits', 'does' => 'le contrôle des fiches (lecture seule)'],
     ];
 

@@ -5,12 +5,14 @@ namespace App\Http\Controllers\Api\Agents;
 use App\Http\Controllers\Controller;
 use App\Models\OrchestratorMessage;
 use App\Models\Setting;
+use App\Services\Agents\CatalogAssistant;
 use App\Services\Agents\DocumentIntake;
 use App\Services\Agents\DocumentReader;
 use App\Services\Agents\Orchestrator;
 use App\Services\Agents\OrchestratorInterpreter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
  * Session de discussion administrateur ↔ orchestrateur. Chaque administrateur ne
@@ -22,6 +24,16 @@ class OrchestratorController extends Controller
 
     public function __construct(private Orchestrator $orchestrator, private OrchestratorInterpreter $interpreter)
     {
+    }
+
+    /** GET /api/agents/orchestrateur/photos/{event}/{product} — l'aperçu d'une photo proposée, en attente de validation. */
+    public function photo(Request $request, CatalogAssistant $catalog, int $event, int $product): BinaryFileResponse
+    {
+        $this->ensureInteractiveUser($request);
+        $path = $catalog->previewPath($event, $product);
+        abort_if($path === null, 404);
+
+        return response()->file($path, ['Cache-Control' => 'private, max-age=300']);
     }
 
     /** GET /api/agents/orchestrateur — l'historique de la session de l'administrateur. */
@@ -123,6 +135,7 @@ class OrchestratorController extends Controller
             'body'        => $m->body,
             'links'       => $m->meta['links'] ?? [],
             'suggestions' => $m->meta['suggestions'] ?? [],
+            'images'      => $m->meta['images'] ?? [],
             'ai'          => (bool) ($m->meta['ai'] ?? false),
             'warning'     => (bool) ($m->meta['warning'] ?? false),
             'error'       => (bool) ($m->meta['error'] ?? false),

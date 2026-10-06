@@ -342,6 +342,22 @@ class AgentStudio
             }
         }
 
+        $event = $this->recordDevRequest($admin, $about, $ideas);
+
+        return $this->reply(
+            "Demande de développement #{$event->id} enregistrée. Copiez le texte ci-dessous et transmettez-le au développeur (Claude Code) :\n\n{$event->payload['brief']}",
+            suggestions: [['label' => 'Voir les demandes ouvertes', 'text' => 'mes demandes de développement']],
+            eventId: $event->id,
+        );
+    }
+
+    /**
+     * Rédige et enregistre une demande de développement (texte complet à transmettre au développeur).
+     *
+     * @param string $ideas texte additionnel (idées déjà identifiées, contexte d'une conception…)
+     */
+    public function recordDevRequest(User $admin, string $about, string $ideas = ''): AgentEvent
+    {
         $brief = "DEMANDE DE DÉVELOPPEMENT — " . mb_strimwidth($about, 0, 70, '…') . "\n\n"
             . "Contexte : application O3, orchestrateur des agents IA (voir la « Spécification du socle des agents IA »).\n"
             . 'Besoin exprimé par ' . $admin->name . ' le ' . now()->format('d/m/Y') . " :\n« {$about} »{$ideas}\n\n"
@@ -351,16 +367,10 @@ class AgentStudio
             . "- tests automatiques, contrôle PHPStan, puis déploiement seulement sur demande explicite.\n\n"
             . "À préciser avant de commencer : les données à lire, les règles de gestion et les seuils, le résultat attendu, qui valide et à quelle fréquence.";
 
-        $event = AgentEvent::create([
+        return AgentEvent::create([
             'type' => 'demande_developpement', 'source' => 'orchestrator', 'status' => AgentEvent::STATUS_NEW,
             'payload' => ['text' => 'Demande de développement : ' . mb_strimwidth($about, 0, 80, '…'), 'brief' => $brief, 'requested_by' => $admin->name],
         ]);
-
-        return $this->reply(
-            "Demande de développement #{$event->id} enregistrée. Copiez le texte ci-dessous et transmettez-le au développeur (Claude Code) :\n\n{$brief}",
-            suggestions: [['label' => 'Voir les demandes ouvertes', 'text' => 'mes demandes de développement']],
-            eventId: $event->id,
-        );
     }
 
     public function devRequests(): array
@@ -390,7 +400,7 @@ class AgentStudio
     /** « applique la proposition #12 », « ignore la proposition #12 ». @param string $n phrase normalisée */
     public function act(User $admin, int $eventId, string $n): array
     {
-        $event = AgentEvent::whereIn('type', ['agent_recrutement', 'routine_proposition', 'consigne_proposition', 'comptes_agents'])->find($eventId);
+        $event = AgentEvent::whereIn('type', ['agent_recrutement', 'routine_proposition', 'consigne_proposition', 'comptes_agents', 'conception_proposition'])->find($eventId);
         if (!$event) {
             return $this->reply("Je ne trouve pas la proposition #{$eventId}.", error: true);
         }
@@ -399,6 +409,7 @@ class AgentStudio
         }
         if (preg_match('/ignor|annul|abandon/', $n)) {
             $event->update(['status' => AgentEvent::STATUS_REJECTED]);
+            $this->closeInterview($event, AgentEvent::STATUS_REJECTED);
 
             return $this->reply("C'est noté : la proposition #{$eventId} est ignorée, rien n'a été créé.", eventId: $eventId);
         }
@@ -411,13 +422,99 @@ class AgentStudio
             'agent_recrutement'   => $this->createAgent($admin, $event, $payload['spec'] ?? []),
             'routine_proposition' => $this->createRoutine($admin, $event, $payload['spec'] ?? []),
             'comptes_agents'      => $this->createAccounts($admin, $event),
+            'conception_proposition' => $this->applyDesign($admin, $event),
             default               => $this->createDirective($admin, $event, (string) ($payload['body'] ?? '')),
         };
         if (!($reply['meta']['error'] ?? false)) {
             $event->update(['status' => AgentEvent::STATUS_DONE]);
+            $this->closeInterview($event, AgentEvent::STATUS_DONE);
         }
 
         return $reply;
+    }
+
+    /** Un plan de conception validé ou ignoré clôt l'entretien dont il est issu. */
+    private function closeInterview(AgentEvent $proposal, string $status): void
+    {
+        if ($proposal->type === 'conception_proposition' && !empty($proposal->payload['interview_id'])) {
+            AgentEvent::where('type', 'atelier_entretien')->whereKey((int) $proposal->payload['interview_id'])->update(['status' => $status]);
+        }
+    }
+
+    /**
+     * Crée ce que le plan de l'entretien prévoit : l'agent (inactif, avec son compte), ses routines (horaire et/ou
+     * événement interne) et une demande de développement par besoin hors du socle. Tout est re-nettoyé ici :
+     * ce qui a disparu depuis la proposition (étape, domaine) est écarté.
+     */
+    private function applyDesign(User $admin, AgentEvent $event): array
+    {
+        $spec = $event->payload['spec'] ?? [];
+        $name = (string) ($spec['name'] ?? '');
+        if ($name === '') {
+            return $this->reply('Ce plan est incomplet : relancez l\'entretien.', error: true, eventId: $event->id);
+        }
+
+        $done = [];
+        $agent = null;
+        $a = $spec['agent'] ?? null;
+        if (is_array($a)) {
+            $scopes = AgentDataTools::sanitizeScopes($a['scopes'] ?? []);
+            if ($scopes !== [] && ($a['name'] ?? '') !== '' && ($a['mission'] ?? '') !== '') {
+                $agent = $this->makeAgent($admin, $a['name'], $a['mission'], $scopes, $event->id);
+                $done[] = "• Agent #{$agent->id} « {$agent->name} » recruté (inactif), avec son propre compte";
+            }
+        }
+
+        $steps = RoutineSteps::sanitize($spec['steps'] ?? []);
+        $agent && array_unshift($steps, "agent:{$agent->id}");
+        $schedule = RoutineSchedule::sanitize($spec['schedule'] ?? null);
+        $trigger = AgentTriggers::sanitize($spec['trigger'] ?? null);
+        $routineName = 'Routine « ' . mb_strimwidth($name, 0, 60, '…') . ' »';
+        $routines = [];
+
+        // Les routines d'un agent neuf attendent son activation ; sans agent (étapes connues seulement), elles démarrent.
+        if ($steps !== [] && $schedule) {
+            $r = AgentRoutine::create([
+                'name' => $routineName, 'steps' => $steps, 'schedule' => $schedule, 'agent_id' => $agent?->id,
+                'is_active' => $agent === null, 'created_by' => $admin->id, 'next_run_at' => $agent === null ? RoutineSchedule::next($schedule) : null,
+            ]);
+            $routines[] = $r;
+            $done[] = "• Routine #{$r->id} : " . RoutineSchedule::describe($schedule);
+        }
+        if ($steps !== [] && $trigger) {
+            $r = AgentRoutine::create([
+                'name' => $routineName . ' (événement)', 'steps' => $steps, 'schedule' => ['frequency' => 'event'], 'trigger' => $trigger,
+                'last_event_id' => (int) AgentEvent::max('id'), 'agent_id' => $agent?->id, 'is_active' => $agent === null,
+                'created_by' => $admin->id, 'next_run_at' => null,
+            ]);
+            $routines[] = $r;
+            $done[] = "• Routine #{$r->id} : " . AgentTriggers::describe($trigger);
+        }
+        foreach ($routines as $r) {
+            $this->log($agent?->id, 'routine_created', ['routine' => $r->id, 'by' => $admin->name, 'event' => $event->id]);
+        }
+        $routines !== [] && AgentTriggers::forgetListeners();
+        $agent && $routines !== [] && $done[] = "  (les routines de l'agent démarrent quand vous l'activez)";
+
+        $goal = (string) ($event->payload['goal'] ?? $name);
+        foreach ($spec['dev_needs'] ?? [] as $d) {
+            if (($d['title'] ?? '') === '') {
+                continue;
+            }
+            $dev = $this->recordDevRequest($admin, (string) $d['title'], "\nDétail : " . ($d['detail'] ?? '') . "\nContexte : issu de l'entretien de conception « " . mb_strimwidth($goal, 0, 120, '…') . " » (plan #{$event->id}).");
+            $done[] = "• Demande de développement #{$dev->id} : {$d['title']}";
+        }
+
+        if ($done === []) {
+            return $this->reply('Ce plan ne contient rien de créable (agent, étapes ou besoins) : relancez l\'entretien.', error: true, eventId: $event->id);
+        }
+        $this->log($agent?->id, 'design_applied', ['plan' => $event->id, 'by' => $admin->name, 'name' => $name]);
+
+        return $this->reply(
+            "Plan « {$name} » mis en place :\n" . implode("\n", $done),
+            suggestions: $agent ? [['label' => "Activer l'agent", 'text' => "active l'agent #{$agent->id}"]] : [],
+            eventId: $event->id,
+        );
     }
 
     private function createAgent(User $admin, AgentEvent $event, array $spec): array
@@ -427,20 +524,7 @@ class AgentStudio
             return $this->reply('La fiche de cet agent est incomplète : redemandez le recrutement.', error: true, eventId: $event->id);
         }
 
-        $base = 'perso-' . Str::limit(Str::slug($spec['name']), 20, '');
-        $domain = $base;
-        for ($i = 2; Agent::where('domain', $domain)->exists(); $i++) {
-            $domain = "{$base}-{$i}";
-        }
-
-        $agent = Agent::create([
-            'domain' => $domain, 'name' => $spec['name'], 'kind' => 'custom', 'mission' => $spec['mission'], 'scopes' => $scopes,
-            'created_by' => $admin->id, 'default_level' => 'approval', 'is_active' => false,
-        ]);
-        $this->log($agent->id, 'agent_recruited', ['by' => $admin->name, 'scopes' => $scopes, 'event' => $event->id]);
-        // Chaque agent recruté a son propre compte, dès son recrutement (inactif comme lui).
-        $account = $this->registry->ensureAccount($agent);
-        $account && $this->log($agent->id, 'agent_account_created', ['email' => $account->email, 'by' => $admin->name]);
+        $agent = $this->makeAgent($admin, $spec['name'], $spec['mission'], $scopes, $event->id);
 
         $routineNote = '';
         if (!empty($spec['schedule'])) {
@@ -456,6 +540,31 @@ class AgentStudio
             suggestions: [['label' => 'Activer l\'agent', 'text' => "active l'agent #{$agent->id}"]],
             eventId: $event->id,
         );
+    }
+
+    /**
+     * Crée un agent recruté : INACTIF, avec son propre compte (lui aussi inactif) et une ligne au journal.
+     *
+     * @param array<int, string> $scopes domaines de données déjà validés
+     */
+    public function makeAgent(User $admin, string $name, string $mission, array $scopes, ?int $eventId = null): Agent
+    {
+        $base = 'perso-' . Str::limit(Str::slug($name), 20, '');
+        $domain = $base;
+        for ($i = 2; Agent::where('domain', $domain)->exists(); $i++) {
+            $domain = "{$base}-{$i}";
+        }
+
+        $agent = Agent::create([
+            'domain' => $domain, 'name' => $name, 'kind' => 'custom', 'mission' => $mission, 'scopes' => $scopes,
+            'created_by' => $admin->id, 'default_level' => 'approval', 'is_active' => false,
+        ]);
+        $this->log($agent->id, 'agent_recruited', ['by' => $admin->name, 'scopes' => $scopes, 'event' => $eventId]);
+        // Chaque agent recruté a son propre compte, dès son recrutement (inactif comme lui).
+        $account = $this->registry->ensureAccount($agent);
+        $account && $this->log($agent->id, 'agent_account_created', ['email' => $account->email, 'by' => $admin->name]);
+
+        return $agent;
     }
 
     private function createRoutine(User $admin, AgentEvent $event, array $spec): array
