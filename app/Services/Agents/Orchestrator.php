@@ -301,6 +301,8 @@ class Orchestrator
         return match (true) {
             // « cherche les photos Jadever » : le serveur va les chercher sur le site autorisé (aperçu, puis clic).
             (bool) preg_match('/\b(photos?|images?)\b/', $n) && (bool) preg_match('/\b(cherch|trouv|recuper|telecharg|import|rattach|rapport|ajout)\w*/', $n) && (bool) preg_match('/jadever|officiel|site|automatique|toi.meme|arriere/', $n) => 'photos_fetch',
+            // « publier les produits dans le website » : l'agent Marketing propose la mise en boutique en ligne.
+            (bool) preg_match('/\b(publi\w*|mise? en ligne|mett\w* en ligne)/', $n) && (bool) preg_match('/produits?|fiches?|articles?|catalogue/', $n) && (bool) preg_match('/website|web site|site web|\bsite\b|boutique|e-?commerce|en ligne|internet/', $n) => 'publication',
             (bool) preg_match('/\bprix\b|tarifs?/', $n) && (bool) preg_match('/revis|propos|marge|calcul/', $n) && ($about || str_contains($n, 'marge')) => 'pricing',
             (bool) preg_match('/sans photos?|photos? manquantes?|manque de photos?|pas de photos?|sans image/', $n) => 'photos',
             $about && (bool) preg_match('/\b(activ(?:e|er|ons|ation)|reactiv\w*|mett\w* en service)\b/', $n) => 'activation',
@@ -319,6 +321,7 @@ class Orchestrator
             'pricing'  => $this->catalog->pricing($admin, $n),
             'photos'   => $this->catalog->photos(),
             'photos_fetch' => $this->catalog->fetchPhotos($admin),
+            'publication' => $this->catalog->publication($admin),
             'activation' => $this->catalog->activation($admin),
             'barcodes' => $this->catalog->barcodes($admin),
             'prepare'  => $this->catalog->prepare($admin),

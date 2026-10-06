@@ -14,6 +14,7 @@ use App\Services\CacheService;
 use App\Services\ProductImageService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -324,6 +325,81 @@ class CatalogAssistant
         );
     }
 
+    /**
+     * « Publie les produits sur le website » (agent Marketing) : propose de marquer « boutique en ligne » les fiches
+     * actives, complètes (catégorie, prix, description) et avec photo. Rien ne change avant le clic ; le site se
+     * nourrit de ce marquage, et un produit se retire de la boutique en le décochant dans l'écran Produits.
+     */
+    public function publication(User $admin): array
+    {
+        $candidates = Product::where('p_status', true)->where('is_ecom', false)->get();
+        if ($candidates->isEmpty()) {
+            return $this->reply(Product::where('is_ecom', true)->exists()
+                ? 'Toutes les fiches actives sont déjà sur la boutique en ligne.'
+                : "Aucune fiche active à publier : activez d'abord des fiches (« active les fiches produits »).");
+        }
+
+        $withPhoto = Product::whereIn('id', $candidates->pluck('id'))->whereHas('images')->pluck('id')->all();
+        $ready = $candidates->filter(fn (Product $p) => in_array($p->id, $withPhoto, true) && $this->notReadyBecause($p) === []);
+        if ($ready->isEmpty()) {
+            $noPhoto = $candidates->count() - count($withPhoto);
+            $hasJadever = $candidates->contains(fn (Product $p) => JadeverPhotoSource::isJadeverSku($p->p_sku) && !in_array($p->id, $withPhoto, true));
+
+            return $this->reply(
+                "{$candidates->count()} fiche(s) active(s) hors boutique, mais aucune n'est publiable : il faut une photo" . ($noPhoto > 0 ? " ({$noPhoto} sans photo)" : '') . ', une vraie catégorie, un prix de vente et une description.',
+                links: [['label' => 'Produits', 'to' => '/products']],
+                suggestions: $hasJadever ? [['label' => 'Chercher les photos Jadever', 'text' => 'cherche les photos Jadever']] : [['label' => 'Préparer les fiches', 'text' => "prépare les fiches pour l'utilisation"]],
+            );
+        }
+
+        $ids = $ready->take(self::ACTIVATION_BATCH)->pluck('id')->all();
+        $event = $this->record('catalogue_publication', AgentEvent::STATUS_ROUTED, 'Proposition de publication de ' . count($ids) . ' fiche(s) sur la boutique en ligne', [
+            'product_ids' => $ids, 'requested_by' => $admin->name,
+        ], 'marketing');
+        $names = $ready->take(8)->map(fn (Product $p) => "• {$p->p_title} ({$p->p_sku})")->implode("\n");
+
+        return $this->reply(
+            "{$candidates->count()} fiche(s) active(s) hors boutique : {$ready->count()} publiable(s) (photo, vraie catégorie, prix de vente, description).\n\n"
+            . 'Lot #' . $event->id . ' : publier ' . count($ids) . " fiche(s) sur la boutique en ligne.\n{$names}" . ($ready->count() > 8 ? "\n… et " . ($ready->count() - 8) . ' autre(s).' : '')
+            . ($ready->count() > count($ids) ? "\n(Les " . self::ACTIVATION_BATCH . ' premières ; redemandez pour la suite.)' : '')
+            . "\n\nLa publication ne change que le marquage « boutique en ligne » de la fiche (inscrit à la piste d'audit) : pour retirer un produit, décochez-le dans l'écran Produits. Les descriptions longues manquantes seront ensuite proposées par « prépare les fiches pour l'utilisation ».",
+            links: [['label' => 'Produits', 'to' => '/products']],
+            suggestions: [
+                ['label' => 'Publier ces ' . count($ids) . ' fiches', 'text' => "applique la publication du lot #{$event->id}"],
+                ['label' => 'Ignorer', 'text' => "ignore le lot #{$event->id}"],
+            ],
+            eventId: $event->id,
+        );
+    }
+
+    private function applyPublication(AgentEvent $event): array
+    {
+        $published = $skipped = 0;
+        DB::transaction(function () use ($event, &$published, &$skipped) {
+            foreach (Product::whereIn('id', $event->payload['product_ids'] ?? [])->get() as $product) {
+                // Seulement une fiche toujours active, pas déjà en boutique, complète et avec photo.
+                if (!$product->p_status || $product->is_ecom || $this->notReadyBecause($product) !== [] || !$product->images()->exists()) {
+                    $skipped++;
+                    continue;
+                }
+                $slug = Str::slug($product->p_title) ?: Str::slug((string) $product->p_sku);
+                if (Product::where('p_slug', $slug)->where('id', '!=', $product->id)->exists()) {
+                    $slug .= '-' . Str::slug((string) $product->p_sku);   // l'adresse de la boutique doit être unique
+                }
+                $product->is_ecom = true;
+                $product->p_slug = $product->p_slug ?: $slug;
+                $product->save();
+                $published++;
+            }
+        });
+
+        $result = ['published' => $published, 'skipped' => $skipped];
+        $event->update(['status' => AgentEvent::STATUS_DONE, 'payload' => array_merge($event->payload ?? [], ['result' => $result])]);
+        $this->log($event, 'catalog_publication_applied', $result);
+
+        return $this->reply("Lot #{$event->id} appliqué : {$published} fiche(s) publiée(s) sur la boutique en ligne" . ($skipped > 0 ? ", {$skipped} laissée(s) telles quelles (devenues incomplètes, ou déjà publiées)" : '') . '.', links: [['label' => 'Produits', 'to' => '/products']], eventId: $event->id);
+    }
+
     /** @return array<int, string> ce qui manque à la fiche pour être activée ; vide si elle est prête */
     private function notReadyBecause(Product $p): array
     {
@@ -400,7 +476,7 @@ class CatalogAssistant
     /** « applique les propositions du lot #12 », « ignore le lot #12 ». @return array{body: string, meta: array<string, mixed>} */
     public function act(User $admin, int $eventId, string $n): array
     {
-        $event = AgentEvent::whereIn('type', ['catalogue_completion', 'catalogue_prix', 'catalogue_activation', 'catalogue_codes_barres', 'catalogue_photos'])->find($eventId);
+        $event = AgentEvent::whereIn('type', ['catalogue_completion', 'catalogue_prix', 'catalogue_activation', 'catalogue_codes_barres', 'catalogue_photos', 'catalogue_publication'])->find($eventId);
         if (!$event) {
             return $this->reply("Je ne trouve pas le lot #{$eventId}.", error: true);
         }
@@ -423,6 +499,7 @@ class CatalogAssistant
                     'catalogue_activation'   => $this->applyActivation($event),
                     'catalogue_codes_barres' => $this->applyBarcodes($event),
                     'catalogue_photos'       => $this->applyPhotos($admin, $event),
+                    'catalogue_publication'  => $this->applyPublication($event),
                     default                  => $this->applyPrices($event),
                 });
             }
@@ -748,13 +825,13 @@ class CatalogAssistant
         return count($this->toComplete());
     }
 
-    private function record(string $type, string $status, string $text, array $payload): AgentEvent
+    private function record(string $type, string $status, string $text, array $payload, string $domain = 'achats'): AgentEvent
     {
         return AgentEvent::create([
             'type'     => $type,
             'source'   => 'orchestrator',
             'status'   => $status,
-            'agent_id' => Agent::where('domain', 'achats')->value('id'),
+            'agent_id' => Agent::where('domain', $domain)->value('id'),
             'payload'  => array_merge(['text' => $text], $payload),
         ]);
     }
