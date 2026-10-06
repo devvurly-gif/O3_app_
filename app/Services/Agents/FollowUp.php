@@ -61,29 +61,32 @@ final class FollowUp
     }
 
     /**
-     * « voir plus », « tout voir », « les 10 suivants », « les 30 premiers » : combien de lignes afficher cette fois.
-     * Null si la phrase n'est pas une demande de plus de lignes.
+     * Les demandes de pagination : « voir plus », « les 10 suivants », « page suivante », « la suite », « les 10
+     * précédents », « les 25 premiers ». Null si la phrase n'en est pas une.
      *
      * @param string $n phrase normalisée
+     * @return array{dir: string, size: ?int}|null dir : more (30 lignes depuis le début), next, prev, first (les N premières)
      */
-    public static function more(string $n): ?int
+    public static function paging(string $n): ?array
     {
         $t = trim(preg_replace('/[^a-z0-9 ]+/', ' ', $n) ?? $n);
         $t = trim(preg_replace('/\s+/', ' ', $t) ?? $t);
 
-        if (preg_match('/^(?:et )?(?:les |la )?(\d{1,2}) (?:suivants?|prochains?)$/', $t, $m)) {
-            return ListLimit::DEFAULT + (int) $m[1];
+        if (preg_match('/^(?:et )?(?:encore )?(?:les |la )?(?:(\d{1,2}) )?(?:suivants?|prochains?|page suivante|suite)$/', $t, $m) || preg_match('/^(?:affiche |montre |donne moi )?(?:la )?page suivante$/', $t)) {
+            return ['dir' => 'next', 'size' => isset($m[1]) && $m[1] !== '' ? (int) $m[1] : null];
+        }
+        if (preg_match('/^(?:retour |reviens )?(?:aux |a la )?(?:les |la )?(?:(\d{1,2}) )?(?:precedents?|page precedente|retour)$/', $t, $m)) {
+            return ['dir' => 'prev', 'size' => isset($m[1]) && $m[1] !== '' ? (int) $m[1] : null];
         }
         if (preg_match('/^(?:affiche |montre |donne moi )?(?:les |la )?(\d{1,2}) premiers?$/', $t, $m)) {
-            return (int) $m[1];
+            return ['dir' => 'first', 'size' => (int) $m[1]];
         }
-        if (preg_match('/^(?:voir |en )?plus(?: de resultats| de lignes| de details)?$|^(?:la )?suite$|^(?:voir |affiche |montre |donne moi )?(?:tout|tous|toute la liste|la liste complete|tout le reste)$|^(?:tout voir|en voir plus|voir tout)$/', $t)) {
-            return 30;
+        if (preg_match('/^(?:voir |en )?plus(?: de resultats| de lignes| de details)?$|^(?:voir |affiche |montre |donne moi )?(?:tout|tous|toute la liste|la liste complete|tout le reste)$|^(?:tout voir|en voir plus|voir tout)$/', $t)) {
+            return ['dir' => 'more', 'size' => 30];
         }
 
         return null;
     }
-
     /**
      * Le nouveau sujet d'une suite sur un tiers ou un produit : « et pour Atlas ? » → « atlas ». Null si ce n'en est pas une.
      *

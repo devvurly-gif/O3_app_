@@ -134,14 +134,14 @@ class DeepDiveAssistant
         ];
         if ($lignes->isNotEmpty()) {
             $lines[] = "Lignes ({$lignes->count()}) :";
-            foreach ($lignes->take(ListLimit::get()) as $l) {
+            foreach ($lignes->slice(ListLimit::offset())->take(ListLimit::get()) as $l) {
                 $lines[] = $l->line_type === 'comment' ? "• {$l->designation}" : "• {$l->designation} — " . $this->qty((float) $l->quantity) . ' × ' . $this->money((float) $l->unit_price) . ((float) $l->discount_percent > 0 ? ' (-' . round((float) $l->discount_percent, 1) . ' %)' : '') . ' = ' . $this->money((float) $l->total_ligne_ht) . ' HT';
             }
             $lignes->count() > ListLimit::get() && $lines[] = '… et ' . ($lignes->count() - ListLimit::get()) . ' autre(s) ligne(s).';
         }
         if ($payments->isNotEmpty()) {
             $lines[] = 'Paiements :';
-            foreach ($payments->take(ListLimit::get()) as $p) {
+            foreach ($payments->slice(ListLimit::offset())->take(ListLimit::get()) as $p) {
                 $lines[] = '• ' . Carbon::parse($p->paid_at)->format('d/m/Y') . ' — ' . $p->method . ' — ' . $this->money((float) $p->amount);
             }
         }
@@ -223,7 +223,7 @@ class DeepDiveAssistant
         $total = max((float) $rows->sum('ht'), 0.01);
 
         return $this->reply('Ventes ' . $label . ($brand ? ' par marque' : ' par catégorie') . ' (HT, ' . $this->money($total) . " au total) :\n\n"
-            . $rows->take(ListLimit::get())->map(fn ($r) => "• {$r->groupe} — " . $this->money((float) $r->ht) . ' (' . round((float) $r->ht / $total * 100) . ' %), ' . $this->qty((float) $r->qte) . ' vendu(s)')->implode("\n"));
+            . $rows->slice(ListLimit::offset())->take(ListLimit::get())->map(fn ($r) => "• {$r->groupe} — " . $this->money((float) $r->ht) . ' (' . round((float) $r->ht / $total * 100) . ' %), ' . $this->qty((float) $r->qte) . ' vendu(s)')->implode("\n"));
     }
 
     /** « taux de transformation des devis ». @param string $n phrase normalisée */
@@ -253,7 +253,7 @@ class DeepDiveAssistant
         }
 
         return $this->reply("{$rows->count()} commande(s) client en attente de livraison, pour " . $this->money((float) $rows->sum('total_ttc')) . " TTC. Les plus anciennes :\n\n"
-            . $rows->take(ListLimit::get())->map(fn ($r) => "• {$r->reference} — " . ($r->client ?? 'sans client') . ' — du ' . Carbon::parse($r->issued_at)->format('d/m/Y') . ' — ' . $this->money((float) $r->total_ttc))->implode("\n"));
+            . $rows->slice(ListLimit::offset())->take(ListLimit::get())->map(fn ($r) => "• {$r->reference} — " . ($r->client ?? 'sans client') . ' — du ' . Carbon::parse($r->issued_at)->format('d/m/Y') . ' — ' . $this->money((float) $r->total_ttc))->implode("\n"));
     }
 
     /** « retours et avoirs du mois ». @param string $n phrase normalisée */
@@ -284,8 +284,8 @@ class DeepDiveAssistant
         }
 
         return $this->reply("{$rows->count()} produit(s) en rupture dans {$horizon} jours ou moins, au rythme de vente des 30 derniers jours :\n\n"
-            . $rows->take(ListLimit::get())->map(fn ($r) => "• {$r->p_title} ({$r->p_sku}) — stock " . $this->qty((float) $r->qty) . ', ' . $this->qty(round((float) $r->par_jour, 2)) . ' vendu(s) par jour → ' . ((float) $r->qty <= 0 ? 'déjà en rupture' : 'environ ' . max(1, (int) floor((float) $r->jours)) . ' jour(s)'))->implode("\n")
-            . ($rows->count() > ListLimit::get() ? "\n… et " . ($rows->count() - ListLimit::get()) . ' autre(s).' : ''), [['label' => 'Produits à stock bas', 'text' => 'quels produits ont un stock bas']]);
+            . $rows->slice(ListLimit::offset())->take(ListLimit::get())->map(fn ($r) => "• {$r->p_title} ({$r->p_sku}) — stock " . $this->qty((float) $r->qty) . ', ' . $this->qty(round((float) $r->par_jour, 2)) . ' vendu(s) par jour → ' . ((float) $r->qty <= 0 ? 'déjà en rupture' : 'environ ' . max(1, (int) floor((float) $r->jours)) . ' jour(s)'))->implode("\n")
+            . (ListLimit::more($rows->count())), [['label' => 'Produits à stock bas', 'text' => 'quels produits ont un stock bas']]);
     }
 
     /** « tickets annulés ce mois ». @param string $n phrase normalisée */
@@ -299,7 +299,7 @@ class DeepDiveAssistant
         }
 
         return $this->reply("{$rows->count()} ticket(s) annulé(s) {$label}, pour " . $this->money((float) $rows->sum('total_ttc')) . " :\n\n"
-            . $rows->take(ListLimit::get())->map(fn ($r) => "• {$r->reference} — " . Carbon::parse($r->issued_at)->format('d/m/Y') . ' — ' . $this->money((float) $r->total_ttc) . ($r->par ? " — {$r->par}" : ''))->implode("\n"));
+            . $rows->slice(ListLimit::offset())->take(ListLimit::get())->map(fn ($r) => "• {$r->reference} — " . Carbon::parse($r->issued_at)->format('d/m/Y') . ' — ' . $this->money((float) $r->total_ttc) . ($r->par ? " — {$r->par}" : ''))->implode("\n"));
     }
 
     // ── Trésorerie ───────────────────────────────────────────────────

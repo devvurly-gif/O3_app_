@@ -39,7 +39,7 @@ class ExtrasAssistant
         }
         if ($rows->isNotEmpty()) {
             $lines[] = "\nLes plus récents :";
-            foreach ($rows->take(ListLimit::get()) as $r) {
+            foreach ($rows->slice(ListLimit::offset())->take(ListLimit::get()) as $r) {
                 $lines[] = '• ' . Carbon::parse($r->created_at)->format('d/m H:i') . " — {$r->channel} — " . ($r->tp_title ?? 'client inconnu (' . $this->maskPhone((string) $r->phone) . ')') . " — {$r->status}" . ($r->reference ? " → {$r->reference}" : '');
             }
         }
@@ -55,7 +55,7 @@ class ExtrasAssistant
         if ($byStatus->isEmpty()) {
             return $this->reply("Aucune importation de facture d'achat sur les 30 derniers jours.");
         }
-        $rows = DB::table('purchase_imports')->where('created_at', '>=', $since)->orderByDesc('id')->limit(ListLimit::get())->get(['created_at', 'status', 'document_reference']);
+        $rows = DB::table('purchase_imports')->where('created_at', '>=', $since)->orderByDesc('id')->offset(ListLimit::offset())->limit(ListLimit::get())->get(['created_at', 'status', 'document_reference']);
 
         return $this->reply("Importations de factures d'achat sur 30 jours : " . $byStatus->map(fn ($c, $s) => "{$s} : {$c}")->implode(', ') . ".\n\nLes plus récentes :\n"
             . $rows->map(fn ($r) => '• ' . Carbon::parse($r->created_at)->format('d/m H:i') . " — {$r->status}" . ($r->document_reference ? " → {$r->document_reference}" : ''))->implode("\n"));
@@ -78,7 +78,7 @@ class ExtrasAssistant
 
     public function agentCases(): array
     {
-        $cases = DB::table('agent_cases as c')->leftJoin('third_partners as t', 't.id', '=', 'c.third_partner_id')->where('c.status', '!=', 'closed')->whereNull('c.closed_at')->orderBy('c.opened_at')->limit(ListLimit::get())->get(['c.id', 'c.status', 'c.opened_at', 't.tp_title']);
+        $cases = DB::table('agent_cases as c')->leftJoin('third_partners as t', 't.id', '=', 'c.third_partner_id')->where('c.status', '!=', 'closed')->whereNull('c.closed_at')->orderBy('c.opened_at')->offset(ListLimit::offset())->limit(ListLimit::get())->get(['c.id', 'c.status', 'c.opened_at', 't.tp_title']);
         $pending = DB::table('agent_approvals')->whereNull('decision')->count();
         $routed = DB::table('agent_events')->where('status', 'routed')->count();
 
@@ -127,7 +127,7 @@ class ExtrasAssistant
         $sales = $rows->filter(fn ($r) => in_array($r->document_type, ['InvoiceSale', 'TicketSale', 'DeliveryNote', 'CustomerOrder'], true));
 
         return $this->reply("Chèques et effets {$label} : {$rows->count()} paiement(s), " . $this->money((float) $rows->sum('amount')) . ' (dont ' . $this->money((float) $sales->sum('amount')) . " reçus de clients).\n\n"
-            . $rows->take(ListLimit::get())->map(fn ($r) => '• ' . Carbon::parse($r->paid_at)->format('d/m/Y') . ' — ' . ($r->method === 'cheque' ? 'chèque' : 'effet') . ($r->reference ? " {$r->reference}" : '') . ' — ' . $this->money((float) $r->amount) . " — {$r->facture}" . ($r->tp_title ? " ({$r->tp_title})" : ''))->implode("\n")
+            . $rows->slice(ListLimit::offset())->take(ListLimit::get())->map(fn ($r) => '• ' . Carbon::parse($r->paid_at)->format('d/m/Y') . ' — ' . ($r->method === 'cheque' ? 'chèque' : 'effet') . ($r->reference ? " {$r->reference}" : '') . ' — ' . $this->money((float) $r->amount) . " — {$r->facture}" . ($r->tp_title ? " ({$r->tp_title})" : ''))->implode("\n")
             . "\n\nO3 n'enregistre pas la date d'échéance ni l'encaissement en banque d'un chèque ou d'un effet : ils ne peuvent pas être suivis ici.");
     }
 
@@ -140,7 +140,7 @@ class ExtrasAssistant
             return $this->reply('Aucune bannière active sur le site.');
         }
 
-        return $this->reply("{$rows->count()} bannière(s) active(s) :\n\n" . $rows->take(ListLimit::get())->map(fn ($r) => "• {$r->title} — {$r->position}" . ($r->link_type !== 'none' ? " — lien : {$r->link_type}" : '') . ($r->ends_at ? " — jusqu'au " . Carbon::parse($r->ends_at)->format('d/m/Y') : ''))->implode("\n"));
+        return $this->reply("{$rows->count()} bannière(s) active(s) :\n\n" . $rows->slice(ListLimit::offset())->take(ListLimit::get())->map(fn ($r) => "• {$r->title} — {$r->position}" . ($r->link_type !== 'none' ? " — lien : {$r->link_type}" : '') . ($r->ends_at ? " — jusqu'au " . Carbon::parse($r->ends_at)->format('d/m/Y') : ''))->implode("\n"));
     }
 
     public function terminals(): array
@@ -162,8 +162,8 @@ class ExtrasAssistant
             return $this->reply('Aucun produit n\'a de variantes.');
         }
 
-        return $this->reply("{$rows->count()} produit(s) avec variantes ({$rows->sum('n')} variante(s)) :\n\n" . $rows->take(ListLimit::get())->map(fn ($r) => "• {$r->p_title} ({$r->p_sku}) — {$r->n} variante(s), {$r->sans_stock} sans stock, {$r->inactives} inactive(s)")->implode("\n")
-            . ($rows->count() > ListLimit::get() ? "\n… et " . ($rows->count() - ListLimit::get()) . ' autre(s).' : ''));
+        return $this->reply("{$rows->count()} produit(s) avec variantes ({$rows->sum('n')} variante(s)) :\n\n" . $rows->slice(ListLimit::offset())->take(ListLimit::get())->map(fn ($r) => "• {$r->p_title} ({$r->p_sku}) — {$r->n} variante(s), {$r->sans_stock} sans stock, {$r->inactives} inactive(s)")->implode("\n")
+            . (ListLimit::more($rows->count())));
     }
 
     /** « prix du produit PRC1 par liste de prix ». @param string $n phrase normalisée */

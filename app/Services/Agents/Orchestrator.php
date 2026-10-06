@@ -118,17 +118,18 @@ class Orchestrator
      */
     private function answer(User $admin, string $text): array
     {
-        [$answer, $used] = $this->resolveAnswer($admin, $text);
+        [$answer, $used, $page] = $this->resolveAnswer($admin, $text) + [2 => ['offset' => 0, 'limit' => ListLimit::DEFAULT]];
 
-        // On retient la dernière lecture comprise : « et hier ? » s'y rapportera.
+        // On retient la dernière lecture comprise et sa page : « et hier ? », « les 10 suivants » s'y rapporteront.
         if ($this->conversational && !$this->isFallback($answer) && $this->isReadPhrase($used)) {
             $answer['meta']['cmd'] = $used;
+            $answer['meta']['page'] = $page;
         }
 
         return $answer;
     }
 
-    /** @return array{0: array{body: string, meta: array<string, mixed>}, 1: string} la réponse et la phrase (normalisée) que les règles ont lue */
+    /** @return array{0: array{body: string, meta: array<string, mixed>}, 1: string, 2?: array{offset: int, limit: int}} la réponse, la phrase (normalisée) que les règles ont lue et, pour une page, sa position */
     private function resolveAnswer(User $admin, string $text): array
     {
         $n = $this->normalize($text);
@@ -137,13 +138,32 @@ class Orchestrator
             return [$first, $n];
         }
 
-        // Plus de lignes (« voir plus », « les 10 suivants ») : la dernière lecture, avec une limite d'affichage relevée.
-        if ($this->conversational && ($last = $this->lastCommand($admin)) !== null && ($limit = FollowUp::more($n)) !== null) {
-            $second = ListLimit::with($limit, fn () => $this->dispatch($admin, $last, $last, false));
+        // Une autre page de la dernière lecture (« voir plus », « les 10 suivants », « page précédente »).
+        if ($this->conversational && ($page = FollowUp::paging($n)) !== null && ($state = $this->lastRead($admin)) !== null) {
+            $size = $page['size'];
+            $offset = match ($page['dir']) {
+                'next'  => $state['offset'] + $state['limit'],
+                'prev'  => ($back = $state['offset'] - ($size ?? $state['limit'])) > 0 ? $back : 0,
+                default => 0,
+            };
+            $limit = match ($page['dir']) {
+                'next', 'prev' => $size ?? $state['limit'],
+                'first'        => $size ?? ListLimit::DEFAULT,
+                default        => $size ?? 30,
+            };
+            $offset = (int) $offset;
+            $limit = (int) $limit;
+            /** @var array{0: array{body: string, meta: array<string, mixed>}, 1: int|null} $paged */
+            $paged = ListLimit::with($limit, fn () => [$this->dispatch($admin, $state['cmd'], $state['cmd'], false), ListLimit::total()], $offset);
+            [$second, $total] = $paged;
             if (!$this->isFallback($second)) {
-                $second['body'] = "Suite : « {$last} », jusqu'à " . ListLimit::with($limit, fn () => ListLimit::get()) . " lignes.\n\n" . $second['body'];
+                if ($total !== null && $offset >= $total && $offset > 0) {
+                    return [$this->reply("Fin de la liste : « {$state['cmd']} » n'a que {$total} ligne(s). Dites « page précédente » pour revenir en arrière.", 'help'), $state['cmd']] + [2 => ['offset' => $state['offset'], 'limit' => $state['limit']]];
+                }
+                $shown = $total === null ? '' : ' — lignes ' . ($offset + 1) . ' à ' . min($total, $offset + $limit) . " sur {$total}";
+                $second['body'] = "Suite : « {$state['cmd']} »{$shown}.\n\n" . $second['body'];
 
-                return [$second, $last];
+                return [$second, $state['cmd']] + [2 => ['offset' => $offset, 'limit' => $limit]];
             }
         }
 
@@ -196,6 +216,17 @@ class Orchestrator
 
         return null;
     }
+    /** La dernière lecture comprise et la page affichée, si elle a moins d'une demi-heure. @return array{cmd: string, offset: int, limit: int}|null */
+    private function lastRead(User $admin): ?array
+    {
+        $last = OrchestratorMessage::where('user_id', $admin->id)->where('role', OrchestratorMessage::ROLE_ORCHESTRATOR)->whereNotNull('meta->cmd')->latest('id')->first();
+        if (!$last || $last->created_at->lt(now()->subMinutes(30)) || !is_string($last->meta['cmd'] ?? null)) {
+            return null;
+        }
+
+        return ['cmd' => $last->meta['cmd'], 'offset' => (int) ($last->meta['page']['offset'] ?? 0), 'limit' => (int) ($last->meta['page']['limit'] ?? ListLimit::DEFAULT)];
+    }
+
     /** La dernière lecture comprise dans cette conversation, si elle a moins d'une demi-heure. */
     private function lastCommand(User $admin): ?string
     {

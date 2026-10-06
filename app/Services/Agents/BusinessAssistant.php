@@ -68,7 +68,7 @@ class BusinessAssistant
         }
 
         $lines = [];
-        foreach (array_slice($events, 0, ListLimit::get()) as $e) {
+        foreach (array_slice($events, ListLimit::offset(), ListLimit::get()) as $e) {
             $studio = in_array($e['type'], ['agent_recrutement', 'routine_proposition', 'consigne_proposition', 'comptes_agents', 'conception_proposition'], true);
             $lines[] = "• #{$e['id']} — {$e['text']} ({$e['age']}) → « applique " . ($studio ? 'la proposition' : 'le lot') . " #{$e['id']} » ou « ignore … »";
         }
@@ -134,7 +134,7 @@ class BusinessAssistant
         }
 
         $rows = $this->overdueBase($min)->join('third_partners as t', 't.id', '=', 'd.thirdPartner_id')
-            ->selectRaw('d.reference, t.tp_title AS client, d.due_at AS echeance, f.amount_due AS du')->orderByDesc('f.amount_due')->limit(ListLimit::get())->get();
+            ->selectRaw('d.reference, t.tp_title AS client, d.due_at AS echeance, f.amount_due AS du')->orderByDesc('f.amount_due')->offset(ListLimit::offset())->limit(ListLimit::get())->get();
         $lines = $rows->map(fn ($r) => "• {$r->reference} — {$r->client} — échue le " . Carbon::parse($r->echeance)->format('d/m/Y') . ' — ' . $this->money((float) $r->du))->implode("\n");
 
         return $this->reply(
@@ -203,10 +203,10 @@ class BusinessAssistant
     {
         $now = $this->today();
         $base = fn () => DB::table('pos_sessions as s')->leftJoin('users as u', 'u.id', '=', 's.user_id');
-        $stale = $base()->whereNull('s.closed_at')->where('s.opened_at', '<', now()->subDay())->orderBy('s.opened_at')->limit(ListLimit::get())->get(['s.id', 's.opened_at', 'u.name']);
+        $stale = $base()->whereNull('s.closed_at')->where('s.opened_at', '<', now()->subDay())->orderBy('s.opened_at')->offset(ListLimit::offset())->limit(ListLimit::get())->get(['s.id', 's.opened_at', 'u.name']);
         $open = $base()->whereNull('s.closed_at')->count();
-        $toValidate = $base()->whereNotNull('s.closed_at')->whereNull('s.validated_at')->orderBy('s.closed_at')->limit(ListLimit::get())->get(['s.id', 's.closed_at', 's.cash_difference', 'u.name']);
-        $gaps = $base()->whereNotNull('s.closed_at')->where('s.cash_difference', '!=', 0)->where('s.closed_at', '>=', $now->copy()->startOfMonth())->orderByDesc(DB::raw('ABS(s.cash_difference)'))->limit(ListLimit::get())->get(['s.id', 's.closed_at', 's.cash_difference', 's.variance_reason', 'u.name']);
+        $toValidate = $base()->whereNotNull('s.closed_at')->whereNull('s.validated_at')->orderBy('s.closed_at')->offset(ListLimit::offset())->limit(ListLimit::get())->get(['s.id', 's.closed_at', 's.cash_difference', 'u.name']);
+        $gaps = $base()->whereNotNull('s.closed_at')->where('s.cash_difference', '!=', 0)->where('s.closed_at', '>=', $now->copy()->startOfMonth())->orderByDesc(DB::raw('ABS(s.cash_difference)'))->offset(ListLimit::offset())->limit(ListLimit::get())->get(['s.id', 's.closed_at', 's.cash_difference', 's.variance_reason', 'u.name']);
 
         $lines = ["Sessions de caisse : {$open} ouverte(s)."];
         if ($stale->isNotEmpty()) {
@@ -310,9 +310,9 @@ class BusinessAssistant
         if ($rows->isEmpty()) {
             return $this->reply($none);
         }
-        $lines = $rows->take(ListLimit::get())->map(fn ($r) => "• {$r->reference} — " . ($r->client ?? 'sans client') . ' — du ' . Carbon::parse($r->issued_at)->format('d/m/Y') . ' — ' . $this->money((float) $r->total_ttc))->implode("\n");
+        $lines = $rows->slice(ListLimit::offset())->take(ListLimit::get())->map(fn ($r) => "• {$r->reference} — " . ($r->client ?? 'sans client') . ' — du ' . Carbon::parse($r->issued_at)->format('d/m/Y') . ' — ' . $this->money((float) $r->total_ttc))->implode("\n");
 
-        return $this->reply("{$rows->count()} {$what}, pour " . $this->money((float) $rows->sum('total_ttc')) . " TTC. Les plus anciens :\n\n{$lines}" . ($rows->count() > ListLimit::get() ? "\n… et " . ($rows->count() - ListLimit::get()) . ' autre(s).' : ''));
+        return $this->reply("{$rows->count()} {$what}, pour " . $this->money((float) $rows->sum('total_ttc')) . " TTC. Les plus anciens :\n\n{$lines}" . (ListLimit::more($rows->count())));
     }
 
     /** @return array<int, array{id: int, type: string, text: string, age: string}> propositions en attente, les plus anciennes d'abord */
