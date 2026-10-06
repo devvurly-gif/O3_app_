@@ -29,10 +29,11 @@ class AgentCapabilities
         ],
         'ventes' => [
             'tasks' => [
+                ['Préparer les relances des devis sans réponse (messages WhatsApp ou e-mail prêts à envoyer, rien n\'est envoyé par O3)', '« relance les devis sans réponse »'],
                 ['Transformer une commande reçue par WhatsApp, SMS ou chat en brouillon de bon de livraison', 'automatique (messagerie), ou « Messagerie commandes »'],
                 ['Lire un bon de commande client (photo ou PDF) et préparer un brouillon de livraison', 'déposez le fichier avec le trombone'],
             ],
-            'missing' => ['préparer des devis à partir d\'une demande de prix', 'relancer un devis sans réponse', 'suivre les clients qui n\'ont pas commandé depuis longtemps'],
+            'missing' => ['préparer des devis à partir d\'une demande de prix', 'suivre les clients qui n\'ont pas commandé depuis longtemps'],
         ],
         'stocks' => [
             'tasks' => [

@@ -70,15 +70,25 @@
               <AuthImage v-for="img in m.images" :key="img.url" :url="img.url" :label="img.label" />
             </div>
             <div v-if="m.links.length" class="flex flex-wrap gap-2 mt-2">
-              <router-link
-                v-for="l in m.links"
-                :key="l.to"
-                :to="l.to"
-                class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-white/80 dark:bg-gray-800 text-[#7C5CFC] border border-[#E4DEFF] dark:border-gray-600 hover:bg-white transition"
-                @click="emit('navigate')"
-              >
-                {{ l.label }} →
-              </router-link>
+              <template v-for="l in m.links" :key="l.to">
+                <a
+                  v-if="/^(https:\/\/wa\.me\/|mailto:)/.test(l.to)"
+                  :href="l.to"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-white/80 dark:bg-gray-800 text-[#7C5CFC] border border-[#E4DEFF] dark:border-gray-600 hover:bg-white transition"
+                >
+                  {{ l.label }} ↗
+                </a>
+                <router-link
+                  v-else
+                  :to="l.to"
+                  class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-white/80 dark:bg-gray-800 text-[#7C5CFC] border border-[#E4DEFF] dark:border-gray-600 hover:bg-white transition"
+                  @click="emit('navigate')"
+                >
+                  {{ l.label }} →
+                </router-link>
+              </template>
             </div>
             <div v-if="m.suggestions?.length" class="flex flex-wrap gap-2 mt-2">
               <button

@@ -262,6 +262,8 @@ class Orchestrator
             (bool) preg_match('/\bdocuments?\s*#?\s*(\d+)/', $n, $doc)                            => $this->intake->act($admin, (int) $doc[1], $n),
             // Atelier des agents : recruter, planifier des routines, retenir des consignes, catalogue des tâches.
             ($studio = $this->studioIntent($n)) !== null                                          => $this->studioAnswer($admin, $studio, $text, $n),
+            // « Relance les devis sans réponse » : messages de relance préparés, à envoyer soi-même après validation.
+            (bool) preg_match('/\brelanc\w*\b/', $n) && (bool) preg_match('/\bdevis\b/', $n) && !preg_match('/\b(historique|combien|liste des relances)\b/', $n) => $this->catalog->quoteFollowUps($admin, $n),
             // « Exporte en Excel / en PDF / en CSV » : la dernière lecture affichée, en fichier à télécharger.
             ($fmt = $this->exportFormat($n)) !== null                                           => $this->exports->export($admin, $fmt),
             // Sites autorisés pour la recherche de photos : lister, proposer d'en ajouter un, en retirer un.
