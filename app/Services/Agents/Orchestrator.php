@@ -45,6 +45,7 @@ class Orchestrator
         private OversightAssistant $oversight,
         private MentionResolver $mentions,
         private GlossaryAssistant $glossary,
+        private ExportAssistant $exports,
     ) {
     }
 
@@ -198,7 +199,8 @@ class Orchestrator
     /** La dernière lecture comprise dans cette conversation, si elle a moins d'une demi-heure. */
     private function lastCommand(User $admin): ?string
     {
-        $last = OrchestratorMessage::where('user_id', $admin->id)->where('role', OrchestratorMessage::ROLE_ORCHESTRATOR)->latest('id')->first();
+        // La dernière lecture comprise, même si des messages sans lecture (un export, une explication) sont venus depuis.
+        $last = OrchestratorMessage::where('user_id', $admin->id)->where('role', OrchestratorMessage::ROLE_ORCHESTRATOR)->whereNotNull('meta->cmd')->latest('id')->first();
 
         return $last && $last->created_at->gt(now()->subMinutes(30)) && is_string($last->meta['cmd'] ?? null) ? $last->meta['cmd'] : null;
     }
@@ -229,6 +231,8 @@ class Orchestrator
             (bool) preg_match('/\bdocuments?\s*#?\s*(\d+)/', $n, $doc)                            => $this->intake->act($admin, (int) $doc[1], $n),
             // Atelier des agents : recruter, planifier des routines, retenir des consignes, catalogue des tâches.
             ($studio = $this->studioIntent($n)) !== null                                          => $this->studioAnswer($admin, $studio, $text, $n),
+            // « Exporte en Excel / en PDF / en CSV » : la dernière lecture affichée, en fichier à télécharger.
+            ($fmt = $this->exportFormat($n)) !== null                                           => $this->exports->export($admin, $fmt),
             // Sites autorisés pour la recherche de photos : lister, proposer d'en ajouter un, en retirer un.
             ($site = $this->photoSitesIntent($n)) !== null                                       => $this->photoSitesAnswer($admin, $site, $text),
             // « Comment tu calcules la marge ? », « c'est quoi un produit dormant ? » : la définition du chiffre, pas le chiffre.
@@ -341,7 +345,7 @@ class Orchestrator
             . "• « mettre à jour les fiches produits » : je contrôle les fiches (photos, descriptions, catégories, marques, prix, codes-barres) et je propose des corrections à valider ; « prépare les fiches pour l'utilisation » enchaîne toutes les étapes jusqu'à l'activation\n"
             . "• « que sait faire chaque agent » : le catalogue des tâches ; « recrute un agent qui… » ; « chaque lundi à 8 h, contrôle les encaissements » (routine) ; « retiens : … » (consigne) ; « crée les comptes des agents » ; « demande de développement : … » pour une tâche qui manque\n"
             . "• déposez une photo ou un PDF (trombone, ou glissez-le ici) : je lis le document, dis ce que c'est et propose la suite\n"
-            . "• lectures sur l'activité : « résume la journée », « que dois-je valider ? », « chiffre d'affaires du mois », « factures échues », « devis sans suite depuis 10 jours », « bons de livraison non facturés », « encaissements du jour », « solde de chaque compte de trésorerie », « sessions de caisse », « valeur du stock », « produits dormants », « transferts en attente », « pertes du mois », « doublons de produits », « marge par catégorie », « produits jamais vendus », « clients inactifs depuis 60 jours », « clients qui dépassent leur seuil de crédit », « achats du mois par fournisseur », « factures fournisseurs à payer », « bons de commande en attente », « prix d'achat en hausse », « remises accordées ce mois », « dépenses du mois par catégorie », « dépenses sans justificatif », « activité récente », « promotions actives », « top 10 des produits vendus », « ventes du mois par vendeur », « meilleurs clients du trimestre », « qui a modifié la facture FV-001 », « codes-barres invalides », « actions des agents aujourd'hui », « fiche du produit PRC1 », « fiche du client Atlas », « montre la facture FV-001 », « marge réalisée du mois », « panier moyen », « évolution du chiffre d'affaires sur 6 mois », « produits bientôt en rupture », « prévision de trésorerie à 30 jours », « cherche perceuse », « factures du client Atlas », « mouvements du produit PRC1 », « brouillons anciens », « compare ce mois au mois dernier », « nouveaux clients du mois », « ventes par jour de la semaine », « permissions du rôle manager », « relances de paiement du mois », « commandes WhatsApp du jour », « comment tu calcules la marge ? » (la définition de chaque chiffre), « sites autorisés pour les photos » et « autorise le site https://exemple.ma/recherche?q={ref} », « chèques et effets reçus ce mois », « produits de la promotion rentrée », « règles de routage », « mes notifications non lues », « mes entrepôts », « listes de prix » ; ou posez simplement la question, par exemple « combien j'ai vendu hier ? » (chiffres lus directement dans la base, rien n'est modifié)
+            . "• lectures sur l'activité : « résume la journée », « que dois-je valider ? », « chiffre d'affaires du mois », « factures échues », « devis sans suite depuis 10 jours », « bons de livraison non facturés », « encaissements du jour », « solde de chaque compte de trésorerie », « sessions de caisse », « valeur du stock », « produits dormants », « transferts en attente », « pertes du mois », « doublons de produits », « marge par catégorie », « produits jamais vendus », « clients inactifs depuis 60 jours », « clients qui dépassent leur seuil de crédit », « achats du mois par fournisseur », « factures fournisseurs à payer », « bons de commande en attente », « prix d'achat en hausse », « remises accordées ce mois », « dépenses du mois par catégorie », « dépenses sans justificatif », « activité récente », « promotions actives », « top 10 des produits vendus », « ventes du mois par vendeur », « meilleurs clients du trimestre », « qui a modifié la facture FV-001 », « codes-barres invalides », « actions des agents aujourd'hui », « fiche du produit PRC1 », « fiche du client Atlas », « montre la facture FV-001 », « marge réalisée du mois », « panier moyen », « évolution du chiffre d'affaires sur 6 mois », « produits bientôt en rupture », « prévision de trésorerie à 30 jours », « cherche perceuse », « factures du client Atlas », « mouvements du produit PRC1 », « brouillons anciens », « compare ce mois au mois dernier », « nouveaux clients du mois », « ventes par jour de la semaine », « permissions du rôle manager », « relances de paiement du mois », « commandes WhatsApp du jour », « comment tu calcules la marge ? » (la définition de chaque chiffre), « exporte en Excel » (ou PDF, CSV : la dernière lecture en fichier), « sites autorisés pour les photos » et « autorise le site https://exemple.ma/recherche?q={ref} », « chèques et effets reçus ce mois », « produits de la promotion rentrée », « règles de routage », « mes notifications non lues », « mes entrepôts », « listes de prix » ; ou posez simplement la question, par exemple « combien j'ai vendu hier ? » (chiffres lus directement dans la base, rien n'est modifié)
 "
             . "• « que peut-on faire dans O3 » : tous les domaines de l'application ; ou nommez un écran (« les fiches produits », « créer une facture ») et je vous y envoie\n\n"
             . "Les agents préparent des brouillons. Rien n'est modifié ni envoyé sans votre validation, dans l'écran concerné.",
@@ -921,6 +925,22 @@ class Orchestrator
             'add'    => $this->catalog->sitesPropose($admin, $text),
             'remove' => $this->catalog->sitesRemove($admin, $text),
             default  => $this->catalog->sitesList(),
+        };
+    }
+    /** Le format demandé par « exporte en Excel », « télécharge ça en PDF »… null si la phrase n'en demande pas. @param string $n phrase normalisée */
+    private function exportFormat(string $n): ?string
+    {
+        if (!preg_match('/\b(pdf|excel|xlsx?|csv|tableur)\b/', $n)) {
+            return null;
+        }
+        if (!preg_match('/\b(export\w*|telecharg\w*|sortir|sors|mets?|envoie\w*|donne\w*|fais|genere\w*|imprim\w*|enregistr\w*)\b|^(et )?en (pdf|excel|csv)\b|\bca en\b/', $n)) {
+            return null;
+        }
+
+        return match (true) {
+            (bool) preg_match('/\bpdf\b/', $n) => 'pdf',
+            (bool) preg_match('/\bcsv\b/', $n) => 'csv',
+            default                            => 'xlsx',
         };
     }
     // ── Fiches produits ──────────────────────────────────────────────

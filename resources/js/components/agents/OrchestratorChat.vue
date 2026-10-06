@@ -63,6 +63,9 @@
             <ul v-if="m.attachments?.length" class="mt-1.5 space-y-0.5 text-xs opacity-90">
               <li v-for="(a, i) in m.attachments" :key="i" class="break-all">📎 {{ a.name }}</li>
             </ul>
+            <div v-if="m.files?.length" class="flex flex-wrap gap-2 mt-2">
+              <AuthDownload v-for="f in m.files" :key="f.url" :url="f.url" :label="f.label" :name="f.name" />
+            </div>
             <div v-if="m.images?.length" class="flex flex-wrap gap-2 mt-2">
               <AuthImage v-for="img in m.images" :key="img.url" :url="img.url" :label="img.label" />
             </div>
@@ -204,6 +207,7 @@ import http from '@/services/http'
 import { useAuthStore } from '@/stores/authStore'
 import { addFiles } from '@/utils/orchestratorFiles'
 import AuthImage from './AuthImage.vue'
+import AuthDownload from './AuthDownload.vue'
 
 withDefaults(defineProps<{ heightClass?: string }>(), { heightClass: 'h-[62vh]' })
 
@@ -222,6 +226,7 @@ interface ChatMessage {
   links: { label: string; to: string }[]
   suggestions?: { label: string; text: string }[]
   images?: { label: string; url: string }[]
+  files?: { label: string; url: string; name: string }[]
   attachments?: { name: string; mime?: string; size?: number }[]
   ai?: boolean
   warning?: boolean

@@ -7,6 +7,7 @@ use App\Models\OrchestratorMessage;
 use App\Models\Setting;
 use App\Services\Agents\CatalogAssistant;
 use App\Services\Agents\DocumentIntake;
+use App\Services\Agents\ExportAssistant;
 use App\Services\Agents\DocumentReader;
 use App\Services\Agents\Orchestrator;
 use App\Services\Agents\OrchestratorInterpreter;
@@ -24,6 +25,16 @@ class OrchestratorController extends Controller
 
     public function __construct(private Orchestrator $orchestrator, private OrchestratorInterpreter $interpreter)
     {
+    }
+
+    /** GET /api/agents/orchestrateur/exports/{uuid} — un export (Excel, CSV, PDF) demandé par cet administrateur, et lui seul. */
+    public function export(Request $request, ExportAssistant $exports, string $uuid): BinaryFileResponse
+    {
+        $this->ensureInteractiveUser($request);
+        $file = $exports->find((int) $request->user()->id, $uuid);
+        abort_if($file === null, 404);
+
+        return response()->download($file['path'], $file['name']);
     }
 
     /** GET /api/agents/orchestrateur/photos/{event}/{product} — l'aperçu d'une photo proposée, en attente de validation. */
@@ -136,6 +147,7 @@ class OrchestratorController extends Controller
             'links'       => $m->meta['links'] ?? [],
             'suggestions' => $m->meta['suggestions'] ?? [],
             'images'      => $m->meta['images'] ?? [],
+            'files'       => $m->meta['files'] ?? [],
             'ai'          => (bool) ($m->meta['ai'] ?? false),
             'warning'     => (bool) ($m->meta['warning'] ?? false),
             'error'       => (bool) ($m->meta['error'] ?? false),

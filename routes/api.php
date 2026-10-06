@@ -425,6 +425,7 @@ Route::middleware(['auth:sanctum', 'tenant.active'])->group(function () {
             Route::delete('/', [$c, 'clear']);
             Route::put('ia',   [$c, 'toggleAi']);
             Route::get('photos/{event}/{product}', [$c, 'photo'])->whereNumber(['event', 'product']);
+            Route::get('exports/{uuid}', [$c, 'export'])->where('uuid', '[0-9a-f\-]{36}');
             // Dépôt de photos / PDF : lus par l'IA (coûteux), donc limités plus strictement.
             Route::post('fichiers', [$c, 'upload'])->middleware('throttle:10,1,orchestrateur-fichiers');
         });
