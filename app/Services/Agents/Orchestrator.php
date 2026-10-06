@@ -42,6 +42,7 @@ class Orchestrator
         private DeepDiveAssistant $deepDive,
         private ExplorerAssistant $explorer,
         private ExtrasAssistant $extras,
+        private OversightAssistant $oversight,
     ) {
     }
 
@@ -108,6 +109,8 @@ class Orchestrator
             (bool) preg_match('/\bdocuments?\s*#?\s*(\d+)/', $n, $doc)                            => $this->intake->act($admin, (int) $doc[1], $n),
             // Atelier des agents : recruter, planifier des routines, retenir des consignes, catalogue des tâches.
             ($studio = $this->studioIntent($n)) !== null                                          => $this->studioAnswer($admin, $studio, $text, $n),
+            // Promotions d'un produit, règles et seuils des agents, notifications, entrepôts, listes de prix : lectures, aucun modèle de langage.
+            ($ovs = $this->oversightIntent($n)) !== null                                          => $this->oversightAnswer($ovs, $n, $admin),
             // Messagerie, relances, droits, chèques, bannières, terminaux, variantes, prix par liste : lectures, aucun modèle de langage.
             ($ext = $this->extrasIntent($n)) !== null                                             => $this->extrasAnswer($ext, $n),
             // Recherche, documents d'un tiers, mouvements d'un produit, brouillons oubliés, comparaisons : lectures, aucun modèle de langage.
@@ -171,7 +174,7 @@ class Orchestrator
             'aide'            => $this->help(true),
             'fonctions'       => $this->capabilities(),
             'fiches_controle' => $this->catalog->audit($admin),
-            'lecture'         => ($read = $r['phrase'] ? $this->readAnswer($this->normalize($r['phrase'])) : null) !== null ? $read : $this->understood($text),
+            'lecture'         => ($read = $r['phrase'] ? $this->readAnswer($this->normalize($r['phrase']), $admin) : null) !== null ? $read : $this->understood($text),
             'ecran'           => $r['screen'] ? $this->navigate($this->normalize($text), [$r['screen']]) : $this->understood($text),
             default           => $this->understood($text),
         };
@@ -211,7 +214,7 @@ class Orchestrator
             . "• « mettre à jour les fiches produits » : je contrôle les fiches (photos, descriptions, catégories, marques, prix, codes-barres) et je propose des corrections à valider ; « prépare les fiches pour l'utilisation » enchaîne toutes les étapes jusqu'à l'activation\n"
             . "• « que sait faire chaque agent » : le catalogue des tâches ; « recrute un agent qui… » ; « chaque lundi à 8 h, contrôle les encaissements » (routine) ; « retiens : … » (consigne) ; « crée les comptes des agents » ; « demande de développement : … » pour une tâche qui manque\n"
             . "• déposez une photo ou un PDF (trombone, ou glissez-le ici) : je lis le document, dis ce que c'est et propose la suite\n"
-            . "• lectures sur l'activité : « résume la journée », « que dois-je valider ? », « chiffre d'affaires du mois », « factures échues », « devis sans suite depuis 10 jours », « bons de livraison non facturés », « encaissements du jour », « solde de chaque compte de trésorerie », « sessions de caisse », « valeur du stock », « produits dormants », « transferts en attente », « pertes du mois », « doublons de produits », « marge par catégorie », « produits jamais vendus », « clients inactifs depuis 60 jours », « clients qui dépassent leur seuil de crédit », « achats du mois par fournisseur », « factures fournisseurs à payer », « bons de commande en attente », « prix d'achat en hausse », « remises accordées ce mois », « dépenses du mois par catégorie », « dépenses sans justificatif », « activité récente », « promotions actives », « top 10 des produits vendus », « ventes du mois par vendeur », « meilleurs clients du trimestre », « qui a modifié la facture FV-001 », « codes-barres invalides », « actions des agents aujourd'hui », « fiche du produit PRC1 », « fiche du client Atlas », « montre la facture FV-001 », « marge réalisée du mois », « panier moyen », « évolution du chiffre d'affaires sur 6 mois », « produits bientôt en rupture », « prévision de trésorerie à 30 jours », « cherche perceuse », « factures du client Atlas », « mouvements du produit PRC1 », « brouillons anciens », « compare ce mois au mois dernier », « nouveaux clients du mois », « ventes par jour de la semaine », « permissions du rôle manager », « relances de paiement du mois », « commandes WhatsApp du jour », « chèques et effets reçus ce mois » ; ou posez simplement la question, par exemple « combien j'ai vendu hier ? » (chiffres lus directement dans la base, rien n'est modifié)
+            . "• lectures sur l'activité : « résume la journée », « que dois-je valider ? », « chiffre d'affaires du mois », « factures échues », « devis sans suite depuis 10 jours », « bons de livraison non facturés », « encaissements du jour », « solde de chaque compte de trésorerie », « sessions de caisse », « valeur du stock », « produits dormants », « transferts en attente », « pertes du mois », « doublons de produits », « marge par catégorie », « produits jamais vendus », « clients inactifs depuis 60 jours », « clients qui dépassent leur seuil de crédit », « achats du mois par fournisseur », « factures fournisseurs à payer », « bons de commande en attente », « prix d'achat en hausse », « remises accordées ce mois », « dépenses du mois par catégorie », « dépenses sans justificatif », « activité récente », « promotions actives », « top 10 des produits vendus », « ventes du mois par vendeur », « meilleurs clients du trimestre », « qui a modifié la facture FV-001 », « codes-barres invalides », « actions des agents aujourd'hui », « fiche du produit PRC1 », « fiche du client Atlas », « montre la facture FV-001 », « marge réalisée du mois », « panier moyen », « évolution du chiffre d'affaires sur 6 mois », « produits bientôt en rupture », « prévision de trésorerie à 30 jours », « cherche perceuse », « factures du client Atlas », « mouvements du produit PRC1 », « brouillons anciens », « compare ce mois au mois dernier », « nouveaux clients du mois », « ventes par jour de la semaine », « permissions du rôle manager », « relances de paiement du mois », « commandes WhatsApp du jour », « chèques et effets reçus ce mois », « produits de la promotion rentrée », « règles de routage », « mes notifications non lues », « mes entrepôts », « listes de prix » ; ou posez simplement la question, par exemple « combien j'ai vendu hier ? » (chiffres lus directement dans la base, rien n'est modifié)
 "
             . "• « que peut-on faire dans O3 » : tous les domaines de l'application ; ou nommez un écran (« les fiches produits », « créer une facture ») et je vous y envoie\n\n"
             . "Les agents préparent des brouillons. Rien n'est modifié ni envoyé sans votre validation, dans l'écran concerné.",
@@ -624,9 +627,10 @@ class Orchestrator
      * @param string $n phrase normalisée
      * @return array{body: string, meta: array<string, mixed>}|null
      */
-    private function readAnswer(string $n): ?array
+    private function readAnswer(string $n, User $admin): ?array
     {
         return match (true) {
+            ($i = $this->oversightIntent($n)) !== null  => $this->oversightAnswer($i, $n, $admin),
             ($i = $this->extrasIntent($n)) !== null    => $this->extrasAnswer($i, $n),
             ($i = $this->explorerIntent($n)) !== null  => $this->explorerAnswer($i, $n),
             ($i = $this->deepDiveIntent($n)) !== null  => $this->deepDiveAnswer($i, $n),
@@ -635,6 +639,49 @@ class Orchestrator
             ($i = $this->insightsIntent($n)) !== null  => $this->insightsAnswer($i, $n),
             ($i = $this->operationsIntent($n)) !== null => $this->operationsAnswer($i, $n),
             default                                    => null,
+        };
+    }
+    /** Quelle lecture sur les promotions d'un produit, les agents, les notifications ou les référentiels ? null si aucune. @param string $n phrase normalisée */
+    private function oversightIntent(string $n): ?string
+    {
+        if (preg_match('/\b(controle\w*|prepar\w*|relanc\w*|recrut\w*|lance\w*|revis\w*|attribu\w*|active(?:r|z|ons)?|publi\w*|supprim\w*|cree\w*)\b/', $n)) {
+            return null;
+        }
+
+        return match (true) {
+            (bool) preg_match('/promotions?/', $n) && (bool) preg_match('/produits? (de|d.|dans|concernes? par) la promotion|produits? (de|d.) (cette )?promotion|promotion\s+\S+.*produits?/', $n) && !preg_match('/promotions? (du|de l.|d.)\s*(produit|article)/', $n) => 'promo_products',
+            (bool) preg_match('/promotions?\s+(du|de l.|d.)\s*(produit|article)\s+\S/', $n) => 'product_promos',
+            (bool) preg_match('/regles? de routage|routage|regles? du routeur/', $n) => 'routing',
+            (bool) preg_match('/seuils?/', $n) && (bool) preg_match('/agents?|autonomie|validations?/', $n) && !preg_match('/credit|alerte stock/', $n) => 'thresholds',
+            (bool) preg_match('/evenements?/', $n) && (bool) preg_match('/agents?/', $n) && (bool) preg_match('/mois|semaine|aujourd|par type|statuts?|combien/', $n) => 'agent_events',
+            (bool) preg_match('/appareils?|abonn\w+/', $n) && (bool) preg_match('/notifications?|push/', $n) => 'push',
+            (bool) preg_match('/notifications?/', $n) => 'notifications',
+            (bool) preg_match('/factures?/', $n) && (bool) preg_match('/(non|pas|jamais) (encore )?envoyees?|a envoyer/', $n) => 'unsent',
+            (bool) preg_match('/(mode|moyens?) de (paiement|reglement)/', $n) && (bool) preg_match('/repartition|par mode|factures?|ventes?/', $n) => 'pay_mix',
+            (bool) preg_match('/livraisons?/', $n) && (bool) preg_match('/par ville|\bvilles?\b/', $n) && !preg_match('/commandes? clients?/', $n) => 'deliveries',
+            (bool) preg_match('/\b(entrepots?|depots?|magasins?)\b/', $n) && (bool) preg_match('/\b(mes|liste|quels|combien|tous les)\b/', $n) && !preg_match('/stock|valeur|mouvement|transfert|inventaire|produit/', $n) => 'warehouses',
+            (bool) preg_match('/categories?/', $n) && (bool) preg_match('/tresorerie|depenses?|caisse/', $n) && (bool) preg_match('/\b(mes|liste|quelles|combien|toutes)\b/', $n) => 'cash_categories',
+            (bool) preg_match('/listes? (de prix|tarifaires?)/', $n) && (bool) preg_match('/\b(mes|liste|quelles|combien|clients?|resume)\b/', $n) && !preg_match('/absents?|manquants?|\bsans\b|pas dans|par liste/', $n) => 'price_lists',
+            default => null,
+        };
+    }
+
+    private function oversightAnswer(string $intent, string $n, User $admin): array
+    {
+        return match ($intent) {
+            'promo_products' => $this->oversight->promotionProducts($n),
+            'product_promos' => $this->oversight->productPromotions($n),
+            'routing'        => $this->oversight->routingRules(),
+            'thresholds'     => $this->oversight->thresholds(),
+            'agent_events'   => $this->oversight->agentEvents($n),
+            'push'           => $this->oversight->pushDevices(),
+            'notifications'  => $this->oversight->notifications($admin->id),
+            'unsent'         => $this->oversight->unsentInvoices(),
+            'pay_mix'        => $this->oversight->paymentMix($n),
+            'deliveries'     => $this->oversight->deliveriesByCity(),
+            'warehouses'     => $this->oversight->warehouses(),
+            'cash_categories' => $this->oversight->cashCategories(),
+            default          => $this->oversight->priceLists(),
         };
     }
     // ── Fiches produits ──────────────────────────────────────────────

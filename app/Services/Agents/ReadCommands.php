@@ -37,6 +37,8 @@ final class ReadCommands
         // Suivi, documents, droits
         'montre la facture FV-0001', 'cherche perceuse', 'brouillons anciens', 'derniers documents créés', 'qui a modifié la facture FV-0001', 'activité récente', 'actions des agents aujourd\'hui',
         'utilisateurs inactifs', 'dernières connexions', 'permissions du rôle manager', 'promotions actives', 'produits en ligne sans stock ou sans photo', 'bannières actives', 'terminaux de caisse',
+        'produits de la promotion rentrée', 'promotions du produit PRC1', 'règles de routage', 'seuils des agents', 'événements des agents du mois', 'mes notifications non lues', 'appareils abonnés aux notifications',
+        'factures non envoyées', 'répartition des ventes par mode de paiement', 'livraisons par ville', 'mes entrepôts', 'catégories de trésorerie', 'listes de prix',
         'commandes WhatsApp du jour', "importations d'achat récentes", 'relances de paiement du mois', 'dossiers ouverts des agents', 'produits avec variantes', 'prix du produit PRC1 par liste de prix',
     ];
 
