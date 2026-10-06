@@ -74,7 +74,7 @@ class AgentCapabilities
     public const GENERAL = [
         ['Dire où faire quelque chose dans O3 (38 écrans)', '« que peut-on faire dans O3 », « où créer une facture »'],
         ['Lire un document déposé (facture, commande, paiement, photo) et proposer la suite', 'trombone'],
-        ['Lire l\'activité de l\'entreprise : point de la journée, ventes, factures échues, devis sans suite, encaissements, soldes, sessions de caisse, stock (valeur, dormants, transferts, pertes), doublons, marges, clients inactifs, seuils de crédit, achats et fournisseurs, remises, dépenses, activité récente, promotions', '« résume la journée », « chiffre d\'affaires du mois », « factures échues »'],
+        ['Lire l\'activité de l\'entreprise : point de la journée, ventes, factures échues, devis sans suite, encaissements, soldes, sessions de caisse, stock (valeur, dormants, transferts, pertes), doublons, marges, clients inactifs, seuils de crédit, achats et fournisseurs, remises, dépenses, activité récente, promotions, classements de ventes, qualité du catalogue, historique d\'une fiche, actions des agents', '« résume la journée », « chiffre d\'affaires du mois », « factures échues »'],
         ['Recruter un agent de lecture et de rapport, planifier des routines, retenir des consignes', '« recrute un agent qui… », « chaque lundi… », « retiens : … »'],
     ];
 }

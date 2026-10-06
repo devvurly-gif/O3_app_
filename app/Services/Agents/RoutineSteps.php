@@ -21,6 +21,15 @@ class RoutineSteps
         'encaissements' => ['label' => 'Contrôler les encaissements', 'phrase' => 'contrôle les encaissements', 'does' => 'des relances de paiement en brouillon (aucun client contacté)'],
         'relances'      => ['label' => 'Relances à valider', 'phrase' => 'relances à valider', 'does' => 'ce qui attend votre validation'],
         'photos'        => ['label' => 'Chercher les photos Jadever', 'phrase' => 'cherche les photos Jadever', 'does' => 'les photos officielles des produits Jadever sans photo, en aperçu à valider (aucune photo rattachée)'],
+        'point'         => ['label' => 'Point de la journée', 'phrase' => 'résume la journée', 'does' => 'ventes, encaissements, factures échues, stock bas et validations en attente (lecture)'],
+        'validations'   => ['label' => 'Ce qui attend une validation', 'phrase' => 'que dois-je valider ?', 'does' => 'les propositions et relances en attente (lecture)'],
+        'ventes_hier'   => ['label' => "Ventes d'hier", 'phrase' => "ventes d'hier", 'does' => "le chiffre d'affaires de la veille, ses principaux clients et produits (lecture)"],
+        'encaissements_hier' => ['label' => "Encaissements d'hier", 'phrase' => "encaissements d'hier", 'does' => 'les paiements de la veille par mode (lecture)'],
+        'echues'        => ['label' => 'Factures échues', 'phrase' => 'factures échues', 'does' => 'les factures de vente en retard de paiement (lecture)'],
+        'devis'         => ['label' => 'Devis sans suite', 'phrase' => 'devis sans suite depuis 10 jours', 'does' => 'les devis ouverts depuis plus de 10 jours (lecture)'],
+        'bl_non_factures' => ['label' => 'Bons de livraison non facturés', 'phrase' => 'bons de livraison non facturés', 'does' => 'les bons livrés et pas encore facturés (lecture)'],
+        'fournisseurs_a_payer' => ['label' => 'Factures fournisseurs à payer', 'phrase' => 'factures fournisseurs à payer cette semaine', 'does' => 'les échéances fournisseurs des 7 prochains jours (lecture)'],
+        'sessions_caisse' => ['label' => 'Sessions de caisse', 'phrase' => 'sessions de caisse', 'does' => 'sessions oubliées, à valider, écarts du mois (lecture)'],
         'fiches'        => ['label' => 'Contrôler les fiches produits', 'phrase' => 'mettre à jour les fiches produits', 'does' => 'le contrôle des fiches (lecture seule)'],
     ];
 

@@ -38,6 +38,7 @@ class Orchestrator
         private BusinessAssistant $business,
         private InsightsAssistant $insights,
         private OperationsAssistant $operations,
+        private AnalysisAssistant $analysis,
     ) {
     }
 
@@ -104,6 +105,8 @@ class Orchestrator
             (bool) preg_match('/\bdocuments?\s*#?\s*(\d+)/', $n, $doc)                            => $this->intake->act($admin, (int) $doc[1], $n),
             // Atelier des agents : recruter, planifier des routines, retenir des consignes, catalogue des tâches.
             ($studio = $this->studioIntent($n)) !== null                                          => $this->studioAnswer($admin, $studio, $text, $n),
+            // Classements, qualité du catalogue, historique d'une fiche, actions des agents : lectures, aucun modèle de langage.
+            ($ana = $this->analysisIntent($n)) !== null                                           => $this->analysisAnswer($ana, $n),
             // Lectures sur l'activité de l'entreprise (ventes, factures échues, trésorerie, caisse…) : aucun modèle de langage.
             ($biz = $this->businessIntent($n)) !== null                                           => $this->businessAnswer($biz, $n),
             ($ins = $this->insightsIntent($n)) !== null                                          => $this->insightsAnswer($ins, $n),
@@ -198,7 +201,7 @@ class Orchestrator
             . "• « mettre à jour les fiches produits » : je contrôle les fiches (photos, descriptions, catégories, marques, prix, codes-barres) et je propose des corrections à valider ; « prépare les fiches pour l'utilisation » enchaîne toutes les étapes jusqu'à l'activation\n"
             . "• « que sait faire chaque agent » : le catalogue des tâches ; « recrute un agent qui… » ; « chaque lundi à 8 h, contrôle les encaissements » (routine) ; « retiens : … » (consigne) ; « crée les comptes des agents » ; « demande de développement : … » pour une tâche qui manque\n"
             . "• déposez une photo ou un PDF (trombone, ou glissez-le ici) : je lis le document, dis ce que c'est et propose la suite\n"
-            . "• lectures sur l'activité : « résume la journée », « que dois-je valider ? », « chiffre d'affaires du mois », « factures échues », « devis sans suite depuis 10 jours », « bons de livraison non facturés », « encaissements du jour », « solde de chaque compte de trésorerie », « sessions de caisse », « valeur du stock », « produits dormants », « transferts en attente », « pertes du mois », « doublons de produits », « marge par catégorie », « produits jamais vendus », « clients inactifs depuis 60 jours », « clients qui dépassent leur seuil de crédit », « achats du mois par fournisseur », « factures fournisseurs à payer », « bons de commande en attente », « prix d'achat en hausse », « remises accordées ce mois », « dépenses du mois par catégorie », « dépenses sans justificatif », « activité récente », « promotions actives » (chiffres lus directement dans la base, rien n'est modifié)
+            . "• lectures sur l'activité : « résume la journée », « que dois-je valider ? », « chiffre d'affaires du mois », « factures échues », « devis sans suite depuis 10 jours », « bons de livraison non facturés », « encaissements du jour », « solde de chaque compte de trésorerie », « sessions de caisse », « valeur du stock », « produits dormants », « transferts en attente », « pertes du mois », « doublons de produits », « marge par catégorie », « produits jamais vendus », « clients inactifs depuis 60 jours », « clients qui dépassent leur seuil de crédit », « achats du mois par fournisseur », « factures fournisseurs à payer », « bons de commande en attente », « prix d'achat en hausse », « remises accordées ce mois », « dépenses du mois par catégorie », « dépenses sans justificatif », « activité récente », « promotions actives », « top 10 des produits vendus », « ventes du mois par vendeur », « meilleurs clients du trimestre », « qui a modifié la facture FV-001 », « codes-barres invalides », « actions des agents aujourd'hui » (chiffres lus directement dans la base, rien n'est modifié)
 "
             . "• « que peut-on faire dans O3 » : tous les domaines de l'application ; ou nommez un écran (« les fiches produits », « créer une facture ») et je vous y envoie\n\n"
             . "Les agents préparent des brouillons. Rien n'est modifié ni envoyé sans votre validation, dans l'écran concerné.",
@@ -257,7 +260,7 @@ class Orchestrator
             (bool) preg_match('/\bmes agents\b|\bagents? (recrutes|personnalises)\b|liste des agents/', $n) => ['agents', null],
             (bool) preg_match('/\b(recrut|embauch|engage)\w*|\bnouvel agent\b/', $n) || ((bool) preg_match('/\b(cree|creer|ajoute|ajouter)\b/', $n) && (bool) preg_match('/\bagent\b/', $n)) => ['recruit', null],
             (bool) preg_match('/\broutines?\b/', $n) && (bool) preg_match('/\b(mes|quelles|liste|les|affiche)\b/', $n) && !$this->hasScheduleWords($n) => ['routines', null],
-            $this->hasScheduleWords($n) && (bool) preg_match('/\b(control|prepar|lance|verifi|fais|met|rappor|surveill|genere|inventaire|etat)\w*/', $n) => ['routine_new', null],
+            $this->hasScheduleWords($n) && (bool) preg_match('/\b(control|prepar|lance|verifi|fais|met|rappor|surveill|genere|inventaire|etat|resum|envoi|donn|montr|affich|bilan|point)\w*/', $n) => ['routine_new', null],
             default => null,
         };
     }
@@ -423,6 +426,53 @@ class Orchestrator
             'users'           => $this->operations->users(),
             'online_gaps'     => $this->operations->onlineGaps(),
             default           => $this->operations->promotions($n),
+        };
+    }
+    /** Quel classement, quelle lecture de qualité ou d'historique la phrase demande-t-elle ? null si aucune. @param string $n phrase normalisée */
+    private function analysisIntent(string $n): ?string
+    {
+        if (preg_match('/\b(controle\w*|prepar\w*|relanc\w*|recrut\w*|lance\w*|revis\w*|attribu\w*|active(?:r|z|ons)?|publi\w*)\b/', $n)) {
+            return null;
+        }
+
+        return match (true) {
+            (bool) preg_match('/qui a (modifie|change|supprime|cree|touche)|historique (de|du|des|d.)/', $n) => 'history',
+            (bool) preg_match('/actions? des agents|journal des agents|ce que (les )?agents? (ont|a) fait/', $n) => 'agent_actions',
+            (bool) preg_match('/fournisseurs?/', $n) && !preg_match('/clients?/', $n) && (bool) preg_match('/inactifs?|plus (achete|commande)|sans (achat|facture)|dormants?/', $n) => 'inactive_suppliers',
+            (bool) preg_match('/clients? en compte|facturation (periodique|mensuelle)|a facturer ce mois/', $n) => 'account_customers',
+            (bool) preg_match('/meilleurs? clients?|principaux clients|clients? .*plus (achete|rapporte)/', $n) => 'best_customers',
+            (bool) preg_match('/\bventes?\b/', $n) && (bool) preg_match('/par (vendeur|utilisateur|caissier|commercial)/', $n) => 'by_seller',
+            (bool) preg_match('/\bventes?\b|tickets?/', $n) && (bool) preg_match('/par (caisse|session|terminal)/', $n) => 'by_register',
+            (bool) preg_match('/\btop\s*\d*\b|plus vendus?|meilleures? ventes?|meilleurs? produits?/', $n) && (bool) preg_match('/produits?|articles?|\btop\b|ventes?/', $n) => 'top_products',
+            (bool) preg_match('/\btva\b/', $n) => 'vat',
+            (bool) preg_match('/codes?[- ]?barres?|\bean\b/', $n) && (bool) preg_match('/invalides?|incorrects?|errones?|faux/', $n) => 'bad_ean',
+            (bool) preg_match('/produits?/', $n) && (bool) preg_match('/par categorie/', $n) && !preg_match('/marge/', $n) => 'by_category',
+            (bool) preg_match('/sans marque/', $n) => 'no_brand',
+            (bool) preg_match('/liste de prix|liste tarifaire/', $n) && (bool) preg_match('/absents?|manquants?|sans|pas dans|oublies?/', $n) => 'pricelist_gap',
+            (bool) preg_match('/mouvements?/', $n) && (bool) preg_match('/en attente|non appliques?|pending/', $n) => 'pending_moves',
+            (bool) preg_match('/ajustements?/', $n) && (bool) preg_match('/inventaire|stock|recents?/', $n) => 'adjustments',
+            default => null,
+        };
+    }
+
+    private function analysisAnswer(string $intent, string $n): array
+    {
+        return match ($intent) {
+            'history'            => $this->analysis->history($n),
+            'agent_actions'      => $this->analysis->agentActions($n),
+            'inactive_suppliers' => $this->analysis->inactiveSuppliers($n),
+            'account_customers'  => $this->analysis->accountCustomersToInvoice(),
+            'best_customers'     => $this->analysis->bestCustomers($n),
+            'by_seller'          => $this->analysis->salesBySeller($n),
+            'by_register'        => $this->analysis->salesByRegister($n),
+            'top_products'       => $this->analysis->topProducts($n),
+            'vat'                => $this->analysis->vatRates(),
+            'bad_ean'            => $this->analysis->invalidBarcodes(),
+            'by_category'        => $this->analysis->productsByCategory(),
+            'no_brand'           => $this->analysis->productsWithoutBrand(),
+            'pricelist_gap'      => $this->analysis->priceListGaps($n),
+            'pending_moves'      => $this->analysis->pendingMovements(),
+            default              => $this->analysis->inventoryAdjustments($n),
         };
     }
     // ── Fiches produits ──────────────────────────────────────────────
