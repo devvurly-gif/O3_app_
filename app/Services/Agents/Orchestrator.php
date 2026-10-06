@@ -37,6 +37,7 @@ class Orchestrator
         private AgentInterview $interview,
         private BusinessAssistant $business,
         private InsightsAssistant $insights,
+        private OperationsAssistant $operations,
     ) {
     }
 
@@ -106,6 +107,7 @@ class Orchestrator
             // Lectures sur l'activité de l'entreprise (ventes, factures échues, trésorerie, caisse…) : aucun modèle de langage.
             ($biz = $this->businessIntent($n)) !== null                                           => $this->businessAnswer($biz, $n),
             ($ins = $this->insightsIntent($n)) !== null                                          => $this->insightsAnswer($ins, $n),
+            ($ops = $this->operationsIntent($n)) !== null                                        => $this->operationsAnswer($ops, $n),
             (bool) preg_match('/inventaire|comptage/', $n)                                        => $this->inventory($admin, $n, $action),
             (bool) preg_match('/encaissement|impaye|recouvrement|relance|paiements? en retard/', $n) => $this->collections($admin, $n, $action),
             // Fiches produits : contrôle, propositions (IA, prix, photos) et leur validation (« lot #12 »).
@@ -196,7 +198,7 @@ class Orchestrator
             . "• « mettre à jour les fiches produits » : je contrôle les fiches (photos, descriptions, catégories, marques, prix, codes-barres) et je propose des corrections à valider ; « prépare les fiches pour l'utilisation » enchaîne toutes les étapes jusqu'à l'activation\n"
             . "• « que sait faire chaque agent » : le catalogue des tâches ; « recrute un agent qui… » ; « chaque lundi à 8 h, contrôle les encaissements » (routine) ; « retiens : … » (consigne) ; « crée les comptes des agents » ; « demande de développement : … » pour une tâche qui manque\n"
             . "• déposez une photo ou un PDF (trombone, ou glissez-le ici) : je lis le document, dis ce que c'est et propose la suite\n"
-            . "• lectures sur l'activité : « résume la journée », « que dois-je valider ? », « chiffre d'affaires du mois », « factures échues », « devis sans suite depuis 10 jours », « bons de livraison non facturés », « encaissements du jour », « solde de chaque compte de trésorerie », « sessions de caisse », « valeur du stock », « produits dormants », « transferts en attente », « pertes du mois », « doublons de produits », « marge par catégorie », « produits jamais vendus », « clients inactifs depuis 60 jours », « clients qui dépassent leur seuil de crédit » (chiffres lus directement dans la base, rien n'est modifié)
+            . "• lectures sur l'activité : « résume la journée », « que dois-je valider ? », « chiffre d'affaires du mois », « factures échues », « devis sans suite depuis 10 jours », « bons de livraison non facturés », « encaissements du jour », « solde de chaque compte de trésorerie », « sessions de caisse », « valeur du stock », « produits dormants », « transferts en attente », « pertes du mois », « doublons de produits », « marge par catégorie », « produits jamais vendus », « clients inactifs depuis 60 jours », « clients qui dépassent leur seuil de crédit », « achats du mois par fournisseur », « factures fournisseurs à payer », « bons de commande en attente », « prix d'achat en hausse », « remises accordées ce mois », « dépenses du mois par catégorie », « dépenses sans justificatif », « activité récente », « promotions actives » (chiffres lus directement dans la base, rien n'est modifié)
 "
             . "• « que peut-on faire dans O3 » : tous les domaines de l'application ; ou nommez un écran (« les fiches produits », « créer une facture ») et je vous y envoie\n\n"
             . "Les agents préparent des brouillons. Rien n'est modifié ni envoyé sans votre validation, dans l'écran concerné.",
@@ -334,7 +336,7 @@ class Orchestrator
     /** Quelle lecture sur le stock, le catalogue ou les tiers la phrase demande-t-elle ? null si aucune. @param string $n phrase normalisée */
     private function insightsIntent(string $n): ?string
     {
-        if (preg_match('/\b(controle\w*|prepar\w*|relanc\w*|recrut\w*|routine|agent|lance\w*|revis\w*|attribu\w*|active\w*)\b/', $n)) {
+        if (preg_match('/\b(controle\w*|prepar\w*|relanc\w*|recrut\w*|routine|agent|lance\w*|revis\w*|attribu\w*|active(?:r|z|ons)?)\b/', $n)) {
             return null;
         }
         $third = (bool) preg_match('/\b(clients?|fournisseurs?|tiers)\b/', $n);
@@ -371,6 +373,56 @@ class Orchestrator
             'dup_products'       => $this->insights->duplicateProducts(),
             'margins'            => $this->insights->margins($n),
             default              => $this->insights->neverSold($n),
+        };
+    }
+    /** Quelle lecture sur les achats, la trésorerie, l'activité, les utilisateurs, la boutique ou les promotions ? @param string $n phrase normalisée */
+    private function operationsIntent(string $n): ?string
+    {
+        if (preg_match('/\b(controle\w*|prepar\w*|relanc\w*|recrut\w*|routine|agent|lance\w*|revis\w*|attribu\w*|active(?:r|z|ons)?|publi\w*)\b/', $n)) {
+            return null;
+        }
+        $supplier = (bool) preg_match('/fournisseurs?/', $n);
+
+        return match (true) {
+            $supplier && (bool) preg_match('/moins cher|meilleur prix|prix le plus bas|compar\w*/', $n) => 'cheapest',
+            (bool) preg_match('/sans fournisseur/', $n) => 'no_supplier',
+            (bool) preg_match('/prix d.achat/', $n) && (bool) preg_match('/hausse|augment|monte|grimpe/', $n) => 'price_up',
+            (bool) preg_match('/bons? de commande/', $n) && (bool) preg_match('/attente|reception|non recus?|en cours|a recevoir/', $n) => 'purchase_orders',
+            (bool) preg_match('/(factures?|echeances?)\s*(de )?(fournisseurs?|d.achat)|(a payer|echeances?).*fournisseurs?|fournisseurs?.*(a payer|echeances?)/', $n) => 'supplier_due',
+            (bool) preg_match('/\bachats?\b/', $n) && (bool) preg_match('/\b(mois|semaine|jour|hier|annee|fournisseurs?)\b/', $n) => 'purchases',
+            (bool) preg_match('/\bremises?\b/', $n) => 'discounts',
+            (bool) preg_match('/prix de reference|sous (le|leur) prix (catalogue|de reference)/', $n) => 'below_ref',
+            (bool) preg_match('/factures?.*annulee|annulations? de factures?/', $n) => 'cancelled',
+            (bool) preg_match('/sans justificatifs?|justificatifs? manquants?/', $n) => 'no_receipt',
+            (bool) preg_match('/recurren\w*|charges? fixes?/', $n) => 'recurrences',
+            (bool) preg_match('/\bdepenses?\b/', $n) => 'expenses',
+            (bool) preg_match('/activite (recente|de |des |d.)|dernieres? (modifications?|operations?|actions?)|qui a modifie/', $n) => 'activity',
+            (bool) preg_match('/utilisateurs?/', $n) && (bool) preg_match('/inactifs?|par role|roles?|actifs|combien|liste/', $n) => 'users',
+            (bool) preg_match('/(en ligne|boutique|website|site web)/', $n) && (bool) preg_match('/sans (stock|photo|image)|en rupture|incomplet/', $n) => 'online_gaps',
+            (bool) preg_match('/promotions?/', $n) && (bool) preg_match('/actives?|en cours|termin|expir|finiss|quelles/', $n) => 'promotions',
+            default => null,
+        };
+    }
+
+    private function operationsAnswer(string $intent, string $n): array
+    {
+        return match ($intent) {
+            'cheapest'        => $this->operations->cheapestSupplier($n),
+            'no_supplier'     => $this->operations->productsWithoutSupplier(),
+            'price_up'        => $this->operations->purchasePriceIncreases(),
+            'purchase_orders' => $this->operations->pendingPurchaseOrders(),
+            'supplier_due'    => $this->operations->supplierInvoicesDue($n),
+            'purchases'       => $this->operations->purchasesBySupplier($n),
+            'discounts'       => $this->operations->discounts($n),
+            'below_ref'       => $this->operations->belowReferencePrice($n),
+            'cancelled'       => $this->operations->cancelledInvoices($n),
+            'no_receipt'      => $this->operations->expensesWithoutReceipt($n),
+            'recurrences'     => $this->operations->upcomingRecurrences(),
+            'expenses'        => $this->operations->expensesByCategory($n),
+            'activity'        => $this->operations->recentActivity($n),
+            'users'           => $this->operations->users(),
+            'online_gaps'     => $this->operations->onlineGaps(),
+            default           => $this->operations->promotions($n),
         };
     }
     // ── Fiches produits ──────────────────────────────────────────────
