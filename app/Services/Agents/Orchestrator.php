@@ -99,10 +99,50 @@ class Orchestrator
         return null;
     }
 
-    /** @return array{body: string, meta: array<string, mixed>} */
+    /**
+     * La réponse à une demande. Les règles essaient d'abord la phrase telle quelle ; si elles n'y trouvent rien (aide,
+     * orientation vers un écran, ou rien du tout), elles essaient la même phrase remise en forme (fautes de frappe,
+     * abréviations, anglais, darija transcrite). Le modèle de langage n'est consulté qu'en dernier recours.
+     *
+     * @return array{body: string, meta: array<string, mixed>}
+     */
     private function answer(User $admin, string $text): array
     {
         $n = $this->normalize($text);
+        $first = $this->dispatch($admin, $text, $n, false);
+        if (!$this->isFallback($first)) {
+            return $first;
+        }
+
+        $canonical = PhraseNormalizer::canonical($n);
+        if ($canonical !== '' && $canonical !== $n) {
+            $second = $this->dispatch($admin, $canonical, $canonical, false);
+            if (!$this->isFallback($second)) {
+                $second['meta']['understood_as'] = $canonical;
+                $second['body'] = "J'ai compris « {$canonical} ».
+
+" . $second['body'];   // l'administrateur voit comment sa phrase a été lue
+
+                return $second;
+            }
+        }
+
+        // Rien de connu : le renfort par IA (s'il est activé) ou, à défaut, l'aide habituelle.
+        return ($first['meta']['intent'] ?? null) === 'unmatched' ? $this->freeText($admin, $text) : $first;
+    }
+
+    /** Une réponse « de repli » : l'aide, l'orientation vers un écran, ou l'absence de règle. */
+    private function isFallback(array $answer): bool
+    {
+        return in_array($answer['meta']['intent'] ?? null, ['help', 'navigate', 'unmatched'], true);
+    }
+
+    /**
+     * @param bool $ai vrai : une phrase sans règle part au modèle de langage ; faux : elle rend « unmatched »
+     * @return array{body: string, meta: array<string, mixed>}
+     */
+    private function dispatch(User $admin, string $text, string $n, bool $ai): array
+    {
         $action = $this->wantsAction($n);
 
         return match (true) {
@@ -136,7 +176,7 @@ class Orchestrator
             AppCatalog::match($n) !== [] && $this->looksLikeNavigation($n)                       => $this->navigate($n, AppCatalog::match($n)),
             (bool) preg_match('/\b(etat|statut|situation|bilan|resume|point|agents?|orchestr|ou en)\b/', $n) => $this->status(),
             (bool) preg_match('/\b(aide|help|bonjour|salut|bonsoir|coucou|que peux|que sais|commandes?)\b/', $n) => $this->help(true),
-            default                                                                               => $this->freeText($admin, $text),
+            default                                                                               => $ai ? $this->freeText($admin, $text) : $this->reply('', 'unmatched'),
         };
     }
 
