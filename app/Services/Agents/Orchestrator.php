@@ -59,12 +59,20 @@ class Orchestrator
     }
 
     /** @return array{user: OrchestratorMessage, reply: OrchestratorMessage} */
+    /** Vrai pendant une réponse du chat : seules les questions de l'administrateur peuvent être des suites de la précédente. */
+    private bool $conversational = false;
+
     public function converse(User $admin, string $text): array
     {
         $text = trim($text);
         $user = OrchestratorMessage::create(['user_id' => $admin->id, 'role' => OrchestratorMessage::ROLE_ADMIN, 'body' => $text]);
 
-        $answer = $this->interviewTurn($admin, $text) ?? $this->answer($admin, $text);
+        $this->conversational = true;
+        try {
+            $answer = $this->interviewTurn($admin, $text) ?? $this->answer($admin, $text);
+        } finally {
+            $this->conversational = false;
+        }
 
         $reply = OrchestratorMessage::create([
             'user_id' => $admin->id,
@@ -108,10 +116,33 @@ class Orchestrator
      */
     private function answer(User $admin, string $text): array
     {
+        [$answer, $used] = $this->resolveAnswer($admin, $text);
+
+        // On retient la dernière lecture comprise : « et hier ? » s'y rapportera.
+        if ($this->conversational && !$this->isFallback($answer) && $this->isReadPhrase($used)) {
+            $answer['meta']['cmd'] = $used;
+        }
+
+        return $answer;
+    }
+
+    /** @return array{0: array{body: string, meta: array<string, mixed>}, 1: string} la réponse et la phrase (normalisée) que les règles ont lue */
+    private function resolveAnswer(User $admin, string $text): array
+    {
         $n = $this->normalize($text);
         $first = $this->dispatch($admin, $text, $n, false);
         if (!$this->isFallback($first)) {
-            return $first;
+            return [$first, $n];
+        }
+
+        // Une suite (« et hier ? », « et par vendeur ? ») : la dernière lecture, avec la période ou le découpage demandé.
+        if ($this->conversational && ($last = $this->lastCommand($admin)) !== null && ($follow = FollowUp::resolve($n, $last)) !== null) {
+            $second = $this->dispatch($admin, $follow, $follow, false);
+            if (!$this->isFallback($second)) {
+                $second['body'] = "Suite de votre question : « {$follow} ».\n\n" . $second['body'];
+
+                return [$second, $follow];
+            }
         }
 
         $canonical = PhraseNormalizer::canonical($n);
@@ -119,16 +150,29 @@ class Orchestrator
             $second = $this->dispatch($admin, $canonical, $canonical, false);
             if (!$this->isFallback($second)) {
                 $second['meta']['understood_as'] = $canonical;
-                $second['body'] = "J'ai compris « {$canonical} ».
+                $second['body'] = "J'ai compris « {$canonical} ».\n\n" . $second['body'];   // l'administrateur voit comment sa phrase a été lue
 
-" . $second['body'];   // l'administrateur voit comment sa phrase a été lue
-
-                return $second;
+                return [$second, $canonical];
             }
         }
 
         // Rien de connu : le renfort par IA (s'il est activé) ou, à défaut, l'aide habituelle.
-        return ($first['meta']['intent'] ?? null) === 'unmatched' ? $this->freeText($admin, $text) : $first;
+        return [($first['meta']['intent'] ?? null) === 'unmatched' ? $this->freeText($admin, $text) : $first, $n];
+    }
+
+    /** La dernière lecture comprise dans cette conversation, si elle a moins d'une demi-heure. */
+    private function lastCommand(User $admin): ?string
+    {
+        $last = OrchestratorMessage::where('user_id', $admin->id)->where('role', OrchestratorMessage::ROLE_ORCHESTRATOR)->latest('id')->first();
+
+        return $last && $last->created_at->gt(now()->subMinutes(30)) && is_string($last->meta['cmd'] ?? null) ? $last->meta['cmd'] : null;
+    }
+
+    /** La phrase est-elle une lecture que les règles reconnaissent ? (sans l'exécuter) */
+    private function isReadPhrase(string $n): bool
+    {
+        return $this->quickIntent($n) !== null || $this->oversightIntent($n) !== null || $this->extrasIntent($n) !== null || $this->explorerIntent($n) !== null
+            || $this->deepDiveIntent($n) !== null || $this->analysisIntent($n) !== null || $this->businessIntent($n) !== null || $this->insightsIntent($n) !== null || $this->operationsIntent($n) !== null;
     }
 
     /** Une réponse « de repli » : l'aide, l'orientation vers un écran, ou l'absence de règle. */
