@@ -200,6 +200,8 @@ class TenantController extends Controller
             'ecom_enabled'        => 'sometimes|boolean',
             'variants_enabled'    => 'sometimes|boolean',
             'imei_enabled'        => 'sometimes|boolean',
+            // Interrupteur des agents IA : indépendant de la formule (voir Tenant::agentsEnabled()).
+            'agents_enabled'      => 'sometimes|boolean',
         ]);
 
         // Generate ecom API key if enabling ecom for the first time

@@ -17,6 +17,7 @@ export interface Tenant {
   ecom_enabled: boolean
   variants_enabled: boolean
   imei_enabled: boolean
+  agents_enabled?: boolean | null
   ecom_api_key?: string
   trial_ends_at: string | null
   created_at: string

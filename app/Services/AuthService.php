@@ -83,10 +83,28 @@ class AuthService
             'avatar'         => $user->avatar,
             // Slugs utilisés par le frontend pour le menu et les pages
             // (auth.hasModule('pos'/'ecom'/…)).
-            'active_modules' => $this->tenantFeatures(),
+            'active_modules' => $this->activeModules(),
             // Bandeau d'essai et écran « choisir une formule ».
             'subscription'   => $this->subscriptionSummary(),
         ];
+    }
+
+    /**
+     * Modules annoncés au frontend : les capacités de la formule, plus « agents » quand le super-administrateur les a
+     * ouverts à ce tenant (ouverts par défaut).
+     *
+     * @return array<int, string>
+     */
+    private function activeModules(): array
+    {
+        $modules = $this->tenantFeatures();
+        $tenant  = $this->tenant();
+
+        if ($tenant && $tenant->agentsEnabled()) {
+            $modules[] = 'agents';
+        }
+
+        return $modules;
     }
 
     /**

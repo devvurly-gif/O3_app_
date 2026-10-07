@@ -407,18 +407,18 @@ Route::middleware(['auth:sanctum', 'tenant.active'])->group(function () {
         });
 
         // ── Activité des agents IA (lecture seule : événements routés, agents, dossiers) ──
-        Route::middleware(['permission:settings.manage', 'throttle:60,1'])
+        Route::middleware(['agents', 'permission:settings.manage', 'throttle:60,1'])
             ->get('agents/activite', [\App\Http\Controllers\Api\Agents\AgentActivityController::class, 'index']);
 
         // Ordres donnés aux agents (ex. préparer un inventaire) : brouillon produit, rien n'est modifié.
-        Route::middleware(['permission:settings.manage', 'throttle:20,1,agent-orders'])->group(function () {
+        Route::middleware(['agents', 'permission:settings.manage', 'throttle:20,1,agent-orders'])->group(function () {
             Route::post('agents/ordres', [\App\Http\Controllers\Api\Agents\AgentOrderController::class, 'store']);
             Route::get('agents/ordres/{event}/fichier', [\App\Http\Controllers\Api\Agents\AgentOrderController::class, 'file'])
                 ->whereNumber('event');
         });
 
         // Session administrateur ↔ orchestrateur des agents (règles, sans modèle de langage).
-        Route::middleware(['permission:settings.manage', 'throttle:30,1,orchestrateur'])->prefix('agents/orchestrateur')->group(function () {
+        Route::middleware(['agents', 'permission:settings.manage', 'throttle:30,1,orchestrateur'])->prefix('agents/orchestrateur')->group(function () {
             $c = \App\Http\Controllers\Api\Agents\OrchestratorController::class;
             Route::get('/',    [$c, 'index']);
             Route::post('/',   [$c, 'send']);
