@@ -15,7 +15,6 @@ use App\Services\ProductImageService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -554,25 +553,25 @@ class CatalogAssistant
      * « applique les propositions du lot #12 », « ignore le lot #12 ».
      *
      * Un lot ne se traite qu'une fois, même si le bouton est cliqué deux fois en même temps (deux onglets, double clic) :
-     * un verrou par lot empêche la seconde requête de lire « en attente » avant que la première ait terminé, ce qui
-     * aurait créé deux fois les mêmes brouillons ou règlements. Le verrou ne retient pas : la seconde requête est refusée.
+     * il est d'abord RÉSERVÉ par une seule instruction SQL (LotClaim), ce qu'une seule requête gagne. La seconde est refusée
+     * sans rien consommer. Un lot que l'application n'a pas terminé (refus, erreur) redevient « en attente ».
      *
      * @return array{body: string, meta: array<string, mixed>}
      */
     public function act(User $admin, int $eventId, string $n): array
     {
-        $lock = Cache::lock("agent-lot:{$eventId}", 120);
-        if (!$lock->get()) {
-            return $this->reply("Le lot #{$eventId} est déjà en cours de traitement : patientez quelques secondes, puis demandez « que dois-je valider ? » pour voir où il en est.", eventId: $eventId);
+        if (!LotClaim::take($eventId)) {
+            return LotClaim::isBeingProcessed($eventId)
+                ? $this->reply("Le lot #{$eventId} est déjà en cours de traitement : patientez quelques secondes, puis demandez « que dois-je valider ? » pour voir où il en est.", eventId: $eventId)
+                : $this->actOnce($admin, $eventId, $n);                                 // introuvable, déjà traité ou ignoré : le message habituel
         }
 
         try {
             return $this->actOnce($admin, $eventId, $n);
         } finally {
-            $lock->release();
+            LotClaim::release($eventId);
         }
     }
-
     /** @return array{body: string, meta: array<string, mixed>} */
     private function actOnce(User $admin, int $eventId, string $n): array
     {
@@ -580,14 +579,16 @@ class CatalogAssistant
         if (!$event) {
             return $this->reply("Je ne trouve pas le lot #{$eventId}.", error: true);
         }
-        if ($event->status !== AgentEvent::STATUS_ROUTED) {
+        if (!in_array($event->status, [AgentEvent::STATUS_ROUTED, AgentEvent::STATUS_IN_PROGRESS], true)) {          // « en cours » : réservé par cette requête
             return $this->reply("Le lot #{$eventId} a déjà été traité ou ignoré.", eventId: $eventId);
         }
         if (preg_match('/ignor|annul|abandon/', $n)) {
             $event->update(['status' => AgentEvent::STATUS_REJECTED, 'payload' => array_merge($event->payload ?? [], ['dismissed_by' => $admin->name])]);
             $event->type === 'catalogue_photos' && Storage::disk('local')->deleteDirectory("agent-photos/{$event->id}");
 
-            return $this->withNextStep($this->reply("C'est noté : le lot #{$eventId} est ignoré, aucune fiche n'a été modifiée.", eventId: $eventId));
+            $ignored = $this->reply("C'est noté : le lot #{$eventId} est ignoré, " . (str_starts_with($event->type, 'catalogue_') ? "aucune fiche n'a été modifiée." : "rien n'a été enregistré ni modifié."), eventId: $eventId);
+
+            return str_starts_with($event->type, 'catalogue_') ? $this->withNextStep($ignored) : $ignored;
         }
         if (!preg_match('/appliqu|confirm|valid|lance/', $n)) {
             return $this->reply("Lot #{$eventId} en attente : dites « applique … du lot #{$eventId} » ou « ignore le lot #{$eventId} ».", eventId: $eventId);
@@ -595,7 +596,7 @@ class CatalogAssistant
 
         try {
             if ($event->type !== 'catalogue_completion') {
-                return $this->withNextStep(match ($event->type) {
+                $applied = match ($event->type) {
                     'catalogue_activation'   => $this->applyActivation($event),
                     'catalogue_codes_barres' => $this->applyBarcodes($event),
                     'catalogue_photos'       => $this->applyPhotos($admin, $event),
@@ -609,7 +610,10 @@ class CatalogAssistant
                     'relance_versement'      => $this->planChat->applyReminder($admin, $event),
                     'releve_import'          => $this->statementChat->apply($admin, $event),
                     default                  => $this->applyPrices($event),
-                });
+                };
+
+                // « Étape suivante » (fiches produits à préparer) n'a de sens qu'après un lot du catalogue, pas après un règlement ou un transfert.
+                return str_starts_with($event->type, 'catalogue_') ? $this->withNextStep($applied) : $applied;
             }
 
             $applied = $this->applyCompletion($event);

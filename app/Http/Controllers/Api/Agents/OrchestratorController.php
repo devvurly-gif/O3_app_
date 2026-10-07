@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Agents;
 use App\Http\Controllers\Controller;
 use App\Models\OrchestratorMessage;
 use App\Models\Setting;
+use App\Services\Agents\BankStatementImporter;
 use App\Services\Agents\CatalogAssistant;
 use App\Services\Agents\DocumentIntake;
 use App\Services\Agents\ExportAssistant;
@@ -87,11 +88,16 @@ class OrchestratorController extends Controller
         $data = $request->validate([
             'message'   => ['nullable', 'string', 'max:1000'],
             'files'     => ['required', 'array', 'min:1', 'max:' . DocumentIntake::MAX_FILES],
-            'files.*'   => ['file', 'max:10240', 'mimes:jpg,jpeg,png,webp,gif,pdf,csv,xlsx,xls'],
+            'files.*'   => ['file', 'max:10240', function (string $attribute, mixed $value, \Closure $fail) {
+                // Photos et PDF : sur le type détecté d'après le contenu ; relevés Excel / CSV : extension + type cohérent (voir isAcceptedStatementFile).
+                if ($value instanceof \Illuminate\Http\UploadedFile && (in_array($value->getMimeType(), DocumentReader::MIMES, true) || BankStatementImporter::isAcceptedStatementFile($value))) {
+                    return;
+                }
+                $fail('Seuls les photos (JPEG, PNG, WebP, GIF), les PDF et les relevés Excel ou CSV sont acceptés.');
+            }],
         ], [
             'files.max'       => 'Trois fichiers au maximum à la fois.',
             'files.*.max'     => 'Un fichier dépasse 10 Mo.',
-            'files.*.mimes' => 'Seuls les photos (JPEG, PNG, WebP, GIF), les PDF et les relevés Excel ou CSV sont acceptés.',
         ]);
 
         $exchange = $intake->receive($request->user(), $request->file('files'), trim((string) ($data['message'] ?? '')));

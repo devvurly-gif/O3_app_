@@ -51,6 +51,25 @@ class BankStatementImporter
     {
     }
 
+    /**
+     * Un fichier Excel / CSV de relevé est-il acceptable au dépôt ?
+     *
+     * L'extension dit ce que l'on attend (csv, xlsx, xls) ; le type DÉTECTÉ d'après le contenu doit lui être cohérent.
+     * On ne se fie pas à la règle « mimes » de Laravel : un vrai CSV est détecté « text/plain », donc « txt », et serait
+     * refusé. Un script déguisé en .csv (type « text/x-php »), une image, un SVG ou un .txt restent refusés.
+     */
+    public static function isAcceptedStatementFile(UploadedFile $file): bool
+    {
+        $detected = strtolower((string) $file->getMimeType());
+
+        return match (strtolower($file->getClientOriginalExtension())) {
+            'csv'  => in_array($detected, ['text/plain', 'text/csv', 'application/csv', 'text/x-csv', 'application/vnd.ms-excel'], true),
+            'xlsx' => in_array($detected, ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/zip', 'application/x-zip-compressed', 'application/octet-stream'], true),
+            'xls'  => in_array($detected, ['application/vnd.ms-excel', 'application/x-ole-storage', 'application/cdfv2', 'application/x-cfb', 'application/octet-stream'], true),
+            default => false,
+        };
+    }
+
     /** Ce fichier déposé est-il un relevé ? Excel / CSV : toujours ; PDF : seulement si le message ou le nom du fichier dit « relevé ». */
     public function isStatement(UploadedFile $file, string $note): bool
     {
@@ -78,15 +97,16 @@ class BankStatementImporter
                 'suggestions' => [['label' => "Lire ce relevé avec l'IA", 'text' => "lis le relevé #{$event->id} avec l'ia"]],
                 'links' => [],
                 'event_id' => $event->id,
+                'ai' => false,                                                                  // rien n'est encore envoyé à l'IA
             ];
         }
 
         $parsed = $stored ? $this->parser->parse(Storage::disk('local')->path($stored), $ext) : null;
         if ($parsed === null) {
-            return ['text' => "Relevé « {$name} » : je n'ai pas pu le lire — " . ($this->parser->failure() ?? 'fichier illisible') . '. Il est conservé.', 'suggestions' => [], 'links' => [], 'event_id' => AgentEvent::create(['type' => 'releve_pdf', 'source' => 'orchestrator', 'status' => AgentEvent::STATUS_TO_SORT, 'payload' => ['text' => "Relevé illisible : {$name}", 'file' => ['path' => $stored, 'name' => $name]]])->id];
+            return ['text' => "Relevé « {$name} » : je n'ai pas pu le lire — " . ($this->parser->failure() ?? 'fichier illisible') . '. Il est conservé.', 'suggestions' => [], 'links' => [], 'ai' => false, 'event_id' => AgentEvent::create(['type' => 'releve_pdf', 'source' => 'orchestrator', 'status' => AgentEvent::STATUS_TO_SORT, 'payload' => ['text' => "Relevé illisible : {$name}", 'file' => ['path' => $stored, 'name' => $name]]])->id];
         }
 
-        return $this->propose($admin, $name, $parsed['lines'], $parsed['ignored']);
+        return $this->propose($admin, $name, $parsed['lines'], $parsed['ignored']) + ['ai' => false];       // lu localement, sans IA
     }
 
     /** Lecture d'un relevé PDF par l'IA, après confirmation explicite de l'administrateur. */
@@ -104,7 +124,10 @@ class BankStatementImporter
         $event->update(['status' => AgentEvent::STATUS_DONE, 'payload' => array_merge($event->payload, ['read_by_ai_at' => now()->toDateTimeString(), 'read_by' => $admin->name])]);
         AgentAction::create(['agent_id' => (int) Agent::where('domain', 'recouvrement')->value('id'), 'event_id' => $event->id, 'action' => 'bank_statement_sent_to_ai', 'level' => 'approval', 'input' => ['confirmed_by' => $admin->name, 'file' => $name], 'result' => ['lines' => count($lines)]]);
 
-        return $this->propose($admin, $name, $lines, 0)['reply'] ?? $this->reply('Relevé lu.');
+        $reply = $this->propose($admin, $name, $lines, 0)['reply'] ?? $this->reply('Relevé lu.');
+        $reply['meta']['ai'] = true;                                                      // ce relevé est passé par l'IA : l'étiquette doit le dire
+
+        return $reply;
     }
 
     /**

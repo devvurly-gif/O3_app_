@@ -69,8 +69,10 @@ class DocumentIntake
         $suggestions = [];
         $links = [];
         $events = [];
+        $usedAi = false;
         foreach ($files as $file) {
             $section = $this->receiveOne($admin, $file, $note);
+            $usedAi = $usedAi || ($section['ai'] ?? true);                   // un relevé Excel / CSV est lu localement : pas d'IA
             $sections[] = $section['text'];
             $suggestions = array_merge($suggestions, $section['suggestions']);
             $links = array_merge($links, $section['links']);
@@ -86,14 +88,14 @@ class DocumentIntake
                 'links'       => $this->uniqueLinks($links) ?: null,
                 'suggestions' => $suggestions ?: null,
                 'event_id'    => count($events) === 1 ? $events[0] : null,
-                'ai'          => true,
+                'ai'          => $usedAi ?: null,
             ], fn ($v) => $v !== null),
         ]);
 
         return ['user' => $user, 'reply' => $reply];
     }
 
-    /** @return array{text: string, suggestions: array, links: array, event_id: int} */
+    /** @return array{text: string, suggestions: array, links: array, event_id: int|null, ai?: bool} ai : faux pour un relevé Excel / CSV lu localement */
     private function receiveOne(User $admin, UploadedFile $file, string $note): array
     {
         // Un relevé bancaire (Excel / CSV, ou PDF nommé « relevé ») ne passe jamais par la lecture automatique des documents.

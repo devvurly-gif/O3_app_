@@ -9,7 +9,6 @@ use App\Models\AgentEvent;
 use App\Models\AgentRoutine;
 use App\Models\Setting;
 use App\Models\User;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 /**
@@ -412,24 +411,24 @@ class AgentStudio
 
     /**
      * « applique la proposition #12 », « ignore la proposition #12 ». Une proposition ne se traite qu'une fois, même si le
-     * bouton est cliqué deux fois en même temps (même verrou par lot que CatalogAssistant::act).
+     * bouton est cliqué deux fois en même temps (même réservation que CatalogAssistant::act, voir LotClaim).
      *
      * @param string $n phrase normalisée
      */
     public function act(User $admin, int $eventId, string $n): array
     {
-        $lock = Cache::lock("agent-lot:{$eventId}", 120);
-        if (!$lock->get()) {
-            return $this->reply("La proposition #{$eventId} est déjà en cours de traitement : patientez quelques secondes.", eventId: $eventId);
+        if (!LotClaim::take($eventId)) {
+            return LotClaim::isBeingProcessed($eventId)
+                ? $this->reply("La proposition #{$eventId} est déjà en cours de traitement : patientez quelques secondes.", eventId: $eventId)
+                : $this->actOnce($admin, $eventId, $n);
         }
 
         try {
             return $this->actOnce($admin, $eventId, $n);
         } finally {
-            $lock->release();
+            LotClaim::release($eventId);
         }
     }
-
     /** @param string $n phrase normalisée */
     private function actOnce(User $admin, int $eventId, string $n): array
     {
@@ -437,7 +436,7 @@ class AgentStudio
         if (!$event) {
             return $this->reply("Je ne trouve pas la proposition #{$eventId}.", error: true);
         }
-        if ($event->status !== AgentEvent::STATUS_ROUTED) {
+        if (!in_array($event->status, [AgentEvent::STATUS_ROUTED, AgentEvent::STATUS_IN_PROGRESS], true)) {
             return $this->reply("La proposition #{$eventId} a déjà été traitée ou ignorée.", eventId: $eventId);
         }
         if (preg_match('/ignor|annul|abandon/', $n)) {

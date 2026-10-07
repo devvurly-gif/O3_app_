@@ -143,6 +143,7 @@ class OrchestratorBankStatementTest extends TestCase
         $this->assertStringContainsString('plusieurs factures de ce montant', $r['body']);
         $this->assertSame('Enregistrer ces règlements', $r['meta']['suggestions'][0]['label'] ?? $r['suggestions'][0]['label']);
         $this->assertSame(0, Payment::count());
+        $this->assertFalse($r['ai']);                                                    // lu localement : l'étiquette « compris par IA » ne doit pas apparaître
         Http::assertNothingSent();
     }
 
@@ -216,6 +217,8 @@ class OrchestratorBankStatementTest extends TestCase
         $read = $this->say($r['suggestions'][0]['text']);
         Http::assertSentCount(1);
         $this->assertStringContainsString('1 règlement(s) reconnu(s) avec certitude', $read['body']);
+        $this->assertTrue($read['ai']);                                                  // ce relevé est passé par l'IA : l'étiquette le dit
+        $this->assertFalse($r['ai']);                                                    // le dépôt seul n'envoyait rien
         $this->assertSame('bank_statement_sent_to_ai', AgentAction::first()->action);
         $this->assertSame(0, Payment::count());
 
@@ -278,5 +281,34 @@ class OrchestratorBankStatementTest extends TestCase
         $again = $this->deposit($this->csv(self::DEBITS));                               // le débit et le crédit de 4 000 ont des empreintes distinctes
         $this->assertStringContainsString('2 déjà importée(s)', $again['body']);
         $this->assertSame(2, Payment::count());
+    }
+    // ── Vrais fichiers : le type détecté d'après le contenu ne doit pas faire refuser un relevé ──
+
+    private function realFile(string $name, string $content): UploadedFile
+    {
+        $path = sys_get_temp_dir() . '/real-' . uniqid() . '-' . $name;
+        file_put_contents($path, $content);
+
+        return new UploadedFile($path, $name, null, null, true);                  // type DÉTECTÉ d'après le contenu, comme avec un vrai navigateur
+    }
+
+    public function test_real_csv_and_excel_files_are_accepted_whatever_mime_is_detected_and_other_files_are_not(): void
+    {
+        $this->invoice('FV-1', 1500, $this->atlas);
+        $post = fn (UploadedFile $f) => $this->actingAs($this->admin, 'sanctum')->post('/api/agents/orchestrateur/fichiers', ['files' => [$f]], ['Accept' => 'application/json']);
+
+        $csv = $this->realFile('releve.csv', "Date opération;Libellé;Débit;Crédit\n05/10/2026;VIR RECU QUINCAILLERIE ATLAS;;1 500,00\n");
+        $this->assertNotSame('text/csv', $csv->getMimeType());                       // le piège : un simple texte « text/plain » (ou presque)
+        $post($csv)->assertCreated();
+
+        $sheet = new Spreadsheet();
+        $sheet->getActiveSheet()->fromArray([['Date', 'Libellé', 'Débit', 'Crédit'], ['05/10/2026', 'VIR ATLAS', null, 1500]], null, 'A1');
+        $xlsxPath = sys_get_temp_dir() . '/real-' . uniqid() . '.xlsx';
+        (new Xlsx($sheet))->save($xlsxPath);
+        $post(new UploadedFile($xlsxPath, 'releve.xlsx', null, null, true))->assertCreated();
+
+        $post($this->realFile('notes.txt', "Date;Libellé\n"))->assertStatus(422);               // un .txt reste refusé
+        $post($this->realFile('script.csv', "<?php echo 'x';"))->assertStatus(422);            // un faux .csv qui est du PHP aussi
+        $post($this->realFile('logo.svg', '<svg xmlns="http://www.w3.org/2000/svg"></svg>'))->assertStatus(422);
     }
 }
