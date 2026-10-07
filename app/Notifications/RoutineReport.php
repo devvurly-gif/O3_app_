@@ -44,7 +44,8 @@ class RoutineReport extends Notification implements ShouldQueue
             ->line($this->title() . '.')
             ->line("Rien n'a été appliqué : les routines ne font que lire et préparer des propositions que vous validez.")
             ->action("Ouvrir l'orchestrateur", $this->webPushUrl('/settings/orchestrateur'))
-            ->line("Pour ne plus recevoir ces e-mails, écrivez « désactive l'e-mail des routines » à l'orchestrateur.");
+            ->line("Pour ne plus recevoir ces e-mails, écrivez « désactive l'e-mail des routines » à l'orchestrateur.")
+            ->salutation('Cordialement, ' . config('app.name'));
     }
 
     public function toWebPush(object $notifiable, $notification): WebPushMessage

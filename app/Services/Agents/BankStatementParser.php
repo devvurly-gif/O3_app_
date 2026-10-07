@@ -31,6 +31,11 @@ class BankStatementParser
     public function parse(string $path, string $extension): ?array
     {
         $this->failure = null;
+        if (strtolower($extension) === 'xlsx' && !class_exists(\ZipArchive::class)) {
+            $this->failure = "l'extension PHP « zip » n'est pas activée sur ce serveur : exportez le relevé en CSV, ou activez cette extension";
+
+            return null;
+        }
         try {
             $rows = in_array(strtolower($extension), ['xlsx', 'xls'], true) ? $this->spreadsheetRows($path) : $this->csvRows($path);
         } catch (\Throwable $e) {

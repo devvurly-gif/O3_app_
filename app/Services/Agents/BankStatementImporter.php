@@ -11,7 +11,6 @@ use App\Models\Setting;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -268,13 +267,15 @@ class BankStatementImporter
 
             return null;
         }
-        $key = 'orchestrator_statements:' . (function_exists('tenant') && tenant() ? tenant('id') : 'central') . ':' . now()->format('Y-m-d');
-        Cache::add($key, 0, now()->endOfDay());
-        if (Cache::increment($key) > self::PDF_DAILY_CAP) {
+        // Compteur du jour tenu en base (« AAAA-MM-JJ:n »), pas en cache : un cache sans étiquettes échoue sous la séparation des tenants.
+        [$day, $count] = array_pad(explode(':', (string) Setting::get('agents', 'statements_read_today', '')), 2, '0');
+        $count = $day === now()->format('Y-m-d') ? (int) $count : 0;
+        if ($count >= self::PDF_DAILY_CAP) {
             $this->failure = 'le plafond de ' . self::PDF_DAILY_CAP . ' relevés lus par jour est atteint';
 
             return null;
         }
+        Setting::set('agents', 'statements_read_today', now()->format('Y-m-d') . ':' . ($count + 1));
 
         try {
             $response = Http::withHeaders(['x-api-key' => $this->interpreter->apiKey(), 'anthropic-version' => '2023-06-01'])->timeout(90)->post(self::ENDPOINT, [

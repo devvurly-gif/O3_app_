@@ -133,6 +133,7 @@ class RoutineNotificationTest extends TestCase
         $text = $mail->greeting . ' ' . implode(' ', $mail->introLines) . ' ' . implode(' ', $mail->outroLines);
         $this->assertStringContainsString('Rien n\'a été appliqué', $text);
         $this->assertStringContainsString('désactive l\'e-mail des routines', $text);
+        $this->assertStringStartsWith('Cordialement', (string) $mail->salutation);                  // en français, comme le reste
         $this->assertStringNotContainsString('Atlas', $text);                           // ni client ni montant dans l'e-mail
         $this->assertStringNotContainsString('DV-1', $text);
 
@@ -160,5 +161,15 @@ class RoutineNotificationTest extends TestCase
 
         $this->admin->forceFill(['email' => 'pas-une-adresse'])->save();
         $this->assertNotContains('mail', (new RoutineReport(1, 'Matin', 'ok', 2, true))->via($this->admin));
+    }
+    public function test_the_alert_does_not_depend_on_the_cache_store(): void
+    {
+        config(['cache.default' => 'file']);                                              // un cache sans étiquettes : l'alerte était perdue en silence (avertissement journalisé)
+        $routine = $this->routine(['encaissements']);
+
+        app(RoutineRunner::class)->run($routine);
+
+        Notification::assertSentTo($this->admin, RoutineReport::class, fn (RoutineReport $n) => in_array('mail', $this->channelsOf($n), true));
+        $this->assertNotSame('0', Setting::get('agents', "routine_mail_at_{$routine->id}", '0'));       // le dernier e-mail est noté en base
     }
 }
