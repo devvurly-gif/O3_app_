@@ -48,6 +48,7 @@ class CatalogAssistant
         private PhotoFinder $finder,
         private PhotoSitesAssistant $siteChat,
         private QuoteFollowUpAssistant $quoteChat,
+        private ReorderAssistant $reorderChat,
     ) {
     }
 
@@ -199,6 +200,12 @@ class CatalogAssistant
             ],
             images: array_map(fn (array $it) => ['label' => "{$it['sku']}", 'url' => "/agents/orchestrateur/photos/{$event->id}/{$it['product_id']}"], $items),
         );
+    }
+
+    /** « Réapprovisionne le stock faible » : bons de commande fournisseur brouillons à valider. */
+    public function reorder(User $admin): array
+    {
+        return $this->reorderChat->propose($admin);
     }
 
     /** « Relance les devis sans réponse » : messages de relance prêts à envoyer (rien n'est envoyé par O3). */
@@ -506,7 +513,7 @@ class CatalogAssistant
     /** « applique les propositions du lot #12 », « ignore le lot #12 ». @return array{body: string, meta: array<string, mixed>} */
     public function act(User $admin, int $eventId, string $n): array
     {
-        $event = AgentEvent::whereIn('type', ['catalogue_completion', 'catalogue_prix', 'catalogue_activation', 'catalogue_codes_barres', 'catalogue_photos', 'catalogue_publication', 'catalogue_site', 'relance_devis'])->find($eventId);
+        $event = AgentEvent::whereIn('type', ['catalogue_completion', 'catalogue_prix', 'catalogue_activation', 'catalogue_codes_barres', 'catalogue_photos', 'catalogue_publication', 'catalogue_site', 'relance_devis', 'reappro_commande'])->find($eventId);
         if (!$event) {
             return $this->reply("Je ne trouve pas le lot #{$eventId}.", error: true);
         }
@@ -532,6 +539,7 @@ class CatalogAssistant
                     'catalogue_publication'  => $this->applyPublication($event),
                     'catalogue_site'         => $this->siteChat->apply($admin, $event),
                     'relance_devis'          => $this->quoteChat->apply($admin, $event),
+                    'reappro_commande'       => $this->reorderChat->apply($admin, $event),
                     default                  => $this->applyPrices($event),
                 });
             }
