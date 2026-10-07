@@ -264,6 +264,10 @@ class Orchestrator
             ($studio = $this->studioIntent($n)) !== null                                          => $this->studioAnswer($admin, $studio, $text, $n),
             // « Relance les devis sans réponse » : messages de relance préparés, à envoyer soi-même après validation.
             (bool) preg_match('/\brelanc\w*\b/', $n) && (bool) preg_match('/\bdevis\b/', $n) && !preg_match('/\b(historique|combien|liste des relances)\b/', $n) => $this->catalog->quoteFollowUps($admin, $n),
+            // « Échéanciers en cours » : les échéanciers enregistrés (lecture).
+            (bool) preg_match('/\becheanciers?\b|\becheanciers?\b/', $n) && (bool) preg_match('/\b(en cours|enregistres?|actifs?|liste|mes|voir|montre\w*|suivi|suivre)\b/', $n) && !preg_match('/\b(propose|prepare|fais|genere|cree|etablis|mets)\w*\b/', $n) => $this->catalog->paymentPlans(),
+            // « Propose un échéancier pour Atlas en 3 mensualités » : calendrier proposé, mémorisé après validation.
+            (bool) preg_match('/\becheanciers?\b|\b(\d{1,2}|deux|trois|quatre|cinq|six|sept|huit|neuf|dix|douze) (mensualites?|fois)\b/', $n) && (bool) preg_match('/\b(propose|prepare|fais|genere|cree|etablis|mets|etale|echelonne|etaler|echelonner)\w*\b/', $n) && !preg_match('/\b(liste|historique|combien)\b/', $n) => $this->catalog->paymentPlan($admin, $n),
             // « Rapproche un virement de 4 500 dirhams de Atlas » : affectation aux factures proposée, règlement enregistré après validation.
             (bool) preg_match('/\b(rapproch\w*|affect\w*|enregistr\w*|(j|on|nous)\W?(ai|a|avons) recu)\b.*\b(virement|cheque|especes?|effet|paiement|reglement|versement)\b/', $n) && (bool) preg_match('/\d/', $n) && !preg_match('/\b(liste|historique|combien|derniers?|quels?)\b/', $n) => $this->catalog->paymentMatch($admin, $n),
             // « Propose des transferts entre entrepôts » : bons de transfert brouillons, créés après validation.

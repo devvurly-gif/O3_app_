@@ -93,7 +93,7 @@ class QuoteFollowUpAssistant
     }
 
     /** Le lien WhatsApp d'un numéro marocain (0612345678, +212612345678, 212612345678…), message déjà rempli. Null si le numéro est inutilisable. */
-    private function whatsapp(string $phone, string $message): ?string
+    public static function whatsapp(string $phone, string $message): ?string
     {
         $d = preg_replace('/\D/', '', $phone) ?? '';
         $d = preg_replace('/^00/', '', $d) ?? $d;
