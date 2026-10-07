@@ -44,6 +44,7 @@ class DocumentIntake
         private WhatsAppOrderImportService $sales,
         private CustomerLookup $customers,
         private ProductImageService $images,
+        private BankStatementImporter $statements,
     ) {
     }
 
@@ -95,6 +96,11 @@ class DocumentIntake
     /** @return array{text: string, suggestions: array, links: array, event_id: int} */
     private function receiveOne(User $admin, UploadedFile $file, string $note): array
     {
+        // Un relevé bancaire (Excel / CSV, ou PDF nommé « relevé ») ne passe jamais par la lecture automatique des documents.
+        if ($this->statements->isStatement($file, $note)) {
+            return $this->statements->receive($admin, $file);
+        }
+
         $name = $file->getClientOriginalName();
         $mime = (string) $file->getMimeType();
         $stored = $file->store('orchestrator/' . now()->format('Y-m'), 'local');

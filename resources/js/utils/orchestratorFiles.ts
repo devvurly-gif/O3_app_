@@ -3,6 +3,9 @@ export const MAX_FILES = 3
 export const MAX_FILE_BYTES = 10 * 1024 * 1024
 export const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf']
 
+/** Un relevé bancaire Excel ou CSV : les navigateurs lui donnent des types variables, on se fie à l'extension. */
+const STATEMENT_NAME = /\.(csv|xlsx|xls)$/i
+
 type FileLike = Pick<File, 'name' | 'type' | 'size'>
 
 /**
@@ -14,8 +17,8 @@ export function addFiles<T extends FileLike>(current: T[], incoming: T[]): { fil
   const problems: string[] = []
 
   for (const f of incoming) {
-    if (!ACCEPTED_TYPES.includes(f.type)) {
-      problems.push(`« ${f.name} » : seules les photos (JPEG, PNG, WebP, GIF) et les PDF sont acceptés`)
+    if (!ACCEPTED_TYPES.includes(f.type) && !STATEMENT_NAME.test(f.name)) {
+      problems.push(`« ${f.name} » : seuls les photos (JPEG, PNG, WebP, GIF), les PDF et les relevés Excel ou CSV sont acceptés`)
     } else if (f.size > MAX_FILE_BYTES) {
       problems.push(`« ${f.name} » dépasse 10 Mo`)
     } else if (files.length >= MAX_FILES) {

@@ -10,6 +10,12 @@ describe('addFiles', () => {
     expect(r.error).toBe('')
   })
 
+  it('accepte un relevé Excel ou CSV, quel que soit le type annoncé par le navigateur', () => {
+    const r = addFiles([], [f('releve.csv', 'application/vnd.ms-excel'), f('releve.xlsx', ''), f('RELEVE.XLS', 'application/octet-stream')])
+    expect(r.files.map((x) => x.name)).toEqual(['releve.csv', 'releve.xlsx', 'RELEVE.XLS'])
+    expect(r.error).toBe('')
+  })
+
   it('refuse un autre type et le dit', () => {
     const r = addFiles([], [f('notes.txt', 'text/plain'), f('ok.png', 'image/png')])
     expect(r.files.map((x) => x.name)).toEqual(['ok.png'])

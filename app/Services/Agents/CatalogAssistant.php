@@ -52,6 +52,7 @@ class CatalogAssistant
         private TransferAssistant $transferChat,
         private PaymentMatchAssistant $paymentChat,
         private PaymentPlanAssistant $planChat,
+        private BankStatementImporter $statementChat,
     ) {
     }
 
@@ -203,6 +204,12 @@ class CatalogAssistant
             ],
             images: array_map(fn (array $it) => ['label' => "{$it['sku']}", 'url' => "/agents/orchestrateur/photos/{$event->id}/{$it['product_id']}"], $items),
         );
+    }
+
+    /** « Lis le relevé #12 avec l'IA » : lecture d'un relevé PDF, confirmée par l'administrateur. */
+    public function readStatementPdf(User $admin, int $eventId): array
+    {
+        return $this->statementChat->readPdf($admin, $eventId);
     }
 
     /** « Propose un échéancier pour Atlas en 3 mensualités » et « échéanciers en cours ». */
@@ -545,7 +552,7 @@ class CatalogAssistant
     /** « applique les propositions du lot #12 », « ignore le lot #12 ». @return array{body: string, meta: array<string, mixed>} */
     public function act(User $admin, int $eventId, string $n): array
     {
-        $event = AgentEvent::whereIn('type', ['catalogue_completion', 'catalogue_prix', 'catalogue_activation', 'catalogue_codes_barres', 'catalogue_photos', 'catalogue_publication', 'catalogue_site', 'relance_devis', 'reappro_commande', 'transfert_entrepots', 'rapprochement_paiement', 'echeancier_paiement', 'relance_versement'])->find($eventId);
+        $event = AgentEvent::whereIn('type', ['catalogue_completion', 'catalogue_prix', 'catalogue_activation', 'catalogue_codes_barres', 'catalogue_photos', 'catalogue_publication', 'catalogue_site', 'relance_devis', 'reappro_commande', 'transfert_entrepots', 'rapprochement_paiement', 'echeancier_paiement', 'relance_versement', 'releve_import'])->find($eventId);
         if (!$event) {
             return $this->reply("Je ne trouve pas le lot #{$eventId}.", error: true);
         }
@@ -576,6 +583,7 @@ class CatalogAssistant
                     'rapprochement_paiement' => $this->paymentChat->apply($admin, $event),
                     'echeancier_paiement'    => $this->planChat->apply($admin, $event),
                     'relance_versement'      => $this->planChat->applyReminder($admin, $event),
+                    'releve_import'          => $this->statementChat->apply($admin, $event),
                     default                  => $this->applyPrices($event),
                 });
             }

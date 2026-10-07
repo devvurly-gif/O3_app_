@@ -156,19 +156,19 @@
           type="file"
           class="hidden"
           multiple
-          accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
+          accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,.csv,.xlsx,.xls"
           @change="onPick"
         />
         <button
           type="button"
           class="px-3 py-2.5 text-base rounded-[11px] border border-[#ECEEF2] dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-50"
-          :disabled="sending || !ai.enabled"
+          :disabled="sending"
           :title="
             ai.enabled
-              ? 'Joindre des photos ou des PDF (3 maximum, 10 Mo chacun) : l\'IA d\'Anthropic les lit, vous dit ce que c\'est et propose la suite. Rien n\'est créé sans votre clic.'
-              : 'Activez d\'abord la compréhension avancée (IA) pour que je puisse lire des photos et des PDF.'
+              ? 'Joindre des photos, des PDF ou un relevé bancaire Excel/CSV (3 maximum, 10 Mo chacun). Photos et PDF : l\'IA d\'Anthropic les lit et propose la suite ; un relevé Excel/CSV est lu sans IA. Rien n\'est créé sans votre clic.'
+              : 'Joindre un relevé bancaire Excel/CSV (lu sans IA). Pour lire des photos ou des PDF, activez d\'abord la compréhension avancée (IA).'
           "
-          aria-label="Joindre des photos ou des PDF"
+          aria-label="Joindre des photos, des PDF ou un relevé bancaire"
           @click="fileInput?.click()"
         >
           📎
@@ -270,7 +270,7 @@ const dragging = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 
 function takeFiles(list: FileList | File[] | null | undefined) {
-  if (!list || !ai.value.enabled) return
+  if (!list) return
   const r = addFiles(files.value, Array.from(list))
   files.value = r.files
   error.value = r.error
@@ -284,10 +284,6 @@ function onPick(e: Event) {
 
 function onDrop(e: DragEvent) {
   dragging.value = false
-  if (!ai.value.enabled) {
-    error.value = "Activez d'abord la compréhension avancée (IA) pour que je puisse lire des photos et des PDF."
-    return
-  }
   takeFiles(e.dataTransfer?.files)
 }
 

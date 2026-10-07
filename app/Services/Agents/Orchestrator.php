@@ -264,6 +264,8 @@ class Orchestrator
             ($studio = $this->studioIntent($n)) !== null                                          => $this->studioAnswer($admin, $studio, $text, $n),
             // « Relance les devis sans réponse » : messages de relance préparés, à envoyer soi-même après validation.
             (bool) preg_match('/\brelanc\w*\b/', $n) && (bool) preg_match('/\bdevis\b/', $n) && !preg_match('/\b(historique|combien|liste des relances)\b/', $n) => $this->catalog->quoteFollowUps($admin, $n),
+            // « Lis le relevé #12 avec l'IA » : confirmation explicite avant d'envoyer un relevé PDF à l'IA.
+            (bool) preg_match('/\blis (le )?releve #?(\d+) avec l.?ia\b/', $n, $statement) => $this->catalog->readStatementPdf($admin, (int) $statement[2]),
             // « Versements en retard » (lecture) / « relance les versements en retard » (messages préparés, à envoyer soi-même).
             (bool) preg_match('/\b(versements?|mensualites?|echeances? de paiement)\b/', $n) && (bool) preg_match('/\b(retard|impayes?|en souffrance|non regles?|non payes?|relanc\w*|rappell?\w*)\b/', $n) && !preg_match('/\b(propose|etablis|cree|genere|etale|echelonne)\w*\b/', $n) => $this->catalog->lateInstallments($admin, (bool) preg_match('/\b(relanc\w*|rappell?\w*|prepare\w*)\b/', $n)),
             // « Échéanciers en cours » : les échéanciers enregistrés (lecture).

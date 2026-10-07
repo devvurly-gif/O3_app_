@@ -87,11 +87,11 @@ class OrchestratorController extends Controller
         $data = $request->validate([
             'message'   => ['nullable', 'string', 'max:1000'],
             'files'     => ['required', 'array', 'min:1', 'max:' . DocumentIntake::MAX_FILES],
-            'files.*'   => ['file', 'max:10240', 'mimetypes:' . implode(',', DocumentReader::MIMES)],
+            'files.*'   => ['file', 'max:10240', 'mimes:jpg,jpeg,png,webp,gif,pdf,csv,xlsx,xls'],
         ], [
             'files.max'       => 'Trois fichiers au maximum à la fois.',
             'files.*.max'     => 'Un fichier dépasse 10 Mo.',
-            'files.*.mimetypes' => 'Seules les photos (JPEG, PNG, WebP, GIF) et les PDF sont acceptés.',
+            'files.*.mimes' => 'Seuls les photos (JPEG, PNG, WebP, GIF), les PDF et les relevés Excel ou CSV sont acceptés.',
         ]);
 
         $exchange = $intake->receive($request->user(), $request->file('files'), trim((string) ($data['message'] ?? '')));
