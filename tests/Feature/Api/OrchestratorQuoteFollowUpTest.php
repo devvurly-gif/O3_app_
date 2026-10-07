@@ -74,6 +74,7 @@ class OrchestratorQuoteFollowUpTest extends TestCase
 
         $this->assertStringContainsString('3 devis ouvert(s) depuis plus de 10 jour(s)', $r['body']);
         $this->assertStringContainsString('DV-OLD', $r['body']);
+        $this->assertStringContainsString('1 200,00 MAD TTC — 24 jour(s)', $r['body']);               // 20/09 → 14/10, fuseau de l'entreprise
         $this->assertStringContainsString('(pas de téléphone : e-mail)', $r['body']);
         $this->assertStringContainsString('(ni téléphone ni e-mail', $r['body']);
         $this->assertStringContainsString("O3 n'envoie rien", $r['body']);

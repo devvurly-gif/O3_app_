@@ -31,6 +31,7 @@ class RoutineSteps
         'fournisseurs_a_payer' => ['label' => 'Factures fournisseurs à payer', 'phrase' => 'factures fournisseurs à payer cette semaine', 'does' => 'les échéances fournisseurs des 7 prochains jours (lecture)'],
         'sessions_caisse' => ['label' => 'Sessions de caisse', 'phrase' => 'sessions de caisse', 'does' => 'sessions oubliées, à valider, écarts du mois (lecture)'],
         'devis_relance' => ['label' => 'Préparer les relances de devis', 'phrase' => 'relance les devis sans réponse', 'does' => 'les messages de relance des devis ouverts depuis plus de 10 jours, à valider (rien n\'est envoyé)'],
+        'versements_retard' => ['label' => 'Relancer les versements en retard', 'phrase' => 'relance les versements en retard', 'does' => 'les messages de relance des versements d\'échéanciers en retard, à valider (rien n\'est envoyé)'],
         'fiches'        => ['label' => 'Contrôler les fiches produits', 'phrase' => 'mettre à jour les fiches produits', 'does' => 'le contrôle des fiches (lecture seule)'],
     ];
 

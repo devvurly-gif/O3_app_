@@ -54,7 +54,7 @@ class QuoteFollowUpAssistant
             $wa = $this->whatsapp((string) $r->tp_phone, $message);
             $mail = filter_var($r->tp_email, FILTER_VALIDATE_EMAIL) ? 'mailto:' . $r->tp_email . '?subject=' . rawurlencode("Votre devis {$r->reference}") . '&body=' . rawurlencode($message) : null;
             $items[] = ['document_id' => $r->id, 'reference' => $r->reference, 'client' => $client, 'amount' => round((float) $r->total_ttc, 2), 'issued_at' => (string) $r->issued_at, 'channel' => $wa ? 'whatsapp' : ($mail ? 'email' : null), 'message' => $message];
-            $age = Carbon::parse($r->issued_at)->diffInDays($this->today());
+            $age = (int) Carbon::parse($r->issued_at, $this->today()->getTimezone())->startOfDay()->diffInDays($this->today());
             $lines[] = "• {$r->reference} — {$client} — " . $this->money((float) $r->total_ttc) . " — {$age} jour(s)" . ($wa ? '' : ($mail ? ' (pas de téléphone : e-mail)' : ' (ni téléphone ni e-mail : à relancer autrement)'));
             $link = $wa ?? $mail;
             $link && $links[] = ['label' => "Relancer {$r->reference} (" . ($wa ? 'WhatsApp' : 'e-mail') . ')', 'to' => $link];

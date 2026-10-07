@@ -120,6 +120,119 @@ class PaymentPlanAssistant
         return $this->reply("Échéanciers enregistrés :\n\n" . $lines->implode("\n") . "\n\nLe « reste dû » est lu sur les factures du client (tous documents confondus) : il baisse quand vous enregistrez les versements reçus.");
     }
 
+    /**
+     * « versements en retard » (lecture) et « relance les versements en retard » (proposition).
+     *
+     * Un versement est en retard quand sa date est passée et que les règlements reçus depuis l'enregistrement de
+     * l'échéancier ne couvrent pas le cumul des versements échus. Un client déjà relancé ces 7 derniers jours n'est pas
+     * reproposé. Rien n'est envoyé : message et liens WhatsApp / e-mail préparés, à envoyer soi-même.
+     */
+    public function lateInstallments(User $admin, bool $propose): array
+    {
+        $late = $this->lateItems();
+        if ($late === []) {
+            return $this->reply('Aucun versement en retard : tous les échéanciers enregistrés sont à jour (ou aucun n\'est enregistré).');
+        }
+
+        if (!$propose) {
+            return $this->reply(count($late) . " client(s) avec un versement en retard :\n\n" . implode("\n", array_map(fn ($i) => "• {$i['client']} — versement {$i['n']}/{$i['count']} du " . Carbon::parse($i['date'])->format('d/m/Y') . " — {$i['days']} jour(s) de retard — " . $this->money($i['late']) . ' à régler', $late))
+                . "\n\nPour préparer les messages de relance : « relance les versements en retard ».", [['label' => 'Préparer les relances', 'text' => 'relance les versements en retard']]);
+        }
+
+        $recent = AgentEvent::where('type', 'relance_versement')->whereIn('status', [AgentEvent::STATUS_ROUTED, AgentEvent::STATUS_DONE])->where('created_at', '>=', now()->subDays(7))->get()
+            ->flatMap(fn (AgentEvent $e) => array_column($e->payload['items'] ?? [], 'client_id'))->all();
+        $late = array_values(array_filter($late, fn ($i) => !in_array($i['client_id'], $recent, true)));
+        if ($late === []) {
+            return $this->reply('Les clients en retard ont déjà été relancés ces 7 derniers jours : pas de nouvelle relance à proposer.');
+        }
+
+        $company = (string) (Setting::get('company', 'name') ?: Setting::get('general', 'company_name') ?: 'notre équipe');
+        $items = [];
+        $links = [];
+        $lines = [];
+        foreach (array_slice($late, 0, 10) as $i) {
+            $message = "Bonjour {$i['client']},\n\nSauf erreur de notre part, le versement {$i['n']}/{$i['count']} prévu le " . Carbon::parse($i['date'])->format('d/m/Y') . ' n\'est pas encore parvenu : il reste ' . number_format($i['late'], 2, ',', ' ') . " MAD à régler selon l'échéancier convenu.\n\nPouvez-vous nous indiquer quand il sera réglé ?\n\nCordialement,\n{$company}";
+            $contact = DB::table('third_partners')->where('id', $i['client_id'])->first(['tp_phone', 'tp_email']);
+            $wa = QuoteFollowUpAssistant::whatsapp((string) ($contact->tp_phone ?? ''), $message);
+            $mail = filter_var($contact->tp_email ?? '', FILTER_VALIDATE_EMAIL) ? 'mailto:' . $contact->tp_email . '?subject=' . rawurlencode('Versement en retard') . '&body=' . rawurlencode($message) : null;
+            $items[] = $i + ['message' => $message, 'channel' => $wa ? 'whatsapp' : ($mail ? 'email' : null)];
+            $lines[] = "• {$i['client']} — versement {$i['n']}/{$i['count']} du " . Carbon::parse($i['date'])->format('d/m/Y') . " — {$i['days']} jour(s) de retard — " . $this->money($i['late']) . ($wa ? '' : ($mail ? ' (pas de téléphone : e-mail)' : ' (ni téléphone ni e-mail : à relancer autrement)'));
+            $link = $wa ?? $mail;
+            $link && $links[] = ['label' => "Relancer {$i['client']} (" . ($wa ? 'WhatsApp' : 'e-mail') . ')', 'to' => $link];
+        }
+        $event = AgentEvent::create([
+            'type' => 'relance_versement', 'source' => 'orchestrator', 'status' => AgentEvent::STATUS_ROUTED, 'agent_id' => Agent::where('domain', 'recouvrement')->value('id'),
+            'payload' => ['text' => 'Relance de ' . count($items) . ' versement(s) en retard', 'items' => $items, 'requested_by' => $admin->name],
+        ]);
+
+        return $this->reply(
+            count($late) . " client(s) avec un versement en retard (lot #{$event->id}) :\n\n" . implode("\n", $lines) . (count($late) > count($items) ? "\n… et " . (count($late) - count($items)) . ' autre(s), pour le prochain lot.' : '')
+            . "\n\nMessage préparé pour le premier : « " . str_replace("\n", ' / ', $items[0]['message']) . ' »'
+            . "\n\nO3 n'envoie rien : cliquez sur un bouton « Relancer … » pour ouvrir WhatsApp ou votre messagerie, puis envoyez vous-même. « Marquer comme relancés » évite de les reproposer pendant 7 jours.",
+            [['label' => 'Marquer comme relancés', 'text' => "applique le lot #{$event->id}"], ['label' => 'Ignorer', 'text' => "ignore le lot #{$event->id}"]],
+            $links,
+            $event->id,
+        );
+    }
+
+    /** Inscrit la relance au journal ; aucune facture ni échéancier n'est modifié. */
+    public function applyReminder(User $admin, AgentEvent $event): array
+    {
+        $items = $event->payload['items'] ?? [];
+        $event->update(['status' => AgentEvent::STATUS_DONE, 'payload' => array_merge($event->payload ?? [], ['marked_by' => $admin->name, 'marked_at' => now()->toDateTimeString()])]);
+        AgentAction::create(['agent_id' => $event->agent_id, 'event_id' => $event->id, 'action' => 'installment_reminder_recorded', 'level' => 'approval', 'input' => ['requested_by' => $event->payload['requested_by'] ?? null], 'result' => ['clients' => array_column($items, 'client')]]);
+
+        return $this->reply('Relance de ' . count($items) . ' versement(s) inscrite au journal : ' . implode(', ', array_column($items, 'client')) . ". Ils ne seront pas reproposés avant 7 jours. Rien n'a été modifié.", eventId: $event->id);
+    }
+
+    /**
+     * Les versements en retard, un par client (le plus ancien non couvert).
+     *
+     * @return array<int, array{client_id: int, client: string, n: int, count: int, date: string, days: int, late: float}>
+     */
+    private function lateItems(): array
+    {
+        $today = Carbon::now(Setting::get('locale', 'timezone') ?: config('app.timezone'))->startOfDay();
+        $out = [];
+        foreach (AgentEvent::where('type', self::TYPE)->where('status', AgentEvent::STATUS_DONE)->orderBy('id')->get() as $plan) {
+            $p = $plan->payload;
+            $clientId = (int) ($p['client_id'] ?? 0);
+            $installments = $p['installments'] ?? [];
+            if ($clientId === 0 || $installments === [] || empty($p['recorded_at'])) {
+                continue;
+            }
+            $balance = (float) DB::table('document_headers as d')->join('document_footers as f', 'f.document_header_id', '=', 'd.id')->whereNull('d.deleted_at')->where('d.thirdPartner_id', $clientId)
+                ->whereIn('d.document_type', ['InvoiceSale', 'DeliveryNote'])->whereNotIn('d.status', ['draft', 'cancelled'])->sum('f.amount_due');
+            if ($balance <= 0.004) {
+                continue;
+            }
+            $paid = (float) DB::table('payments as pay')->join('document_headers as d', 'd.id', '=', 'pay.document_header_id')->where('d.thirdPartner_id', $clientId)->where('pay.method', '!=', 'credit')
+                ->where('pay.paid_at', '>=', Carbon::parse($p['recorded_at'])->toDateString())->sum('pay.amount');
+
+            $expected = 0.0;
+            $first = null;
+            foreach ($installments as $i) {
+                if (Carbon::parse($i['date'], $today->getTimezone())->startOfDay()->gte($today)) {
+                    break;
+                }
+                $expected = round($expected + (float) $i['amount'], 2);
+                if ($first === null && $paid + 0.005 < $expected) {
+                    $first = $i;
+                }
+            }
+            if ($first === null) {
+                continue;
+            }
+            $out[] = [
+                'client_id' => $clientId, 'client' => (string) $p['client'], 'n' => (int) $first['n'], 'count' => count($installments), 'date' => $first['date'],
+                'days' => (int) Carbon::parse($first['date'], $today->getTimezone())->startOfDay()->diffInDays($today), 'late' => round(min($expected - $paid, $balance), 2),
+            ];
+        }
+        usort($out, fn ($a, $b) => $b['days'] <=> $a['days']);
+
+        return $out;
+    }
+
     /** @return array<int, array{n: int, date: string, amount: float}> */
     private function split(float $total, int $count, Carbon $start): array
     {

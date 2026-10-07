@@ -50,6 +50,7 @@ class AgentCapabilities
                 ['Voir les relances à valider', '« relances à valider »'],
                 ['Proposer un échéancier de paiement en mensualités et préparer le message au client (rien n\'est envoyé, aucune facture modifiée)', '« propose un échéancier pour Atlas en 3 mensualités »'],
                 ['Suivre les échéanciers enregistrés', '« échéanciers en cours »'],
+                ['Repérer les versements en retard et préparer les messages de relance (rien n\'est envoyé) ; à planifier en routine', '« relance les versements en retard »'],
                 ['Rapprocher un paiement reçu (virement, chèque, espèces, effet) des factures de vente : affectation proposée, règlement enregistré à votre clic, client non notifié', '« rapproche un virement de 4 500 dirhams de Atlas »'],
             ],
             'missing' => [],
