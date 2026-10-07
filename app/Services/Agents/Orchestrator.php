@@ -264,6 +264,8 @@ class Orchestrator
             ($studio = $this->studioIntent($n)) !== null                                          => $this->studioAnswer($admin, $studio, $text, $n),
             // « Relance les devis sans réponse » : messages de relance préparés, à envoyer soi-même après validation.
             (bool) preg_match('/\brelanc\w*\b/', $n) && (bool) preg_match('/\bdevis\b/', $n) && !preg_match('/\b(historique|combien|liste des relances)\b/', $n) => $this->catalog->quoteFollowUps($admin, $n),
+            // « Rapproche un virement de 4 500 dirhams de Atlas » : affectation aux factures proposée, règlement enregistré après validation.
+            (bool) preg_match('/\b(rapproch\w*|affect\w*|enregistr\w*|(j|on|nous)\W?(ai|a|avons) recu)\b.*\b(virement|cheque|especes?|effet|paiement|reglement|versement)\b/', $n) && (bool) preg_match('/\d/', $n) && !preg_match('/\b(liste|historique|combien|derniers?|quels?)\b/', $n) => $this->catalog->paymentMatch($admin, $n),
             // « Propose des transferts entre entrepôts » : bons de transfert brouillons, créés après validation.
             (bool) preg_match('/\btransferts?\b.*\bentrepots?\b|\bentrepots?\b.*\btransferts?\b|\b(equilibre|reequilibre|reequilibrer|redistribue)\b.*\b(stock|entrepots?)\b/', $n) && (bool) preg_match('/\b(propose|prepare|fais|genere|cree|equilibre|reequilibre|redistribue)\w*\b/', $n) && !preg_match('/\b(historique|combien|liste|derniers?)\b/', $n) => $this->catalog->transfers($admin),
             // « Réapprovisionne le stock faible » : bons de commande fournisseur brouillons, à créer après validation.

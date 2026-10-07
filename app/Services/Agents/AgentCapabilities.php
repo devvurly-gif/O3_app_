@@ -24,14 +24,13 @@ class AgentCapabilities
                 ['Activer les fiches prêtes', '« active les fiches produits »'],
                 ['Rattacher une photo à un produit', 'déposez la photo avec le trombone'],
                 ['Enchaîner tout cela jusqu\'à des fiches prêtes à l\'emploi', '« prépare les fiches pour l\'utilisation »'],
+                ['Réapprovisionner le stock faible : un bon de commande fournisseur brouillon par fournisseur, à créer après votre clic', '« réapprovisionne le stock faible »'],
             ],
             'missing' => ['comparer les prix de plusieurs fournisseurs', 'relancer un fournisseur en retard de livraison'],
         ],
         'ventes' => [
             'tasks' => [
                 ['Préparer les relances des devis sans réponse (messages WhatsApp ou e-mail prêts à envoyer, rien n\'est envoyé par O3)', '« relance les devis sans réponse »'],
-                ['Proposer des transferts entre entrepôts : un bon de transfert brouillon par couple d\'entrepôts, le stock ne bouge qu\'à l\'application du bon', '« propose des transferts entre entrepôts »'],
-                ['Réapprovisionner le stock faible : un bon de commande fournisseur brouillon par fournisseur, à créer après votre clic', '« réapprovisionne le stock faible »'],
                 ['Transformer une commande reçue par WhatsApp, SMS ou chat en brouillon de bon de livraison', 'automatique (messagerie), ou « Messagerie commandes »'],
                 ['Lire un bon de commande client (photo ou PDF) et préparer un brouillon de livraison', 'déposez le fichier avec le trombone'],
             ],
@@ -41,6 +40,7 @@ class AgentCapabilities
             'tasks' => [
                 ['Préparer une feuille d\'inventaire (tous les entrepôts, un entrepôt, ou les articles à vérifier)', '« prépare un inventaire »'],
                 ['Alerte quand le stock est bas', 'planificateur (08:00)'],
+                ['Proposer des transferts entre entrepôts : un bon de transfert brouillon par couple d\'entrepôts, le stock ne bouge qu\'à l\'application du bon', '« propose des transferts entre entrepôts »'],
             ],
             'missing' => [],
         ],
@@ -48,8 +48,9 @@ class AgentCapabilities
             'tasks' => [
                 ['Contrôler les encaissements et préparer les relances de paiement en brouillon', '« contrôle les encaissements »'],
                 ['Voir les relances à valider', '« relances à valider »'],
+                ['Rapprocher un paiement reçu (virement, chèque, espèces, effet) des factures de vente : affectation proposée, règlement enregistré à votre clic, client non notifié', '« rapproche un virement de 4 500 dirhams de Atlas »'],
             ],
-            'missing' => ['rapprocher un virement ou un chèque d\'une facture', 'proposer un échéancier de paiement'],
+            'missing' => ['proposer un échéancier de paiement'],
         ],
         'expedition' => [
             'tasks' => [],
