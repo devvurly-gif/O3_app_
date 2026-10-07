@@ -22,9 +22,10 @@ use Illuminate\Support\Str;
  * « Import du relevé bancaire » : sixième commande de PROPOSITION de l'orchestrateur.
  *
  * Un relevé déposé dans la conversation (Excel ou CSV, lu localement par BankStatementParser ; PDF, lu par l'IA seulement
- * après une confirmation donnée À CHAQUE FOIS) est comparé aux factures de vente impayées. Chaque CRÉDIT dont le client et le
- * montant exact correspondent à une facture devient une proposition de règlement ; tout le reste est listé « à traiter à la
- * main » (« rapproche un virement de … »). Les débits sont comptés et ignorés.
+ * après une confirmation donnée À CHAQUE FOIS) est comparé aux factures impayées. Chaque CRÉDIT dont le client et le montant
+ * exact correspondent à une facture de vente, et chaque DÉBIT dont le fournisseur ET le montant exact correspondent à une
+ * facture d'achat, devient une proposition de règlement ; tout le reste est listé « à traiter à la main ». Un débit n'est
+ * jamais rapproché sur le montant seul (loyer, frais, salaires : trop de coïncidences) ; un débit quelconque est seulement compté.
  *
  * Règles de rapprochement, volontairement strictes :
  *   - un client reconnu dans le libellé (nom complet, ou un mot unique de son nom) ET une facture de ce client dont le reste
@@ -115,48 +116,66 @@ class BankStatementImporter
         $normalize = fn (string $s) => trim(preg_replace('/[^a-z0-9]+/', ' ', Str::lower(Str::ascii($s))) ?? '');
         $done = AgentEvent::where('type', 'releve_import')->where('status', AgentEvent::STATUS_DONE)->get()->flatMap(fn (AgentEvent $e) => $e->payload['imported_hashes'] ?? [])->flip();
 
-        $types = ['InvoiceSale'];
-        Setting::get('ventes', 'paiement_sur_bl', 'false') === 'true' && $types[] = 'DeliveryNote';
-        $open = DB::table('document_headers as d')->join('document_footers as f', 'f.document_header_id', '=', 'd.id')->leftJoin('third_partners as t', 't.id', '=', 'd.thirdPartner_id')
-            ->whereNull('d.deleted_at')->whereIn('d.document_type', $types)->whereNotIn('d.status', ['draft', 'cancelled'])->where('f.amount_due', '>', 0)
-            ->orderBy('d.issued_at')->orderBy('d.id')->get(['d.id', 'd.reference', 'd.thirdPartner_id', 't.tp_title', 'f.amount_due'])
-            ->reject(fn ($r) => DocumentHeader::find($r->id)?->hasManualTreasuryEntry())->values();
+        $openOf = function (array $types) {
+            return DB::table('document_headers as d')->join('document_footers as f', 'f.document_header_id', '=', 'd.id')->leftJoin('third_partners as t', 't.id', '=', 'd.thirdPartner_id')
+                ->whereNull('d.deleted_at')->whereIn('d.document_type', $types)->whereNotIn('d.status', ['draft', 'cancelled'])->where('f.amount_due', '>', 0)
+                ->orderBy('d.issued_at')->orderBy('d.id')->get(['d.id', 'd.reference', 'd.thirdPartner_id', 't.tp_title', 'f.amount_due'])
+                ->reject(fn ($r) => DocumentHeader::find($r->id)?->hasManualTreasuryEntry())->values();
+        };
+        $salesTypes = ['InvoiceSale'];
+        Setting::get('ventes', 'paiement_sur_bl', 'false') === 'true' && $salesTypes[] = 'DeliveryNote';
+        $openSales = $openOf($salesTypes);
+        $openPurchases = $openOf(['InvoicePurchase']);
 
-        $customers = DB::table('third_partners')->whereNull('deleted_at')->where('tp_status', true)->whereIn('tp_Role', ['customer', 'both'])->get(['id', 'tp_title']);
+        $partners = fn (array $roles) => DB::table('third_partners')->whereNull('deleted_at')->where('tp_status', true)->whereIn('tp_Role', $roles)->get(['id', 'tp_title']);
+        $customers = $partners(['customer', 'both']);
+        $suppliers = $partners(['supplier', 'both']);
         $used = [];
         $items = [];
         $manual = [];
         $debits = 0;
+        $debitsMatched = 0;
         $already = 0;
         $credits = 0;
         foreach ($lines as $l) {
-            if ($l['credit'] <= 0) {
-                $debits++;
-                continue;
-            }
-            $credits++;
+            $out = $l['credit'] <= 0;                                                               // débit : un paiement fait à un fournisseur
+            $amount = $out ? $l['debit'] : $l['credit'];
+            $out ? $debits++ : $credits++;
             $hash = $this->hash($l, $normalize);
             if (isset($done[$hash])) {
                 $already++;
                 continue;
             }
             $label = $normalize($l['label']);
-            $client = $this->mentions->thirdParty($label)?->id ?? $this->clientByWord($label, $customers);
-            $exact = $open->filter(fn ($r) => !isset($used[$r->id]) && abs((float) $r->amount_due - $l['credit']) < 0.01 && ($client === null || $r->thirdPartner_id === $client))->values();
-            if ($exact->count() === 1) {
+            $open = $out ? $openPurchases : $openSales;
+            $found = $this->mentions->thirdParty($label);
+            $partner = $found !== null && in_array($found->role ?? '', $out ? ['supplier', 'both'] : ['customer', 'both', ''], true) ? $found->id : null;
+            $partner ??= $this->clientByWord($label, $out ? $suppliers : $customers);
+            $exact = $open->filter(fn ($r) => !isset($used[$r->id]) && abs((float) $r->amount_due - $amount) < 0.01 && ($partner === null || $r->thirdPartner_id === $partner))->values();
+            // Un débit n'est jamais rapproché sur le montant seul (loyer, frais, salaires : trop de coïncidences) : il faut aussi le fournisseur.
+            if ($exact->count() === 1 && (!$out || $partner !== null)) {
                 $r = $exact->first();
                 $used[$r->id] = true;
-                $items[] = ['hash' => $hash, 'date' => $l['date'], 'label' => $l['label'], 'amount' => $l['credit'], 'document_id' => $r->id, 'reference' => $r->reference, 'client' => $r->tp_title, 'by' => $client === null ? 'montant' : 'client+montant', 'method' => preg_match('/\b(chq|cheque)\b/', $label) ? 'cheque' : 'bank_transfer'];
+                $out && $debitsMatched++;
+                $items[] = ['hash' => $hash, 'direction' => $out ? 'out' : 'in', 'date' => $l['date'], 'label' => $l['label'], 'amount' => $amount, 'document_id' => $r->id, 'reference' => $r->reference, 'client' => $r->tp_title, 'by' => $partner === null ? 'montant' : 'client+montant', 'method' => preg_match('/\b(chq|cheque)\b/', $label) ? 'cheque' : 'bank_transfer'];
                 continue;
             }
-            $manual[] = ['date' => $l['date'], 'label' => $l['label'], 'amount' => $l['credit'], 'why' => $exact->count() > 1 ? 'plusieurs factures de ce montant' : ($client !== null ? 'client reconnu mais aucune facture à ce montant exact' : 'client et facture non reconnus')];
+            if ($out && $partner === null) {
+                continue;                                                                           // un débit quelconque : compté, pas listé
+            }
+            $manual[] = ['direction' => $out ? 'out' : 'in', 'date' => $l['date'], 'label' => $l['label'], 'amount' => $amount, 'why' => $exact->count() > 1 ? 'plusieurs factures de ce montant' : ($partner !== null ? ($out ? 'fournisseur' : 'client') . ' reconnu mais aucune facture à ce montant exact' : 'client et facture non reconnus')];
         }
 
-        $head = "Relevé « {$name} » : " . count($lines) . ' ligne(s) lue(s), ' . $credits . ' crédit(s), ' . $debits . ' débit(s) ignoré(s)' . ($ignored > 0 ? ", {$ignored} ligne(s) illisible(s) écartée(s)" : '') . ($already > 0 ? ", {$already} déjà importée(s)" : '') . '.';
-        $manualText = $manual === [] ? '' : "\n\nÀ traiter à la main (" . count($manual) . ') — « rapproche un virement de <montant> de <client> » :' . "\n" . implode("\n", array_map(fn ($m) => "• {$this->date($m['date'])} — {$this->money($m['amount'])} — " . Str::limit($m['label'], 40) . " ({$m['why']})", array_slice($manual, 0, self::SHOWN))) . (count($manual) > self::SHOWN ? "\n… et " . (count($manual) - self::SHOWN) . ' autre(s).' : '');
+        $debitsLeft = $debits - $debitsMatched;
+        $head = "Relevé « {$name} » : " . count($lines) . ' ligne(s) lue(s), ' . $credits . ' crédit(s), ' . $debits . ' débit(s)'
+            . ($debitsLeft > 0 ? " (dont {$debitsLeft} sans fournisseur ni facture d'achat reconnus, laissés de côté)" : '')
+            . ($ignored > 0 ? ", {$ignored} ligne(s) illisible(s) écartée(s)" : '') . ($already > 0 ? ", {$already} déjà importée(s)" : '') . '.';
+        $manualText = $manual === [] ? '' : "\n\nÀ traiter à la main (" . count($manual) . ') — « rapproche un virement de <montant> de <client> » ou « j\'ai payé un virement de <montant> à <fournisseur> » :' . "\n"
+            . implode("\n", array_map(fn ($m) => "• {$this->date($m['date'])} — " . ($m['direction'] === 'out' ? '−' : '+') . $this->money($m['amount']) . ' — ' . Str::limit($m['label'], 40) . " ({$m['why']})", array_slice($manual, 0, self::SHOWN)))
+            . (count($manual) > self::SHOWN ? "\n… et " . (count($manual) - self::SHOWN) . ' autre(s).' : '');
 
         if ($items === []) {
-            $reply = $this->reply($head . "\n\nAucun crédit ne correspond avec certitude à une facture impayée." . $manualText);
+            $reply = $this->reply($head . "\n\nAucune ligne ne correspond avec certitude à une facture impayée." . $manualText);
 
             return ['text' => $reply['body'], 'suggestions' => [], 'links' => [], 'event_id' => null, 'reply' => $reply];
         }
@@ -165,11 +184,13 @@ class BankStatementImporter
             'type' => 'releve_import', 'source' => 'orchestrator', 'status' => AgentEvent::STATUS_ROUTED, 'agent_id' => Agent::where('domain', 'recouvrement')->value('id'),
             'payload' => ['text' => 'Relevé bancaire : ' . count($items) . ' règlement(s) reconnu(s)', 'statement' => $name, 'items' => $items, 'manual' => count($manual), 'requested_by' => $admin->name],
         ]);
-        $total = array_sum(array_column($items, 'amount'));
-        $body = $head . "\n\n" . count($items) . " règlement(s) reconnu(s) avec certitude (lot #{$event->id}), " . $this->money($total) . " :\n"
-            . implode("\n", array_map(fn ($i) => "• {$this->date($i['date'])} — {$this->money($i['amount'])} — {$i['reference']} ({$i['client']}) — reconnu par " . ($i['by'] === 'montant' ? 'le montant seul' : 'le client et le montant'), array_slice($items, 0, self::SHOWN)))
+        $in = array_filter($items, fn ($i) => $i['direction'] === 'in');
+        $outItems = array_filter($items, fn ($i) => $i['direction'] === 'out');
+        $body = $head . "\n\n" . count($items) . " règlement(s) reconnu(s) avec certitude (lot #{$event->id}) : " . count($in) . ' encaissement(s) ' . $this->money(array_sum(array_column($in, 'amount')))
+            . ($outItems !== [] ? ', ' . count($outItems) . ' paiement(s) fournisseur ' . $this->money(array_sum(array_column($outItems, 'amount'))) : '') . " :\n"
+            . implode("\n", array_map(fn ($i) => "• {$this->date($i['date'])} — " . ($i['direction'] === 'out' ? '−' : '+') . $this->money($i['amount']) . " — {$i['reference']} ({$i['client']}) — reconnu par " . ($i['by'] === 'montant' ? 'le montant seul' : 'le tiers et le montant'), array_slice($items, 0, self::SHOWN)))
             . (count($items) > self::SHOWN ? "\n… et " . (count($items) - self::SHOWN) . ' autre(s).' : '') . $manualText
-            . "\n\nLe bouton enregistre un règlement par ligne reconnue, daté de l'opération bancaire, à votre nom ; le client ne reçoit aucun message. Chaque règlement s'annule depuis sa facture.";
+            . "\n\nLe bouton enregistre un règlement par ligne reconnue, daté de l'opération bancaire, à votre nom ; ni les clients ni les fournisseurs ne reçoivent de message. Chaque règlement s'annule depuis sa facture.";
         $suggestions = [['label' => 'Enregistrer ces règlements', 'text' => "applique le lot #{$event->id}"], ['label' => 'Ignorer', 'text' => "ignore le lot #{$event->id}"]];
         $reply = $this->reply($body, $suggestions, $event->id);
 
@@ -183,7 +204,7 @@ class BankStatementImporter
         $created = [];
         $skipped = [];
         $previous = Payment::$skipNotification;
-        Payment::$skipNotification = true;                                                        // aucun e-mail ni WhatsApp au client
+        Payment::$skipNotification = true;                                                        // aucun e-mail ni WhatsApp, ni au client ni au fournisseur
         try {
             foreach ($p['items'] ?? [] as $i) {
                 $doc = DocumentHeader::find($i['document_id']);
@@ -207,7 +228,7 @@ class BankStatementImporter
 
         return $this->reply(count($created) . ' règlement(s) enregistré(s) : ' . implode(', ', array_map(fn ($c) => "{$c['reference']} ({$this->money((float) $c['amount'])})", $created)) . '.'
             . ($skipped !== [] ? "\n" . count($skipped) . ' ligne(s) écartée(s), la facture ayant changé depuis (déjà réglée, supprimée ou portée par une écriture manuelle) : ' . implode(', ', array_column($skipped, 'reference')) . '.' : '')
-            . " Aucun message n'a été envoyé aux clients.", eventId: $event->id);
+            . " Aucun message n'a été envoyé aux clients ni aux fournisseurs.", eventId: $event->id);
     }
 
     /** Lecture du PDF par l'IA : uniquement après confirmation, plafonnée par jour, sortie nettoyée. @return array<int, array{date: string, label: string, credit: float, debit: float}>|null */
@@ -294,7 +315,9 @@ class BankStatementImporter
     /** @param array{date: string, label: string, credit: float, debit: float} $l */
     private function hash(array $l, callable $normalize): string
     {
-        return sha1($l['date'] . '|' . number_format($l['credit'], 2, '.', '') . '|' . $normalize($l['label']));
+        $out = $l['credit'] <= 0;                                                                   // un débit n'a jamais la même empreinte qu'un crédit de même montant
+
+        return sha1(($out ? 'D|' : '') . $l['date'] . '|' . number_format($out ? $l['debit'] : $l['credit'], 2, '.', '') . '|' . $normalize($l['label']));
     }
 
     private function date(string $iso): string

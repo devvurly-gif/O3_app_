@@ -48,9 +48,9 @@ class OrchestratorBankStatementTest extends TestCase
         $this->bati = ThirdPartner::factory()->create(['tp_title' => 'Bati Plus', 'tp_Role' => 'customer']);
     }
 
-    private function invoice(string $ref, float $due, ThirdPartner $tp): DocumentHeader
+    private function invoice(string $ref, float $due, ThirdPartner $tp, string $type = 'InvoiceSale'): DocumentHeader
     {
-        $d = DocumentHeader::factory()->create(['document_type' => 'InvoiceSale', 'status' => 'confirmed', 'issued_at' => '2026-09-01', 'reference' => $ref, 'thirdPartner_id' => $tp->id]);
+        $d = DocumentHeader::factory()->create(['document_type' => $type, 'status' => 'confirmed', 'issued_at' => '2026-09-01', 'reference' => $ref, 'thirdPartner_id' => $tp->id]);
         DocumentFooter::factory()->create(['document_header_id' => $d->id, 'total_ht' => round($due / 1.2, 2), 'total_ttc' => $due, 'amount_paid' => 0, 'amount_due' => $due]);
 
         return $d;
@@ -119,7 +119,7 @@ class OrchestratorBankStatementTest extends TestCase
 
         $r = $this->deposit(UploadedFile::fake()->createWithContent('releve.xlsx', (string) file_get_contents($path)));
 
-        $this->assertStringContainsString('2 ligne(s) lue(s), 1 crédit(s), 1 débit(s) ignoré(s)', $r['body']);
+        $this->assertStringContainsString("2 ligne(s) lue(s), 1 crédit(s), 1 débit(s) (dont 1 sans fournisseur ni facture d'achat reconnus, laissés de côté)", $r['body']);
         $this->assertStringContainsString('FV-1 (Quincaillerie Atlas)', $r['body']);
         Http::assertNothingSent();
     }
@@ -135,10 +135,10 @@ class OrchestratorBankStatementTest extends TestCase
 
         $r = $this->deposit($this->csv(self::STATEMENT));
 
-        $this->assertStringContainsString('4 ligne(s) lue(s), 3 crédit(s), 1 débit(s) ignoré(s), 1 ligne(s) illisible(s) écartée(s)', $r['body']);
+        $this->assertStringContainsString("4 ligne(s) lue(s), 3 crédit(s), 1 débit(s) (dont 1 sans fournisseur ni facture d'achat reconnus, laissés de côté), 1 ligne(s) illisible(s) écartée(s)", $r['body']);
         $this->assertStringContainsString('2 règlement(s) reconnu(s) avec certitude', $r['body']);
-        $this->assertStringContainsString('05/10/2026 — 1 500,00 MAD — FV-1 (Quincaillerie Atlas) — reconnu par le client et le montant', $r['body']);
-        $this->assertStringContainsString('07/10/2026 — 2 000,50 MAD — FV-2 (Bati Plus)', $r['body']);
+        $this->assertStringContainsString('05/10/2026 — +1 500,00 MAD — FV-1 (Quincaillerie Atlas) — reconnu par le tiers et le montant', $r['body']);
+        $this->assertStringContainsString('07/10/2026 — +2 000,50 MAD — FV-2 (Bati Plus)', $r['body']);
         $this->assertStringContainsString('À traiter à la main (1)', $r['body']);
         $this->assertStringContainsString('plusieurs factures de ce montant', $r['body']);
         $this->assertSame('Enregistrer ces règlements', $r['meta']['suggestions'][0]['label'] ?? $r['suggestions'][0]['label']);
@@ -165,7 +165,7 @@ class OrchestratorBankStatementTest extends TestCase
 
         $again = $this->deposit($this->csv(self::STATEMENT));
         $this->assertStringContainsString('2 déjà importée(s)', $again['body']);
-        $this->assertStringContainsString('Aucun crédit ne correspond avec certitude', $again['body']);
+        $this->assertStringContainsString('Aucune ligne ne correspond avec certitude', $again['body']);
         $this->assertSame(2, Payment::count());
     }
 
@@ -233,5 +233,50 @@ class OrchestratorBankStatementTest extends TestCase
         Http::assertNothingSent();
 
         $this->assertStringContainsString('document #', $this->deposit(UploadedFile::fake()->create('facture.pdf', 50, 'application/pdf'))['body']);
+    }
+    // ── Débits : paiements faits aux fournisseurs ────────────────────
+
+    private const DEBITS = "Date;Libellé;Débit;Crédit\n05/10/2026;VIR EMIS LEADER STAR FA-9;4 000,00;\n06/10/2026;LOYER OCTOBRE;1 500,00;\n07/10/2026;VIR EMIS INCONNU;4 000,00;\n08/10/2026;VIR RECU QUINCAILLERIE ATLAS;;4 000,00\n";
+
+    public function test_a_debit_is_matched_to_a_purchase_invoice_only_with_the_supplier_and_the_exact_amount(): void
+    {
+        $leader = ThirdPartner::factory()->create(['tp_title' => 'Leader Star', 'tp_Role' => 'supplier']);
+        $other = ThirdPartner::factory()->create(['tp_title' => 'Immobilière Sud', 'tp_Role' => 'supplier']);
+        $this->invoice('FA-9', 4000, $leader, 'InvoicePurchase');
+        $this->invoice('FA-LOYER', 1500, $other, 'InvoicePurchase');                    // même montant que « LOYER », mais le libellé ne nomme pas ce fournisseur
+        $this->invoice('FV-4', 4000, $this->atlas);
+
+        $r = $this->deposit($this->csv(self::DEBITS));
+
+        $this->assertStringContainsString('3 débit(s)', $r['body']);
+        $this->assertStringContainsString('1 crédit(s)', $r['body']);
+        $this->assertStringContainsString('2 règlement(s) reconnu(s) avec certitude', $r['body']);
+        $this->assertStringContainsString('1 encaissement(s) 4 000,00 MAD, 1 paiement(s) fournisseur 4 000,00 MAD', $r['body']);
+        $this->assertStringContainsString('05/10/2026 — −4 000,00 MAD — FA-9 (Leader Star) — reconnu par le tiers et le montant', $r['body']);
+        $this->assertStringContainsString('08/10/2026 — +4 000,00 MAD — FV-4 (Quincaillerie Atlas)', $r['body']);
+        $this->assertStringNotContainsString('FA-LOYER', $r['body']);                  // le loyer n'est pas rapproché sur le montant seul
+        $this->assertSame(0, Payment::count());
+    }
+
+    public function test_the_click_records_the_supplier_payment_on_the_purchase_invoice_without_any_message(): void
+    {
+        $this->mock(\App\Services\PaymentNotificationService::class)->shouldNotReceive('send');
+        $leader = ThirdPartner::factory()->create(['tp_title' => 'Leader Star', 'tp_Role' => 'supplier']);
+        $purchase = $this->invoice('FA-9', 4000, $leader, 'InvoicePurchase');
+        $sale = $this->invoice('FV-4', 4000, $this->atlas);
+
+        $r = $this->deposit($this->csv(self::DEBITS));
+        $done = $this->say($r['suggestions'][0]['text']);
+
+        $this->assertStringContainsString('2 règlement(s) enregistré(s)', $done['body']);
+        $this->assertStringContainsString('ni aux fournisseurs', $done['body']);
+        $p = Payment::where('document_header_id', $purchase->id)->firstOrFail();
+        $this->assertSame('2026-10-05', $p->paid_at->toDateString());
+        $this->assertSame(0.0, (float) DocumentFooter::where('document_header_id', $purchase->id)->value('amount_due'));
+        $this->assertSame(0.0, (float) DocumentFooter::where('document_header_id', $sale->id)->value('amount_due'));
+
+        $again = $this->deposit($this->csv(self::DEBITS));                               // le débit et le crédit de 4 000 ont des empreintes distinctes
+        $this->assertStringContainsString('2 déjà importée(s)', $again['body']);
+        $this->assertSame(2, Payment::count());
     }
 }
