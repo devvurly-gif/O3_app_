@@ -36,12 +36,17 @@ class PaymentMatchAssistant
     {
     }
 
-    /** @param string $n phrase normalisée */
-    public function propose(User $admin, string $n): array
+    /**
+     * @param string $n phrase normalisée
+     * @param bool $outgoing vrai pour un paiement fait à un fournisseur (factures d'achat) ; faux pour un encaissement (factures de vente)
+     */
+    public function propose(User $admin, string $n, bool $outgoing = false): array
     {
+        $who = $outgoing ? 'fournisseur' : 'client';
+        $docs = $outgoing ? "facture d'achat" : 'facture de vente';
         $amount = $this->amount($n);
         if ($amount === null || $amount <= 0) {
-            return $this->reply("Je n'ai pas trouvé le montant. Exemple : « rapproche un virement de 4 500 dirhams de Atlas ».");
+            return $this->reply("Je n'ai pas trouvé le montant. Exemple : " . ($outgoing ? '« j\'ai payé un virement de 4 500 dirhams à Leader Star »' : '« rapproche un virement de 4 500 dirhams de Atlas »') . '.');
         }
         $method = $this->method($n);
         if ($method === null) {
@@ -49,9 +54,12 @@ class PaymentMatchAssistant
         }
         $reference = preg_match('/\bref(?:erence)?\.?\s*:?\s*([a-z0-9][a-z0-9\-\/]{2,40})/', $n, $m) ? strtoupper($m[1]) : null;
         $client = $this->mentions->thirdParty($n) ?? $this->clientByWord($n);
+        if ($outgoing && $client !== null && !in_array($client->role ?? '', ['supplier', 'both'], true)) {
+            $client = null;                                                                    // « Atlas » est un client : pas un fournisseur à payer
+        }
 
-        $types = ['InvoiceSale'];
-        Setting::get('ventes', 'paiement_sur_bl', 'false') === 'true' && $types[] = 'DeliveryNote';
+        $types = $outgoing ? ['InvoicePurchase'] : ['InvoiceSale'];
+        !$outgoing && Setting::get('ventes', 'paiement_sur_bl', 'false') === 'true' && $types[] = 'DeliveryNote';
         $open = DB::table('document_headers as d')->join('document_footers as f', 'f.document_header_id', '=', 'd.id')->leftJoin('third_partners as t', 't.id', '=', 'd.thirdPartner_id')
             ->whereNull('d.deleted_at')->whereIn('d.document_type', $types)->whereNotIn('d.status', ['draft', 'cancelled'])->where('f.amount_due', '>', 0)
             ->when($client !== null, fn ($q) => $q->where('d.thirdPartner_id', $client->id))
@@ -63,17 +71,17 @@ class PaymentMatchAssistant
         $exact = $open->filter(fn ($r) => abs((float) $r->amount_due - $amount) < 0.01)->values();
         if ($client === null) {
             if ($exact->isEmpty()) {
-                return $this->reply("Aucune facture de vente n'a un reste à payer de {$this->money($amount)}. Précisez le client : « rapproche un {$this->methodLabel($method)} de {$this->num($amount)} dirhams de <client> ».");
+                return $this->reply("Aucune {$docs} n'a un reste à payer de {$this->money($amount)}. Précisez le {$who} : " . $this->example($outgoing, $method, $amount) . '.');
             }
             if ($exact->count() > 1) {
                 return $this->reply("{$exact->count()} factures ont un reste à payer de {$this->money($amount)} : " . $exact->take(6)->map(fn ($r) => "{$r->reference} ({$r->tp_title})")->implode(', ')
-                    . ". Précisez le client : « rapproche un {$this->methodLabel($method)} de {$this->num($amount)} dirhams de <client> ».");
+                    . ". Précisez le {$who} : " . $this->example($outgoing, $method, $amount) . '.');
             }
             $plan = [['doc' => $exact->first(), 'applied' => $amount]];
             $surplus = 0.0;
         } else {
             if ($open->isEmpty()) {
-                return $this->reply("{$client->title} n'a aucune facture de vente impayée" . ($blocked !== [] ? ' (hors celles déjà portées par une écriture de trésorerie manuelle)' : '') . '.');
+                return $this->reply("{$client->title} n'a aucune {$docs} impayée" . ($blocked !== [] ? ' (hors celles déjà portées par une écriture de trésorerie manuelle)' : '') . '.');
             }
             $docs = $exact->isNotEmpty() ? $exact->take(1) : $open;
             $remaining = $amount;
@@ -95,17 +103,17 @@ class PaymentMatchAssistant
         $label = $client?->title ?? $items[0]['client'];
         $event = AgentEvent::create([
             'type' => 'rapprochement_paiement', 'source' => 'orchestrator', 'status' => AgentEvent::STATUS_ROUTED, 'agent_id' => Agent::where('domain', 'recouvrement')->value('id'),
-            'payload' => ['text' => "Rapprochement : {$this->methodLabel($method)} de {$this->money($amount)} ({$label})", 'items' => $items, 'amount' => $amount, 'method' => $method, 'reference' => $reference, 'surplus' => $surplus, 'requested_by' => $admin->name],
+            'payload' => ['text' => ($outgoing ? 'Paiement fournisseur' : 'Rapprochement') . " : {$this->methodLabel($method)} de {$this->money($amount)} ({$label})", 'outgoing' => $outgoing, 'items' => $items, 'amount' => $amount, 'method' => $method, 'reference' => $reference, 'surplus' => $surplus, 'requested_by' => $admin->name],
         ]);
 
         $lines = array_map(fn ($i) => "• {$i['reference']} — {$i['client']} — reste " . $this->money($i['due']) . ' → affecté ' . $this->money($i['applied']) . ($i['applied'] >= $i['due'] - 0.004 ? ' (soldée)' : ' (partiel)'), $items);
 
         return $this->reply(
-            ucfirst($this->methodLabel($method)) . " de {$this->money($amount)}" . ($reference ? " (réf. {$reference})" : '') . " — affectation proposée (lot #{$event->id}) :\n\n" . implode("\n", $lines)
-            . ($surplus > 0 ? "\n\nTrop-perçu non affecté : {$this->money($surplus)} (je ne l'enregistre pas ; à traiter à part, par exemple en avoir ou avance)." : '')
+            ucfirst($this->methodLabel($method)) . ($outgoing ? ' payé' : '') . " de {$this->money($amount)}" . ($reference ? " (réf. {$reference})" : '') . " — affectation proposée (lot #{$event->id}) :\n\n" . implode("\n", $lines)
+            . ($surplus > 0 ? "\n\n" . ($outgoing ? 'Montant payé en trop' : 'Trop-perçu') . " non affecté : {$this->money($surplus)} (je ne l'enregistre pas ; à traiter à part, par exemple en avoir ou avance)." : '')
             . ($blocked !== [] ? "\n\n" . count($blocked) . ' facture(s) écartée(s) : déjà portée(s) par une écriture de trésorerie saisie à la main (le règlement compterait la somme deux fois).' : '')
-            . "\n\nLe bouton enregistre ce(s) règlement(s) à votre nom, daté d'aujourd'hui, et met à jour le reste à payer. Le client ne reçoit aucun message. Vous pouvez l'annuler depuis la facture (supprimer le règlement).",
-            [['label' => 'Enregistrer le paiement', 'text' => "applique le lot #{$event->id}"], ['label' => 'Ignorer', 'text' => "ignore le lot #{$event->id}"]],
+            . "\n\nLe bouton enregistre ce(s) règlement(s) à votre nom, daté d'aujourd'hui, et met à jour le reste à payer. Le {$who} ne reçoit aucun message. Vous pouvez l'annuler depuis la facture (supprimer le règlement).",
+            [['label' => $outgoing ? 'Enregistrer le paiement fournisseur' : 'Enregistrer le paiement', 'text' => "applique le lot #{$event->id}"], ['label' => 'Ignorer', 'text' => "ignore le lot #{$event->id}"]],
             $event->id,
         );
     }
@@ -126,7 +134,7 @@ class PaymentMatchAssistant
 
         $created = [];
         $previous = Payment::$skipNotification;
-        Payment::$skipNotification = true;                                                     // aucun e-mail ni WhatsApp au client
+        Payment::$skipNotification = true;                                                     // aucun e-mail ni WhatsApp au client ni au fournisseur
         try {
             DB::transaction(function () use ($items, $p, $admin, &$created) {
                 foreach ($items as $i) {
@@ -145,7 +153,7 @@ class PaymentMatchAssistant
         $event->update(['status' => AgentEvent::STATUS_DONE, 'payload' => array_merge($p, ['created' => $created, 'applied_by' => $admin->name])]);
         AgentAction::create(['agent_id' => $event->agent_id, 'event_id' => $event->id, 'action' => 'payment_matched', 'level' => 'approval', 'input' => ['requested_by' => $p['requested_by'] ?? null, 'method' => $p['method'] ?? null], 'result' => ['payments' => array_column($created, 'payment_id')]]);
 
-        return $this->reply('Paiement enregistré : ' . implode(', ', array_map(fn ($c) => "{$c['reference']} ({$this->money((float) $c['amount'])})", $created)) . ". Le reste à payer des factures est à jour ; aucun message n'a été envoyé au client.", eventId: $event->id);
+        return $this->reply('Paiement enregistré : ' . implode(', ', array_map(fn ($c) => "{$c['reference']} ({$this->money((float) $c['amount'])})", $created)) . ". Le reste à payer des factures est à jour ; aucun message n'a été envoyé au " . (!empty($p['outgoing']) ? 'fournisseur' : 'client') . '.', eventId: $event->id);
     }
 
     /** Le premier montant de la phrase : « 4 500 », « 4500,50 », « 1.200,5 », suivi ou non de dh / mad / dirhams. */
@@ -163,11 +171,18 @@ class PaymentMatchAssistant
     /** « … de Atlas » : le seul client dont le nom contient le mot qui suit « de », « du » ou « chez » après le montant. */
     private function clientByWord(string $n): ?object
     {
-        if (!preg_match('/\d\s*(?:dh|dhs|mad|dirhams?)?\s*(?:de|du|d|chez|par)\s+([a-z0-9][a-z0-9\- ]{2,40}?)(?:\s+ref\b.*)?$/', $n, $m)) {
+        if (!preg_match('/\d\s*(?:dh|dhs|mad|dirhams?)?\s*(?:de|du|d|a|au|chez|par|pour)\s+([a-z0-9][a-z0-9\- ]{2,40}?)(?:\s+ref\b.*)?$/', $n, $m)) {
             return null;
         }
 
         return $this->mentions->thirdPartyLike(trim($m[1]));
+    }
+
+    private function example(bool $outgoing, string $method, float $amount): string
+    {
+        return $outgoing
+            ? "« j'ai payé un {$this->methodLabel($method)} de {$this->num($amount)} dirhams à <fournisseur> »"
+            : "« rapproche un {$this->methodLabel($method)} de {$this->num($amount)} dirhams de <client> »";
     }
 
     private function method(string $n): ?string

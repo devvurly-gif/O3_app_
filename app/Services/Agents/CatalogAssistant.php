@@ -230,9 +230,9 @@ class CatalogAssistant
     }
 
     /** « Rapproche un virement de 4 500 dirhams de Atlas » : affectation proposée, règlement enregistré au clic. */
-    public function paymentMatch(User $admin, string $n): array
+    public function paymentMatch(User $admin, string $n, bool $outgoing = false): array
     {
-        return $this->paymentChat->propose($admin, $n);
+        return $this->paymentChat->propose($admin, $n, $outgoing);
     }
 
     /** « Propose des transferts entre entrepôts » : bons de transfert brouillons à valider. */

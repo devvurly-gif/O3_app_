@@ -46,9 +46,9 @@ class OrchestratorPaymentMatchTest extends TestCase
         return $r;
     }
 
-    private function invoice(string $ref, string $day, float $due, ?ThirdPartner $tp = null, float $total = null): DocumentHeader
+    private function invoice(string $ref, string $day, float $due, ?ThirdPartner $tp = null, float $total = null, string $type = 'InvoiceSale'): DocumentHeader
     {
-        $d = DocumentHeader::factory()->create(['document_type' => 'InvoiceSale', 'status' => 'confirmed', 'issued_at' => $day, 'reference' => $ref, 'thirdPartner_id' => ($tp ?? $this->atlas)->id]);
+        $d = DocumentHeader::factory()->create(['document_type' => $type, 'status' => 'confirmed', 'issued_at' => $day, 'reference' => $ref, 'thirdPartner_id' => ($tp ?? $this->atlas)->id]);
         DocumentFooter::factory()->create(['document_header_id' => $d->id, 'total_ht' => round(($total ?? $due) / 1.2, 2), 'total_ttc' => $total ?? $due, 'amount_paid' => ($total ?? $due) - $due, 'amount_due' => $due]);
 
         return $d;
@@ -133,5 +133,64 @@ class OrchestratorPaymentMatchTest extends TestCase
         $this->assertStringContainsString('Quel mode de paiement ?', $this->say('rapproche un paiement de 750 dirhams')['body']);
         $this->assertSame(0, AgentEvent::where('type', 'rapprochement_paiement')->count());
         $this->assertStringNotContainsString('affectation proposée', $this->say('chèques reçus ce mois')['body']);
+    }
+    // ── Paiements faits aux fournisseurs ─────────────────────────────
+
+    public function test_a_payment_to_a_supplier_is_matched_to_purchase_invoices_only_and_the_click_notifies_nobody(): void
+    {
+        $this->mock(\App\Services\PaymentNotificationService::class)->shouldNotReceive('send');
+        $leader = ThirdPartner::factory()->create(['tp_title' => 'Leader Star', 'tp_Role' => 'supplier']);
+        $this->invoice('FV-VENTE', '2026-09-01', 3000, $this->atlas);                                  // une facture de VENTE de même montant : jamais proposée
+        $a1 = $this->invoice('FA-1', '2026-09-01', 1000, $leader, null, 'InvoicePurchase');
+        $a2 = $this->invoice('FA-2', '2026-09-10', 4000, $leader, null, 'InvoicePurchase');
+
+        $r = $this->say("j'ai payé un virement de 3 000 dirhams à Leader Star");
+
+        $this->assertStringContainsString('Virement payé de 3 000,00 MAD', $r['body']);
+        $this->assertStringContainsString('FA-1 — Leader Star — reste 1 000,00 MAD → affecté 1 000,00 MAD (soldée)', $r['body']);
+        $this->assertStringContainsString('FA-2 — Leader Star — reste 4 000,00 MAD → affecté 2 000,00 MAD (partiel)', $r['body']);
+        $this->assertStringNotContainsString('FV-VENTE', $r['body']);
+        $this->assertStringContainsString('Le fournisseur ne reçoit aucun message', $r['body']);
+        $this->assertSame('Enregistrer le paiement fournisseur', $r['suggestions'][0]['label']);
+        $this->assertSame(0, Payment::count());
+
+        $done = $this->say($r['suggestions'][0]['text']);
+
+        $this->assertStringContainsString("aucun message n'a été envoyé au fournisseur", $done['body']);
+        $this->assertSame(2, Payment::count());
+        $this->assertSame(0.0, (float) DocumentFooter::where('document_header_id', $a1->id)->value('amount_due'));
+        $this->assertSame(2000.0, (float) DocumentFooter::where('document_header_id', $a2->id)->value('amount_due'));
+        $this->assertSame(3000.0, (float) DocumentFooter::whereHas('header', fn ($q) => $q->where('reference', 'FV-VENTE'))->value('amount_due'));   // la vente n'a pas bougé
+    }
+
+    public function test_a_customer_is_not_a_supplier_to_pay_and_an_exact_unique_purchase_amount_works_without_a_name(): void
+    {
+        $leader = ThirdPartner::factory()->create(['tp_title' => 'Leader Star', 'tp_Role' => 'supplier']);
+        $this->invoice('FA-1', '2026-09-01', 750, $leader, null, 'InvoicePurchase');
+
+        $none = $this->say("j'ai payé un virement de 999 dirhams à Quincaillerie Atlas");        // Atlas est un client
+        $this->assertStringContainsString("Aucune facture d'achat n'a un reste à payer de 999,00 MAD", $none['body']);
+        $this->assertStringContainsString('<fournisseur>', $none['body']);
+
+        $one = $this->say("j'ai réglé un chèque de 750 dirhams");
+        $this->assertStringContainsString('FA-1', $one['body']);
+        $this->assertStringContainsString('Chèque payé de 750,00 MAD', $one['body']);
+        $this->assertSame(0, Payment::count());
+    }
+
+    public function test_incoming_and_outgoing_phrases_do_not_cross(): void
+    {
+        $leader = ThirdPartner::factory()->create(['tp_title' => 'Leader Star', 'tp_Role' => 'supplier']);
+        $this->invoice('FA-1', '2026-09-01', 500, $leader, null, 'InvoicePurchase');
+        $this->invoice('FV-1', '2026-09-01', 500, $this->atlas);
+
+        $incoming = $this->say('rapproche un virement de 500 dirhams de Atlas');
+        $this->assertStringContainsString('FV-1', $incoming['body']);
+        $this->assertStringNotContainsString('FA-1', $incoming['body']);
+        $this->assertStringContainsString('Le client ne reçoit aucun message', $incoming['body']);
+
+        $outgoing = $this->say('on a payé un virement de 500 dirhams à Leader Star');
+        $this->assertStringContainsString('FA-1', $outgoing['body']);
+        $this->assertStringNotContainsString('FV-1', $outgoing['body']);
     }
 }
