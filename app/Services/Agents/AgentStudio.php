@@ -9,6 +9,7 @@ use App\Models\AgentEvent;
 use App\Models\AgentRoutine;
 use App\Models\Setting;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 /**
@@ -409,8 +410,28 @@ class AgentStudio
 
     // ── Validation des propositions ──────────────────────────────────
 
-    /** « applique la proposition #12 », « ignore la proposition #12 ». @param string $n phrase normalisée */
+    /**
+     * « applique la proposition #12 », « ignore la proposition #12 ». Une proposition ne se traite qu'une fois, même si le
+     * bouton est cliqué deux fois en même temps (même verrou par lot que CatalogAssistant::act).
+     *
+     * @param string $n phrase normalisée
+     */
     public function act(User $admin, int $eventId, string $n): array
+    {
+        $lock = Cache::lock("agent-lot:{$eventId}", 120);
+        if (!$lock->get()) {
+            return $this->reply("La proposition #{$eventId} est déjà en cours de traitement : patientez quelques secondes.", eventId: $eventId);
+        }
+
+        try {
+            return $this->actOnce($admin, $eventId, $n);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    /** @param string $n phrase normalisée */
+    private function actOnce(User $admin, int $eventId, string $n): array
     {
         $event = AgentEvent::whereIn('type', ['agent_recrutement', 'routine_proposition', 'consigne_proposition', 'comptes_agents', 'conception_proposition'])->find($eventId);
         if (!$event) {

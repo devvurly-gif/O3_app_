@@ -15,6 +15,7 @@ use App\Services\ProductImageService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -549,8 +550,31 @@ class CatalogAssistant
 
     // ── Actions confirmées par l'administrateur ──────────────────────
 
-    /** « applique les propositions du lot #12 », « ignore le lot #12 ». @return array{body: string, meta: array<string, mixed>} */
+    /**
+     * « applique les propositions du lot #12 », « ignore le lot #12 ».
+     *
+     * Un lot ne se traite qu'une fois, même si le bouton est cliqué deux fois en même temps (deux onglets, double clic) :
+     * un verrou par lot empêche la seconde requête de lire « en attente » avant que la première ait terminé, ce qui
+     * aurait créé deux fois les mêmes brouillons ou règlements. Le verrou ne retient pas : la seconde requête est refusée.
+     *
+     * @return array{body: string, meta: array<string, mixed>}
+     */
     public function act(User $admin, int $eventId, string $n): array
+    {
+        $lock = Cache::lock("agent-lot:{$eventId}", 120);
+        if (!$lock->get()) {
+            return $this->reply("Le lot #{$eventId} est déjà en cours de traitement : patientez quelques secondes, puis demandez « que dois-je valider ? » pour voir où il en est.", eventId: $eventId);
+        }
+
+        try {
+            return $this->actOnce($admin, $eventId, $n);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    /** @return array{body: string, meta: array<string, mixed>} */
+    private function actOnce(User $admin, int $eventId, string $n): array
     {
         $event = AgentEvent::whereIn('type', ['catalogue_completion', 'catalogue_prix', 'catalogue_activation', 'catalogue_codes_barres', 'catalogue_photos', 'catalogue_publication', 'catalogue_site', 'relance_devis', 'reappro_commande', 'transfert_entrepots', 'rapprochement_paiement', 'echeancier_paiement', 'relance_versement', 'releve_import'])->find($eventId);
         if (!$event) {
