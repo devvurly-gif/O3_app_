@@ -427,6 +427,7 @@ export type NotificationType =
   | 'invoice_due_reminder'
   | 'payment_received'
   | 'stock_movement'
+  | 'routine_report'
 
 export interface NotificationData {
   type: NotificationType

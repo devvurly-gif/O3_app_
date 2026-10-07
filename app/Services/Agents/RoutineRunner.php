@@ -8,6 +8,7 @@ use App\Models\AgentEvent;
 use App\Models\AgentRoutine;
 use App\Models\OrchestratorMessage;
 use App\Models\User;
+use App\Notifications\RoutineReport;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -143,6 +144,8 @@ class RoutineRunner
         return $this->finish($routine, $status, $body, $creator, [
             'suggestions' => array_slice($this->uniqueByText($suggestions), 0, 6),
             'links'       => array_values(collect($links)->unique('to')->all()),
+            // Prévenu hors du chat seulement quand personne n'a lancé la routine lui-même.
+            'notify'      => $trigger !== 'lancée à la demande',
         ]);
     }
 
@@ -190,6 +193,15 @@ class RoutineRunner
                 'body'    => $body,
                 'meta'    => array_filter(['intent' => 'routine', 'suggestions' => $meta['suggestions'] ?? null ?: null, 'links' => $meta['links'] ?? null ?: null, 'error' => $status === 'error' ?: null], fn ($v) => $v !== null),
             ]);
+        }
+
+        // La cloche (et la notification push si elle est configurée) : seulement s'il y a quelque chose à décider ou si la routine a échoué.
+        if ($creator && ($meta['notify'] ?? false) && ($status !== 'ok' || !empty($meta['suggestions']))) {
+            try {
+                $creator->notify(new RoutineReport($routine->id, $routine->name, $status, count($meta['suggestions'] ?? [])));
+            } catch (\Throwable $e) {
+                Log::warning("Routine #{$routine->id} : notification non envoyée ({$e->getMessage()})");
+            }
         }
 
         AgentAction::create([

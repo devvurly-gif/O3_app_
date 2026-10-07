@@ -47,6 +47,7 @@ export function useNotifications() {
       invoice_due_reminder: { message: 'Facture(s) en retard de paiement',       type: 'warning' },
       payment_received:     { message: 'Paiement recu',                          type: 'success' },
       stock_movement:       { message: 'Alerte stock bas apres mouvement',       type: 'warning' },
+      routine_report:       { message: 'Une routine attend votre validation',    type: 'info' },
     }
 
     const config = labels[notif.data?.type] ?? { message: 'Nouvelle notification', type: 'info' }

@@ -339,6 +339,8 @@ function notifTitle(data) {
         : `BL brouillon ${data.reference} reçu par ${data.channel_label} — ${data.customer ?? ''}`
     case 'order_pin_locked':
       return `Commandes par message bloquées — ${data.customer ?? ''} (5 PIN incorrects)`
+    case 'routine_report':
+      return data.title ?? `Routine « ${data.routine ?? ''} »`
     default:
       return 'Notification'
   }
@@ -358,6 +360,8 @@ function notifIconClass(type) {
       return 'bg-violet-100 text-violet-600'
     case 'order_pin_locked':
       return 'bg-red-100 text-red-600'
+    case 'routine_report':
+      return 'bg-indigo-100 text-indigo-600'
     default:
       return 'bg-gray-100 text-gray-500'
   }
@@ -378,6 +382,8 @@ function notifIcon(type) {
       return '@'
     case 'order_pin_locked':
       return '!'
+    case 'routine_report':
+      return '✦'
     default:
       return '?'
   }
