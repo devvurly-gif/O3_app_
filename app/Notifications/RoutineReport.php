@@ -5,14 +5,16 @@ namespace App\Notifications;
 use App\Notifications\Concerns\SendsWebPush;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use NotificationChannels\WebPush\WebPushMessage;
 
 /**
  * Prévient l'administrateur, hors du chat, qu'une routine planifiée vient de déposer un compte rendu qui demande sa
- * décision (propositions à valider) ou qui a échoué. Pas de message au client ni à un tiers : seulement la cloche et, si
- * les clés sont configurées, une notification push à l'administrateur lui-même. Le texte ne reprend que le nom de la routine
- * et des comptes : le détail reste dans le chat.
+ * décision (propositions à valider) ou qui a échoué. Pas de message au client ni à un tiers : seulement la cloche, un e-mail
+ * à l'administrateur lui-même (réglage « agents.routine_email », activé par défaut, au plus un par routine et par 6 heures)
+ * et, si les clés sont configurées, une notification push. Le texte ne reprend que le nom de la routine et des comptes :
+ * le détail (clients, montants) reste dans le chat.
  */
 class RoutineReport extends Notification implements ShouldQueue
 {
@@ -23,11 +25,26 @@ class RoutineReport extends Notification implements ShouldQueue
         private string $routineName,
         private string $status,
         private int $pending,
+        private bool $mail = false,
     ) {}
 
     public function via(object $notifiable): array
     {
-        return array_merge(['database'], $this->webPushChannel());
+        // L'e-mail ne part que si l'administrateur l'a gardé activé (réglage) et que la routine n'a pas déjà écrit ces dernières heures.
+        $mail = $this->mail && filter_var($notifiable->email ?? '', FILTER_VALIDATE_EMAIL) ? ['mail'] : [];
+
+        return array_merge(['database'], $mail, $this->webPushChannel());
+    }
+
+    public function toMail(object $notifiable): MailMessage
+    {
+        return (new MailMessage)
+            ->subject('O3 — ' . $this->title())
+            ->greeting("Bonjour {$notifiable->name},")
+            ->line($this->title() . '.')
+            ->line("Rien n'a été appliqué : les routines ne font que lire et préparer des propositions que vous validez.")
+            ->action("Ouvrir l'orchestrateur", $this->webPushUrl('/settings/orchestrateur'))
+            ->line("Pour ne plus recevoir ces e-mails, écrivez « désactive l'e-mail des routines » à l'orchestrateur.");
     }
 
     public function toWebPush(object $notifiable, $notification): WebPushMessage

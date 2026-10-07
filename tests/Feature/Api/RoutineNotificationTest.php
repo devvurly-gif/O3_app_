@@ -105,4 +105,60 @@ class RoutineNotificationTest extends TestCase
         });
         Notification::assertCount(1);
     }
+    // ── E-mail à l'administrateur ────────────────────────────────────
+
+    private function channelsOf(RoutineReport $n): array
+    {
+        return $n->via($this->admin);
+    }
+
+    public function test_the_email_is_added_once_per_routine_every_six_hours_and_carries_no_figures(): void
+    {
+        $this->staleQuote();
+        $routine = $this->routine(['encaissements']);                                  // l'agent Recouvrement est inactif : la routine échoue, donc prévient, à chaque passage
+        $runner = app(RoutineRunner::class);
+
+        $runner->run($routine);
+        $runner->run($routine);                                                          // deux heures plus tard, par exemple : pas un second e-mail
+
+        $sent = Notification::sent($this->admin, RoutineReport::class);
+        $this->assertCount(2, $sent);
+        $this->assertContains('mail', $this->channelsOf($sent[0]));
+        $this->assertContains('database', $this->channelsOf($sent[0]));
+        $this->assertNotContains('mail', $this->channelsOf($sent[1]));
+        $this->assertContains('database', $this->channelsOf($sent[1]));
+
+        $mail = $sent[0]->toMail($this->admin);
+        $this->assertStringStartsWith('O3 — Routine « Matin » : ', $mail->subject);
+        $text = $mail->greeting . ' ' . implode(' ', $mail->introLines) . ' ' . implode(' ', $mail->outroLines);
+        $this->assertStringContainsString('Rien n\'a été appliqué', $text);
+        $this->assertStringContainsString('désactive l\'e-mail des routines', $text);
+        $this->assertStringNotContainsString('Atlas', $text);                           // ni client ni montant dans l'e-mail
+        $this->assertStringNotContainsString('DV-1', $text);
+
+        Carbon::setTestNow(now()->addHours(7));
+        $runner->run($routine);
+        $this->assertContains('mail', $this->channelsOf(Notification::sent($this->admin, RoutineReport::class)->last()));
+    }
+
+    public function test_the_admin_can_switch_the_email_off_and_on_from_the_chat_and_an_invalid_address_gets_none(): void
+    {
+        $this->staleQuote();
+        $routine = $this->routine(['devis_relance']);
+        $api = $this->actingAs($this->admin, 'sanctum');
+
+        $off = $api->postJson('/api/agents/orchestrateur', ['message' => "désactive l'e-mail des routines"])->assertCreated()->json('reply.body');
+        $this->assertStringContainsString("L'e-mail d'alerte des routines est désactivé", $off);
+        $this->assertSame('false', Setting::get('agents', 'routine_email'));
+
+        app(RoutineRunner::class)->run($routine);
+        $this->assertNotContains('mail', $this->channelsOf(Notification::sent($this->admin, RoutineReport::class)->first()));
+
+        $on = $api->postJson('/api/agents/orchestrateur', ['message' => "active l'e-mail des routines"])->assertCreated()->json('reply.body');
+        $this->assertStringContainsString("L'e-mail d'alerte des routines est activé", $on);
+        $this->assertSame('true', Setting::get('agents', 'routine_email'));
+
+        $this->admin->forceFill(['email' => 'pas-une-adresse'])->save();
+        $this->assertNotContains('mail', (new RoutineReport(1, 'Matin', 'ok', 2, true))->via($this->admin));
+    }
 }

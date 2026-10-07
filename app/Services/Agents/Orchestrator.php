@@ -269,6 +269,7 @@ class Orchestrator
             // Un document déposé (« prépare le brouillon d'achat du document #12 », « ignore le document #12 »…).
             (bool) preg_match('/\bdocuments?\s*#?\s*(\d+)/', $n, $doc)                            => $this->intake->act($admin, (int) $doc[1], $n),
             // Atelier des agents : recruter, planifier des routines, retenir des consignes, catalogue des tâches.
+            (bool) preg_match('/\b(active\w*|desactive\w*|coupe\w*|arrete\w*|stoppe\w*)\b.*\be-?mails?\b.*\broutines?\b|\b(active\w*|desactive\w*|coupe\w*|arrete\w*|stoppe\w*)\b.*\broutines?\b.*\be-?mails?\b/', $n) => $this->studio->routineEmail($admin, !preg_match('/\b(desactive|coupe|arrete|stoppe)\w*/', $n)),
             ($studio = $this->studioIntent($n)) !== null                                          => $this->studioAnswer($admin, $studio, $text, $n),
             // « Relance les devis sans réponse » : messages de relance préparés, à envoyer soi-même après validation.
             (bool) preg_match('/\brelanc\w*\b/', $n) && (bool) preg_match('/\bdevis\b/', $n) && !preg_match('/\b(historique|combien|liste des relances)\b/', $n) => $this->catalog->quoteFollowUps($admin, $n),

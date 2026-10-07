@@ -8,7 +8,9 @@ use App\Models\AgentEvent;
 use App\Models\AgentRoutine;
 use App\Models\OrchestratorMessage;
 use App\Models\User;
+use App\Models\Setting;
 use App\Notifications\RoutineReport;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -198,7 +200,9 @@ class RoutineRunner
         // La cloche (et la notification push si elle est configurée) : seulement s'il y a quelque chose à décider ou si la routine a échoué.
         if ($creator && ($meta['notify'] ?? false) && ($status !== 'ok' || !empty($meta['suggestions']))) {
             try {
-                $creator->notify(new RoutineReport($routine->id, $routine->name, $status, count($meta['suggestions'] ?? [])));
+                $key = 'routine-mail:' . (function_exists('tenant') && tenant() ? tenant('id') : 'central') . ':' . $routine->id;
+                $mail = Setting::get('agents', 'routine_email', 'true') !== 'false' && Cache::add($key, 1, now()->addHours(6));      // au plus un e-mail par routine et par 6 heures
+                $creator->notify(new RoutineReport($routine->id, $routine->name, $status, count($meta['suggestions'] ?? []), $mail));
             } catch (\Throwable $e) {
                 Log::warning("Routine #{$routine->id} : notification non envoyée ({$e->getMessage()})");
             }

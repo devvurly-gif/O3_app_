@@ -7,6 +7,7 @@ use App\Models\AgentAction;
 use App\Models\AgentDirective;
 use App\Models\AgentEvent;
 use App\Models\AgentRoutine;
+use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Support\Str;
 
@@ -187,6 +188,17 @@ class AgentStudio
             ],
             eventId: $event->id,
         );
+    }
+
+    /** « active / désactive l'e-mail des routines » : l'e-mail d'alerte à l'administrateur (la cloche reste). */
+    public function routineEmail(User $admin, bool $on): array
+    {
+        Setting::set('agents', 'routine_email', $on ? 'true' : 'false');
+        $this->log(null, 'routine_email_' . ($on ? 'on' : 'off'), ['by' => $admin->name]);
+
+        return $this->reply($on
+            ? "L'e-mail d'alerte des routines est activé : vous en recevrez au plus un par routine et par 6 heures, seulement quand elle a quelque chose à valider ou a échoué (en plus de la cloche)."
+            : "L'e-mail d'alerte des routines est désactivé. La cloche (et la notification push si elle est configurée) continuent de vous prévenir.");
     }
 
     public function routines(): array
