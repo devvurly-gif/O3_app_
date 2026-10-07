@@ -49,6 +49,7 @@ class CatalogAssistant
         private PhotoSitesAssistant $siteChat,
         private QuoteFollowUpAssistant $quoteChat,
         private ReorderAssistant $reorderChat,
+        private TransferAssistant $transferChat,
     ) {
     }
 
@@ -200,6 +201,12 @@ class CatalogAssistant
             ],
             images: array_map(fn (array $it) => ['label' => "{$it['sku']}", 'url' => "/agents/orchestrateur/photos/{$event->id}/{$it['product_id']}"], $items),
         );
+    }
+
+    /** « Propose des transferts entre entrepôts » : bons de transfert brouillons à valider. */
+    public function transfers(User $admin): array
+    {
+        return $this->transferChat->propose($admin);
     }
 
     /** « Réapprovisionne le stock faible » : bons de commande fournisseur brouillons à valider. */
@@ -513,7 +520,7 @@ class CatalogAssistant
     /** « applique les propositions du lot #12 », « ignore le lot #12 ». @return array{body: string, meta: array<string, mixed>} */
     public function act(User $admin, int $eventId, string $n): array
     {
-        $event = AgentEvent::whereIn('type', ['catalogue_completion', 'catalogue_prix', 'catalogue_activation', 'catalogue_codes_barres', 'catalogue_photos', 'catalogue_publication', 'catalogue_site', 'relance_devis', 'reappro_commande'])->find($eventId);
+        $event = AgentEvent::whereIn('type', ['catalogue_completion', 'catalogue_prix', 'catalogue_activation', 'catalogue_codes_barres', 'catalogue_photos', 'catalogue_publication', 'catalogue_site', 'relance_devis', 'reappro_commande', 'transfert_entrepots'])->find($eventId);
         if (!$event) {
             return $this->reply("Je ne trouve pas le lot #{$eventId}.", error: true);
         }
@@ -540,6 +547,7 @@ class CatalogAssistant
                     'catalogue_site'         => $this->siteChat->apply($admin, $event),
                     'relance_devis'          => $this->quoteChat->apply($admin, $event),
                     'reappro_commande'       => $this->reorderChat->apply($admin, $event),
+                    'transfert_entrepots'    => $this->transferChat->apply($admin, $event),
                     default                  => $this->applyPrices($event),
                 });
             }

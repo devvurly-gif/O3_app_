@@ -30,6 +30,7 @@ class AgentCapabilities
         'ventes' => [
             'tasks' => [
                 ['Préparer les relances des devis sans réponse (messages WhatsApp ou e-mail prêts à envoyer, rien n\'est envoyé par O3)', '« relance les devis sans réponse »'],
+                ['Proposer des transferts entre entrepôts : un bon de transfert brouillon par couple d\'entrepôts, le stock ne bouge qu\'à l\'application du bon', '« propose des transferts entre entrepôts »'],
                 ['Réapprovisionner le stock faible : un bon de commande fournisseur brouillon par fournisseur, à créer après votre clic', '« réapprovisionne le stock faible »'],
                 ['Transformer une commande reçue par WhatsApp, SMS ou chat en brouillon de bon de livraison', 'automatique (messagerie), ou « Messagerie commandes »'],
                 ['Lire un bon de commande client (photo ou PDF) et préparer un brouillon de livraison', 'déposez le fichier avec le trombone'],
@@ -41,7 +42,7 @@ class AgentCapabilities
                 ['Préparer une feuille d\'inventaire (tous les entrepôts, un entrepôt, ou les articles à vérifier)', '« prépare un inventaire »'],
                 ['Alerte quand le stock est bas', 'planificateur (08:00)'],
             ],
-            'missing' => ['proposer des transferts entre entrepôts'],
+            'missing' => [],
         ],
         'recouvrement' => [
             'tasks' => [

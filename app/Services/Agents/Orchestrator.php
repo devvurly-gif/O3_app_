@@ -264,6 +264,8 @@ class Orchestrator
             ($studio = $this->studioIntent($n)) !== null                                          => $this->studioAnswer($admin, $studio, $text, $n),
             // « Relance les devis sans réponse » : messages de relance préparés, à envoyer soi-même après validation.
             (bool) preg_match('/\brelanc\w*\b/', $n) && (bool) preg_match('/\bdevis\b/', $n) && !preg_match('/\b(historique|combien|liste des relances)\b/', $n) => $this->catalog->quoteFollowUps($admin, $n),
+            // « Propose des transferts entre entrepôts » : bons de transfert brouillons, créés après validation.
+            (bool) preg_match('/\btransferts?\b.*\bentrepots?\b|\bentrepots?\b.*\btransferts?\b|\b(equilibre|reequilibre|reequilibrer|redistribue)\b.*\b(stock|entrepots?)\b/', $n) && (bool) preg_match('/\b(propose|prepare|fais|genere|cree|equilibre|reequilibre|redistribue)\w*\b/', $n) && !preg_match('/\b(historique|combien|liste|derniers?)\b/', $n) => $this->catalog->transfers($admin),
             // « Réapprovisionne le stock faible » : bons de commande fournisseur brouillons, à créer après validation.
             (bool) preg_match('/\breapprovisionne\b|\bprepare\w* (le |les |un |des )?(reapprovisionnement|bons? de commande|commandes? fournisseurs?|bcf)|\bcommande\b.*(ce qui manque|stock (bas|faible)|rupture)/', $n) => $this->catalog->reorder($admin),
             // « Exporte en Excel / en PDF / en CSV » : la dernière lecture affichée, en fichier à télécharger.
