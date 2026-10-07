@@ -23,20 +23,34 @@ class AnalysisAssistant
 
     // ── Classements de ventes ────────────────────────────────────────
 
-    /** « top 10 des produits vendus ce mois ». @param string $n phrase normalisée */
+    /**
+     * « top 10 des produits vendus ce mois », puis « les 10 suivants », « voir plus », « page précédente ».
+     *
+     * Le nombre demandé (« top 5 », « les 20 premiers », 25 au plus) est la taille de la page ; une demande de pagination
+     * (« voir plus », « les 10 suivants ») reprend celle de la page en cours, sans que « top 10 » dans la phrase d'origine
+     * la ramène à 10.
+     *
+     * @param string $n phrase normalisée
+     */
     public function topProducts(string $n): array
     {
         [$from, $to, $label] = $this->period($n, 'month');
-        $limit = preg_match('/top\s*(\d{1,2})|(\d{1,2})\s*(?:premiers|meilleurs|plus)/', $n, $m) ? max(1, min(25, (int) ($m[1] !== '' ? $m[1] : $m[2]))) : ListLimit::get();
-        $rows = $this->saleLines($from, $to)->groupBy('l.product_id', 'l.designation')->selectRaw('l.designation AS produit, SUM(l.quantity) AS qte, SUM(l.total_ligne_ht) AS ht')->orderByDesc('ht')->limit($limit)->get();
+        $paged = ListLimit::offset() > 0 || ListLimit::get() !== ListLimit::DEFAULT;
+        $asked = preg_match('/top\s*(\d{1,2})|(\d{1,2})\s*(?:premiers|meilleurs|plus)/', $n, $m) ? max(1, min(25, (int) ($m[1] !== '' ? $m[1] : $m[2]))) : null;
+        $limit = $paged ? ListLimit::get() : ($asked ?? ListLimit::get());
+        $rows = $this->saleLines($from, $to)->groupBy('l.product_id', 'l.designation')->selectRaw('l.designation AS produit, SUM(l.quantity) AS qte, SUM(l.total_ligne_ht) AS ht')->orderByDesc('ht')->get();
         if ($rows->isEmpty()) {
             return $this->reply("Aucune vente {$label}.");
         }
 
-        return $this->reply("Les {$rows->count()} produits les plus vendus {$label} (en chiffre d'affaires HT) :\n\n"
-            . $rows->map(fn ($r, $i) => ($i + 1) . ". {$r->produit} — " . $this->qty((float) $r->qte) . ' vendu(s), ' . $this->money((float) $r->ht))->implode("\n"));
-    }
+        return ListLimit::with($limit, function () use ($rows, $label) {
+            $page = $rows->slice(ListLimit::offset())->take(ListLimit::get())->values();
 
+            return $this->reply('Produits les plus vendus ' . $label . ' (en chiffre d\'affaires HT), rangs ' . (ListLimit::offset() + 1) . ' à ' . (ListLimit::offset() + $page->count()) . " sur {$rows->count()} :\n\n"
+                . $page->map(fn ($r, $i) => (ListLimit::offset() + $i + 1) . ". {$r->produit} — " . $this->qty((float) $r->qte) . ' vendu(s), ' . $this->money((float) $r->ht))->implode("\n")
+                . ListLimit::more($rows->count()));
+        }, ListLimit::offset());
+    }
     /** « ventes du mois par vendeur ». @param string $n phrase normalisée */
     public function salesBySeller(string $n): array
     {

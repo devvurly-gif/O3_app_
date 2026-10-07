@@ -3,6 +3,9 @@
 namespace Tests\Feature\Api;
 
 use App\Models\Category;
+use App\Models\DocumentFooter;
+use App\Models\DocumentHeader;
+use App\Models\DocumentLigne;
 use App\Models\Product;
 use App\Models\Setting;
 use App\Models\ThirdPartner;
@@ -12,6 +15,7 @@ use App\Services\Agents\ListLimit;
 use Database\Seeders\AgentFoundationSeeder;
 use Illuminate\Http\Client\Factory;
 use Illuminate\Routing\Middleware\ThrottleRequests;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Tests\Concerns\RefreshTenantDatabase;
 use Tests\TestCase;
@@ -141,5 +145,49 @@ class OrchestratorMoreTest extends TestCase
 
         $this->assertStringContainsString('Perceuse 18V (PRC18)', $this->say('fiche du produit PRC18'));
         $this->assertStringContainsString('Marteau coffreur (MRT1)', $this->say('et pour marteau ?'));
+    }
+    private function rank(string $body): array
+    {
+        preg_match_all('/^(\d+)\. /m', $body, $m);
+
+        return array_map('intval', $m[1]);
+    }
+
+    public function test_rankings_scroll_too_and_the_requested_size_becomes_the_page_size(): void
+    {
+        $client = ThirdPartner::factory()->create(['tp_title' => 'Client Atlas']);
+        $cat = Category::factory()->create();
+        $doc = DocumentHeader::factory()->create(['document_type' => 'InvoiceSale', 'status' => 'confirmed', 'issued_at' => now()->toDateString(), 'thirdPartner_id' => $client->id]);
+        DocumentFooter::factory()->create(['document_header_id' => $doc->id, 'total_ht' => 1000, 'total_ttc' => 1200]);
+        for ($i = 1; $i <= 30; $i++) {                                                  // « Produit 30 » est le plus vendu, « Produit 01 » le moins
+            $p = Product::factory()->create(['p_title' => sprintf('Produit %02d', $i), 'p_sku' => sprintf('SKU%02d', $i), 'p_status' => true, 'category_id' => $cat->id]);
+            $l = DocumentLigne::factory()->create(['document_header_id' => $doc->id, 'product_id' => $p->id, 'designation' => $p->p_title, 'quantity' => 1, 'status' => 'active', 'line_type' => 'product']);
+            DB::table('document_lignes')->where('id', $l->id)->update(['total_ligne_ht' => $i * 10]);
+        }
+
+        $first = $this->say('top 5 des produits vendus ce mois');
+        $this->assertSame([1, 2, 3, 4, 5], $this->rank($first));
+        $this->assertStringContainsString('rangs 1 à 5 sur 30', $first);
+        $this->assertStringContainsString('1. Produit 30', $first);
+        $this->assertStringContainsString('… et 25 autre(s).', $first);
+
+        $next = $this->say('les 5 suivants');
+        $this->assertSame([6, 7, 8, 9, 10], $this->rank($next));
+        $this->assertStringContainsString('6. Produit 25', $next);
+        $this->assertStringNotContainsString('1. Produit 30', $next);
+
+        $all = $this->say('voir plus');                                                   // « top 5 » dans la phrase d'origine ne bride plus rien
+        $this->assertSame(range(1, 30), $this->rank($all));
+
+        $ten = $this->say('top 10 des produits vendus ce mois');
+        $this->assertSame(range(1, 10), $this->rank($ten));
+        $this->assertSame(range(11, 20), $this->rank($this->say('page suivante')));
+        $this->assertSame(range(1, 10), $this->rank($this->say('page précédente')));
+
+        $twenty = $this->say('top 20 des produits vendus ce mois');
+        $this->assertSame(range(1, 20), $this->rank($twenty));
+        $this->assertSame(range(21, 30), $this->rank($this->say('la suite')));          // la page mémorisée est de 20, pas de 10
+
+        $this->assertSame(range(1, 10), $this->rank($this->say('top 10 des produits vendus ce mois')));   // la page habituelle est rétablie
     }
 }

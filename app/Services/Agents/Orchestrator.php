@@ -118,7 +118,9 @@ class Orchestrator
      */
     private function answer(User $admin, string $text): array
     {
-        [$answer, $used, $page] = $this->resolveAnswer($admin, $text) + [2 => ['offset' => 0, 'limit' => ListLimit::DEFAULT]];
+        $resolved = $this->resolveAnswer($admin, $text);
+        [$answer, $used] = $resolved;
+        $page = $resolved[2] ?? ['offset' => 0, 'limit' => $this->askedPageSize($used)];
 
         // On retient la dernière lecture comprise et sa page : « et hier ? », « les 10 suivants » s'y rapporteront.
         if ($this->conversational && !$this->isFallback($answer) && $this->isReadPhrase($used)) {
@@ -216,6 +218,12 @@ class Orchestrator
 
         return null;
     }
+    /** « top 5 », « les 20 premiers » : la taille de page qu'une phrase de classement demande elle-même (10 sinon). */
+    private function askedPageSize(string $command): int
+    {
+        return preg_match('/\btop\s*(\d{1,2})\b|\b(\d{1,2})\s*(?:premiers|meilleurs)\b/', $command, $m) ? max(1, min(25, (int) ($m[1] !== '' ? $m[1] : $m[2]))) : ListLimit::DEFAULT;
+    }
+
     /** La dernière lecture comprise et la page affichée, si elle a moins d'une demi-heure. @return array{cmd: string, offset: int, limit: int}|null */
     private function lastRead(User $admin): ?array
     {
