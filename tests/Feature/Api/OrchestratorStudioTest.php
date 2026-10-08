@@ -220,10 +220,29 @@ class OrchestratorStudioTest extends TestCase
         $this->assertFalse($routine->fresh()->is_active);
         $this->assertNull($routine->fresh()->next_run_at);
 
-        // Les agents du socle ne s'activent pas depuis ici : ils se règlent dans l'écran Activité des agents.
+    }
+
+    public function test_a_built_in_agent_is_switched_on_and_off_by_its_domain_or_its_number(): void
+    {
         $builtin = Agent::where('domain', 'recouvrement')->firstOrFail();
-        $this->assertStringContainsString('Je ne trouve pas', $this->say("active l'agent #{$builtin->id}")->json('reply.body'));
+        $marketing = Agent::where('domain', 'marketing')->firstOrFail();
+        $this->assertFalse($builtin->is_active);
+
+        $on = $this->say("allume l'agent recouvrement")->json('reply.body');
+        $this->assertStringContainsString("Agent « {$builtin->name} » activé", $on);
+        $this->assertStringContainsString("rien n'est envoyé ni appliqué sans votre validation", $on);
+        $this->assertTrue($builtin->fresh()->is_active);
+        $this->assertFalse($marketing->fresh()->is_active);                                 // seul l'agent nommé change
+
+        $this->assertStringContainsString('désactivé', $this->say("éteins l'agent de recouvrement")->json('reply.body'));
         $this->assertFalse($builtin->fresh()->is_active);
+
+        $this->assertStringContainsString('activé', $this->say("active l'agent #{$builtin->id}")->json('reply.body'));        // le numéro marche aussi
+        $this->assertTrue($builtin->fresh()->is_active);
+        $this->assertStringContainsString('est déjà actif', $this->say("active l'agent recouvrement")->json('reply.body'));
+
+        $this->assertSame(['agent_activated', 'agent_deactivated', 'agent_activated'], \App\Models\AgentAction::whereIn('action', ['agent_activated', 'agent_deactivated'])->orderBy('id')->pluck('action')->all());
+        $this->assertStringContainsString("Je ne trouve pas l'agent #99999", $this->say("active l'agent #99999")->json('reply.body'));
     }
 
     public function test_a_recruited_agent_reads_with_its_tools_then_reports_and_only_proposes_known_actions(): void

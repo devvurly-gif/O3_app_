@@ -98,11 +98,12 @@ class AgentStudio
         return $this->reply("Agents recrutés :\n\n{$lines}", suggestions: $suggestions);
     }
 
+    /** Allume ou éteint un agent, recruté ou du socle (« active l'agent #8 », « allume l'agent recouvrement »). */
     public function toggleAgent(User $admin, int $id, bool $activate): array
     {
-        $agent = Agent::where('kind', 'custom')->find($id);
+        $agent = Agent::find($id);
         if (!$agent) {
-            return $this->reply("Je ne trouve pas d'agent recruté #{$id}. Les agents du socle se règlent dans l'écran Activité des agents.", error: true);
+            return $this->reply("Je ne trouve pas l'agent #{$id}.", error: true);
         }
         if ($agent->is_active === $activate) {
             return $this->reply("L'agent « {$agent->name} » est déjà " . ($activate ? 'actif' : 'inactif') . '.');
@@ -118,8 +119,10 @@ class AgentStudio
         $this->log($agent->id, $activate ? 'agent_activated' : 'agent_deactivated', ['by' => $admin->name]);
 
         return $this->reply(
-            "Agent « {$agent->name} » " . ($activate ? 'activé' : 'désactivé') . '.' . ($activate ? ' Ses routines planifiées sont réactivées.' : ' Ses routines sont suspendues.'),
-            suggestions: $activate ? [['label' => 'Le lancer maintenant', 'text' => "lance l'agent #{$agent->id}"]] : [],
+            "Agent « {$agent->name} » " . ($activate ? 'activé' : 'désactivé') . '.' . ($agent->kind === 'custom'
+                ? ($activate ? ' Ses routines planifiées sont réactivées.' : ' Ses routines sont suspendues.')
+                : ($activate ? ' Il prépare des brouillons selon ses règles ; rien n\'est envoyé ni appliqué sans votre validation.' : ' Il ne prépare plus rien tant que vous ne le rallumez pas.')),
+            suggestions: $activate && $agent->kind === 'custom' ? [['label' => 'Le lancer maintenant', 'text' => "lance l'agent #{$agent->id}"]] : [],
         );
     }
 

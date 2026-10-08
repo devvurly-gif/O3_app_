@@ -435,6 +435,11 @@ class Orchestrator
         if ($this->hasScheduleWords($n) && preg_match('/\bagent\s*#\s*\d+/', $n) && preg_match('/\b(lance|execut|control|prepar|surveill|verifi|fais|demande)\w*/', $n)) {
             return ['routine_new', null];
         }
+        // Un agent du socle se désigne par son domaine : « allume l'agent recouvrement », « éteins l'agent marketing ».
+        if (preg_match('/\b(activ\w*|desactiv\w*|allum\w*|eteins|eteint\w*|arrete\w*|suspend\w*)\b.*\bagents?\b.*\b(achats|ventes|stocks|expedition|recouvrement|comptabilite|marketing)\b/', $n, $builtin)
+            && (($builtinId = Agent::where('domain', $builtin[2])->value('id')) !== null)) {
+            return [preg_match('/desactiv|eteins|eteint|arrete|suspend/', $n) ? 'agent_off' : 'agent_on', (int) $builtinId];
+        }
         if (($a = $id('agent')) !== null) {
             return match (true) {
                 (bool) preg_match('/desactiv|arrete|suspend|pause/', $n) => ['agent_off', $a],
