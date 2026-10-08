@@ -22,7 +22,7 @@ interface PlanFields {
   limits: Limits
   agents: boolean
 }
-interface PlanView { key: string; effective: PlanFields; defaults: PlanFields; overridden: boolean; tenants_count: number; updated_at: string | null }
+interface PlanView { key: string; effective: PlanFields; defaults: PlanFields; overridden: boolean; custom: boolean; tenants_count: number; updated_at: string | null }
 interface AddonView { key: string; effective: { name: string; price_month_cents: number }; defaults: { name: string; price_month_cents: number }; overridden: boolean }
 interface ChangeView { id: number; kind: string; key: string; action: string; by: string | null; tenants_concerned: number; at: string | null; before: Record<string, unknown>; after: Record<string, unknown> }
 interface Catalog { plans: PlanView[]; addons: AddonView[]; capabilities: Record<string, string>; core: string[]; changes: ChangeView[] }
@@ -122,6 +122,63 @@ async function resetPlan(plan: PlanView) {
   }
 }
 
+/** Nouvelle formule : on part d'une formule existante (contenu copié), on choisit un identifiant définitif et on ajuste. */
+const creating = ref(false)
+const newKey = ref('')
+const copyFrom = ref('pro')
+const newForm = reactive<PlanForm>(toForm({ name: '', tagline: '', price_month_cents: 0, price_year_cents: 0, setup_fee_cents: 0, features: [], limits: { users: null, pos_terminals: null, storage_gb: null }, agents: false }))
+const keyValid = computed(() => /^[a-z][a-z0-9_]{1,29}$/.test(newKey.value))
+
+function startCreate() {
+  const base = catalog.value?.plans.find((p) => p.key === copyFrom.value) ?? catalog.value?.plans[0]
+  if (base) Object.assign(newForm, toForm(base.effective), { name: '' })
+  newKey.value = ''
+  creating.value = true
+}
+
+function pickBase() {
+  const base = catalog.value?.plans.find((p) => p.key === copyFrom.value)
+  if (base) Object.assign(newForm, toForm(base.effective), { name: newForm.name })
+}
+
+function toggleNewFeature(feature: string) {
+  newForm.features = newForm.features.includes(feature) ? newForm.features.filter((f) => f !== feature) : [...newForm.features, feature]
+}
+
+async function createPlan() {
+  const invalid = [newForm.month, newForm.year, newForm.setup].some((v) => !Number.isFinite(toCents(v)) || toCents(v) < 0)
+  if (!keyValid.value || !newForm.name.trim() || invalid) {
+    toast.error('Identifiant (lettres minuscules, chiffres, _), nom et montants positifs sont attendus.')
+    return
+  }
+  if (!window.confirm(`Créer la formule « ${newForm.name.trim()} » (identifiant « ${newKey.value} », définitif) ?\n\nElle sera proposable à vos clients dès maintenant.`)) return
+  busy.value = 'new'
+  try {
+    await http.post('/central/plan-catalog/plans', { key: newKey.value, ...fromForm(newForm) })
+    toast.success('Formule créée.')
+    creating.value = false
+    await load()
+  } catch {
+    /* message déjà affiché */
+  } finally {
+    busy.value = ''
+  }
+}
+
+async function deletePlan(plan: PlanView) {
+  if (!window.confirm(`Supprimer la formule « ${plan.effective.name} » ? Cette action est refusée tant qu'un abonné l'utilise.`)) return
+  busy.value = plan.key
+  try {
+    await http.delete(`/central/plan-catalog/plans/${plan.key}`)
+    toast.success('Formule supprimée.')
+    await load()
+  } catch {
+    /* message déjà affiché (ex. : encore utilisée) */
+  } finally {
+    busy.value = ''
+  }
+}
+
 async function saveAddon(addon: AddonView) {
   const f = addonForms[addon.key]
   if (!f.name.trim() || !Number.isFinite(toCents(f.price)) || toCents(f.price) < 0) {
@@ -149,6 +206,8 @@ const addonDirty = (addon: AddonView) => {
 /** Résumé lisible d'une modification de l'historique. */
 function summarize(c: ChangeView): string {
   if (c.action === 'reset') return "Retour aux valeurs d'origine"
+  if (c.action === 'create') return 'Formule créée'
+  if (c.action === 'delete') return 'Formule supprimée'
   const labels: Record<string, string> = { name: 'nom', tagline: 'slogan', price_month_cents: 'prix mensuel', price_year_cents: 'prix annuel', setup_fee_cents: "frais d'installation", features: 'capacités', limits: 'quotas', agents: 'agents IA' }
   const parts: string[] = []
   for (const key of Object.keys(c.after)) {
@@ -166,17 +225,65 @@ const core = computed(() => (catalog.value ? Object.entries(catalog.value.capabi
 
 <template>
   <div class="space-y-6">
-    <div>
+    <div class="flex items-start justify-between gap-3">
+     <div>
       <h1 class="text-xl font-bold text-gray-900 dark:text-white">Formules et prix</h1>
       <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
         Personnalisez le contenu et les prix des packs. Montants en dirhams, hors taxes. Une modification ne touche jamais une facture déjà émise : les
         prochaines factures utilisent les nouveaux prix, et les capacités incluses sont mises à jour chez les clients de la formule la nuit suivante.
       </p>
+     </div>
+     <button v-if="catalog && !creating" type="button" class="shrink-0 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600" @click="startCreate">Nouvelle formule</button>
     </div>
+
+    <section v-if="catalog && creating" class="bg-white dark:bg-gray-800 rounded-xl border border-orange-300 p-5 space-y-4">
+      <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-200">Nouvelle formule</h2>
+      <div class="grid gap-3 sm:grid-cols-3">
+        <label class="block">
+          <span class="text-xs font-medium text-gray-500">Identifiant (définitif)</span>
+          <input v-model="newKey" maxlength="30" placeholder="pro_plus" class="mt-1 w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-transparent px-3 py-2 text-sm" />
+          <span v-if="newKey && !keyValid" class="text-[11px] text-red-600">Minuscules, chiffres et _ ; commence par une lettre.</span>
+        </label>
+        <label class="block">
+          <span class="text-xs font-medium text-gray-500">Nom affiché</span>
+          <input v-model="newForm.name" maxlength="40" placeholder="Pro Plus" class="mt-1 w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-transparent px-3 py-2 text-sm" />
+        </label>
+        <label class="block">
+          <span class="text-xs font-medium text-gray-500">Partir du contenu de</span>
+          <select v-model="copyFrom" class="mt-1 w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-transparent px-3 py-2 text-sm" @change="pickBase">
+            <option v-for="p in catalog.plans" :key="p.key" :value="p.key">{{ p.effective.name }}</option>
+          </select>
+        </label>
+      </div>
+      <label class="block">
+        <span class="text-xs font-medium text-gray-500">Slogan</span>
+        <input v-model="newForm.tagline" maxlength="160" class="mt-1 w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-transparent px-3 py-2 text-sm" />
+      </label>
+      <div class="grid grid-cols-3 gap-2">
+        <label class="block"><span class="text-xs font-medium text-gray-500">Mensuel (MAD HT)</span><input v-model="newForm.month" inputmode="decimal" class="mt-1 w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-transparent px-2 py-2 text-sm" /></label>
+        <label class="block"><span class="text-xs font-medium text-gray-500">Annuel (MAD HT)</span><input v-model="newForm.year" inputmode="decimal" class="mt-1 w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-transparent px-2 py-2 text-sm" /></label>
+        <label class="block"><span class="text-xs font-medium text-gray-500">Installation (MAD HT)</span><input v-model="newForm.setup" inputmode="decimal" class="mt-1 w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-transparent px-2 py-2 text-sm" /></label>
+      </div>
+      <div class="grid grid-cols-3 gap-2">
+        <label class="block"><span class="text-xs font-medium text-gray-500">Utilisateurs</span><input v-model="newForm.users" inputmode="numeric" placeholder="Illimité" class="mt-1 w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-transparent px-2 py-2 text-sm" /></label>
+        <label class="block"><span class="text-xs font-medium text-gray-500">Terminaux caisse</span><input v-model="newForm.pos" inputmode="numeric" placeholder="Illimité" class="mt-1 w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-transparent px-2 py-2 text-sm" /></label>
+        <label class="block"><span class="text-xs font-medium text-gray-500">Stockage (Go)</span><input v-model="newForm.storage" inputmode="numeric" placeholder="Illimité" class="mt-1 w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-transparent px-2 py-2 text-sm" /></label>
+      </div>
+      <div class="grid sm:grid-cols-2 gap-x-6 gap-y-1">
+        <label v-for="[key, label] in optional" :key="key" class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+          <input type="checkbox" :checked="newForm.features.includes(key)" @change="toggleNewFeature(key)" /> {{ label }}
+        </label>
+      </div>
+      <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300"><input v-model="newForm.agents" type="checkbox" /> Agents IA (ouvre le droit à l'option, une fois la formule payée)</label>
+      <div class="flex justify-end gap-2">
+        <button type="button" class="px-4 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700" @click="creating = false">Annuler</button>
+        <button type="button" class="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 disabled:opacity-40" :disabled="busy === 'new'" @click="createPlan">{{ busy === 'new' ? 'Création…' : 'Créer la formule' }}</button>
+      </div>
+    </section>
 
     <p v-if="loading" class="text-sm text-gray-400">Chargement…</p>
 
-    <div v-else-if="catalog" class="grid gap-5 lg:grid-cols-3">
+    <div v-else-if="catalog" class="grid gap-5 lg:grid-cols-2 xl:grid-cols-3">
       <section
         v-for="plan in catalog.plans"
         :key="plan.key"
@@ -187,7 +294,8 @@ const core = computed(() => (catalog.value ? Object.entries(catalog.value.capabi
             <p class="text-xs uppercase tracking-wide text-gray-400">{{ plan.key }}</p>
             <p class="text-xs text-gray-500 dark:text-gray-400">{{ plan.tenants_count }} client(s) sur cette formule</p>
           </div>
-          <span v-if="plan.overridden" class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">Modifiée</span>
+          <span v-if="plan.custom" class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-violet-100 text-violet-700">Personnalisée</span>
+          <span v-else-if="plan.overridden" class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">Modifiée</span>
         </div>
 
         <label class="block">
@@ -213,7 +321,7 @@ const core = computed(() => (catalog.value ? Object.entries(catalog.value.capabi
             <input v-model="forms[plan.key].setup" inputmode="decimal" class="mt-1 w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-transparent px-2 py-2 text-sm" />
           </label>
         </div>
-        <p class="text-[11px] text-gray-400 -mt-2">Valeur d'origine : {{ mad(plan.defaults.price_month_cents) }} / {{ mad(plan.defaults.price_year_cents) }} / {{ mad(plan.defaults.setup_fee_cents) }} MAD</p>
+        <p v-if="!plan.custom" class="text-[11px] text-gray-400 -mt-2">Valeur d'origine : {{ mad(plan.defaults.price_month_cents) }} / {{ mad(plan.defaults.price_year_cents) }} / {{ mad(plan.defaults.setup_fee_cents) }} MAD</p>
 
         <div class="grid grid-cols-3 gap-2">
           <label class="block">
@@ -249,7 +357,16 @@ const core = computed(() => (catalog.value ? Object.entries(catalog.value.capabi
 
         <div class="flex items-center justify-between pt-1">
           <button
-            v-if="plan.overridden"
+            v-if="plan.custom"
+            type="button"
+            class="text-xs text-gray-500 hover:text-red-600 underline disabled:opacity-50"
+            :disabled="busy === plan.key"
+            @click="deletePlan(plan)"
+          >
+            Supprimer
+          </button>
+          <button
+            v-else-if="plan.overridden"
             type="button"
             class="text-xs text-gray-500 hover:text-red-600 underline disabled:opacity-50"
             :disabled="busy === plan.key"

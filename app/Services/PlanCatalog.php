@@ -68,7 +68,9 @@ class PlanCatalog
         $addons = $defaults['addons'];
         foreach ($overrides as $o) {
             $data = (array) $o->data;
-            if ($o->kind === 'plan' && isset($plans[$o->item_key])) {
+            if ($o->kind === 'plan' && !isset($plans[$o->item_key]) && !empty($data['custom'])) {
+                $plans[$o->item_key] = self::mergePlan(['name' => $o->item_key, 'tagline' => '', 'price_month_cents' => 0, 'price_year_cents' => 0, 'setup_fee_cents' => 0, 'features' => self::CORE, 'limits' => ['users' => null, 'pos_terminals' => 0, 'storage_gb' => null], 'custom' => true], $data);
+            } elseif ($o->kind === 'plan' && isset($plans[$o->item_key])) {
                 $plans[$o->item_key] = self::mergePlan($plans[$o->item_key], $data);
             } elseif ($o->kind === 'addon' && isset($addons[$o->item_key])) {
                 $addons[$o->item_key] = array_merge($addons[$o->item_key], array_intersect_key($data, array_flip(self::ADDON_FIELDS)));
@@ -151,6 +153,7 @@ class PlanCatalog
                 'effective'      => $this->editable($key, $plan, true),
                 'defaults'       => $this->editable($key, $defaults['plans'][$key] ?? $plan, false),
                 'overridden'     => $override !== null,
+                'custom'         => !empty($plan['custom']),                                  // créée depuis l'éditeur : pas de valeur d'origine, supprimable
                 'tenants_count'  => (int) ($counts[$key] ?? 0),
                 'updated_at'     => $override?->updated_at?->toIso8601String(),
             ];
@@ -209,11 +212,63 @@ class PlanCatalog
         $before = $this->editable($key, (array) config("plans.plans.{$key}"), true);
         $data = array_intersect_key($input, array_flip(self::PLAN_FIELDS));
         $data['features'] = array_values(array_unique(array_merge(self::CORE, array_intersect((array) ($data['features'] ?? []), array_keys(self::CAPABILITIES)))));
+        if (!empty(config("plans.plans.{$key}.custom"))) {
+            $data['custom'] = true;                                                      // sans ce drapeau, la formule créée disparaîtrait au prochain démarrage
+        }
 
         PlanOverride::updateOrCreate(['kind' => 'plan', 'item_key' => $key], ['data' => $data, 'updated_by' => $by?->id]);
         self::refresh();
 
         return $this->logged('plan', $key, 'update', $before, $by);
+    }
+
+    /**
+     * Crée une nouvelle formule (« Pro Plus »…) à partir d'un contenu déjà rempli (copie d'une formule existante, ajustée).
+     * La clé est définitive (elle est écrite sur les abonnements et les factures) ; le nom, lui, reste modifiable.
+     *
+     * @param array<string, mixed> $input name, tagline, prix, features, limits, agents (déjà validés)
+     * @return array<string, mixed>
+     */
+    public function createPlan(string $key, array $input, ?User $by): array
+    {
+        $data = array_intersect_key($input, array_flip(self::PLAN_FIELDS));
+        $data['features'] = array_values(array_unique(array_merge(self::CORE, array_intersect((array) ($data['features'] ?? []), array_keys(self::CAPABILITIES)))));
+        $data['custom'] = true;
+
+        PlanOverride::updateOrCreate(['kind' => 'plan', 'item_key' => $key], ['data' => $data, 'updated_by' => $by?->id]);
+        self::refresh();
+
+        $after = $this->editable($key, (array) config("plans.plans.{$key}"), true);
+        $this->record('plan', $key, 'create', [], $after, $by, 0);
+
+        return $after;
+    }
+
+    /** Une clé est utilisable si elle est neuve : ni formule existante, ni ancien nom (alias) d'une formule. */
+    public static function keyIsFree(string $key): bool
+    {
+        return !array_key_exists($key, (array) config('plans.plans', [])) && !array_key_exists($key, (array) config('plans.legacy_aliases', []));
+    }
+
+    /** Supprime une formule créée depuis l'éditeur ; l'appelant a vérifié qu'aucun abonné ne l'utilise. */
+    public function deletePlan(string $key, ?User $by): void
+    {
+        $before = $this->editable($key, (array) config("plans.plans.{$key}"), true);
+        PlanOverride::where('kind', 'plan')->where('item_key', $key)->delete();
+        self::refresh();
+        $this->record('plan', $key, 'delete', $before, [], $by, 0);
+    }
+
+    /** Combien d'abonnements ou de demandes de changement pointent sur cette formule. */
+    public function usageOf(string $key): int
+    {
+        $requested = 0;
+        foreach (Tenant::query()->get() as $tenant) {                                       // `requested_plan` vit dans la colonne JSON : pas de WHERE possible
+            /** @var Tenant $tenant */
+            $requested += $tenant->requested_plan === $key ? 1 : 0;
+        }
+
+        return Tenant::where('plan', $key)->count() + $requested;
     }
 
     /** Supprime les modifications d'une formule : elle retrouve ses valeurs du code. @return array<string, mixed> */

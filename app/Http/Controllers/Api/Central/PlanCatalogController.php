@@ -27,11 +27,36 @@ class PlanCatalogController extends Controller
         return response()->json(['data' => $this->catalog->view() + ['changes' => $this->catalog->changes(30)]]);
     }
 
+    /** POST /api/central/plan-catalog/plans : nouvelle formule (« Pro Plus »), clé définitive. */
+    public function createPlan(Request $request): JsonResponse
+    {
+        $data = $request->validate(['key' => ['required', 'string', 'regex:/^[a-z][a-z0-9_]{1,29}$/']] + $this->planRules());
+        abort_unless(PlanCatalog::keyIsFree($data['key']), 422, 'Cet identifiant est déjà pris par une formule ou un ancien nom de formule.');
+
+        $plan = $this->catalog->createPlan($data['key'], $data, $request->user());
+
+        return response()->json(['message' => 'Formule créée. Elle est proposable dès maintenant à vos clients.', 'data' => $plan], 201);
+    }
+
     /** PUT /api/central/plan-catalog/plans/{key} */
     public function updatePlan(Request $request, string $key): JsonResponse
     {
         $this->ensurePlan($key);
-        $data = $request->validate([
+        $data = $request->validate($this->planRules());
+
+        $plan = $this->catalog->updatePlan($key, $data, $request->user());
+
+        return response()->json([
+            'message' => 'Formule enregistrée. Les factures déjà émises ne changent pas ; les prochaines utiliseront ces prix.',
+            'data'    => $plan,
+            'tenants' => Tenant::where('plan', $key)->count(),
+        ]);
+    }
+
+    /** @return array<string, array<int, mixed>> */
+    private function planRules(): array
+    {
+        return [
             'name'                  => ['required', 'string', 'max:40'],
             'tagline'               => ['nullable', 'string', 'max:160'],
             'price_month_cents'     => ['required', 'integer', 'min:0', 'max:100000000'],
@@ -44,21 +69,20 @@ class PlanCatalogController extends Controller
             'limits.pos_terminals'  => ['nullable', 'integer', 'min:0', 'max:100000'],
             'limits.storage_gb'     => ['nullable', 'integer', 'min:1', 'max:100000'],
             'agents'                => ['required', 'boolean'],
-        ]);
-
-        $plan = $this->catalog->updatePlan($key, $data, $request->user());
-
-        return response()->json([
-            'message' => 'Formule enregistrée. Les factures déjà émises ne changent pas ; les prochaines utiliseront ces prix.',
-            'data'    => $plan,
-            'tenants' => Tenant::where('plan', $key)->count(),
-        ]);
+        ];
     }
 
     /** DELETE /api/central/plan-catalog/plans/{key} : retour aux valeurs livrées avec le code. */
     public function resetPlan(Request $request, string $key): JsonResponse
     {
         $this->ensurePlan($key);
+        if (config("plans.plans.{$key}.custom")) {
+            $used = $this->catalog->usageOf($key);
+            abort_if($used > 0, 422, "Cette formule est utilisée par {$used} abonnement(s) ou demande(s) en cours : changez d'abord leur formule, puis supprimez-la.");
+            $this->catalog->deletePlan($key, $request->user());
+
+            return response()->json(['message' => 'Formule supprimée.', 'data' => null]);
+        }
 
         return response()->json(['message' => 'Formule remise à ses valeurs d\'origine.', 'data' => $this->catalog->resetPlan($key, $request->user())]);
     }

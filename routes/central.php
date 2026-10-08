@@ -48,6 +48,7 @@ Route::prefix('api/central')->middleware(['api', 'auth:sanctum', 'role:admin'])-
 
     // Personnalisation des formules, prix et options depuis la gestion des tenants.
     Route::get('plan-catalog',                    [PlanCatalogController::class, 'index']);
+    Route::post('plan-catalog/plans',              [PlanCatalogController::class, 'createPlan']);
     Route::put('plan-catalog/plans/{key}',        [PlanCatalogController::class, 'updatePlan']);
     Route::delete('plan-catalog/plans/{key}',     [PlanCatalogController::class, 'resetPlan']);
     Route::put('plan-catalog/addons/{key}',       [PlanCatalogController::class, 'updateAddon']);

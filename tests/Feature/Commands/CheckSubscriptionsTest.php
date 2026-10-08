@@ -5,7 +5,10 @@ namespace Tests\Feature\Commands;
 use App\Enums\TenantStatus;
 use App\Mail\SubscriptionReminderMail;
 use App\Models\Tenant;
+use App\Models\User;
+use App\Notifications\TenantPaymentLate;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 use Tests\Concerns\RefreshTenantDatabase;
 use Tests\TestCase;
 
@@ -177,5 +180,52 @@ class CheckSubscriptionsTest extends TestCase
 
         $this->assertSame(TenantStatus::Active, $tenant->refresh()->currentStatus());
         Mail::assertNothingSent();
+    }
+    // ── Alerte au super-administrateur ───────────────────────────
+
+    public function test_the_admin_is_alerted_when_a_paying_subscriber_falls_late_and_never_twice(): void
+    {
+        Notification::fake();
+        $admin = User::factory()->admin()->create();
+        $cashier = User::factory()->cashier()->create();
+        $this->tenant(['subscription_ends_at' => now()->subDay(), 'agents_enabled' => true]);
+
+        $this->artisan('subscriptions:check')->assertSuccessful();
+
+        Notification::assertSentTo($admin, TenantPaymentLate::class, function (TenantPaymentLate $n) use ($admin) {
+            $mail = $n->toMail($admin)->render();
+
+            return str_contains((string) $mail, 'agents IA') && str_contains($n->toArray($admin)['title'], 'Acme') && $n->toArray($admin)['agents'] === true;
+        });
+        Notification::assertNotSentTo($cashier, TenantPaymentLate::class);
+
+        $this->artisan('subscriptions:check')->assertSuccessful();                        // le lendemain, rien de nouveau : pas de seconde alerte
+        Notification::assertSentToTimes($admin, TenantPaymentLate::class, 1);
+    }
+
+    public function test_the_alert_is_silent_for_a_finished_trial_and_in_dry_run_and_never_reaches_the_client(): void
+    {
+        Notification::fake();
+        $admin = User::factory()->admin()->create();
+        $this->tenant(['id' => 'essai', 'status' => TenantStatus::Trial, 'subscription_ends_at' => now()->subDay()]);
+        $this->tenant(['id' => 'impaye', 'email' => 'impaye@x.ma', 'subscription_ends_at' => now()->subDay()]);
+
+        $this->artisan('subscriptions:check --dry-run')->assertSuccessful();
+        Notification::assertNothingSent();
+
+        $this->artisan('subscriptions:check')->assertSuccessful();
+        Notification::assertSentToTimes($admin, TenantPaymentLate::class, 1);             // « impaye » seulement, pas l'essai terminé
+        Notification::assertNotSentTo(new \Illuminate\Notifications\AnonymousNotifiable(), TenantPaymentLate::class);
+    }
+
+    public function test_a_suspension_alerts_the_admin_and_says_the_agents_are_closed(): void
+    {
+        Notification::fake();
+        $admin = User::factory()->admin()->create();
+        $this->tenant(['status' => TenantStatus::PastDue, 'subscription_ends_at' => now()->subDays(40), 'agents_enabled' => false]);
+
+        $this->artisan('subscriptions:check')->assertSuccessful();
+
+        Notification::assertSentTo($admin, TenantPaymentLate::class, fn (TenantPaymentLate $n) => $n->toArray($admin)['status'] === 'suspended' && $n->toArray($admin)['agents'] === false);
     }
 }

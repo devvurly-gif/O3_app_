@@ -15,7 +15,6 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class TenantController extends Controller
 {
@@ -824,7 +823,7 @@ class TenantController extends Controller
      *
      * Optional query: ?doc=fiche  → serves the intake form instead.
      */
-    public function downloadContract(Request $request, Tenant $tenant): BinaryFileResponse
+    public function downloadContract(Request $request, Tenant $tenant): \Symfony\Component\HttpFoundation\Response
     {
         $which = $request->query('doc') === 'fiche' ? 'fiche' : 'contrat';
         $file = $which === 'fiche'
@@ -833,13 +832,18 @@ class TenantController extends Controller
 
         abort_unless(is_file($file), 404, 'Document non disponible. Régénérer via docs/legal/build/md_to_docx.py.');
 
+        // Le contrat part avec l'Annexe 1 remplie des prix et du périmètre EN VIGUEUR de la formule du client.
+        $filled = $which === 'contrat' ? app(\App\Services\ContractAnnex::class)->contractFor($tenant) : null;
+
         $slug = Str::slug($tenant->name ?: $tenant->id);
         $stem = $which === 'fiche' ? 'fiche-souscription' : 'contrat-services';
         $name = "{$stem}-{$slug}.docx";
 
-        return response()->download($file, $name, [
-            'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        ]);
+        $headers = ['Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+
+        return $filled !== null
+            ? response()->streamDownload(function () use ($filled) { echo $filled; }, $name, $headers)
+            : response()->download($file, $name, $headers);
     }
 
     /**

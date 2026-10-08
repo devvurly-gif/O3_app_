@@ -61,7 +61,11 @@ class TenantContractMail extends Mailable
         $files = [];
 
         $contract = base_path('docs/legal/contrat-services-saas.docx');
-        if (is_file($contract)) {
+        $filled = app(\App\Services\ContractAnnex::class)->contractFor($this->tenant);     // Annexe 1 aux prix en vigueur
+        if ($filled !== null) {
+            $files[] = Attachment::fromData(fn () => $filled, 'contrat-services-saas.docx')
+                ->withMime('application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+        } elseif (is_file($contract)) {
             $files[] = Attachment::fromPath($contract)
                 ->as('contrat-services-saas.docx')
                 ->withMime('application/vnd.openxmlformats-officedocument.wordprocessingml.document');

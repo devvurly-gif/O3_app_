@@ -7,11 +7,14 @@ namespace App\Console\Commands;
 use App\Enums\TenantStatus;
 use App\Mail\SubscriptionReminderMail;
 use App\Models\Tenant;
+use App\Models\User;
+use App\Notifications\TenantPaymentLate;
 use App\Services\PlanService;
 use App\Services\SubscriptionService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 
 /**
  * Fait avancer les abonnements dans le temps : bascule les statuts échus et
@@ -54,6 +57,7 @@ class CheckSubscriptions extends Command
         $reminders   = 0;
 
         foreach ($tenants as $tenant) {
+            /** @var Tenant $tenant */
             $before = $tenant->currentStatus();
 
             if (!$dryRun) {
@@ -70,6 +74,11 @@ class CheckSubscriptions extends Command
                     $before->value,
                     $after->value
                 ));
+
+                // Un essai qui s'achève n'est pas un impayé : on n'alerte que pour un abonné payant qui n'a pas réglé, ou une suspension.
+                if (!$dryRun && ($after === TenantStatus::Suspended || ($after === TenantStatus::PastDue && $before === TenantStatus::Active))) {
+                    $this->alertAdmins($tenant, $after, $plans);
+                }
             }
 
             if ($this->sendReminderIfDue($tenant, $plans, $dryRun)) {
@@ -86,6 +95,29 @@ class CheckSubscriptions extends Command
         ));
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Prévient les super-administrateurs (jamais le client) qu'un abonné passe en retard de paiement ou en suspension.
+     * Une seule fois par changement de statut : la commande ne parle que des transitions. Un échec d'envoi n'arrête pas le balayage.
+     */
+    private function alertAdmins(Tenant $tenant, TenantStatus $status, PlanService $plans): void
+    {
+        try {
+            $admins = User::query()->where('is_active', true)->whereHas('role', fn ($q) => $q->where('name', 'admin'))->get();
+            Notification::send($admins, new TenantPaymentLate(
+                tenantId: (string) $tenant->id,
+                tenantName: (string) $tenant->name,
+                planName: (string) ($plans->get((string) $tenant->plan)['name'] ?? $tenant->plan),
+                status: $status->value,
+                endedOn: $tenant->subscription_ends_at?->format('d/m/Y') ?? '—',
+                agentsWereOn: $tenant->agentsEnabled(),
+                url: url('/central/tenants/' . $tenant->id),
+            ));
+            $this->line(sprintf('  %-20s alerte envoyée à %d administrateur(s)', $tenant->id, $admins->count()));
+        } catch (\Throwable $e) {
+            Log::error('TenantPaymentLate alert failed', ['tenant_id' => $tenant->id, 'error' => $e->getMessage()]);
+        }
     }
 
     /**

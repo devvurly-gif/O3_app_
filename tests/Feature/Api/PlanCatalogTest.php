@@ -177,4 +177,60 @@ class PlanCatalogTest extends TestCase
         $api->deleteJson('/api/central/plan-catalog/plans/pro')->assertForbidden();
         $this->assertSame(0, PlanOverride::count());
     }
+    public function test_a_new_formula_can_be_created_used_edited_and_deleted_only_when_unused(): void
+    {
+        $api = $this->actingAs($this->admin, 'sanctum');
+        $payload = $this->payload(['name' => 'Pro Plus', 'price_month_cents' => 89_000, 'agents' => true]) + ['key' => 'pro_plus'];
+
+        $api->postJson('/api/central/plan-catalog/plans', $payload)->assertCreated()->assertJsonPath('data.name', 'Pro Plus');
+
+        $this->assertSame('Pro Plus', config('plans.plans.pro_plus.name'));
+        $this->assertSame(89_000, config('plans.plans.pro_plus.price_month_cents'));
+        $this->assertContains('pro_plus', config('plans.agents_plans'));                      // « agents » coché : la nouvelle formule ouvre le droit
+        $this->assertSame(['essentiel', 'pro', 'business', 'pro_plus'], array_keys(config('plans.plans')));
+        $this->assertSame('create', PlanChange::latest('id')->first()->action);
+
+        // survit au redémarrage (la fusion repart des valeurs du code puis relit la base)
+        PlanCatalog::refresh();
+        $this->assertSame('Pro Plus', config('plans.plans.pro_plus.name'));
+
+        // modifiable : le drapeau « créée ici » est conservé
+        $this->save('pro_plus', $this->payload(['name' => 'Pro Plus 2', 'price_month_cents' => 95_000]))->assertOk();
+        PlanCatalog::refresh();
+        $this->assertSame('Pro Plus 2', config('plans.plans.pro_plus.name'));
+
+        // un abonné la prend : la suppression est refusée avec la raison
+        $tenant = new Tenant();
+        Tenant::withoutEvents(function () use ($tenant) {
+            $tenant->id = 'pp'; $tenant->name = 'PP'; $tenant->email = 'pp@t.ma'; $tenant->plan = 'pro_plus'; $tenant->status = TenantStatus::Active; $tenant->is_active = true;
+            $tenant->save();
+        });
+        $api->deleteJson('/api/central/plan-catalog/plans/pro_plus')->assertStatus(422);
+        $this->assertNotNull(config('plans.plans.pro_plus'));
+
+        Tenant::withoutEvents(fn () => $tenant->forceFill(['plan' => 'pro'])->save());
+        $api->deleteJson('/api/central/plan-catalog/plans/pro_plus')->assertOk();
+        $this->assertNull(config('plans.plans.pro_plus'));
+        $this->assertSame('delete', PlanChange::latest('id')->first()->action);
+    }
+
+    public function test_a_new_formula_key_must_be_well_formed_and_free(): void
+    {
+        $api = $this->actingAs($this->admin, 'sanctum');
+        $base = $this->payload(['name' => 'X']);
+
+        $api->postJson('/api/central/plan-catalog/plans', $base + ['key' => 'pro'])->assertStatus(422);          // déjà une formule
+        $api->postJson('/api/central/plan-catalog/plans', $base + ['key' => 'starter'])->assertStatus(422);      // ancien nom d'une formule
+        $api->postJson('/api/central/plan-catalog/plans', $base + ['key' => 'Pro Plus'])->assertStatus(422);     // forme invalide
+        $api->postJson('/api/central/plan-catalog/plans', $base + ['key' => '9plus'])->assertStatus(422);
+        $api->postJson('/api/central/plan-catalog/plans', $base)->assertStatus(422);
+        $this->assertSame(0, PlanOverride::count());
+    }
+
+    public function test_the_core_capabilities_are_always_in_a_new_formula(): void
+    {
+        $this->actingAs($this->admin, 'sanctum')->postJson('/api/central/plan-catalog/plans', $this->payload(['features' => ['pos']]) + ['key' => 'mini'])->assertCreated();
+
+        $this->assertEqualsCanonicalizing(['ventes', 'achats', 'stock', 'tiers', 'documents', 'tresorerie', 'pos'], config('plans.plans.mini.features'));
+    }
 }
