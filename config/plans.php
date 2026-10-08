@@ -38,6 +38,18 @@ return [
     */
     'trial_plan' => 'pro',
 
+    /*
+    |----------------------------------------------------------------------
+    | Formules qui ouvrent droit aux agents IA
+    |----------------------------------------------------------------------
+    |
+    | Les agents IA (orchestrateur, routines, relances préparées…) ne sont proposés qu'à ces formules, une fois
+    | l'abonnement PAYÉ (statut « actif »), et seulement si le super-administrateur allume l'option « Agents IA » du
+    | tenant depuis la gestion des tenants : c'est cet acte qui installe le socle des agents (AgentsProvisioning).
+    |
+    */
+    'agents_plans' => ['pro', 'business'],
+
     'trial_days' => 14,
 
     /*

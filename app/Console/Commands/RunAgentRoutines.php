@@ -27,7 +27,7 @@ class RunAgentRoutines extends Command
     public function handle(RoutineRunner $runner): int
     {
         return $this->runForEachTenant(function (Tenant $tenant) use ($runner) {
-            if (!$tenant->agentsEnabled() || !Schema::hasTable('agent_routines')) {
+            if (!$tenant->agentsUsable() || !Schema::hasTable('agent_routines')) {
                 return self::SUCCESS;
             }
 

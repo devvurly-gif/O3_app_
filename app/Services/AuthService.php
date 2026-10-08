@@ -100,7 +100,7 @@ class AuthService
         $modules = $this->tenantFeatures();
         $tenant  = $this->tenant();
 
-        if ($tenant && $tenant->agentsEnabled()) {
+        if ($tenant && $tenant->agentsUsable()) {
             $modules[] = 'agents';
         }
 

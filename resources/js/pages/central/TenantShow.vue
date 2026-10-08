@@ -114,7 +114,10 @@ async function toggleFeature(feature: string, value: boolean) {
     }
     const label = labels[feature] ?? feature
     toast.success(`${label} ${value ? 'activé' : 'désactivé'}.`)
-  } catch { /* interceptor */ }
+  } catch {
+    /* message déjà affiché par l'intercepteur ; on relit le tenant pour que l'interrupteur reprenne son état réel */
+    await loadTenant()
+  }
   saving.value = false
 }
 
@@ -687,26 +690,27 @@ function getPlanColor(plan: string) {
             </label>
           </div>
 
-          <!-- Agents IA Toggle : actif par défaut, indépendant de la formule -->
+          <!-- Agents IA : réservé aux formules Pro et Business payées ; l'allumer installe le socle des agents chez le client -->
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-lg flex items-center justify-center" :class="tenant.agents_enabled !== false ? 'bg-violet-100 dark:bg-violet-900/30' : 'bg-gray-100 dark:bg-gray-700'">
-                <svg :class="['w-5 h-5', tenant.agents_enabled !== false ? 'text-violet-600 dark:text-violet-400' : 'text-gray-400']" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <div class="w-10 h-10 rounded-lg flex items-center justify-center" :class="tenant.agents_enabled ? 'bg-violet-100 dark:bg-violet-900/30' : 'bg-gray-100 dark:bg-gray-700'">
+                <svg :class="['w-5 h-5', tenant.agents_enabled ? 'text-violet-600 dark:text-violet-400' : 'text-gray-400']" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
                 </svg>
               </div>
               <div>
                 <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Agents IA</p>
-                <p class="text-xs text-gray-400 dark:text-gray-500">Orchestrateur, routines, ordres et activité des agents. Désactivé : menus masqués, API fermée, routines à l'arrêt.</p>
+                <p class="text-xs text-gray-400 dark:text-gray-500">Orchestrateur, routines, ordres et activité des agents. Réservé aux formules Pro et Business payées : l'allumer installe le socle des agents chez le client ; l'éteindre ferme l'accès sans rien supprimer.</p>
+                <p v-if="!tenant.agents_available" class="text-xs font-medium text-amber-600 dark:text-amber-400 mt-1">{{ tenant.agents_unavailable_reason }}</p>
               </div>
             </div>
             <label class="relative inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"
-                :checked="tenant.agents_enabled !== false"
-                @change="toggleFeature('agents_enabled', tenant.agents_enabled === false)"
+                :checked="!!tenant.agents_enabled"
+                @change="toggleFeature('agents_enabled', !tenant.agents_enabled)"
                 class="sr-only peer"
-                :disabled="saving"
+                :disabled="saving || (!tenant.agents_enabled && !tenant.agents_available)"
               />
               <div class="w-11 h-6 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-violet-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 dark:after:border-gray-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-600"></div>
             </label>

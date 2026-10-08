@@ -30,7 +30,7 @@ class AgentAccountsTest extends TestCase
         parent::setUp();
         $this->seed(AgentFoundationSeeder::class);
         $this->admin = User::factory()->admin()->create();
-        $this->fakeTenant();
+        $this->fakeTenant(['plan' => 'pro', 'status' => \App\Enums\TenantStatus::Active, 'agents_enabled' => true]);          // un client Pro payé, option « Agents IA » allumée
     }
 
     private function say(string $text): \Illuminate\Testing\TestResponse

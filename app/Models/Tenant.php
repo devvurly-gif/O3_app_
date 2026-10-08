@@ -37,7 +37,7 @@ use Stancl\Tenancy\Database\Concerns\HasDomains;
  * @property bool        $imei_enabled          Suivi IMEI
  * @property bool        $paiement_bl_enabled   Règlement sur bon de livraison
  * @property bool        $ocr_import_enabled    Import OCR de factures fournisseur
- * @property bool|null   $agents_enabled        Agents IA et orchestrateur ; absent = actif (voir agentsEnabled())
+ * @property bool|null   $agents_enabled        Option « Agents IA » allumée par le super-administrateur ; absent = éteinte (voir agentsUsable())
  * @property array|null  $feature_overrides     Dérogations à la formule, par capacité
  * @property string|null $requested_plan        Formule demandée par le client, en attente de règlement
  * @property string|null $requested_billing_period
@@ -108,17 +108,25 @@ class Tenant extends BaseTenant implements TenantWithDatabase
         return TenantStatus::tryFrom((string) $status) ?? TenantStatus::Trial;
     }
 
-    /**
-     * Les agents IA (orchestrateur, routines, ordres, activité) sont-ils ouverts à ce client ?
-     *
-     * Interrupteur du super-administrateur, indépendant de la formule : un tenant qui n'a jamais été touché a la
-     * valeur absente, donc ACTIF — on ne retire rien à un client existant en déployant cette option.
-     */
+    /** L'option « Agents IA » a-t-elle été allumée pour ce client ? Éteinte tant que le super-administrateur ne l'a pas allumée. */
     public function agentsEnabled(): bool
     {
-        $value = $this->getAttribute('agents_enabled');
+        return filter_var($this->getAttribute('agents_enabled'), FILTER_VALIDATE_BOOLEAN);
+    }
 
-        return $value === null || filter_var($value, FILTER_VALIDATE_BOOLEAN);
+    /** La formule et le paiement donnent-ils droit aux agents IA (Pro ou Business, abonnement payé) ? */
+    public function agentsAvailable(): bool
+    {
+        return app(\App\Services\Agents\AgentsProvisioning::class)->unavailableReason($this) === null;
+    }
+
+    /**
+     * Les agents IA (orchestrateur, routines, ordres, activité) sont-ils réellement ouverts à ce client ?
+     * Il faut l'option allumée ET le droit (formule Pro/Business payée) : un abonnement qui s'interrompt referme les agents.
+     */
+    public function agentsUsable(): bool
+    {
+        return $this->agentsEnabled() && $this->agentsAvailable();
     }
 
     public function isOnTrial(): bool

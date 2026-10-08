@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Central;
 use App\Http\Controllers\Controller;
 use App\Mail\TenantContractMail;
 use App\Models\Tenant;
+use App\Services\Agents\AgentsProvisioning;
 use App\Services\PlanService;
 use App\Services\ProductScraperService;
 use App\Services\SubscriptionService;
@@ -21,7 +22,21 @@ class TenantController extends Controller
     public function __construct(
         private readonly PlanService $plans,
         private readonly SubscriptionService $subscriptions,
+        private readonly AgentsProvisioning $agents,
     ) {
+    }
+
+    /**
+     * Le tenant tel que l'écran de gestion le lit, avec ce qu'il faut pour l'option « Agents IA » : droit (formule Pro ou
+     * Business payée) et raison de l'indisponibilité. Calculé ici : jamais écrit dans la colonne JSON du tenant.
+     *
+     * @return array<string, mixed>
+     */
+    private function present(Tenant $tenant): array
+    {
+        $reason = $this->agents->unavailableReason($tenant);
+
+        return array_merge($tenant->toArray(), ['agents_enabled' => $tenant->agentsEnabled(), 'agents_available' => $reason === null, 'agents_unavailable_reason' => $reason]);
     }
 
     /**
@@ -59,11 +74,13 @@ class TenantController extends Controller
      */
     public function index(): JsonResponse
     {
-        $tenants = Tenant::with('domains')
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $data = [];
+        foreach (Tenant::with('domains')->orderBy('created_at', 'desc')->get() as $tenant) {
+            /** @var Tenant $tenant */
+            $data[] = $this->present($tenant);
+        }
 
-        return response()->json(['data' => $tenants]);
+        return response()->json(['data' => $data]);
     }
 
     /**
@@ -72,7 +89,7 @@ class TenantController extends Controller
     public function show(Tenant $tenant): JsonResponse
     {
         return response()->json([
-            'data' => $tenant->load('domains'),
+            'data' => $this->present($tenant->load('domains')),
         ]);
     }
 
@@ -204,6 +221,13 @@ class TenantController extends Controller
             'agents_enabled'      => 'sometimes|boolean',
         ]);
 
+        // « Agents IA » : refusé avant toute écriture si la formule (Pro/Business) ou le paiement ne le permettent pas.
+        $agentsRequested = array_key_exists('agents_enabled', $validated) ? (bool) $validated['agents_enabled'] : null;
+        if ($agentsRequested === true && ($reason = $this->agents->unavailableReason($tenant, $validated['plan'] ?? null)) !== null) {
+            return response()->json(['message' => $reason, 'errors' => ['agents_enabled' => [$reason]]], 422);
+        }
+        unset($validated['agents_enabled']);                                        // traité plus bas : installation du socle, pas une simple valeur
+
         // Generate ecom API key if enabling ecom for the first time
         if (($validated['ecom_enabled'] ?? false) && !$tenant->ecom_api_key) {
             $tenant->ecom_api_key = 'ecom_' . bin2hex(random_bytes(20));
@@ -269,6 +293,18 @@ class TenantController extends Controller
 
         $this->plans->applyTo($tenant, $plan);
 
+        // Allumer l'option installe le socle des agents dans la base du client ; l'éteindre ne supprime rien.
+        $agentsInstall = null;
+        if ($agentsRequested === true) {
+            try {
+                $agentsInstall = $this->agents->enable($tenant, $validated['plan'] ?? null);
+            } catch (\DomainException $e) {
+                return response()->json(['message' => $e->getMessage(), 'errors' => ['agents_enabled' => [$e->getMessage()]]], 422);
+            }
+        } elseif ($agentsRequested === false) {
+            $this->agents->disable($tenant);
+        }
+
         // Sync tenant-side settings & seed POS terminal when toggling pos_enabled.
         // (Feature gating itself reads tenant flags directly — no in-tenant module table.)
         $syncNeeded = array_key_exists('pos_enabled', $validated)
@@ -296,8 +332,9 @@ class TenantController extends Controller
         }
 
         return response()->json([
-            'message' => 'Tenant mis à jour.',
-            'data'    => $tenant->load('domains'),
+            'message' => 'Tenant mis à jour.' . ($agentsInstall !== null ? " Agents IA activés : socle installé ({$agentsInstall['total']} agents, dont {$agentsInstall['installed']} créé(s))." : ''),
+            'agents'  => $agentsInstall,
+            'data'    => $this->present($tenant->load('domains')),
         ]);
     }
 

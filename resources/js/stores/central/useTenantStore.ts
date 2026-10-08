@@ -18,6 +18,9 @@ export interface Tenant {
   variants_enabled: boolean
   imei_enabled: boolean
   agents_enabled?: boolean | null
+  /** Droit aux agents IA : formule Pro ou Business, abonnement payé (calculé par le serveur). */
+  agents_available?: boolean
+  agents_unavailable_reason?: string | null
   ecom_api_key?: string
   trial_ends_at: string | null
   created_at: string
