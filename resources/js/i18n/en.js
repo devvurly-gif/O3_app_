@@ -218,6 +218,7 @@ export default {
     central: 'Administration',
     tenants: 'Tenants',
     tenantCreate: 'New tenant',
+    plans: 'Plans and prices',
     favorites: 'Favorites',
     sections: 'Sections',
     search: 'Search',

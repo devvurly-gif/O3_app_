@@ -218,6 +218,7 @@ export default {
     central: 'Administration',
     tenants: 'Gestion clients',
     tenantCreate: 'Nouveau client',
+    plans: 'Formules et prix',
     favorites: 'Favoris',
     sections: 'Sections',
     search: 'Rechercher',

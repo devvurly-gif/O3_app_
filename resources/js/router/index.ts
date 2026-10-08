@@ -326,6 +326,11 @@ const routes: RouteRecordRaw[] = [
     meta: { layout: 'app', title: 'Gestion Clients', breadcrumb: 'Clients', adminOnly: true },
   },
   {
+    path: '/central/plans',
+    component: () => import('../pages/central/PlanCatalog.vue'),
+    meta: { layout: 'app', title: 'Formules et prix', breadcrumb: 'Formules et prix', adminOnly: true },
+  },
+  {
     path: '/central/tenants/create',
     component: () => import('../pages/central/TenantCreate.vue'),
     meta: { layout: 'app', title: 'Nouveau Client', breadcrumb: 'Nouveau Client', adminOnly: true },

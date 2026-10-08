@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Central\PlanCatalogController;
 use App\Http\Controllers\Api\Central\PublicRegistrationController;
 use App\Http\Controllers\Api\Central\TenantController;
 use App\Http\Controllers\Api\Central\TenantInvoiceController;
@@ -42,8 +43,14 @@ Route::prefix('api/central')->middleware(['api', 'auth:sanctum', 'role:admin'])-
     Route::post('tenants/scrape-products',          [TenantController::class, 'scrapeProducts']);
     Route::post('tenants/{tenant}/import-products', [TenantController::class, 'importProducts']);
 
-    // Catalogue des formules (source unique : config/plans.php).
+    // Catalogue des formules (valeurs du code, modifiables ci-dessous : config/plans.php + plan_overrides).
     Route::get('plans', [TenantSubscriptionController::class, 'plans']);
+
+    // Personnalisation des formules, prix et options depuis la gestion des tenants.
+    Route::get('plan-catalog',                    [PlanCatalogController::class, 'index']);
+    Route::put('plan-catalog/plans/{key}',        [PlanCatalogController::class, 'updatePlan']);
+    Route::delete('plan-catalog/plans/{key}',     [PlanCatalogController::class, 'resetPlan']);
+    Route::put('plan-catalog/addons/{key}',       [PlanCatalogController::class, 'updateAddon']);
 
     // Abonnement : consultation, encaissement, changement de formule.
     Route::get('tenants/{tenant}/subscription',          [TenantSubscriptionController::class, 'show']);

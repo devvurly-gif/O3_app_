@@ -34,6 +34,9 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Les modifications de formules et de prix faites depuis la gestion des tenants se fusionnent dans config('plans').
+        \App\Services\PlanCatalog::apply();
+
         // Register Resend mail transport (HTTP-based, no SMTP ports needed)
         Mail::extend('resend', function (array $config) {
             return new ResendTransport($config['key'] ?? config('services.resend.key'));

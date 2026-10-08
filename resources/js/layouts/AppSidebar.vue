@@ -754,6 +754,7 @@ const centralGroups: SidebarGroup[] = [
     links: [
       { to: '/central/tenants', labelKey: 'nav.tenants', icon: icons.tenants },
       { to: '/central/tenants/create', labelKey: 'nav.tenantCreate', icon: icons.plus },
+      { to: '/central/plans', labelKey: 'nav.plans', icon: icons.docs },
     ],
   },
 ]
