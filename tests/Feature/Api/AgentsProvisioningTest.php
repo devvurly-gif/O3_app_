@@ -97,4 +97,26 @@ class AgentsProvisioningTest extends TestCase
         $this->assertTrue(Tenant::find($without->id)->agentsEnabled());                               // des agents existent : on ne coupe pas le client
         $this->assertSame(1, Agent::count());                                                         // rien n'est installé ni supprimé
     }
+    public function test_the_tenant_list_tells_the_screen_who_has_the_agents_and_who_may(): void
+    {
+        $this->tenantsOnTheTestDatabase([
+            'paye-allume'  => ['plan' => 'business', 'status' => TenantStatus::Active, 'agents_enabled' => true],
+            'paye-eteint'  => ['plan' => 'pro', 'status' => TenantStatus::Active],
+            'essentiel'    => ['plan' => 'essentiel', 'status' => TenantStatus::Active],
+            'essai'        => ['plan' => 'pro', 'status' => TenantStatus::Trial],
+        ]);
+        $admin = \App\Models\User::factory()->admin()->create();
+
+        $rows = collect($this->actingAs($admin, 'sanctum')->getJson('/api/central/tenants')->assertOk()->json('data'))->keyBy('id');
+
+        $this->assertTrue($rows['paye-allume']['agents_enabled']);
+        $this->assertTrue($rows['paye-allume']['agents_available']);
+        $this->assertFalse($rows['paye-eteint']['agents_enabled']);
+        $this->assertTrue($rows['paye-eteint']['agents_available']);                                   // éteint mais éligible : le bouton « allumer » est proposé
+        $this->assertNull($rows['paye-eteint']['agents_unavailable_reason']);
+        $this->assertFalse($rows['essentiel']['agents_available']);
+        $this->assertStringContainsString('réservés aux formules Pro et Business', $rows['essentiel']['agents_unavailable_reason']);
+        $this->assertFalse($rows['essai']['agents_available']);
+        $this->assertStringContainsString('après le paiement', $rows['essai']['agents_unavailable_reason']);
+    }
 }

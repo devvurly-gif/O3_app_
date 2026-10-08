@@ -115,6 +115,19 @@ async function toggleActive(tenant: any) {
   } catch { /* interceptor */ }
 }
 
+/** Allume ou éteint « Agents IA » depuis la liste ; allumer installe le socle des agents chez le client (refusé avec la raison s'il n'y a pas droit). */
+async function toggleAgents(tenant: any) {
+  const on = !tenant.agents_enabled
+  const message = on
+    ? `Allumer « Agents IA » pour « ${tenant.name} » ?\n\nLe socle des agents (7 agents) sera installé dans sa base. Ils ne préparent que des brouillons : rien n'est envoyé ni appliqué sans validation.`
+    : `Éteindre « Agents IA » pour « ${tenant.name} » ?\n\nL'accès est fermé et les routines s'arrêtent ; rien n'est supprimé, tout revient au rallumage.`
+  if (!confirm(message)) return
+  try {
+    await store.update(tenant.id, { agents_enabled: on } as any)
+    toast.success(`Agents IA ${on ? 'activés' : 'désactivés'} pour « ${tenant.name} ».`)
+  } catch { /* message déjà affiché par l'intercepteur ; la liste est relue */ }
+}
+
 async function deleteTenant(tenant: any) {
   if (!confirm(`Supprimer le tenant "${tenant.name}" et sa base de données ? Cette action est irréversible.`)) return
   try {
@@ -217,6 +230,7 @@ function formatDate(d: string) {
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Plan</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Statut</th>
             <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Modules</th>
+            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Agents IA</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Essai expire</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Créé le</th>
             <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Actions</th>
@@ -224,7 +238,7 @@ function formatDate(d: string) {
         </thead>
         <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
           <tr v-if="filtered.length === 0">
-            <td colspan="8" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">Aucun client trouvé.</td>
+            <td colspan="9" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">Aucun client trouvé.</td>
           </tr>
 
           <tr v-for="tenant in filtered" :key="tenant.id"
@@ -284,6 +298,35 @@ function formatDate(d: string) {
                   eCom
                 </span>
               </div>
+            </td>
+
+            <!-- Agents IA : allumé / à allumer / non éligible (formule ou paiement) -->
+            <td class="px-6 py-4 text-center">
+              <button
+                v-if="tenant.agents_enabled"
+                type="button"
+                class="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-medium rounded-full bg-violet-100 text-violet-700 hover:bg-violet-200"
+                :title="tenant.agents_available ? 'Allumé : cliquer pour éteindre' : (tenant.agents_unavailable_reason || 'Allumé mais fermé : droit perdu') + ' — cliquer pour éteindre'"
+                @click="toggleAgents(tenant)"
+              >
+                {{ tenant.agents_available ? 'Allumés' : 'Allumés (fermés)' }}
+              </button>
+              <button
+                v-else-if="tenant.agents_available"
+                type="button"
+                class="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-600 hover:bg-violet-100 hover:text-violet-700 dark:bg-gray-700 dark:text-gray-300"
+                title="Cliquer pour allumer et installer le socle des agents"
+                @click="toggleAgents(tenant)"
+              >
+                Éteints · allumer
+              </button>
+              <span
+                v-else
+                class="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500 cursor-help"
+                :title="tenant.agents_unavailable_reason || 'Non éligible'"
+              >
+                Non éligible
+              </span>
             </td>
 
             <!-- Essai -->
