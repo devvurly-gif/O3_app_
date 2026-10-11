@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreDocumentHeaderRequest;
 use App\Http\Requests\UpdateDocumentHeaderRequest;
 use App\Models\DocumentHeader;
+use App\Models\Product;
 use App\Models\ThirdPartner;
 use App\Repositories\Contracts\DocumentHeaderRepositoryInterface;
 use App\Services\CacheService;
@@ -13,6 +14,7 @@ use App\Services\DocumentHeaderService;
 use App\Services\StockMouvementService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class DocumentHeaderController extends Controller
 {
@@ -203,6 +205,52 @@ class DocumentHeaderController extends Controller
         }
 
         $this->documents->delete($documentHeader);
+        CacheService::flushDocuments();
+
+        return response()->json(null, 204);
+    }
+
+    /**
+     * Suppression définitive (admin) : le document, ses lignes, son pied, ses règlements et ses mouvements
+     * de stock disparaissent ; le stock déjà appliqué est contrepassé avant. Refusée si un document en dérive
+     * (facture, retour…) ou si la marchandise reçue a déjà été consommée (le stock deviendrait négatif).
+     * La trace reste dans le journal d'activité.
+     */
+    public function forceDestroy(DocumentHeader $documentHeader): JsonResponse
+    {
+        $children = $documentHeader->children()->pluck('reference');
+        if ($children->isNotEmpty()) {
+            return response()->json(['message' => 'Des documents en dérivent : ' . $children->take(5)->implode(', ') . '. Supprimez-les d\'abord.'], 422);
+        }
+
+        // Ce que la contrepassation retirerait du stock (entrées appliquées), à comparer au stock actuel.
+        $short = $documentHeader->stockMouvements()->where('status', 'applied')->get()
+            ->groupBy(fn ($m) => $m->product_id . '-' . $m->warehouse_id)
+            ->filter(function ($rows) {
+                $delta = $rows->where('direction', 'in')->sum('quantity') - $rows->where('direction', 'out')->sum('quantity');
+                $stock = (float) DB::table('warehouse_has_stock')
+                    ->where('product_id', $rows->first()->product_id)->where('warehouse_id', $rows->first()->warehouse_id)->sum('stockLevel');
+
+                return $delta > 0 && $stock < $delta;
+            })
+            ->map(fn ($rows) => Product::whereKey($rows->first()->product_id)->value('p_sku') ?? '#' . $rows->first()->product_id);
+        if ($short->isNotEmpty()) {
+            return response()->json(['message' => 'Le stock reçu est déjà consommé pour : ' . $short->take(5)->implode(', ') . '. La suppression le rendrait négatif.'], 422);
+        }
+
+        $snapshot = [
+            'reference' => $documentHeader->reference, 'type' => $documentHeader->document_type, 'status' => $documentHeader->status,
+            'total_ttc' => $documentHeader->footer?->total_ttc, 'payments' => $documentHeader->payments()->count(),
+        ];
+
+        DB::transaction(function () use ($documentHeader) {
+            $this->stockService->cancelDocumentMovements($documentHeader);
+            $documentHeader->stockMouvements()->delete();
+            $documentHeader->payments()->delete();
+            $documentHeader->forceDelete();                      // lignes et pied partent en cascade
+        });
+
+        activity()->causedBy(auth()->user())->withProperties($snapshot)->log("Document {$snapshot['reference']} supprimé définitivement");
         CacheService::flushDocuments();
 
         return response()->json(null, 204);

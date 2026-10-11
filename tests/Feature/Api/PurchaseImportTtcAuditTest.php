@@ -208,6 +208,60 @@ class PurchaseImportTtcAuditTest extends TestCase
         $this->assertEquals(2, DB::table('warehouse_has_stock')->sum('stockLevel'));
     }
 
+    private function confirmedInvoice(): \App\Models\DocumentHeader
+    {
+        $this->as(['achats:import'])->postJson('/api/achats/import', $this->payload(['type' => 'facture_achat']))->assertCreated();
+        $doc = \App\Models\DocumentHeader::sole();
+        $this->actingAs($this->agent, 'sanctum')->putJson("/api/achats/documents/{$doc->id}/confirmer-facture-achat")->assertOk();
+
+        return $doc;
+    }
+
+    public function test_an_admin_can_permanently_delete_a_confirmed_document_and_the_stock_is_reversed(): void
+    {
+        $doc = $this->confirmedInvoice();
+        $this->assertEquals(2, DB::table('warehouse_has_stock')->sum('stockLevel'));
+
+        $this->actingAs($this->agent, 'sanctum')->deleteJson("/api/documents/{$doc->id}/definitif")->assertNoContent();
+
+        $this->assertSame(0, \App\Models\DocumentHeader::withTrashed()->count());      // pas de corbeille
+        $this->assertSame(0, DB::table('document_lignes')->count());
+        $this->assertSame(0, DB::table('document_footers')->count());
+        $this->assertSame(0, DB::table('stock_mouvements')->count());
+        $this->assertEquals(0, DB::table('warehouse_has_stock')->sum('stockLevel'));
+        $this->assertDatabaseHas('activity_log', ['description' => "Document {$doc->reference} supprimé définitivement"]);
+    }
+
+    public function test_permanent_deletion_is_refused_when_the_received_stock_is_already_consumed_or_a_document_derives_from_it(): void
+    {
+        $doc = $this->confirmedInvoice();
+
+        DB::table('warehouse_has_stock')->update(['stockLevel' => 1]);              // 1 sur les 2 reçus a déjà été vendu
+        $this->actingAs($this->agent, 'sanctum')->deleteJson("/api/documents/{$doc->id}/definitif")
+            ->assertStatus(422)->assertJsonFragment(['message' => 'Le stock reçu est déjà consommé pour : NEW-001. La suppression le rendrait négatif.']);
+        $this->assertSame(1, \App\Models\DocumentHeader::count());
+
+        DB::table('warehouse_has_stock')->update(['stockLevel' => 2]);
+        $child = \App\Models\DocumentHeader::factory()->create([
+            'document_incrementor_id' => $doc->document_incrementor_id, 'document_type' => 'ReturnPurchase', 'thirdPartner_id' => $doc->thirdPartner_id,
+            'warehouse_id' => $doc->warehouse_id, 'parent_id' => $doc->id, 'status' => 'draft', 'user_id' => $this->agent->id,
+        ]);
+        $this->actingAs($this->agent, 'sanctum')->deleteJson("/api/documents/{$doc->id}/definitif")
+            ->assertStatus(422)->assertJsonFragment(['message' => "Des documents en dérivent : {$child->reference}. Supprimez-les d'abord."]);
+        $this->assertSame(2, \App\Models\DocumentHeader::count());
+    }
+
+    public function test_only_an_admin_can_permanently_delete(): void
+    {
+        $this->as(['achats:import'])->postJson('/api/achats/import', $this->payload())->assertCreated();
+        $doc = \App\Models\DocumentHeader::sole();
+
+        foreach ([User::factory()->manager()->create(), User::factory()->cashier()->create()] as $user) {
+            $this->actingAs($user, 'sanctum')->deleteJson("/api/documents/{$doc->id}/definitif")->assertForbidden();
+        }
+        $this->assertSame(1, \App\Models\DocumentHeader::count());
+    }
+
     public function test_confirm_purchase_invoice_refuses_other_documents(): void
     {
         $this->as(['achats:import'])->postJson('/api/achats/import', $this->payload(['type' => 'bon_reception']))->assertCreated();

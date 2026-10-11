@@ -530,6 +530,9 @@ Route::middleware(['auth:sanctum', 'tenant.active'])->group(function () {
         Route::put('users/{user}',       [UserController::class, 'update']);
         Route::delete('users/{user}',    [UserController::class, 'destroy']);
 
+        // Suppression DÉFINITIVE d'un document (pas de corbeille) : admin seulement, stock contrepassé, règlements supprimés.
+        Route::delete('documents/{documentHeader}/definitif', [DocumentHeaderController::class, 'forceDestroy']);
+
         Route::get('roles',              [RoleController::class, 'index']);
         Route::post('roles',             [RoleController::class, 'store']);
         Route::get('roles/{role}',       [RoleController::class, 'show']);
