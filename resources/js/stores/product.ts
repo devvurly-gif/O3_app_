@@ -22,6 +22,12 @@ export const useProductStore = defineStore('product', () => {
     return data
   }
 
+  /** Suppression définitive (admin) d'un produit de la corbeille ; refusée par le serveur s'il a encore un historique. */
+  async function forceDelete(id: number): Promise<void> {
+    await http.delete(`/products/${id}/definitif`)
+    trashedItems.value = trashedItems.value.filter((p) => p.id !== id)
+  }
+
   async function create(payload: Partial<Product>): Promise<Product> {
     const { data } = await http.post<Product>('/products', payload)
     items.value.unshift(data)
@@ -144,6 +150,7 @@ export const useProductStore = defineStore('product', () => {
     fetchTrashedPage,
     goToTrashedPage,
     restore,
+    forceDelete,
     uploadImage,
     setPrimaryImage,
     deleteImage,

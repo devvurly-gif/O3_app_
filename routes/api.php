@@ -140,6 +140,7 @@ Route::middleware(['auth:sanctum', 'tenant.active'])->group(function () {
     // binding would otherwise try (and fail) to resolve "trashed" as an id.
     Route::get('products/trashed',                   [ProductController::class, 'trashed'])->middleware('role:admin,manager');
     Route::post('products/{id}/restore',             [ProductController::class, 'restore'])->middleware('role:admin,manager');
+    Route::delete('products/{id}/definitif',         [ProductController::class, 'forceDestroy'])->middleware('role:admin');
     Route::get('products/{product}',                 [ProductController::class, 'show']);
     Route::get('products/{product}/statistics',      [ProductController::class, 'statistics']);
     Route::get('products/{product}/stock-history',   [ProductController::class, 'stockHistory']);

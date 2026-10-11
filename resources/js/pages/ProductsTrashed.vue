@@ -22,14 +22,23 @@
     </div>
 
     <!-- Search -->
-    <div class="flex items-stretch gap-2.5 bg-white dark:bg-gray-800 border border-[#ECEEF2] dark:border-gray-700 rounded-[14px] p-3">
+    <div
+      class="flex items-stretch gap-2.5 bg-white dark:bg-gray-800 border border-[#ECEEF2] dark:border-gray-700 rounded-[14px] p-3"
+    >
       <div class="relative flex-1 min-w-[220px]">
-        <svg class="w-[15px] h-[15px] absolute left-3.5 top-1/2 -translate-y-1/2 text-[#B0B4BE]" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 20 20">
-          <circle cx="9" cy="9" r="6" /><line x1="14" y1="14" x2="18" y2="18" />
+        <svg
+          class="w-[15px] h-[15px] absolute left-3.5 top-1/2 -translate-y-1/2 text-[#B0B4BE]"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          viewBox="0 0 20 20"
+        >
+          <circle cx="9" cy="9" r="6" />
+          <line x1="14" y1="14" x2="18" y2="18" />
         </svg>
         <input
-          :aria-label="$t('products.search')"
           v-model="search"
+          :aria-label="$t('products.search')"
           type="text"
           :placeholder="$t('products.search')"
           class="w-full pl-9 pr-3.5 py-2.5 text-input rounded-[10px] border border-[#E1E3E9] dark:border-gray-600 bg-[#FAFBFC] dark:bg-gray-700 text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:border-transparent"
@@ -60,6 +69,21 @@
           >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M3 10a8 8 0 1 1 2.343 5.657M3 10V4m0 6h6" />
+            </svg>
+          </button>
+          <button
+            v-if="auth.isAdmin"
+            class="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
+            :title="$t('products.deleteForever')"
+            :aria-label="$t('products.deleteForever')"
+            @click="confirmForceDelete(row)"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+              />
             </svg>
           </button>
         </div>
@@ -98,6 +122,36 @@
       </template>
     </BaseModal>
 
+    <!-- Permanent deletion confirmation (admin) -->
+    <BaseModal v-model="showForceDelete" :title="$t('products.deleteForeverTitle')" size="sm">
+      <div class="space-y-3 text-sm text-gray-600 dark:text-gray-400">
+        <p>{{ $t('products.deleteForeverConfirm') }}</p>
+        <div
+          class="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 px-4 py-3 text-gray-800 dark:text-gray-200"
+        >
+          <div class="font-semibold">{{ forceDeleteTarget?.p_title }}</div>
+          <div class="font-mono text-xs">{{ forceDeleteTarget?.p_sku }}</div>
+        </div>
+        <p class="text-xs text-gray-500 dark:text-gray-400">{{ $t('products.deleteForeverHint') }}</p>
+        <p v-if="forceDeleteError" class="text-red-600 dark:text-red-400 font-medium">{{ forceDeleteError }}</p>
+      </div>
+      <template #footer>
+        <button
+          class="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition"
+          @click="showForceDelete = false"
+        >
+          {{ $t('common.cancel') }}
+        </button>
+        <button
+          class="px-4 py-2 text-sm font-semibold bg-red-600 hover:bg-red-700 text-white rounded-lg transition disabled:opacity-60"
+          :disabled="forceDeleting"
+          @click="doForceDelete"
+        >
+          {{ forceDeleting ? $t('products.deleting') : $t('products.deleteForever') }}
+        </button>
+      </template>
+    </BaseModal>
+
     <BaseNotification ref="toast" />
   </div>
 </template>
@@ -107,6 +161,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useProductStore } from '@/stores/product'
+import { useAuthStore } from '@/stores/authStore'
 import { useFormat } from '@/composables/useFormat'
 import BaseTable from '@/components/BaseTable.vue'
 import BasePagination from '@/components/BasePagination.vue'
@@ -116,6 +171,7 @@ import BaseNotification from '@/components/BaseNotification.vue'
 const { t } = useI18n()
 const { date: fmtDate } = useFormat()
 const store = useProductStore()
+const auth = useAuthStore()
 
 const { trashedItems: items, trashedMeta: meta } = storeToRefs(store)
 
@@ -168,6 +224,36 @@ async function doRestore() {
     toast.value?.notify(e.response?.data?.message ?? t('products.restoreFailed'), 'error')
   } finally {
     restoring.value = false
+  }
+}
+
+const showForceDelete = ref(false)
+const forceDeleteTarget = ref<{ id: number; p_title: string; p_sku?: string | null } | null>(null)
+const forceDeleting = ref(false)
+const forceDeleteError = ref('')
+
+function confirmForceDelete(row: { id: number; p_title: string; p_sku?: string | null }) {
+  forceDeleteTarget.value = row
+  forceDeleteError.value = ''
+  showForceDelete.value = true
+}
+
+async function doForceDelete() {
+  if (!forceDeleteTarget.value) return
+  forceDeleting.value = true
+  forceDeleteError.value = ''
+  try {
+    await store.forceDelete(forceDeleteTarget.value.id)
+    toast.value?.notify(t('products.deletedForever'), 'success')
+    showForceDelete.value = false
+    // Page vidée par la suppression : on revient à la précédente.
+    if (!items.value.length && meta.value.current_page > 1) loadPage(meta.value.current_page - 1)
+    else loadPage(meta.value.current_page || 1)
+  } catch (err: unknown) {
+    const e = err as { response?: { data?: { message?: string } } }
+    forceDeleteError.value = e.response?.data?.message ?? t('products.deleteForeverFailed')
+  } finally {
+    forceDeleting.value = false
   }
 }
 

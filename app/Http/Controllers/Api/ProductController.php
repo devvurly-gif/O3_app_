@@ -3,11 +3,15 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\DocumentLigne;
 use App\Models\Product;
+use App\Models\StockMouvement;
 use App\Models\ThirdPartner;
+use App\Models\WarehouseTransfer;
 use App\Repositories\Contracts\ProductRepositoryInterface;
 use App\Services\CacheService;
 use App\Services\PriceResolver;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -380,6 +384,45 @@ class ProductController extends Controller
         CacheService::flushProducts();
 
         return response()->json($this->guardCosts($request, $product->load(['category', 'brand', 'images', 'primaryImage'])));
+    }
+
+    /**
+     * DELETE /api/products/{id}/definitif (admin)
+     * Suppression définitive d'un produit de la corbeille (« Produits supprimés »). Seul un produit déjà
+     * supprimé peut l'être, et seulement s'il n'a plus d'historique : mouvements de stock, transferts et lignes
+     * de documents le référencent, et les perdre falsifierait les rapports. Stock, images, tarifs et variantes
+     * partent avec lui (cascade). Libère aussi les codes SKU / EAN uniques qu'un produit supprimé retenait.
+     */
+    public function forceDestroy(int $id): JsonResponse
+    {
+        $product = Product::withTrashed()->findOrFail($id);
+
+        if (!$product->trashed()) {
+            return response()->json(['message' => 'Seul un produit déjà supprimé peut être supprimé définitivement.'], 422);
+        }
+
+        $usage = array_filter([
+            'mouvement(s) de stock'          => StockMouvement::where('product_id', $id)->count(),
+            'transfert(s) entre entrepôts'   => WarehouseTransfer::where('product_id', $id)->count(),
+            'ligne(s) de document'           => DocumentLigne::where('product_id', $id)->count(),
+        ]);
+        if ($usage) {
+            return response()->json(['message' => 'Suppression définitive impossible : ce produit figure encore dans '
+                . collect($usage)->map(fn ($n, $label) => "{$n} {$label}")->implode(', ')
+                . '. Supprimez d\'abord ces documents, ou gardez le produit dans les produits supprimés.'], 422);
+        }
+
+        $snapshot = ['sku' => $product->p_sku, 'title' => $product->p_title, 'ean13' => $product->p_ean13];
+        try {
+            DB::transaction(fn () => $product->forceDelete());
+        } catch (QueryException) {
+            return response()->json(['message' => 'Suppression définitive impossible : ce produit est encore référencé ailleurs dans l\'application.'], 422);
+        }
+
+        activity()->causedBy(auth()->user())->withProperties($snapshot)->log("Produit {$snapshot['sku']} supprimé définitivement");
+        CacheService::flushProducts();
+
+        return response()->json(null, 204);
     }
 
     /**
