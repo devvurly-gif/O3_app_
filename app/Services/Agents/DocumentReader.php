@@ -160,6 +160,11 @@ class DocumentReader
         $hint = is_array($in['product_hint'] ?? null) ? $in['product_hint'] : [];
 
         $confidence = $this->number($in['confidence'] ?? null);
+        $printed = [
+            'ht'  => $this->number($totals['ht'] ?? null),
+            'tva' => $this->number($totals['tva'] ?? null),
+            'ttc' => $this->number($totals['ttc'] ?? null),
+        ];
 
         return [
             'type'               => $type,
@@ -173,12 +178,8 @@ class DocumentReader
             'reference'          => $this->text($in['reference'] ?? null, 60),
             'date'               => $this->date($in['date'] ?? null),
             'due_date'           => $this->date($in['due_date'] ?? null),
-            'prices_include_vat' => (bool) ($in['prices_include_vat'] ?? false),
-            'totals'             => [
-                'ht'  => $this->number($totals['ht'] ?? null),
-                'tva' => $this->number($totals['tva'] ?? null),
-                'ttc' => $this->number($totals['ttc'] ?? null),
-            ],
+            'prices_include_vat' => $this->pricesIncludeVat((bool) ($in['prices_include_vat'] ?? false), $lines, $printed),
+            'totals'             => $printed,
             'lines'              => $lines,
             'payment'            => [
                 'amount'    => $this->number($payment['amount'] ?? null),
@@ -189,6 +190,31 @@ class DocumentReader
             ],
             'product_hint'       => ['name' => $this->text($hint['name'] ?? null, 255), 'sku' => $this->text($hint['sku'] ?? null, 100)],
         ];
+    }
+
+    /**
+     * Les prix unitaires sont-ils TTC ? Beaucoup de factures ne l'écrivent pas : le modèle ne peut que deviner.
+     * Les totaux imprimés tranchent : si la somme quantité × prix unitaire tombe sur le total TTC (et pas sur
+     * le total HT), les prix sont TTC ; si elle tombe sur le total HT, ils sont HT. Sinon (remises, ports,
+     * totaux absents), on garde la réponse du modèle.
+     *
+     * @param array<int, array<string, mixed>> $lines
+     * @param array{ht: ?float, tva: ?float, ttc: ?float} $totals
+     */
+    private function pricesIncludeVat(bool $modelSays, array $lines, array $totals): bool
+    {
+        if ($lines === [] || $totals['ht'] === null || $totals['ttc'] === null || abs($totals['ttc'] - $totals['ht']) < 0.5
+            || count(array_filter($lines, fn ($l) => $l['unit_price'] === null)) > 0) {
+            return $modelSays;
+        }
+        $sum = array_sum(array_map(fn ($l) => $l['quantity'] * $l['unit_price'], $lines));
+        $tolerance = max(0.1, 0.0005 * $totals['ttc']);
+
+        if (abs($sum - $totals['ttc']) <= $tolerance) {
+            return true;
+        }
+
+        return abs($sum - $totals['ht']) <= $tolerance ? false : $modelSays;
     }
 
     private function text(mixed $v, int $max): ?string
@@ -247,7 +273,8 @@ class DocumentReader
             . "- summary : une phrase en français qui dit ce que c'est.\n"
             . "- party : l'autre partie du document (le fournisseur d'une facture fournisseur, le client d'un bon de commande, le payeur ou le bénéficiaire d'un paiement), avec son ICE (15 chiffres) s'il est imprimé.\n"
             . "- reference, date et due_date (format AAAA-MM-JJ) : tels qu'imprimés. Ne devine jamais une valeur absente : mets null.\n"
-            . "- totals : totaux imprimés (ht, tva, ttc). prices_include_vat : vrai seulement si les prix unitaires sont imprimés TTC.\n"
+            . "- totals : totaux imprimés (ht, tva, ttc). prices_include_vat : vrai si les prix unitaires sont TTC, ce que beaucoup de factures n'écrivent pas : vérifie si la somme des montants de lignes égale le Total TTC (alors vrai) ou le Total HT (alors faux).\n"
+            . "- Les annotations manuscrites (flèches, prix réécrits au stylo, tampons) ne sont pas des valeurs imprimées : ne les recopie pas.\n"
             . "- lines : chaque ligne d'article imprimée, avec sku (référence imprimée, jamais inventée), designation, quantity, unit_price tel qu'imprimé et vat_rate.\n"
             . "- payment : seulement pour un paiement ; direction « recu » si le commerce reçoit l'argent, « emis » s'il le paie.\n"
             . "- product_hint : seulement pour une photo de produit : le nom ou la référence que l'on peut lire dessus ou y deviner de façon sûre.\n"

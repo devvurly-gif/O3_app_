@@ -207,6 +207,31 @@ class OrchestratorDocumentsTest extends TestCase
         $this->assertSame(AgentEvent::STATUS_TO_SORT, AgentEvent::firstOrFail()->status);
     }
 
+    public function test_unit_prices_are_read_as_ttc_when_the_line_amounts_add_up_to_the_ttc_total_even_if_the_model_says_ht(): void
+    {
+        ThirdPartner::factory()->create(['tp_title' => 'CENTRAMAT', 'tp_Role' => 'supplier', 'tp_Ice_Number' => '001558520000015']);
+        $this->modelReads([
+            'type' => 'facture_fournisseur', 'confidence' => 0.9, 'summary' => 'Facture Centramat pour Jawad Light.',
+            'party' => ['name' => 'CENTRAMAT', 'ice' => '001558520000015'], 'reference' => '20260198', 'date' => '2026-08-31',
+            'prices_include_vat' => false,                                         // le modèle se trompe : rien n'est écrit sur la facture
+            'totals' => ['ht' => 866.67, 'tva' => 173.33, 'ttc' => 1040.0],
+            'lines' => [
+                ['sku' => 'ITPM/5', 'designation' => 'PRESSOSTAT MONO PM/5', 'quantity' => 6, 'unit_price' => 75.0, 'vat_rate' => 20],
+                ['sku' => 'RP1/4MO', 'designation' => 'PRESSOSTAT KITO 220 V', 'quantity' => 10, 'unit_price' => 35.0, 'vat_rate' => 20],
+                ['sku' => 'VANRET1/4', 'designation' => 'VANNE A RETULE KITO 1/4', 'quantity' => 6, 'unit_price' => 40.0, 'vat_rate' => 20],
+            ],
+        ]);
+
+        $r = $this->deposit('centramat.jpg', 'image/jpeg')->assertCreated();
+        $id = AgentEvent::firstOrFail()->id;
+        $this->assertStringContainsString('Contrôle à blanc réussi', $r->json('reply.body'));
+        $this->assertTrue(AgentEvent::firstOrFail()->payload['reading']['prices_include_vat']);
+
+        $this->say("prépare le brouillon d'achat du document #{$id}");
+
+        $this->assertEquals(1040.0, (float) DocumentHeader::where('document_type', 'InvoicePurchase')->firstOrFail()->footer->total_ttc);
+    }
+
     public function test_a_line_without_printed_reference_is_matched_by_exact_title_or_gets_a_stable_generated_reference(): void
     {
         ThirdPartner::factory()->create(['tp_title' => 'YAHYA CLEAN', 'tp_Role' => 'supplier', 'tp_Ice_Number' => '001427028000002']);
