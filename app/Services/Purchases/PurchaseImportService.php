@@ -457,17 +457,34 @@ class PurchaseImportService
         $ttc   = round($ht + $tva + $stamp, 2);
         $given = $p['totals'];
 
-        $cmp = function (string $key, float $calc, string $label) use ($given) {
-            if (isset($given[$key]) && round(abs((float) $given[$key] - $calc), 2) > self::TOLERANCE) {
+        // Prix unitaires imprimés au centime : chaque unité peut porter jusqu'à 0,005 d'arrondi, que le total
+        // imprimé (calculé par le fournisseur sur des prix plus précis) ne reproduit pas. Marge plafonnée à 0,05 %.
+        $qty     = array_sum(array_column($lines, 'qty'));
+        $maxVat  = $lines ? max(array_column($lines, 'vat_rate')) / 100 : 0;
+        $factors = ['ht' => 1, 'tva' => $maxVat, 'ttc' => 1 + $maxVat];
+
+        $result = ['ht' => $ht, 'tva' => $tva, 'stamp' => $stamp, 'ttc' => $ttc];
+        $cmp = function (string $key, float $calc, string $label) use ($given, $qty, $factors, &$result) {
+            if (!isset($given[$key])) {
+                return;
+            }
+            $allowed = max(self::TOLERANCE, min(0.005 * $qty * $factors[$key], 0.0005 * abs($calc)));
+            $gap = round(abs((float) $given[$key] - $calc), 2);
+            if ($gap > $allowed) {
                 $this->block('TOTAL_MISMATCH', "totals.{$key}",
                     sprintf('%s document = %.2f ≠ calculé depuis les lignes = %.2f.', $label, $given[$key], $calc));
+            } elseif ($gap > 0) {
+                // Écart d'arrondi des prix imprimés : le document garde le total imprimé (c'est lui qui sera payé).
+                $result[$key] = round((float) $given[$key], 2);
+                $this->info('TOTAL_ROUNDING', "totals.{$key}",
+                    sprintf('%s : écart d\'arrondi de %.2f entre les lignes (%.2f) et le total imprimé (%.2f) ; le total imprimé est conservé.', $label, $gap, $calc, $given[$key]));
             }
         };
         $cmp('ht', $ht, 'Total HT');
         $cmp('tva', $tva, 'TVA');
         $cmp('ttc', $ttc, 'Total TTC');
 
-        return ['ht' => $ht, 'tva' => $tva, 'stamp' => $stamp, 'ttc' => $ttc];
+        return $result;
     }
 
     private function checkDueDate(array $p): void

@@ -92,6 +92,37 @@ class PurchaseImportTtcAuditTest extends TestCase
         $this->assertEquals(50.00, (float) Product::where('p_sku', 'OLD-001')->value('p_purchasePrice'));
     }
 
+    /** Cas F402 : prix unitaires au centime, total imprimé calculé par le fournisseur sur des prix plus précis. */
+    private function roundedInvoice(array $totals): array
+    {
+        return $this->payload([
+            'totals' => $totals,
+            'lines'  => [
+                ['sku' => 'POUB-120', 'designation' => 'Poubelle 120L', 'qty' => 5, 'unit_price' => 395.83, 'vat_rate' => 20],
+                ['sku' => 'POUB-360', 'designation' => 'Poubelle 360L', 'qty' => 5, 'unit_price' => 395.83, 'vat_rate' => 20],
+            ],
+        ]);
+    }
+
+    public function test_a_printed_total_off_by_unit_price_rounding_is_accepted_and_kept(): void
+    {
+        $r = $this->as(['achats:import'])->postJson('/api/achats/import', $this->roundedInvoice(['ht' => 3958.33, 'tva' => 791.67, 'ttc' => 4750.00]))
+            ->assertCreated();
+
+        $this->assertContains('TOTAL_ROUNDING', array_column($r->json('warnings'), 'code'));
+        $footer = \App\Models\DocumentHeader::firstOrFail()->footer;
+        $this->assertEquals(4750.00, (float) $footer->total_ttc);          // le total imprimé fait foi
+        $this->assertEquals(4750.00, (float) $footer->amount_due);
+    }
+
+    public function test_a_real_total_error_is_still_refused(): void
+    {
+        $this->as(['achats:import'])->postJson('/api/achats/import', $this->roundedInvoice(['ht' => 3958.33, 'tva' => 791.67, 'ttc' => 4800.00]))
+            ->assertStatus(422)
+            ->assertJsonFragment(['code' => 'TOTAL_MISMATCH']);
+        $this->assertDatabaseCount('document_headers', 0);
+    }
+
     public function test_media_from_unlisted_host_is_refused(): void
     {
         $this->as(['achats:import'])->postJson('/api/achats/import', $this->payload([], ['image_url' => 'https://evil.example/x.jpg']))
