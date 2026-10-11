@@ -25,7 +25,9 @@ use Illuminate\Support\Facades\Log;
 class DocumentReader
 {
     private const ENDPOINT = 'https://api.anthropic.com/v1/messages';
-    private const TIMEOUT_SECONDS = 45;
+    private const TIMEOUT_SECONDS = 120;
+    /** Un bon de livraison de 40+ lignes demande plusieurs milliers de jetons de réponse. */
+    private const MAX_OUTPUT_TOKENS = 16000;
     public const DAILY_CAP = 40;
     public const MAX_BYTES = 10 * 1024 * 1024;
 
@@ -92,7 +94,7 @@ class DocumentReader
                 ->timeout(self::TIMEOUT_SECONDS)
                 ->post(self::ENDPOINT, [
                     'model'       => Setting::get('agents', 'orchestrator_ai_model') ?: OrchestratorInterpreter::DEFAULT_MODEL,
-                    'max_tokens'  => 3000,
+                    'max_tokens'  => self::MAX_OUTPUT_TOKENS,
                     'system'      => $this->systemPrompt(),
                     'tools'       => [$this->tool()],
                     'tool_choice' => ['type' => 'tool', 'name' => 'read_document'],
@@ -102,6 +104,13 @@ class DocumentReader
             if (!$response->successful()) {
                 Log::warning("Lecture de document : réponse {$response->status()} de l'API Anthropic.");
                 $this->failure = $this->interpreter->describe($response->status(), (string) $response->json('error.message'));
+
+                return null;
+            }
+
+            if ($response->json('stop_reason') === 'max_tokens') {
+                // Réponse coupée : les lignes seraient incomplètes, on ne travaille jamais sur une lecture tronquée.
+                $this->failure = 'le document est trop long pour être lu en une fois : découpez-le en plusieurs fichiers';
 
                 return null;
             }
@@ -166,8 +175,14 @@ class DocumentReader
             'ttc' => $this->number($totals['ttc'] ?? null),
         ];
 
-        return [
+        $issuer = is_array($in['issuer'] ?? null) ? $in['issuer'] : [];
+        $issuerIce = preg_replace('/\D/', '', (string) ($issuer['ice'] ?? ''));
+        $kind = $in['document_kind'] ?? null;
+
+        $out = [
             'type'               => $type,
+            'issuer'             => ['name' => $this->text($issuer['name'] ?? null, 255), 'ice' => strlen($issuerIce) === 15 ? $issuerIce : null],
+            'document_kind'      => in_array($kind, ['facture', 'bon_livraison', 'devis', 'bon_commande', 'autre'], true) ? $kind : null,
             'confidence'         => $confidence === null ? null : max(0.0, min(1.0, $confidence)),
             'summary'            => $this->text($in['summary'] ?? null, 400) ?? '',
             'party'              => [
@@ -190,6 +205,59 @@ class DocumentReader
             ],
             'product_hint'       => ['name' => $this->text($hint['name'] ?? null, 255), 'sku' => $this->text($hint['sku'] ?? null, 100)],
         ];
+
+        return $this->resolveDirection($out);
+    }
+
+    /**
+     * Le sens d'un document (émis par nous, ou reçu d'un fournisseur) ne se devine pas : on compare l'ÉMETTEUR lu
+     * (logo, en-tête, pied de page) à la société du tenant (Paramètres → Société). Le modèle se trompe
+     * facilement quand le nom du client est en haut de page : le code tranche et corrige type et partie.
+     * Sans identité de société renseignée, ou sans émetteur lu, on garde la réponse du modèle.
+     *
+     * @param array<string, mixed> $r lecture nettoyée
+     * @return array<string, mixed>
+     */
+    private function resolveDirection(array $r): array
+    {
+        $directional = ['document_emis', 'facture_fournisseur', 'bon_reception_fournisseur'];
+        $issuer = $r['issuer'];
+        $ownName = trim((string) Setting::get('company', 'name', ''));
+        $ownIce = preg_replace('/\D/', '', (string) Setting::get('company', 'ice', ''));
+        if (!in_array($r['type'], $directional, true) || ($issuer['name'] === null && $issuer['ice'] === null) || ($ownName === '' && $ownIce === '')) {
+            return $r;
+        }
+
+        if ($this->sameCompany($issuer, $ownName, $ownIce)) {
+            $r['type'] = 'document_emis';
+
+            return $r;
+        }
+
+        // Établi par une autre société : c'est un document reçu d'un fournisseur ; le « party » est cet émetteur.
+        $kind = $r['document_kind'] ?? (preg_match('/bon de livraison|\bBL\b/i', $r['summary'] ?? '') ? 'bon_livraison' : ($r['type'] === 'bon_reception_fournisseur' ? 'bon_livraison' : 'facture'));
+        $r['type'] = match ($kind) {
+            'bon_livraison' => 'bon_reception_fournisseur',
+            'facture'       => 'facture_fournisseur',
+            default         => 'autre',
+        };
+        $r['party'] = ['name' => $issuer['name'], 'ice' => $issuer['ice'], 'phone' => null];
+        $r['summary'] = self::TYPES[$r['type']] . ' reçu(e) de ' . ($issuer['name'] ?? $issuer['ice']) . '.';
+
+        return $r;
+    }
+
+    /** @param array{name: ?string, ice: ?string} $issuer */
+    private function sameCompany(array $issuer, string $ownName, string $ownIce): bool
+    {
+        if ($issuer['ice'] !== null && $ownIce !== '') {
+            return $issuer['ice'] === $ownIce;
+        }
+        $norm = fn (string $s) => preg_replace('/\b(SARL|SARLAU|SA|STE|SOCIETE)\b|[^A-Z0-9]+/', '', strtoupper(\Illuminate\Support\Str::ascii($s)));
+        $a = $norm((string) $issuer['name']);
+        $b = $norm($ownName);
+
+        return $a !== '' && $b !== '' && (str_contains($a, $b) || str_contains($b, $a)) && min(strlen($a), strlen($b)) >= 4;
     }
 
     /**
@@ -268,12 +336,13 @@ class DocumentReader
             . "- type, parmi :\n{$types}\n"
             . "- Attention au sens : bon_commande_client est une commande passée PAR un client AU commerce. Un bon de livraison, une facture de vente ou un devis établis PAR le commerce pour un client (son nom et ses coordonnées en en-tête, le client en destinataire) sont des document_emis, jamais des commandes. Une facture reçue d'un fournisseur est une facture_fournisseur ; un bon de livraison ou de réception établi par un fournisseur (marchandise reçue, souvent sans prix ou sans TVA détaillée) est un bon_reception_fournisseur.\n"
             . "- Disposition : l'en-tête (logo, nom) et le pied de page (adresse, RC, patente, IF, ICE, téléphone) sont réservés à la société qui ÉMET le document. Le destinataire figure dans le corps, près de la date ou du numéro. L'ICE du pied de page est donc celui de l'émetteur : party décrit toujours l'autre partie, jamais l'émetteur.\n"
+            . "- issuer : la société qui ÉTABLIT le document, celle du logo, de l'en-tête ou du pied de page (nom, ICE si imprimé). Ne la confonds jamais avec le destinataire, qui est nommé près de la date ou du numéro, souvent en haut à droite, avec « Code client ». document_kind : facture, bon_livraison, devis, bon_commande ou autre.\n"
             . $this->ownCompanyHint()
             . "- confidence : de 0 à 1, ta certitude sur le type. Si le document est flou, tronqué ou ambigu, baisse-la.\n"
             . "- summary : une phrase en français qui dit ce que c'est.\n"
             . "- party : l'autre partie du document (le fournisseur d'une facture fournisseur, le client d'un bon de commande, le payeur ou le bénéficiaire d'un paiement), avec son ICE (15 chiffres) s'il est imprimé.\n"
             . "- reference, date et due_date (format AAAA-MM-JJ) : tels qu'imprimés. Ne devine jamais une valeur absente : mets null.\n"
-            . "- totals : totaux imprimés (ht, tva, ttc). prices_include_vat : vrai si les prix unitaires sont TTC, ce que beaucoup de factures n'écrivent pas : vérifie si la somme des montants de lignes égale le Total TTC (alors vrai) ou le Total HT (alors faux).\n"
+            . "- totals : totaux imprimés (ht, tva, ttc). Un bon de livraison qui n'imprime qu'un seul total, sans mention de TVA : mets-le dans ht. prices_include_vat : vrai si les prix unitaires sont TTC, ce que beaucoup de factures n'écrivent pas : vérifie si la somme des montants de lignes égale le Total TTC (alors vrai) ou le Total HT (alors faux).\n"
             . "- Les annotations manuscrites (flèches, prix réécrits au stylo, tampons) ne sont pas des valeurs imprimées : ne les recopie pas.\n"
             . "- lines : chaque ligne d'article imprimée, avec sku (référence imprimée, jamais inventée), designation, quantity, unit_price tel qu'imprimé et vat_rate.\n"
             . "- payment : seulement pour un paiement ; direction « recu » si le commerce reçoit l'argent, « emis » s'il le paie.\n"
@@ -296,6 +365,8 @@ class DocumentReader
                     'confidence'         => ['type' => 'number'],
                     'summary'            => ['type' => 'string'],
                     'party'              => ['type' => 'object', 'properties' => ['name' => $nullableString, 'ice' => $nullableString, 'phone' => $nullableString]],
+                    'issuer'             => ['type' => 'object', 'properties' => ['name' => $nullableString, 'ice' => $nullableString]],
+                    'document_kind'      => ['type' => ['string', 'null'], 'enum' => ['facture', 'bon_livraison', 'devis', 'bon_commande', 'autre', null]],
                     'reference'          => $nullableString,
                     'date'               => $nullableString,
                     'due_date'           => $nullableString,

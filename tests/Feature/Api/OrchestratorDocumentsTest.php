@@ -232,6 +232,38 @@ class OrchestratorDocumentsTest extends TestCase
         $this->assertEquals(1040.0, (float) DocumentHeader::where('document_type', 'InvoicePurchase')->firstOrFail()->footer->total_ttc);
     }
 
+    public function test_the_issuer_decides_the_direction_even_when_the_model_takes_the_customer_for_the_issuer(): void
+    {
+        Setting::set('company', 'name', 'JAWAD LIGHT');
+        DocumentIncrementor::firstOrCreate(['di_model' => 'ReceiptNotePurchase', 'di_domain' => 'achat'], ['di_title' => 'Bon de réception', 'template' => 'BR-{0000}', 'operatorSens' => 'in']);
+        ThirdPartner::factory()->create(['tp_title' => 'LEADER STAR', 'tp_Role' => 'supplier']);
+        $this->modelReads([
+            'type' => 'document_emis', 'confidence' => 0.95, 'summary' => 'Bon de livraison émis par JAWAD LIGHT.',   // le modèle se trompe
+            'issuer' => ['name' => 'LEADER STAR'], 'document_kind' => 'bon_livraison',
+            'party' => ['name' => 'JAWAD LIGHT'], 'reference' => '2026002115', 'date' => '2026-07-09',
+            'totals' => ['ht' => 460.0],
+            'lines' => [['sku' => 'JDED15501', 'designation' => 'PERCEUSE ELECTRIQUE 500 W', 'quantity' => 2, 'unit_price' => 230.0]],
+        ]);
+
+        $r = $this->deposit('bl.pdf')->assertCreated();
+
+        $this->assertStringContainsString('Bon de livraison reçu', $r->json('reply.body'));
+        $this->assertStringContainsString('LEADER STAR', $r->json('reply.body'));
+        $this->assertStringContainsString('bon de réception', $r->json('reply.suggestions.0.label'));
+        $this->assertSame('bon_reception_fournisseur', AgentEvent::firstOrFail()->payload['reading']['type']);
+    }
+
+    public function test_a_truncated_reading_is_refused_instead_of_working_on_missing_lines(): void
+    {
+        $this->enableAi();
+        Http::fake(['api.anthropic.com/*' => Http::response(['stop_reason' => 'max_tokens', 'content' => [['type' => 'tool_use', 'name' => 'read_document', 'input' => ['type' => 'document_emis', 'confidence' => 0.9, 'summary' => 'x']]]])]);
+
+        $r = $this->deposit('long.pdf')->assertCreated();
+
+        $this->assertStringContainsString('trop long', $r->json('reply.body'));
+        $this->assertSame(AgentEvent::STATUS_TO_SORT, AgentEvent::firstOrFail()->status);
+    }
+
     public function test_a_line_without_printed_reference_is_matched_by_exact_title_or_gets_a_stable_generated_reference(): void
     {
         ThirdPartner::factory()->create(['tp_title' => 'YAHYA CLEAN', 'tp_Role' => 'supplier', 'tp_Ice_Number' => '001427028000002']);
