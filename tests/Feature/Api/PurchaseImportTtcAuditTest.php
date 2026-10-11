@@ -251,6 +251,29 @@ class PurchaseImportTtcAuditTest extends TestCase
         $this->assertSame(2, \App\Models\DocumentHeader::count());
     }
 
+    public function test_permanently_deleting_a_confirmed_delivery_note_puts_the_stock_back(): void
+    {
+        $product = Product::factory()->create(['p_sku' => 'SALE-001']);
+        $warehouse = Warehouse::firstOrFail();
+        DB::table('warehouse_has_stock')->insert(['warehouse_id' => $warehouse->id, 'product_id' => $product->id, 'stockLevel' => 2, 'created_at' => now(), 'updated_at' => now()]);
+        $customer = ThirdPartner::factory()->customer()->create();
+        $bl = \App\Models\DocumentHeader::factory()->create([
+            'document_incrementor_id' => DocumentIncrementor::firstWhere('di_model', 'InvoicePurchase')->id, 'document_type' => 'DeliveryNote',
+            'thirdPartner_id' => $customer->id, 'warehouse_id' => $warehouse->id, 'status' => 'confirmed', 'user_id' => $this->agent->id,
+        ]);
+        \App\Models\StockMouvement::create([
+            'product_id' => $product->id, 'warehouse_id' => $warehouse->id, 'document_header_id' => $bl->id, 'document_reference' => $bl->reference,
+            'document_type' => 'DeliveryNote', 'direction' => 'out', 'reason' => 'sale_delivery', 'quantity' => 3, 'unit_cost' => 0,
+            'stock_before' => 5, 'stock_after' => 2, 'user_id' => $this->agent->id, 'status' => 'applied',
+        ]);
+
+        $this->actingAs($this->agent, 'sanctum')->deleteJson("/api/documents/{$bl->id}/definitif")->assertNoContent();
+
+        $this->assertSame(0, \App\Models\DocumentHeader::withTrashed()->count());
+        $this->assertEquals(5, DB::table('warehouse_has_stock')->where('product_id', $product->id)->value('stockLevel'));   // 2 + 3 remis
+        $this->assertSame(0, DB::table('stock_mouvements')->count());
+    }
+
     public function test_only_an_admin_can_permanently_delete(): void
     {
         $this->as(['achats:import'])->postJson('/api/achats/import', $this->payload())->assertCreated();
