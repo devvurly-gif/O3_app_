@@ -253,6 +253,33 @@ class OrchestratorDocumentsTest extends TestCase
         $this->assertSame('bon_reception_fournisseur', AgentEvent::firstOrFail()->payload['reading']['type']);
     }
 
+    public function test_a_document_addressed_to_the_company_is_received_even_if_the_model_puts_the_company_as_issuer_too(): void
+    {
+        Setting::set('company', 'name', 'JAWAD LIGHT');
+        $this->modelReads([
+            'type' => 'document_emis', 'confidence' => 0.95, 'summary' => 'Bon de livraison émis par MR JAWAD LIGHT.',
+            'issuer' => ['name' => 'MR JAWAD LIGHT'], 'recipient' => ['name' => 'MR JAWAD LIGHT'], 'document_kind' => 'bon_livraison',
+            'reference' => '2026002115', 'date' => '2026-07-09', 'totals' => ['ht' => 460.0],
+            'lines' => [['sku' => 'JDED15501', 'designation' => 'PERCEUSE', 'quantity' => 2, 'unit_price' => 230.0]],
+        ]);
+
+        $r = $this->deposit('bl.pdf')->assertCreated();
+
+        $this->assertSame('bon_reception_fournisseur', AgentEvent::firstOrFail()->payload['reading']['type']);
+        $this->assertStringContainsString('fournisseur non identifié', $r->json('reply.body'));
+        $this->assertStringContainsString('fournisseur (nom ou ICE)', $r->json('reply.body'));   // rien n'est proposé sans fournisseur
+        $this->assertSame([], $r->json('reply.suggestions'));
+    }
+
+    public function test_the_reply_says_when_the_company_is_not_set_so_the_direction_cannot_be_checked(): void
+    {
+        $this->modelReads($this->issuedInvoice(['issuer' => ['name' => 'YAHYA CLEAN'], 'recipient' => ['name' => 'JAWAD LIGHT']]));
+
+        $r = $this->deposit('f.pdf')->assertCreated();
+
+        $this->assertStringContainsString('Paramètres → Société', $r->json('reply.body'));
+    }
+
     public function test_a_truncated_reading_is_refused_instead_of_working_on_missing_lines(): void
     {
         $this->enableAi();

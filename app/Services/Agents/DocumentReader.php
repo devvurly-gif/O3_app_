@@ -178,10 +178,13 @@ class DocumentReader
         $issuer = is_array($in['issuer'] ?? null) ? $in['issuer'] : [];
         $issuerIce = preg_replace('/\D/', '', (string) ($issuer['ice'] ?? ''));
         $kind = $in['document_kind'] ?? null;
+        $recipient = is_array($in['recipient'] ?? null) ? $in['recipient'] : [];
+        $recipientIce = preg_replace('/\D/', '', (string) ($recipient['ice'] ?? ''));
 
         $out = [
             'type'               => $type,
             'issuer'             => ['name' => $this->text($issuer['name'] ?? null, 255), 'ice' => strlen($issuerIce) === 15 ? $issuerIce : null],
+            'recipient'          => ['name' => $this->text($recipient['name'] ?? null, 255), 'ice' => strlen($recipientIce) === 15 ? $recipientIce : null],
             'document_kind'      => in_array($kind, ['facture', 'bon_livraison', 'devis', 'bon_commande', 'autre'], true) ? $kind : null,
             'confidence'         => $confidence === null ? null : max(0.0, min(1.0, $confidence)),
             'summary'            => $this->text($in['summary'] ?? null, 400) ?? '',
@@ -210,10 +213,10 @@ class DocumentReader
     }
 
     /**
-     * Le sens d'un document (émis par nous, ou reçu d'un fournisseur) ne se devine pas : on compare l'ÉMETTEUR lu
-     * (logo, en-tête, pied de page) à la société du tenant (Paramètres → Société). Le modèle se trompe
-     * facilement quand le nom du client est en haut de page : le code tranche et corrige type et partie.
-     * Sans identité de société renseignée, ou sans émetteur lu, on garde la réponse du modèle.
+     * Le sens d'un document (émis par nous, ou reçu d'un fournisseur) ne se devine pas : on compare l'ÉMETTEUR et
+     * le DESTINATAIRE lus à la société du tenant (Paramètres → Société). Le modèle se trompe facilement quand le
+     * nom du client est en haut de page : le code tranche et corrige type et partie.
+     * Sans identité de société renseignée, ou sans émetteur ni destinataire lus, on garde la réponse du modèle.
      *
      * @param array<string, mixed> $r lecture nettoyée
      * @return array<string, mixed>
@@ -221,28 +224,45 @@ class DocumentReader
     private function resolveDirection(array $r): array
     {
         $directional = ['document_emis', 'facture_fournisseur', 'bon_reception_fournisseur'];
-        $issuer = $r['issuer'];
         $ownName = trim((string) Setting::get('company', 'name', ''));
         $ownIce = preg_replace('/\D/', '', (string) Setting::get('company', 'ice', ''));
-        if (!in_array($r['type'], $directional, true) || ($issuer['name'] === null && $issuer['ice'] === null) || ($ownName === '' && $ownIce === '')) {
+        $r['company_known'] = $ownName !== '' || $ownIce !== '';
+        if (!in_array($r['type'], $directional, true) || !$r['company_known']) {
             return $r;
         }
 
-        if ($this->sameCompany($issuer, $ownName, $ownIce)) {
+        $known = fn (array $p) => $p['name'] !== null || $p['ice'] !== null;
+        $issuerIsOwn = $known($r['issuer']) ? $this->sameCompany($r['issuer'], $ownName, $ownIce) : null;
+        $recipientIsOwn = $known($r['recipient']) ? $this->sameCompany($r['recipient'], $ownName, $ownIce) : null;
+
+        // Le destinataire (près de « Client ») se lit plus sûrement que l'émetteur : s'il est votre société, le document est reçu.
+        $received = match (true) {
+            $recipientIsOwn === true => true,         // même si le modèle a mis votre société des deux côtés : fournisseur alors inconnu
+            $issuerIsOwn === true => false,
+            $issuerIsOwn === false => true,
+            $recipientIsOwn === false => false,
+            default => null,
+        };
+        if ($received === null) {
+            return $r;
+        }
+        if (!$received) {
             $r['type'] = 'document_emis';
 
             return $r;
         }
 
-        // Établi par une autre société : c'est un document reçu d'un fournisseur ; le « party » est cet émetteur.
+        // Reçu d'une autre société : c'est un document fournisseur ; le « party » est l'émetteur.
+        $supplier = $issuerIsOwn === true ? ['name' => null, 'ice' => null] : $r['issuer'];
         $kind = $r['document_kind'] ?? (preg_match('/bon de livraison|\bBL\b/i', $r['summary'] ?? '') ? 'bon_livraison' : ($r['type'] === 'bon_reception_fournisseur' ? 'bon_livraison' : 'facture'));
         $r['type'] = match ($kind) {
             'bon_livraison' => 'bon_reception_fournisseur',
             'facture'       => 'facture_fournisseur',
             default         => 'autre',
         };
-        $r['party'] = ['name' => $issuer['name'], 'ice' => $issuer['ice'], 'phone' => null];
-        $r['summary'] = self::TYPES[$r['type']] . ' reçu(e) de ' . ($issuer['name'] ?? $issuer['ice']) . '.';
+        $r['party'] = ['name' => $supplier['name'], 'ice' => $supplier['ice'], 'phone' => null];
+        $from = $supplier['name'] ?? $supplier['ice'];
+        $r['summary'] = self::TYPES[$r['type']] . ' reçu(e) ' . ($from !== null ? "de {$from}" : "d'un fournisseur non identifié") . '.';
 
         return $r;
     }
@@ -336,7 +356,7 @@ class DocumentReader
             . "- type, parmi :\n{$types}\n"
             . "- Attention au sens : bon_commande_client est une commande passée PAR un client AU commerce. Un bon de livraison, une facture de vente ou un devis établis PAR le commerce pour un client (son nom et ses coordonnées en en-tête, le client en destinataire) sont des document_emis, jamais des commandes. Une facture reçue d'un fournisseur est une facture_fournisseur ; un bon de livraison ou de réception établi par un fournisseur (marchandise reçue, souvent sans prix ou sans TVA détaillée) est un bon_reception_fournisseur.\n"
             . "- Disposition : l'en-tête (logo, nom) et le pied de page (adresse, RC, patente, IF, ICE, téléphone) sont réservés à la société qui ÉMET le document. Le destinataire figure dans le corps, près de la date ou du numéro. L'ICE du pied de page est donc celui de l'émetteur : party décrit toujours l'autre partie, jamais l'émetteur.\n"
-            . "- issuer : la société qui ÉTABLIT le document, celle du logo, de l'en-tête ou du pied de page (nom, ICE si imprimé). Ne la confonds jamais avec le destinataire, qui est nommé près de la date ou du numéro, souvent en haut à droite, avec « Code client ». document_kind : facture, bon_livraison, devis, bon_commande ou autre.\n"
+            . "- issuer : la société qui ÉTABLIT le document, celle du logo, de l'en-tête ou du pied de page (nom, ICE si imprimé). Ne la confonds jamais avec le destinataire. recipient : le destinataire (le client), nommé près de la date ou du numéro, souvent en haut à droite, près de « Code client » ou « Client ». document_kind : facture, bon_livraison, devis, bon_commande ou autre.\n"
             . $this->ownCompanyHint()
             . "- confidence : de 0 à 1, ta certitude sur le type. Si le document est flou, tronqué ou ambigu, baisse-la.\n"
             . "- summary : une phrase en français qui dit ce que c'est.\n"
@@ -366,6 +386,7 @@ class DocumentReader
                     'summary'            => ['type' => 'string'],
                     'party'              => ['type' => 'object', 'properties' => ['name' => $nullableString, 'ice' => $nullableString, 'phone' => $nullableString]],
                     'issuer'             => ['type' => 'object', 'properties' => ['name' => $nullableString, 'ice' => $nullableString]],
+                    'recipient'          => ['type' => 'object', 'properties' => ['name' => $nullableString, 'ice' => $nullableString]],
                     'document_kind'      => ['type' => ['string', 'null'], 'enum' => ['facture', 'bon_livraison', 'devis', 'bon_commande', 'autre', null]],
                     'reference'          => $nullableString,
                     'date'               => $nullableString,

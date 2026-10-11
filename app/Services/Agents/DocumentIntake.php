@@ -138,7 +138,8 @@ class DocumentIntake
         $typeLabel = DocumentReader::TYPES[$doc['type']];
         $certainty = $doc['confidence'] !== null ? ' (certitude ' . round($doc['confidence'] * 100) . ' %)' : '';
         $head = "Fichier « {$name} » (document #{$event->id}) : {$typeLabel}{$certainty}."
-            . ($doc['summary'] !== '' ? "\n{$doc['summary']}" : '');
+            . ($doc['summary'] !== '' ? "\n{$doc['summary']}" : '')
+            . $this->directionNote($doc);
 
         $proposal = match ($doc['type']) {
             'facture_fournisseur' => $this->proposePurchase($event, $doc, $admin, $name),
@@ -165,6 +166,20 @@ class DocumentIntake
         }
 
         return ['text' => $head . "\n" . $proposal['text'], 'suggestions' => $suggestions, 'links' => $proposal['links'], 'event_id' => $event->id];
+    }
+
+    /** Dit sur quoi repose le sens du document (émis / reçu), ou pourquoi il n'a pas pu être vérifié. */
+    private function directionNote(array $d): string
+    {
+        if (!in_array($d['type'], ['document_emis', 'facture_fournisseur', 'bon_reception_fournisseur'], true)) {
+            return '';
+        }
+        if (!($d['company_known'] ?? false)) {
+            return "\nAttention : le nom et l'ICE de votre société ne sont pas renseignés (Paramètres → Société) : je ne peux pas vérifier si ce document est émis ou reçu.";
+        }
+        $name = fn (array $p) => $p['name'] ?? $p['ice'] ?? 'non lu';
+
+        return "\nÉmetteur lu : " . $name($d['issuer']) . ' · destinataire lu : ' . $name($d['recipient']) . '.';
     }
 
     // ── Propositions ─────────────────────────────────────────────────
