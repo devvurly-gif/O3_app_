@@ -19,6 +19,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 /**
  * Les fichiers (photos, PDF) déposés dans la conversation avec l'orchestrateur : il les garde, les
@@ -187,9 +188,25 @@ class DocumentIntake
         if ($d['lines'] === []) {
             $missing[] = 'les lignes d\'articles';
         }
-        $noSku = count(array_filter($d['lines'], fn ($l) => empty($l['sku'])));
+        // Une ligne sans référence imprimée : produit existant de même intitulé exact, sinon référence générée
+        // (stable : même intitulé, même référence). La fiche créée reste inactive, à compléter dans O3.
+        $skuNotes = [];
+        $d['lines'] = array_map(function ($l) use (&$skuNotes) {
+            if (!empty($l['sku'])) {
+                return $l;
+            }
+            $found = Product::whereRaw('LOWER(p_title) = ?', [mb_strtolower(trim($l['designation']))])->get(['p_sku']);
+            if ($found->count() === 1) {
+                $skuNotes[] = "« {$l['designation']} » rapproché du produit {$found->first()->p_sku} (même intitulé)";
+
+                return array_merge($l, ['sku' => $found->first()->p_sku]);
+            }
+            $sku = $this->generatedSku($l['designation']);
+            $skuNotes[] = "« {$l['designation']} » sans référence imprimée : fiche à créer sous la référence {$sku} (inactive, à compléter)";
+
+            return array_merge($l, ['sku' => $sku]);
+        }, $d['lines']);
         $noPrice = count(array_filter($d['lines'], fn ($l) => $l['unit_price'] === null));
-        $noSku && $missing[] = "la référence de {$noSku} ligne(s)";
         $noPrice && $missing[] = "le prix de {$noPrice} ligne(s)";
 
         $d['lines'] = $this->withUniformVatRate($d);
@@ -234,12 +251,21 @@ class DocumentIntake
             . '. Fournisseur ' . (($new['supplier'] ?? null) ? 'à créer (' . ($supplier['name'] ?? $supplier['ice']) . ')' : 'reconnu')
             . (($new['products'] ?? []) ? ', ' . count($new['products']) . ' produit(s) à créer' : '')
             . '. Le brouillon laisse le stock en attente : rien n\'entre en stock avant votre confirmation.'
+            . ($skuNotes ? "\nRéférences : " . implode(' ; ', $skuNotes) . '.' : '')
             . ($res['warnings'] ? "\nÀ noter :\n" . $this->issues($res['warnings']) : '');
 
         return [
             'action' => 'purchase', 'text' => $text, 'links' => $links, 'data' => ['payload' => $payload],
             'suggestions' => [['label' => $isReceipt ? 'Oui, préparer le bon de réception (à confirmer)' : "Oui, préparer le brouillon d'achat", 'text' => "prépare le brouillon d'achat du document #{$event->id}"]],
         ];
+    }
+
+    /** Référence stable tirée de l'intitulé : AUTO-POUBELLE-240L-1A2B. */
+    private function generatedSku(string $designation): string
+    {
+        $slug = trim(preg_replace('/[^A-Z0-9]+/', '-', strtoupper(Str::ascii($designation))), '-');
+
+        return 'AUTO-' . substr($slug, 0, 24) . '-' . strtoupper(substr(md5(mb_strtolower(trim($designation))), 0, 4));
     }
 
     /**

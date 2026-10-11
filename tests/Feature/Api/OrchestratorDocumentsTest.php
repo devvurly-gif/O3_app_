@@ -197,14 +197,43 @@ class OrchestratorDocumentsTest extends TestCase
 
     public function test_an_invoice_with_unreadable_fields_is_not_proposed_and_says_what_is_missing(): void
     {
-        $this->modelReads($this->invoice(['reference' => null], ['sku' => null]));
+        $this->modelReads($this->invoice(['reference' => null], ['unit_price' => null]));
 
         $r = $this->deposit()->assertCreated();
 
         $this->assertStringContainsString('numéro de la facture', $r->json('reply.body'));
-        $this->assertStringContainsString('la référence de 1 ligne', $r->json('reply.body'));
+        $this->assertStringContainsString('le prix de 1 ligne', $r->json('reply.body'));
         $this->assertSame([], $r->json('reply.suggestions'));
         $this->assertSame(AgentEvent::STATUS_TO_SORT, AgentEvent::firstOrFail()->status);
+    }
+
+    public function test_a_line_without_printed_reference_is_matched_by_exact_title_or_gets_a_stable_generated_reference(): void
+    {
+        ThirdPartner::factory()->create(['tp_title' => 'YAHYA CLEAN', 'tp_Role' => 'supplier', 'tp_Ice_Number' => '001427028000002']);
+        $existing = Product::factory()->create(['p_title' => 'Gant nitrile', 'p_sku' => 'GANT-01']);
+        $this->modelReads([
+            'type' => 'facture_fournisseur', 'confidence' => 0.95, 'summary' => 'Facture Yahya Clean pour Jawad Light.',
+            'party' => ['name' => 'YAHYA CLEAN', 'ice' => '001427028000002'], 'reference' => '398/26', 'date' => '2026-10-07',
+            'prices_include_vat' => false, 'totals' => ['ht' => 3850.0, 'tva' => 770.0, 'ttc' => 4620.0],
+            'lines' => [
+                ['designation' => 'POUBELLE 240L', 'quantity' => 10, 'unit_price' => 375.0, 'vat_rate' => 20],
+                ['designation' => 'gant NITRILE', 'quantity' => 1, 'unit_price' => 100.0, 'vat_rate' => 20],
+            ],
+        ]);
+
+        $r = $this->deposit('F398.pdf')->assertCreated();
+        $id = AgentEvent::firstOrFail()->id;
+
+        $this->assertStringContainsString('fiche à créer sous la référence AUTO-POUBELLE-240L-', $r->json('reply.body'));
+        $this->assertStringContainsString('rapproché du produit GANT-01', $r->json('reply.body'));
+
+        $this->say("prépare le brouillon d'achat du document #{$id}");
+
+        $doc = DocumentHeader::where('document_type', 'InvoicePurchase')->firstOrFail();
+        $this->assertSame('draft', $doc->status);
+        $created = Product::where('p_sku', 'like', 'AUTO-POUBELLE-240L-%')->firstOrFail();
+        $this->assertFalse((bool) $created->p_status);                          // inactive, à compléter
+        $this->assertEqualsCanonicalizing([$created->id, $existing->id], $doc->lignes->pluck('product_id')->all());
     }
 
     public function test_an_invoice_blocked_by_the_import_controls_gets_no_confirm_button(): void
