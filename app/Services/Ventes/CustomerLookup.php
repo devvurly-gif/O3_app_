@@ -39,6 +39,16 @@ class CustomerLookup
         return $this->customers()->where('tp_code', trim($code))->get();
     }
 
+    /** ICE du client (15 chiffres), quelle que soit la mise en forme saisie. */
+    public function byIce(string $ice): Collection
+    {
+        $ice = preg_replace('/\D/', '', $ice);
+
+        return strlen($ice) === 15
+            ? $this->customers()->whereRaw("REPLACE(REPLACE(tp_Ice_Number, ' ', ''), '-', '') = ?", [$ice])->get()
+            : collect();
+    }
+
     public function byExactName(string $name): Collection
     {
         return $this->customers()->where('tp_title', trim($name))->get();

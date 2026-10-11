@@ -279,11 +279,83 @@ class OrchestratorDocumentsTest extends TestCase
         $this->assertSame([], $known->json('reply.suggestions'));
         $this->assertSame(AgentEvent::STATUS_DONE, AgentEvent::firstOrFail()->status);
 
-        // Il n'existe pas : on le dit, on ne le recrée pas.
+        // Il n'existe pas et il est incomplet (ni date ni lignes) : on le dit, on ne le recrée pas.
         $unknown = $this->deposit('bl2.pdf')->assertCreated();
-        $this->assertStringContainsString('pas une commande reçue', $unknown->json('reply.body'));
+        $this->assertStringContainsString("je n'ai pas pu lire sa date", $unknown->json('reply.body'));
         $this->assertSame([], $unknown->json('reply.suggestions'));
         $this->assertSame(1, DocumentHeader::count());                        // aucun document créé
+    }
+
+    private function issuedInvoice(array $over = []): array
+    {
+        return array_replace_recursive([
+            'type' => 'document_emis', 'confidence' => 0.95, 'summary' => 'Facture de vente Yahya Clean pour Jawad Light.',
+            'party' => ['name' => 'JAWAD LIGHT', 'ice' => '003167048000054'], 'reference' => '398/26', 'date' => '2026-10-07',
+            'prices_include_vat' => false, 'totals' => ['ht' => 3750.0, 'tva' => 750.0, 'ttc' => 4500.0],
+            'lines' => [['designation' => 'POUBELLE 240L', 'quantity' => 10, 'unit_price' => 375.0, 'vat_rate' => 20]],
+        ], $over);
+    }
+
+    public function test_a_missing_issued_sales_invoice_is_proposed_then_created_as_a_draft_to_confirm(): void
+    {
+        DocumentIncrementor::firstOrCreate(['di_model' => 'InvoiceSale', 'di_domain' => 'sales'], ['di_title' => 'Facture Vente', 'template' => 'FV-{0000}', 'operatorSens' => 'out']);
+        ThirdPartner::factory()->customer()->create(['tp_title' => 'JAWAD LIGHT', 'tp_Ice_Number' => '003167048000054']);
+        $this->modelReads($this->issuedInvoice());
+
+        $r = $this->deposit('F398.pdf')->assertCreated();
+
+        $this->assertStringContainsString('JAWAD LIGHT', $r->json('reply.body'));
+        $this->assertSame(0, DocumentHeader::count());                         // proposé, rien créé
+        $id = AgentEvent::firstOrFail()->id;
+        $this->assertContains("prépare le brouillon de facture de vente du document #{$id}", array_column($r->json('reply.suggestions'), 'text'));
+
+        $this->say("prépare le brouillon de facture de vente du document #{$id}");
+
+        $doc = DocumentHeader::firstOrFail();
+        $this->assertSame('InvoiceSale', $doc->document_type);
+        $this->assertSame('398/26', $doc->reference);                          // numéro déjà émis, conservé
+        $this->assertSame('draft', $doc->status);
+        $this->assertEquals(4500.0, (float) $doc->footer->total_ttc);
+        $this->assertEquals(375.0, (float) $doc->lignes->first()->unit_price);   // prix du document, pas du tarif O3
+        $this->assertSame(AgentEvent::STATUS_DONE, AgentEvent::findOrFail($id)->status);
+
+        // Redéposé : la facture existe, plus rien à faire.
+        $this->modelReads($this->issuedInvoice());
+        $again = $this->deposit('F398-bis.pdf')->assertCreated();
+        $this->assertStringContainsString('il existe déjà dans O3 : 398/26', $again->json('reply.body'));
+        $this->assertSame(1, DocumentHeader::count());
+    }
+
+    public function test_an_issued_invoice_whose_totals_do_not_add_up_or_whose_customer_is_unknown_is_not_created(): void
+    {
+        DocumentIncrementor::firstOrCreate(['di_model' => 'InvoiceSale', 'di_domain' => 'sales'], ['di_title' => 'Facture Vente', 'template' => 'FV-{0000}', 'operatorSens' => 'out']);
+        $this->modelReadsInOrder($this->issuedInvoice(), $this->issuedInvoice(['totals' => ['ttc' => 4600.0]]));
+
+        $unknown = $this->deposit('a.pdf')->assertCreated();
+        $this->assertStringContainsString('introuvable parmi vos clients', $unknown->json('reply.body'));
+
+        ThirdPartner::factory()->customer()->create(['tp_title' => 'JAWAD LIGHT', 'tp_Ice_Number' => '003167048000054']);
+        $bad = $this->deposit('b.pdf')->assertCreated();
+        $this->assertStringContainsString('≠ recalculé', $bad->json('reply.body'));
+        $this->assertSame([], $bad->json('reply.suggestions'));
+        $this->assertSame(0, DocumentHeader::count());
+    }
+
+    public function test_a_supplier_delivery_note_is_proposed_as_a_receipt_note_draft(): void
+    {
+        DocumentIncrementor::firstOrCreate(['di_model' => 'ReceiptNotePurchase', 'di_domain' => 'achat'], ['di_title' => 'Bon de réception', 'template' => 'BR-{0000}', 'operatorSens' => 'in']);
+        ThirdPartner::factory()->create(['tp_title' => 'LEADER STAR', 'tp_Role' => 'supplier', 'tp_Ice_Number' => '003303692000061']);
+        $this->modelReads($this->invoice(['type' => 'bon_reception_fournisseur', 'reference' => 'BL-555']));
+
+        $r = $this->deposit('bl-fournisseur.pdf')->assertCreated();
+        $id = AgentEvent::firstOrFail()->id;
+        $this->assertStringContainsString('bon de réception', $r->json('reply.suggestions.0.label'));
+
+        $this->say("prépare le brouillon d'achat du document #{$id}");
+
+        $doc = DocumentHeader::firstOrFail();
+        $this->assertSame('ReceiptNotePurchase', $doc->document_type);
+        $this->assertSame('draft', $doc->status);
     }
 
     // ── Paiement ─────────────────────────────────────────────────────

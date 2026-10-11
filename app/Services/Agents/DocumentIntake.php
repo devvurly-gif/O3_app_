@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Services\ProductImageService;
 use App\Services\Purchases\PurchaseImportService;
 use App\Services\Ventes\CustomerLookup;
+use App\Services\Ventes\IssuedInvoiceImportService;
 use App\Services\Ventes\WhatsAppOrderImportService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
@@ -45,6 +46,7 @@ class DocumentIntake
         private CustomerLookup $customers,
         private ProductImageService $images,
         private BankStatementImporter $statements,
+        private IssuedInvoiceImportService $issuedInvoices,
     ) {
     }
 
@@ -139,14 +141,15 @@ class DocumentIntake
 
         $proposal = match ($doc['type']) {
             'facture_fournisseur' => $this->proposePurchase($event, $doc, $admin, $name),
+            'bon_reception_fournisseur' => $this->proposePurchase($event, $doc, $admin, $name, 'bon_reception'),
             'bon_commande_client' => $this->proposeSale($event, $doc, $admin),
-            'document_emis'       => $this->describeIssued($doc),
+            'document_emis'       => $this->describeIssued($event, $doc, $admin),
             'paiement'            => $this->proposePayment($event, $doc),
             'photo_produit'       => $this->proposePhoto($event, $doc, $mime),
             default               => ['text' => "Je ne sais pas quoi en faire automatiquement : il est classé à trier.", 'suggestions' => [], 'links' => [], 'action' => 'none'],
         };
 
-        $keep = in_array($proposal['action'], ['purchase', 'sale', 'photo', 'payment'], true);
+        $keep = in_array($proposal['action'], ['purchase', 'sale', 'issued', 'photo', 'payment'], true);
         $this->update(
             $event,
             // « known » : un document émis qui existe déjà dans O3, il n'y a rien à faire.
@@ -165,10 +168,11 @@ class DocumentIntake
 
     // ── Propositions ─────────────────────────────────────────────────
 
-    private function proposePurchase(AgentEvent $event, array $d, User $admin, string $fileName): array
+    private function proposePurchase(AgentEvent $event, array $d, User $admin, string $fileName, string $type = 'facture_achat'): array
     {
+        $isReceipt = $type === 'bon_reception';
         $missing = [];
-        foreach ([['reference', 'le numéro de la facture'], ['date', 'la date']] as [$key, $label]) {
+        foreach ([['reference', $isReceipt ? 'le numéro du bon' : 'le numéro de la facture'], ['date', 'la date']] as [$key, $label]) {
             if (empty($d[$key])) {
                 $missing[] = $label;
             }
@@ -198,7 +202,7 @@ class DocumentIntake
 
         $payload = [
             'external_id'        => 'ORC-' . $event->id,
-            'type'               => 'facture_achat',
+            'type'               => $type,
             'source_file'        => mb_substr($fileName, 0, 255),
             'supplier'           => $supplier,
             // Un fournisseur n'est créé que s'il est identifié par son ICE ; sinon il doit déjà exister.
@@ -234,7 +238,7 @@ class DocumentIntake
 
         return [
             'action' => 'purchase', 'text' => $text, 'links' => $links, 'data' => ['payload' => $payload],
-            'suggestions' => [['label' => "Oui, préparer le brouillon d'achat", 'text' => "prépare le brouillon d'achat du document #{$event->id}"]],
+            'suggestions' => [['label' => $isReceipt ? 'Oui, préparer le bon de réception (à confirmer)' : "Oui, préparer le brouillon d'achat", 'text' => "prépare le brouillon d'achat du document #{$event->id}"]],
         ];
     }
 
@@ -317,7 +321,7 @@ class DocumentIntake
      * Un document établi par l'entreprise elle-même (bon de livraison, facture de vente, devis) n'est pas une
      * commande à traiter : on regarde s'il existe déjà dans O3 sous cette référence, et on ne le recrée jamais.
      */
-    private function describeIssued(array $d): array
+    private function describeIssued(AgentEvent $event, array $d, User $admin): array
     {
         $links = [['label' => 'Documents de vente', 'to' => '/ventes/documents']];
         $ref = $d['reference'];
@@ -328,9 +332,81 @@ class DocumentIntake
                 'text' => "C'est un document que vous avez émis, et il existe déjà dans O3 : {$found->reference} (statut {$found->status}). Il n'y a rien à faire."];
         }
 
-        return ['action' => 'none', 'suggestions' => [], 'links' => $links,
-            'text' => "C'est un document émis par votre entreprise" . ($ref ? " ({$ref})" : '') . ", pas une commande reçue : je ne le recrée pas à partir d'un PDF."
-                . ($ref ? " Je ne le trouve pas dans O3 sous cette référence ; s'il manque, saisissez-le dans Documents de vente." : '')];
+        $none = fn (string $why) => ['action' => 'none', 'suggestions' => [], 'links' => $links,
+            'text' => "C'est un document émis par votre entreprise" . ($ref ? " ({$ref})" : '') . ", absent d'O3, mais je ne peux pas le préparer seul : {$why}\nSaisissez-le dans Documents de vente."];
+
+        // Seule une facture de vente complète est recopiée ; un bon de livraison ou un devis émis n'est jamais recréé.
+        if (!$ref || !$d['date']) {
+            return $none("je n'ai pas pu lire " . (!$ref ? 'son numéro' : 'sa date') . '.');
+        }
+        if ($d['lines'] === []) {
+            return $none("je n'ai pas pu lire les lignes d'articles.");
+        }
+        $found = collect([
+            $d['party']['ice'] ? $this->customers->byIce($d['party']['ice']) : collect(),
+            $d['party']['name'] ? $this->customers->byExactName($d['party']['name']) : collect(),
+        ])->first(fn ($c) => $c->isNotEmpty(), collect());
+        if ($found->count() !== 1) {
+            $who = $d['party']['name'] ?: ($d['party']['ice'] ?: 'ce client');
+
+            return $none($found->isEmpty() ? "le client « {$who} » est introuvable parmi vos clients (je ne crée jamais de client depuis un PDF)." : "plusieurs clients correspondent à « {$who} ».");
+        }
+        $customer = $found->first();
+
+        $payload = [
+            'external_id'        => 'ORC-' . $event->id,
+            'reference'          => $ref,
+            'date'               => $d['date'],
+            'due_date'           => $d['due_date'] && $d['due_date'] >= $d['date'] ? $d['due_date'] : null,
+            'prices_include_vat' => $d['prices_include_vat'],
+            'totals'             => array_filter(['ht' => $d['totals']['ht'], 'tva' => $d['totals']['tva'], 'ttc' => $d['totals']['ttc']], fn ($v) => $v !== null),
+            'lines'              => array_map(fn ($l) => ['sku' => $l['sku'], 'designation' => $l['designation'], 'quantity' => $l['quantity'],
+                'unit' => $l['unit'], 'unit_price' => $l['unit_price'], 'vat_rate' => $l['vat_rate']], $this->withUniformVatRate($d)),
+            'notes'              => "Déposé dans l'orchestrateur par {$admin->name} (document #{$event->id}).",
+        ];
+
+        $res = $this->issuedInvoices->handle($payload, $customer, true, $admin->id);
+        if ($res['status'] === 'already_imported') {
+            return ['action' => 'known', 'suggestions' => [], 'links' => [['label' => "Ouvrir {$res['document']['reference']}", 'to' => "/ventes/documents/{$res['document']['id']}"]],
+                'text' => "Cette facture a déjà été saisie depuis ce document : {$res['document']['reference']}. Il n'y a rien à faire."];
+        }
+        if ($res['status'] !== 'valid') {
+            return ['action' => 'none', 'links' => $links, 'suggestions' => [], 'text' => "La facture est bloquée par les contrôles :\n" . $this->issues($res['errors'])];
+        }
+
+        return [
+            'action' => 'issued', 'links' => $links, 'data' => ['payload' => $payload, 'customer_id' => $customer->id],
+            'text' => "Facture de vente émise absente d'O3. Client reconnu : {$customer->tp_title} ({$customer->tp_code}). " . count($d['lines']) . ' ligne(s), total TTC '
+                . $this->money($res['preview']['totals']['ttc']) . ". Je la recopie telle qu'imprimée (numéro {$ref}, prix et TVA du document), en brouillon à confirmer."
+                . "\nLe stock reste en attente : rien ne sort avant votre confirmation. Si cette marchandise a déjà été livrée par un bon de livraison, vérifiez le stock avant de confirmer."
+                . ($res['warnings'] ? "\nÀ noter :\n" . $this->issues($res['warnings']) : ''),
+            'suggestions' => [['label' => 'Oui, préparer la facture de vente (à confirmer)', 'text' => "prépare le brouillon de facture de vente du document #{$event->id}"]],
+        ];
+    }
+
+    private function createIssued(AgentEvent $event, array $proposal, User $admin): array
+    {
+        if (($proposal['action'] ?? null) !== 'issued') {
+            return $this->reply("Aucune facture de vente n'est proposée pour le document #{$event->id}.", error: true, eventId: $event->id);
+        }
+
+        $customer = \App\Models\ThirdPartner::find($proposal['customer_id'] ?? 0);
+        if (!$customer) {
+            return $this->reply('Le client de cette facture est introuvable.', error: true, eventId: $event->id);
+        }
+        $res = $this->issuedInvoices->handle($proposal['payload'], $customer, false, $admin->id);
+        if (!in_array($res['status'], ['created', 'already_imported'], true)) {
+            return $this->reply("La facture n'a pas été créée :\n" . $this->issues($res['errors']), error: true, eventId: $event->id);
+        }
+
+        $doc = $res['document'];
+        $this->update($event, AgentEvent::STATUS_DONE, ['result' => ['document_id' => $doc['id'], 'reference' => $doc['reference']]]);
+
+        return $this->reply(
+            ($res['status'] === 'already_imported' ? 'Cette facture avait déjà été saisie' : 'Facture de vente créée, à confirmer') . " : {$doc['reference']}.\nElle est en brouillon et le stock est en attente : vérifiez-la puis confirmez-la dans Documents de vente.",
+            links: [['label' => "Ouvrir le brouillon {$doc['reference']}", 'to' => "/ventes/documents/{$doc['id']}"]],
+            eventId: $event->id,
+        );
     }
 
     private function proposePayment(AgentEvent $event, array $d): array
@@ -443,6 +519,9 @@ class DocumentIntake
             if (preg_match('/achat/', $n)) {
                 return $this->createPurchase($event, $proposal, $admin);
             }
+            if (preg_match('/facture (de )?vente/', $n)) {
+                return $this->createIssued($event, $proposal, $admin);
+            }
             if (preg_match('/livraison|\bbl\b/', $n)) {
                 return $this->createSale($event, $proposal, $admin);
             }
@@ -470,7 +549,7 @@ class DocumentIntake
         $this->update($event, AgentEvent::STATUS_DONE, ['result' => ['document_id' => $doc['id'] ?? null, 'reference' => $doc['reference'] ?? null]]);
 
         return $this->reply(
-            ($res['status'] === 'already_imported' ? 'Ce document avait déjà été importé' : "Brouillon d'achat créé") . ($doc ? " : {$doc['reference']}" : '')
+            ($res['status'] === 'already_imported' ? 'Ce document avait déjà été importé' : (($proposal['payload']['type'] ?? '') === 'bon_reception' ? 'Bon de réception créé (à confirmer)' : "Brouillon d'achat créé")) . ($doc ? " : {$doc['reference']}" : '')
             . ".\nIl est en brouillon et le stock est en attente : vérifiez-le puis confirmez-le dans Documents d'achat.",
             links: isset($doc['id']) ? [['label' => "Ouvrir le brouillon {$doc['reference']}", 'to' => "/achats/documents/{$doc['id']}"]] : [],
             eventId: $event->id,
@@ -533,7 +612,7 @@ class DocumentIntake
 
     private function agentFor(string $action): ?Agent
     {
-        $domain = ['purchase' => 'achats', 'sale' => 'ventes'][$action] ?? null;
+        $domain = ['purchase' => 'achats', 'sale' => 'ventes', 'issued' => 'ventes'][$action] ?? null;
 
         return $domain ? Agent::where('domain', $domain)->first() : null;
     }

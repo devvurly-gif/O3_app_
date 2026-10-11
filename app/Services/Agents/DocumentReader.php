@@ -31,6 +31,7 @@ class DocumentReader
 
     public const TYPES = [
         'facture_fournisseur'  => 'Facture fournisseur',
+        'bon_reception_fournisseur' => 'Bon de livraison reçu d\'un fournisseur (à enregistrer comme bon de réception)',
         'bon_commande_client'  => 'Bon de commande client',
         'document_emis'        => 'Document émis par votre entreprise (bon de livraison, facture de vente, devis)',
         'paiement'             => 'Paiement (reçu, chèque ou virement)',
@@ -219,6 +220,19 @@ class DocumentReader
         return $v;
     }
 
+    /** Dit au modèle qui est « le commerce », pour qu'il sache si l'émetteur du document est cette société. */
+    private function ownCompanyHint(): string
+    {
+        $name = trim((string) Setting::get('company', 'name', ''));
+        $ice = preg_replace('/\D/', '', (string) Setting::get('company', 'ice', ''));
+        if ($name === '' && $ice === '') {
+            return '';
+        }
+
+        return "- Le commerce, c'est-à-dire votre société : " . ($name !== '' ? "« {$name} »" : '') . ($ice !== '' ? " (ICE {$ice})" : '')
+            . ". Si l'émetteur du document est cette société, c'est un document_emis ; si c'est une autre société qui vend au commerce, c'est une facture_fournisseur.\n";
+    }
+
     private function systemPrompt(): string
     {
         $types = collect(self::TYPES)->map(fn ($label, $key) => "- {$key} : {$label}")->implode("\n");
@@ -226,7 +240,9 @@ class DocumentReader
         return "Tu lis des documents d'un commerce marocain (photo ou PDF) : factures, bons de commande, reçus, chèques, virements, photos de produits. Français, parfois arabe.\n"
             . "Remplis le formulaire de l'outil read_document :\n"
             . "- type, parmi :\n{$types}\n"
-            . "- Attention au sens : bon_commande_client est une commande passée PAR un client AU commerce. Un bon de livraison, une facture de vente ou un devis établis PAR le commerce pour un client (son nom et ses coordonnées en en-tête, le client en destinataire) sont des document_emis, jamais des commandes. Une facture reçue d'un fournisseur est une facture_fournisseur.\n"
+            . "- Attention au sens : bon_commande_client est une commande passée PAR un client AU commerce. Un bon de livraison, une facture de vente ou un devis établis PAR le commerce pour un client (son nom et ses coordonnées en en-tête, le client en destinataire) sont des document_emis, jamais des commandes. Une facture reçue d'un fournisseur est une facture_fournisseur ; un bon de livraison ou de réception établi par un fournisseur (marchandise reçue, souvent sans prix ou sans TVA détaillée) est un bon_reception_fournisseur.\n"
+            . "- Disposition : l'en-tête (logo, nom) et le pied de page (adresse, RC, patente, IF, ICE, téléphone) sont réservés à la société qui ÉMET le document. Le destinataire figure dans le corps, près de la date ou du numéro. L'ICE du pied de page est donc celui de l'émetteur : party décrit toujours l'autre partie, jamais l'émetteur.\n"
+            . $this->ownCompanyHint()
             . "- confidence : de 0 à 1, ta certitude sur le type. Si le document est flou, tronqué ou ambigu, baisse-la.\n"
             . "- summary : une phrase en français qui dit ce que c'est.\n"
             . "- party : l'autre partie du document (le fournisseur d'une facture fournisseur, le client d'un bon de commande, le payeur ou le bénéficiaire d'un paiement), avec son ICE (15 chiffres) s'il est imprimé.\n"
