@@ -70,7 +70,23 @@ sudo -u www-data php artisan view:cache
 # Build frontend
 echo "[5/7] Building frontend assets..."
 npm ci --production=false
-npm run build
+
+# The VPS has ~1 GB of RAM: with Node's default heap limit `vite build` ran out of
+# memory ("JavaScript heap out of memory", core dumped) during "rendering chunks",
+# which aborted the deploy and — because Vite empties public/build first — left the
+# site without its JS/CSS. Give Node more heap (the rest spills into swap), and keep
+# a copy of the current build so a failed build restores it instead of leaving it empty.
+rm -rf public/build-prev
+[ -d public/build ] && cp -a public/build public/build-prev
+if ! NODE_OPTIONS="--max-old-space-size=1536" npm run build; then
+    echo "FATAL: frontend build failed — restoring the previous build." >&2
+    if [ -d public/build-prev ]; then
+        rm -rf public/build
+        mv public/build-prev public/build
+    fi
+    exit 1
+fi
+rm -rf public/build-prev
 
 # Restart queue workers (graceful)
 echo "[6/7] Restarting queue workers..."
