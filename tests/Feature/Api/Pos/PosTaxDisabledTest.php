@@ -69,6 +69,24 @@ class PosTaxDisabledTest extends TestCase
         $this->assertEquals(120, (float) $footer->total_ttc);
     }
 
+    public function test_the_printed_receipt_shows_no_vat_or_ttc_label_when_the_option_was_off(): void
+    {
+        $user = $this->cashier();
+
+        Setting::set('invoice', 'tax_enabled', 'false');
+        $off = $this->sell($user, paid: 100)->assertCreated()->json('id');
+        $html = $this->actingAs($user, 'sanctum')->get("/api/pos/tickets/{$off}/print-html")->assertOk()->getContent();
+        $this->assertStringNotContainsString('TOTAL TTC', $html);
+        $this->assertStringNotContainsString('Sous-total HT', $html);
+        $this->assertStringContainsString('TOTAL', $html);
+
+        Setting::set('invoice', 'tax_enabled', 'true');
+        $on = $this->sell($user, paid: 120)->assertCreated()->json('id');
+        $html = $this->actingAs($user, 'sanctum')->get("/api/pos/tickets/{$on}/print-html")->assertOk()->getContent();
+        $this->assertStringContainsString('TOTAL TTC', $html);
+        $this->assertStringContainsString('TVA', $html);
+    }
+
     public function test_the_till_reprice_returns_no_tax_rate_when_the_option_is_off(): void
     {
         $product = $this->stockedProduct(salePrice: 100, stock: 20, taxRate: 20);

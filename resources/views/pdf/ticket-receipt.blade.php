@@ -125,10 +125,14 @@
             </tr>
         </thead>
         <tbody>
+            @php
+                // Un ticket sans TVA (option désactivée à la vente) n'affiche ni sous-total HT, ni « TTC », ni taux de ligne.
+                $ticketHasTax = (float) ($ticket->footer?->total_tax ?? 0) > 0;
+            @endphp
             @foreach($ticket->lignes as $ligne)
             @php
                 $lineHt = $ligne->quantity * $ligne->unit_price * (1 - ($ligne->discount_percent ?? 0) / 100);
-                $lineTtc = $lineHt * (1 + ($ligne->tax_percent ?? 0) / 100);
+                $lineTtc = $ticketHasTax ? $lineHt * (1 + ($ligne->tax_percent ?? 0) / 100) : $lineHt;
             @endphp
             <tr>
                 <td>{{ $ligne->designation }}</td>
@@ -148,18 +152,18 @@
     {{-- ── Totals ──────────────────────────────────── --}}
     @if($ticket->footer)
     <div class="totals">
+        @if($ticketHasTax)
         <div class="row">
             <span class="label">Sous-total HT</span>
             <span class="value">{{ number_format($ticket->footer->total_ht, 2, ',', ' ') }}</span>
         </div>
-        @if($ticket->footer->total_tax > 0)
         <div class="row">
             <span class="label">TVA</span>
             <span class="value">{{ number_format($ticket->footer->total_tax, 2, ',', ' ') }}</span>
         </div>
         @endif
         <div class="row grand">
-            <span class="label">TOTAL TTC</span>
+            <span class="label">{{ $ticketHasTax ? 'TOTAL TTC' : 'TOTAL' }}</span>
             <span class="value">{{ number_format($ticket->footer->total_ttc, 2, ',', ' ') }} MAD</span>
         </div>
         @if($ticket->footer->amount_due > 0)
