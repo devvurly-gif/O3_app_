@@ -427,8 +427,10 @@ class PosService
                     ));
                 }
 
+                // Option TVA désactivée : le taux de la fiche produit (ou celui envoyé par le poste) est ignoré.
+                $taxRate = TaxService::effectiveRate($item['tax_percent'] ?? 0);
                 $lineHt  = $item['quantity'] * $submitted * (1 - ($item['discount_percent'] ?? 0) / 100);
-                $lineTax = $lineHt * ($item['tax_percent'] ?? 0) / 100;
+                $lineTax = $lineHt * $taxRate / 100;
                 $totalHt  += $lineHt;
                 $totalTax += $lineTax;
 
@@ -447,7 +449,7 @@ class PosService
                     // se relit sans avoir à rejouer la résolution tarifaire.
                     'reference_price'  => $override ? $reference : null,
                     'discount_percent' => $item['discount_percent'] ?? 0,
-                    'tax_percent'      => $item['tax_percent'] ?? 0,
+                    'tax_percent'      => $taxRate,
                 ]);
             }
 
@@ -976,7 +978,7 @@ class PosService
                 'unit'             => $item['unit'] ?? 'pcs',
                 'unit_price'       => $item['unit_price'],
                 'discount_percent' => $item['discount_percent'] ?? 0,
-                'tax_percent'      => $item['tax_percent'] ?? 0,
+                'tax_percent'      => TaxService::effectiveRate($item['tax_percent'] ?? 0),
             ]);
         }
 

@@ -1162,7 +1162,7 @@ function clearCustomer() {
 function draftTotalTtc(draft: DraftTicket): number {
   return draft.cart.reduce((sum, item) => {
     const ht = item.quantity * item.unit_price * (1 - item.discount_percent / 100)
-    return sum + ht * (1 + item.tax_percent / 100)
+    return sum + ht * (1 + (isTaxEnabled.value ? item.tax_percent : 0) / 100)
   }, 0)
 }
 

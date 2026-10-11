@@ -11,6 +11,16 @@ class TaxService
         return Setting::get('invoice', 'tax_enabled', 'true') === 'true';
     }
 
+    /**
+     * Taux de TVA réellement applicable : celui du produit quand l'option TVA est active, 0 sinon.
+     * À utiliser partout où un taux enregistré (fiche produit, ligne soumise par le client) entrerait
+     * dans un calcul : l'option désactivée ne doit jamais laisser passer le taux de la fiche.
+     */
+    public static function effectiveRate(float|int|string|null $rate): float
+    {
+        return self::isTaxActive() ? (float) $rate : 0.0;
+    }
+
     public static function getDefaultTaxRate(): float
     {
         $rate = Setting::get('general', 'default_tax_rate', '20');

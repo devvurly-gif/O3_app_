@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Models\ThirdPartner;
 use App\Services\PosService;
 use App\Services\PriceResolver;
+use App\Services\TaxService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -101,7 +102,7 @@ class PosProductController extends Controller
                 'quantity'      => $qty,
                 'unit_price'    => $resolved['price_ht'],
                 'price_ttc'     => $resolved['price_ttc'],
-                'tax_percent'   => (float) $product->p_taxRate,
+                'tax_percent'   => TaxService::effectiveRate($product->p_taxRate),
                 'price_list_id' => $resolved['price_list_id'],
                 'source'        => $resolved['source'],
             ];

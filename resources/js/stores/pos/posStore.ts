@@ -233,7 +233,7 @@ export const usePosStore = defineStore('pos', () => {
       unit_price: variantId ? (product.variants?.find(v => v.id === variantId)?.price ?? product.p_salePrice) : product.p_salePrice,
       unit: product.p_unit,
       discount_percent: 0,
-      tax_percent: product.p_taxRate,
+      tax_percent: isTaxEnabled.value ? product.p_taxRate : 0, // option TVA désactivée : la fiche produit est ignorée
       stock: product.stock,
       image_url: product.primary_image?.url ?? null,
     })
@@ -289,7 +289,7 @@ export const usePosStore = defineStore('pos', () => {
         const priced = byId.get(line.product_id)
         if (!priced) continue
         line.unit_price = priced.unit_price
-        line.tax_percent = priced.tax_percent
+        line.tax_percent = isTaxEnabled.value ? priced.tax_percent : 0
       }
     } catch {
       // Leave cart untouched on failure — the UI will surface the error elsewhere.
@@ -380,7 +380,7 @@ export const usePosStore = defineStore('pos', () => {
         unit_price: item.unit_price,
         unit: item.unit,
         discount_percent: item.discount_percent,
-        tax_percent: item.tax_percent,
+        tax_percent: isTaxEnabled.value ? item.tax_percent : 0,
       })),
       payments,
       customer_id: customerId ?? null,
