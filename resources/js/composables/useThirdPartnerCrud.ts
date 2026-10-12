@@ -186,6 +186,33 @@ export function useThirdPartnerForm<T extends Record<string, any>>(options: Thir
     }
   }
 
+  // ── Suppression définitive (admin) ──────────────────────────────────────
+  const showForceDelete = ref(false)
+  const forceDeleting = ref(false)
+  const forceDeleteError = ref('')
+  const forceDeleteTarget: Ref<any> = ref(null)
+
+  function confirmForceDelete(row: any): void {
+    forceDeleteTarget.value = row
+    forceDeleteError.value = ''
+    showForceDelete.value = true
+  }
+
+  async function doForceDelete(): Promise<void> {
+    forceDeleting.value = true
+    forceDeleteError.value = ''
+    try {
+      await store.forceRemove(forceDeleteTarget.value.id)
+      options.notify(t('common.deletedForever'), 'success')
+      showForceDelete.value = false
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } } }
+      forceDeleteError.value = e.response?.data?.message ?? t('common.failedDelete')
+    } finally {
+      forceDeleting.value = false
+    }
+  }
+
   return {
     form,
     showModal,
@@ -199,5 +226,11 @@ export function useThirdPartnerForm<T extends Record<string, any>>(options: Thir
     submit,
     confirmDelete,
     doDelete,
+    showForceDelete,
+    forceDeleting,
+    forceDeleteError,
+    forceDeleteTarget,
+    confirmForceDelete,
+    doForceDelete,
   }
 }

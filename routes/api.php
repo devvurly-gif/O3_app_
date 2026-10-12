@@ -533,6 +533,8 @@ Route::middleware(['auth:sanctum', 'tenant.active'])->group(function () {
 
         // Suppression DÉFINITIVE d'un document (pas de corbeille) : admin seulement, stock contrepassé, règlements supprimés.
         Route::delete('documents/{documentHeader}/definitif', [DocumentHeaderController::class, 'forceDestroy']);
+        // Idem pour un client / fournisseur : refusé tant que la fiche porte un historique.
+        Route::delete('third-partners/{id}/definitif',        [ThirdPartnerController::class, 'forceDestroy']);
 
         Route::get('roles',              [RoleController::class, 'index']);
         Route::post('roles',             [RoleController::class, 'store']);

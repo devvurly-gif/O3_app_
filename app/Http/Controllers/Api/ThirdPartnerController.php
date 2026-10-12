@@ -10,10 +10,12 @@ use App\Repositories\Contracts\ThirdPartnerRepositoryInterface;
 use App\Services\CacheService;
 use App\Services\Messaging\OrderPin;
 use App\Services\PaymentNotificationService;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class ThirdPartnerController extends Controller
 {
@@ -143,6 +145,54 @@ class ThirdPartnerController extends Controller
     public function destroy(ThirdPartner $thirdPartner): JsonResponse
     {
         $this->partners->delete($thirdPartner);
+        CacheService::flushPartners();
+
+        return response()->json(null, 204);
+    }
+
+    /**
+     * DELETE /api/third-partners/{id}/definitif (admin)
+     * Suppression définitive d'un client ou d'un fournisseur, y compris déjà supprimé (corbeille). Refusée tant
+     * que la fiche porte un historique — documents (même supprimés), écritures et échéances de trésorerie,
+     * messages de commande, dossiers d'agents, relances de paiement : les perdre fausserait les soldes et les
+     * rapports. Dans ce cas, la suppression simple (corbeille) reste la bonne option. Les codes d'accès au chat
+     * client et les tarifs fournisseur de la fiche partent avec elle.
+     */
+    public function forceDestroy(int $id): JsonResponse
+    {
+        $partner = ThirdPartner::withTrashed()->findOrFail($id);
+
+        $usage = collect([
+            'document(s)'                  => ['document_headers', 'thirdPartner_id'],
+            'écriture(s) de trésorerie'    => ['cash_transactions', 'thirdPartner_id'],
+            'échéance(s) récurrente(s)'    => ['cash_recurrences', 'thirdPartner_id'],
+            'message(s) de commande'       => ['order_messages', 'third_partner_id'],
+            'dossier(s) d\'agent'          => ['agent_cases', 'third_partner_id'],
+            'relance(s) de paiement'       => ['payment_reminders', 'third_partner_id'],
+        ])->map(fn (array $ref) => Schema::hasTable($ref[0]) ? DB::table($ref[0])->where($ref[1], $id)->count() : 0)
+            ->filter();
+
+        if ($usage->isNotEmpty()) {
+            return response()->json(['message' => 'Suppression définitive impossible : cette fiche porte encore '
+                . $usage->map(fn ($n, $label) => "{$n} {$label}")->implode(', ')
+                . '. Gardez-la en suppression simple, ou supprimez d\'abord ces éléments.'], 422);
+        }
+
+        $snapshot = ['code' => $partner->tp_code, 'title' => $partner->tp_title, 'role' => $partner->tp_Role, 'ice' => $partner->tp_Ice_Number];
+        try {
+            DB::transaction(function () use ($partner, $id) {
+                foreach (['customer_chat_codes', 'customer_chat_sessions'] as $table) {
+                    if (Schema::hasTable($table)) {
+                        DB::table($table)->where('third_partner_id', $id)->delete();
+                    }
+                }
+                $partner->forceDelete();                     // tarifs fournisseur en cascade
+            });
+        } catch (QueryException) {
+            return response()->json(['message' => 'Suppression définitive impossible : cette fiche est encore référencée ailleurs dans l\'application.'], 422);
+        }
+
+        activity()->causedBy(auth()->user())->withProperties($snapshot)->log("Tiers {$snapshot['code']} supprimé définitivement");
         CacheService::flushPartners();
 
         return response()->json(null, 204);

@@ -26,5 +26,11 @@ export const useThirdPartnerStore = defineStore('thirdPartner', () => {
     items.value = items.value.filter((p) => p.id !== id)
   }
 
-  return { items, meta, loading, error, params, fetchPage, goToPage, create, update, remove }
+  /** Suppression définitive (admin) : refusée par le serveur tant que la fiche porte un historique. */
+  async function forceRemove(id: number): Promise<void> {
+    await http.delete(`/third-partners/${id}/definitif`)
+    items.value = items.value.filter((p) => p.id !== id)
+  }
+
+  return { items, meta, loading, error, params, fetchPage, goToPage, create, update, remove, forceRemove }
 })

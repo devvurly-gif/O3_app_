@@ -185,6 +185,21 @@
               />
             </svg>
           </button>
+          <button
+            v-if="auth.isAdmin"
+            class="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
+            :title="$t('common.deleteForever')"
+            :aria-label="$t('common.deleteForever')"
+            @click="confirmForceDelete(row)"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+              />
+            </svg>
+          </button>
         </div>
       </template>
     </BaseTable>
@@ -791,6 +806,34 @@
       </template>
     </BaseModal>
 
+    <!-- Suppression définitive (admin) -->
+    <BaseModal v-model="showForceDelete" :title="$t('common.deleteForeverTitle')" size="sm">
+      <div class="space-y-3 text-sm text-gray-600 dark:text-gray-400">
+        <p>{{ $t('common.deleteForeverPartner') }}</p>
+        <div class="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 px-4 py-3 text-gray-800 dark:text-gray-200">
+          <div class="font-semibold">{{ forceDeleteTarget?.tp_title }}</div>
+          <div class="font-mono text-xs">{{ forceDeleteTarget?.tp_code }}</div>
+        </div>
+        <p class="text-xs text-gray-500 dark:text-gray-400">{{ $t('common.deleteForeverPartnerHint') }}</p>
+        <p v-if="forceDeleteError" class="text-red-600 dark:text-red-400 font-medium">{{ forceDeleteError }}</p>
+      </div>
+      <template #footer>
+        <button
+          class="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition"
+          @click="showForceDelete = false"
+        >
+          {{ $t('common.cancel') }}
+        </button>
+        <button
+          class="px-4 py-2 text-sm font-semibold bg-red-600 hover:bg-red-700 text-white rounded-lg transition disabled:opacity-60"
+          :disabled="forceDeleting"
+          @click="doForceDelete"
+        >
+          {{ forceDeleting ? $t('common.deleting') : $t('common.deleteForever') }}
+        </button>
+      </template>
+    </BaseModal>
+
     <BaseNotification ref="toast" />
   </div>
 </template>
@@ -799,6 +842,7 @@
 import { ref, computed, onMounted } from 'vue'
 import type { Component } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useAuthStore } from '@/stores/authStore'
 import { useExcelExport } from '@/composables/useExcelExport'
 import { useBulkPayment } from '@/composables/useBulkPayment'
 import { usePartnerLedger, useCreditGauge } from '@/composables/usePartnerLedger'
@@ -1008,6 +1052,7 @@ async function openShow(row: any) {
 
 // ── UI state ──────────────────────────────────────────────────────────────
 const toast = ref(null)
+const auth = useAuthStore()
 
 const {
   store,
@@ -1052,6 +1097,12 @@ const {
   submit,
   confirmDelete,
   doDelete,
+  showForceDelete,
+  forceDeleting,
+  forceDeleteError,
+  forceDeleteTarget,
+  confirmForceDelete,
+  doForceDelete,
 } = useThirdPartnerForm({
   scope: 'suppliers',
   blank: emptyForm,
