@@ -1594,7 +1594,7 @@
           <!-- Actions -->
           <div class="flex justify-between items-center pt-2">
             <a
-              href="https://shop.teliphoni.o3app.ma"
+              :href="shopUrl"
               target="_blank"
               class="flex items-center gap-1.5 px-4 py-2 text-sm font-medium border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
             >
@@ -1715,6 +1715,13 @@ import BaseNotification from '@/components/BaseNotification.vue'
 import BaseModal from '@/components/BaseModal.vue'
 
 const { t } = useI18n()
+
+/** URL de la boutique du tenant courant : shop.<domaine du tenant>. */
+const shopUrl = computed(() => {
+  const { protocol, hostname, port } = window.location
+  const base = hostname.replace(/^(shop|www)\./, '')
+  return `${protocol}//shop.${base}${port ? `:${port}` : ''}`
+})
 const store = useSettingStore()
 const variantStore = useVariantOptionsStore()
 const { isVariantsEnabled } = useFeaturesSettings()
