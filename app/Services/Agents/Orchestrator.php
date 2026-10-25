@@ -1021,6 +1021,8 @@ class Orchestrator
             (bool) preg_match('/\b(photos?|images?)\b/', $n) && (bool) preg_match('/\b(cherch|trouv|recuper|telecharg)\w*/', $n) && !preg_match('/\b(quels?|quelles?|liste|combien|montre)\b/', $n) => 'photos_fetch',
             // « publier les produits dans le website » : l'agent Marketing propose la mise en boutique en ligne.
             (bool) preg_match('/\b(publi\w*|mise? en ligne|mett\w* en ligne)/', $n) && (bool) preg_match('/produits?|fiches?|articles?|catalogue/', $n) && (bool) preg_match('/website|web site|site web|\bsite\b|boutique|e-?commerce|en ligne|internet/', $n) => 'publication',
+            // « mets tous les produits à la marque Jadever » : proposition pour les fiches sans marque (la marque est lue dans la phrase).
+            $about && (bool) preg_match('/\b(mets?|mett\w*|affect\w*|attribu\w*|assign\w*|pass\w*|chang\w*|donn\w*)\b/', $n) && $this->brandNameIn($n) !== null && !preg_match('/\b(quels?|quelles?|liste|combien|montre|a jour)\b/', $n) => 'brand_assign',
             (bool) preg_match('/\bprix\b|tarifs?/', $n) && (bool) preg_match('/revis|propos|marge|calcul/', $n) && ($about || str_contains($n, 'marge')) => 'pricing',
             (bool) preg_match('/sans photos?|photos? manquantes?|manque de photos?|pas de photos?|sans image/', $n) => 'photos',
             $about && (bool) preg_match('/\b(activ(?:e|er|ons|ation)|reactiv\w*|mett\w* en service)\b/', $n) => 'activation',
@@ -1032,9 +1034,21 @@ class Orchestrator
         };
     }
 
+    /** Le nom de marque cité après « marque » (« … à la marque jadever » → « jadever »), ou null. @param string $n phrase normalisée */
+    private function brandNameIn(string $n): ?string
+    {
+        if (!preg_match('/\bmarques?\s+(?:de\s+|d\W)?(?:la\s+|le\s+|l\W)?([a-z0-9][a-z0-9 &.\-]*?)\s*$/', $n, $m)) {
+            return null;
+        }
+        $name = trim($m[1]);
+
+        return $name === '' || in_array($name, ['inconnue', 'manquante', 'manquantes', 'vide', 'definie'], true) ? null : $name;
+    }
+
     private function catalogAnswer(User $admin, string $intent, string $n): array
     {
         return match ($intent) {
+            'brand_assign' => $this->catalog->assignBrand($admin, (string) $this->brandNameIn($n)),
             'act'      => preg_match('/\blot\s*#\s*(\d+)/', $n, $m) ? $this->catalog->act($admin, (int) $m[1], $n) : $this->catalog->audit($admin),
             'pricing'  => $this->catalog->pricing($admin, $n),
             'photos'   => $this->catalog->photos(),

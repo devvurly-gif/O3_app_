@@ -476,6 +476,75 @@ class CatalogAssistant
         return $this->reply("Lot #{$event->id} appliqué : {$published} fiche(s) publiée(s) sur la boutique en ligne" . ($skipped > 0 ? ", {$skipped} laissée(s) telles quelles (devenues incomplètes, ou déjà publiées)" : '') . '.', links: [['label' => 'Produits', 'to' => '/products']], eventId: $event->id);
     }
 
+    /**
+     * « Mets tous les produits à la marque Jadever » : propose de donner cette marque aux fiches qui n'en ont pas
+     * (vide ou marque par défaut). Une marque déjà saisie n'est jamais écrasée ; rien ne change avant le clic.
+     *
+     * @param string $brandName nom de marque tel que tapé (normalisé), sans article
+     */
+    public function assignBrand(User $admin, string $brandName): array
+    {
+        $title = Str::title(trim($brandName));
+        if ($title === '') {
+            return $this->reply('Quelle marque donner aux produits ? Par exemple : « mets tous les produits sans marque à la marque Jadever ».', error: true);
+        }
+
+        $ids = $this->audit->query('no_brand')->orderBy('id')->pluck('id')->all();
+        if ($ids === []) {
+            return $this->reply("Aucune fiche sans marque : toutes les fiches ont déjà une marque, je n'en change aucune.", links: [['label' => 'Produits', 'to' => '/products']]);
+        }
+
+        $key = $this->enricher->fold($title);
+        $existing = Brand::all(['id', 'br_title'])->first(fn (Brand $b) => $this->enricher->fold($b->br_title) === $key);
+        $label = $existing?->br_title ?? $title;
+        $event = $this->record('catalogue_marque', AgentEvent::STATUS_ROUTED, "Proposition : marque « {$label} » pour " . count($ids) . ' fiche(s) sans marque', [
+            'product_ids' => $ids, 'brand_id' => $existing?->id, 'brand_title' => $label, 'requested_by' => $admin->name,
+        ]);
+        $names = Product::whereIn('id', array_slice($ids, 0, 8))->get()->map(fn (Product $p) => "• {$p->p_title} ({$p->p_sku})")->implode("\n");
+
+        return $this->reply(
+            "Lot #{$event->id} : donner la marque « {$label} » à " . count($ids) . ' fiche(s) sans marque.'
+            . ($existing ? '' : "\nCette marque n'existe pas encore : elle sera créée à l'application.")
+            . "\n{$names}" . (count($ids) > 8 ? "\n… et " . (count($ids) - 8) . ' autre(s).' : '')
+            . "\n\nLes fiches qui ont déjà une marque ne sont pas touchées.",
+            links: [['label' => 'Produits', 'to' => '/products'], ['label' => 'Marques', 'to' => '/brands']],
+            suggestions: [
+                ['label' => 'Appliquer à ces ' . count($ids) . ' fiches', 'text' => "applique la marque du lot #{$event->id}"],
+                ['label' => 'Ignorer', 'text' => "ignore le lot #{$event->id}"],
+            ],
+            eventId: $event->id,
+        );
+    }
+
+    private function applyBrandAssign(AgentEvent $event): array
+    {
+        $assigned = $skipped = $created = 0;
+        DB::transaction(function () use ($event, &$assigned, &$skipped, &$created) {
+            $brandId = Brand::whereKey($event->payload['brand_id'] ?? 0)->value('id');
+            if ($brandId === null) {
+                $brandId = Brand::create(['br_title' => $event->payload['brand_title'], 'br_status' => true])->id;
+                $created = 1;
+            }
+            foreach (Product::whereIn('id', $event->payload['product_ids'] ?? [])->get() as $product) {
+                // Seulement une fiche toujours sans marque : une marque saisie depuis la proposition n'est jamais écrasée.
+                if (!$this->enricher->needsBrand($product)) {
+                    $skipped++;
+                    continue;
+                }
+                $product->brand_id = $brandId;
+                $product->save();
+                $assigned++;
+            }
+        });
+        $created > 0 && CacheService::flushBrands();
+
+        $result = ['assigned' => $assigned, 'skipped' => $skipped, 'brand_created' => $created];
+        $event->update(['status' => AgentEvent::STATUS_DONE, 'payload' => array_merge($event->payload ?? [], ['result' => $result])]);
+        $this->log($event, 'catalog_brand_assigned', $result);
+
+        return $this->reply("Lot #{$event->id} appliqué : marque « {$event->payload['brand_title']} » donnée à {$assigned} fiche(s)" . ($created > 0 ? ' (marque créée)' : '') . ($skipped > 0 ? ", {$skipped} laissée(s) telles quelles (marque saisie entre-temps)" : '') . '.', links: [['label' => 'Produits', 'to' => '/products'], ['label' => 'Marques', 'to' => '/brands']], eventId: $event->id);
+    }
+
     /** @return array<int, string> ce qui manque à la fiche pour être activée ; vide si elle est prête */
     private function notReadyBecause(Product $p): array
     {
@@ -575,7 +644,7 @@ class CatalogAssistant
     /** @return array{body: string, meta: array<string, mixed>} */
     private function actOnce(User $admin, int $eventId, string $n): array
     {
-        $event = AgentEvent::whereIn('type', ['catalogue_completion', 'catalogue_prix', 'catalogue_activation', 'catalogue_codes_barres', 'catalogue_photos', 'catalogue_publication', 'catalogue_site', 'relance_devis', 'reappro_commande', 'transfert_entrepots', 'rapprochement_paiement', 'echeancier_paiement', 'relance_versement', 'releve_import'])->find($eventId);
+        $event = AgentEvent::whereIn('type', ['catalogue_completion', 'catalogue_prix', 'catalogue_activation', 'catalogue_codes_barres', 'catalogue_photos', 'catalogue_publication', 'catalogue_marque', 'catalogue_site', 'relance_devis', 'reappro_commande', 'transfert_entrepots', 'rapprochement_paiement', 'echeancier_paiement', 'relance_versement', 'releve_import'])->find($eventId);
         if (!$event) {
             return $this->reply("Je ne trouve pas le lot #{$eventId}.", error: true);
         }
@@ -601,6 +670,7 @@ class CatalogAssistant
                     'catalogue_codes_barres' => $this->applyBarcodes($event),
                     'catalogue_photos'       => $this->applyPhotos($admin, $event),
                     'catalogue_publication'  => $this->applyPublication($event),
+                    'catalogue_marque'       => $this->applyBrandAssign($event),
                     'catalogue_site'         => $this->siteChat->apply($admin, $event),
                     'relance_devis'          => $this->quoteChat->apply($admin, $event),
                     'reappro_commande'       => $this->reorderChat->apply($admin, $event),
