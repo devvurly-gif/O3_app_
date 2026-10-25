@@ -137,7 +137,7 @@ class OrchestratorExportTest extends TestCase
 
         // Au-delà de 24 heures, le fichier disparaît au prochain export.
         $path = (new ExportAssistant())->find($this->admin->id, substr($first['url'], strrpos($first['url'], '/') + 1))['path'];
-        touch($path, time() - 25 * 3600);
+        touch($path, now()->subHours(25)->getTimestamp());   // l'heure est figée (setTestNow) : time() la dépasserait
         $this->reply('exporte en pdf');
         $this->assertNull((new ExportAssistant())->find($this->admin->id, substr($first['url'], strrpos($first['url'], '/') + 1)));
     }
