@@ -57,7 +57,7 @@
               ? 'border-[#7C5CFC] ring-1 ring-[#7C5CFC]'
               : 'border-[#ECEEF2] dark:border-gray-700'
           "
-          @click="toggleAgent(a.domain)"
+          @click="openAgent(a)"
         >
           <div class="flex items-center justify-between gap-2">
             <span class="font-semibold text-sm text-gray-800 dark:text-gray-100 truncate">{{ a.name }}</span>
@@ -82,6 +82,151 @@
         </button>
       </div>
     </div>
+
+    <!-- Fiche d'un agent : ses tâches, la phrase à écrire, et « + » pour en configurer d'autres -->
+    <Teleport to="body">
+      <div
+        v-if="selectedAgent"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+        @click.self="selectedAgent = null"
+        @keydown.esc="selectedAgent = null"
+      >
+        <section
+          role="dialog"
+          :aria-label="`Tâches de l'agent ${selectedAgent.name}`"
+          class="w-full max-w-2xl max-h-[calc(100vh-2rem)] overflow-y-auto bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-[#ECEEF2] dark:border-gray-700"
+        >
+          <header
+            class="flex items-start justify-between gap-3 px-5 py-4 border-b border-[#ECEEF2] dark:border-gray-700"
+          >
+            <div>
+              <h3 class="text-base font-bold text-gray-800 dark:text-gray-100">{{ selectedAgent.name }}</h3>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                {{ selectedAgent.is_active ? 'Actif' : 'Inactif : ses tâches ne s’exécutent pas' }}
+                · {{ selectedAgent.events_count }} événement{{ selectedAgent.events_count > 1 ? 's' : '' }}
+              </p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                class="text-xs font-semibold text-[#7C5CFC] hover:underline"
+                @click="filterByAgent(selectedAgent)"
+              >
+                Voir ses événements
+              </button>
+              <button
+                type="button"
+                aria-label="Fermer"
+                class="w-7 h-7 rounded-md text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
+                @click="selectedAgent = null"
+              >
+                ✕
+              </button>
+            </div>
+          </header>
+
+          <div class="px-5 py-4 space-y-4">
+            <div class="flex items-center justify-between">
+              <h4 class="text-sm font-bold text-gray-700 dark:text-gray-200">Tâches exécutées</h4>
+              <button
+                type="button"
+                aria-label="Configurer une autre tâche pour cet agent"
+                title="Configurer une autre tâche"
+                class="w-8 h-8 flex items-center justify-center rounded-full bg-[#7C5CFC] text-white text-lg leading-none hover:bg-[#6A49F0] transition"
+                @click="adding = !adding"
+              >
+                +
+              </button>
+            </div>
+
+            <form
+              v-if="adding"
+              class="rounded-xl border border-[#7C5CFC]/40 bg-[#7C5CFC]/5 p-3 space-y-2"
+              @submit.prevent="submitNewTask"
+            >
+              <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300" for="new-task-kind"
+                >Type</label
+              >
+              <select id="new-task-kind" v-model="newKind" class="field w-full">
+                <option v-for="(k, key) in KINDS" :key="key" :value="key">{{ k.label }}</option>
+              </select>
+              <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300" for="new-task-text">
+                Ce que l'agent doit faire
+              </label>
+              <textarea
+                id="new-task-text"
+                v-model="newText"
+                rows="2"
+                class="field w-full"
+                :placeholder="KINDS[newKind].hint"
+              ></textarea>
+              <p class="text-[11px] text-gray-500 dark:text-gray-400">
+                La phrase est envoyée à l'orchestrateur, qui vous propose la configuration : rien n'est enregistré avant
+                votre clic de confirmation.
+              </p>
+              <div class="flex justify-end gap-2">
+                <button
+                  type="button"
+                  class="px-3 py-1.5 text-xs rounded-lg text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                  @click="adding = false"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  :disabled="!newText.trim()"
+                  class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#7C5CFC] text-white disabled:opacity-50"
+                >
+                  Envoyer à l'orchestrateur
+                </button>
+              </div>
+            </form>
+
+            <p v-if="!selectedAgent.tasks.length" class="text-sm text-gray-500 dark:text-gray-400">
+              Aucune tâche pour l'instant. Utilisez « + » pour en demander une.
+            </p>
+            <ul v-else class="space-y-2">
+              <li
+                v-for="t in selectedAgent.tasks"
+                :key="t.label"
+                class="rounded-xl border border-[#ECEEF2] dark:border-gray-700 px-3 py-2.5"
+              >
+                <p class="text-sm text-gray-800 dark:text-gray-100">{{ t.label }}</p>
+                <div v-if="promptOf(t.how)" class="mt-1.5 flex items-center gap-2">
+                  <code
+                    class="flex-1 text-xs bg-gray-50 dark:bg-gray-900 rounded-md px-2 py-1 text-gray-700 dark:text-gray-200 break-words"
+                  >
+                    {{ promptOf(t.how) }}
+                  </code>
+                  <button
+                    type="button"
+                    class="text-xs text-gray-500 hover:text-[#7C5CFC]"
+                    @click="copyPrompt(promptOf(t.how)!)"
+                  >
+                    Copier
+                  </button>
+                  <button
+                    type="button"
+                    class="text-xs font-semibold text-[#7C5CFC] hover:underline"
+                    @click="runPrompt(promptOf(t.how)!)"
+                  >
+                    Lancer
+                  </button>
+                </div>
+                <p v-else class="mt-1 text-xs text-gray-500 dark:text-gray-400">Comment : {{ t.how }}</p>
+              </li>
+            </ul>
+
+            <div v-if="selectedAgent.missing.length">
+              <h4 class="text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Pas encore disponible</h4>
+              <ul class="list-disc pl-5 text-sm text-gray-500 dark:text-gray-400 space-y-0.5">
+                <li v-for="m in selectedAgent.missing" :key="m">{{ m }}</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+      </div>
+    </Teleport>
 
     <!-- Order -->
     <div class="bg-white dark:bg-gray-800 border border-[#ECEEF2] dark:border-gray-700 rounded-2xl px-4 py-4">
@@ -290,7 +435,7 @@
           </button>
         </header>
         <div class="px-3 py-3 overflow-y-auto">
-          <OrchestratorChat height-class="h-[min(48vh,420px)]" @ordered="load()" />
+          <OrchestratorChat ref="chat" height-class="h-[min(48vh,420px)]" @ordered="load()" />
         </div>
       </section>
     </Teleport>
@@ -298,7 +443,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import http from '@/services/http'
 import OrchestratorChat from '@/components/agents/OrchestratorChat.vue'
 
@@ -318,6 +463,8 @@ interface AgentRow {
   ability: string | null
   events_count: number
   last_event_at: string | null
+  tasks: { label: string; how: string }[]
+  missing: string[]
 }
 
 interface EventDocument {
@@ -448,6 +595,73 @@ const chatMounted = ref(false)
 function openChat() {
   chatMounted.value = true
   showChat.value = true
+}
+
+const chat = ref<InstanceType<typeof OrchestratorChat> | null>(null)
+const selectedAgent = ref<AgentRow | null>(null)
+const adding = ref(false)
+const newKind = ref<'routine' | 'consigne' | 'developpement'>('routine')
+const newText = ref('')
+
+const KINDS = {
+  routine: {
+    label: 'Routine planifiée',
+    hint: 'Ex. : chaque lundi à 8 h, contrôle les encaissements',
+    prefix: '',
+  },
+  consigne: {
+    label: 'Consigne (règle de la maison)',
+    hint: 'Ex. : toujours arrondir les prix au dirham',
+    prefix: 'retiens : ',
+  },
+  developpement: {
+    label: 'Nouvelle tâche à développer',
+    hint: 'Ex. : comparer les prix de plusieurs fournisseurs',
+    prefix: 'demande de développement : ',
+  },
+} as const
+
+function openAgent(a: AgentRow) {
+  selectedAgent.value = a
+  adding.value = false
+  newText.value = ''
+}
+
+/** La phrase à écrire au chef, extraite de « … » ; null si la tâche ne se lance pas par une phrase (fichier, planificateur). */
+function promptOf(how: string): string | null {
+  const m = how.match(/«\s*(.+?)\s*»/)
+  return m ? m[1] : null
+}
+
+async function runPrompt(text: string) {
+  selectedAgent.value = null
+  openChat()
+  await nextTick()
+  await chat.value?.send(text)
+}
+
+async function copyPrompt(text: string) {
+  try {
+    await navigator.clipboard.writeText(text)
+  } catch {
+    /* Presse-papiers indisponible : la phrase reste affichée. */
+  }
+}
+
+async function submitNewTask() {
+  const body = newText.value.trim()
+  if (!body || !selectedAgent.value) return
+  const kind = KINDS[newKind.value]
+  const text =
+    newKind.value === 'developpement'
+      ? `${kind.prefix}pour l'agent ${selectedAgent.value.name} : ${body}`
+      : `${kind.prefix}${body}`
+  await runPrompt(text)
+}
+
+function filterByAgent(a: AgentRow) {
+  selectedAgent.value = null
+  if (agentFilter.value !== a.domain) toggleAgent(a.domain)
 }
 
 async function load(page = meta.current_page) {

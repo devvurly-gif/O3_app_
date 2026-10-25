@@ -401,6 +401,9 @@ onMounted(async () => {
   await load()
   input.value?.focus()
 })
+
+/** Permet à l'écran parent d'envoyer une phrase au chef (ex. depuis la fiche d'un agent). */
+defineExpose({ send: (text: string) => send(text, false) })
 </script>
 
 <style scoped>

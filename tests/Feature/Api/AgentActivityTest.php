@@ -58,6 +58,18 @@ class AgentActivityTest extends TestCase
         $this->assertSame(1, $ventes['events_count']);
     }
 
+    public function test_each_agent_carries_its_tasks_and_what_is_missing(): void
+    {
+        $r = $this->actingAs(User::factory()->admin()->create(), 'sanctum')->getJson('/api/agents/activite')->assertOk();
+
+        $marketing = collect($r->json('agents'))->firstWhere('domain', 'marketing');
+        $this->assertStringContainsString("mets les produits sur l'ecommerce", collect($marketing['tasks'])->pluck('how')->implode(' '));
+        $this->assertNotEmpty($marketing['missing']);
+
+        $expedition = collect($r->json('agents'))->firstWhere('domain', 'expedition');
+        $this->assertSame([], $expedition['tasks']);
+    }
+
     public function test_filters_narrow_the_events_but_not_the_summary(): void
     {
         $this->event(['source' => 'whatsapp', 'payload' => ['text' => 'je veux un devis']]);

@@ -9,6 +9,7 @@ use App\Models\AgentEvent;
 use App\Models\DocumentHeader;
 use App\Models\ThirdPartner;
 use App\Models\User;
+use App\Services\Agents\AgentCapabilities;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -115,6 +116,9 @@ class AgentActivityController extends Controller
             'ability'      => $a->ability,
             'events_count' => (int) ($counts->get($a->id)?->n ?? 0),
             'last_event_at' => $counts->get($a->id)?->last_at,
+            // Catalogue des tâches : ce que l'agent exécute et la phrase à écrire au chef pour les lancer.
+            'tasks'        => array_map(fn (array $t) => ['label' => $t[0], 'how' => $t[1]], AgentCapabilities::all()[$a->domain]['tasks'] ?? []),
+            'missing'      => AgentCapabilities::all()[$a->domain]['missing'] ?? [],
         ])->all();
     }
 }
