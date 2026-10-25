@@ -425,11 +425,16 @@ Route::middleware(['auth:sanctum', 'tenant.active'])->group(function () {
             Route::post('/',   [$c, 'send']);
             Route::delete('/', [$c, 'clear']);
             Route::put('ia',   [$c, 'toggleAi']);
-            Route::get('photos/{event}/{product}', [$c, 'photo'])->whereNumber(['event', 'product']);
             Route::get('exports/{uuid}', [$c, 'export'])->where('uuid', '[0-9a-f\-]{36}');
             // Dépôt de photos / PDF : lus par l'IA (coûteux), donc limités plus strictement.
             Route::post('fichiers', [$c, 'upload'])->middleware('throttle:10,1,orchestrateur-fichiers');
         });
+
+        // Aperçus de photos du chat : une requête par vignette, à l'ouverture de la page (un lot en compte des dizaines).
+        // Ils ne partagent donc pas la limite du chat (30/min), sinon la page se remplit d'erreurs « Trop de requêtes ».
+        Route::middleware(['agents', 'permission:settings.manage', 'throttle:600,1,orchestrateur-photos'])
+            ->get('agents/orchestrateur/photos/{event}/{product}', [\App\Http\Controllers\Api\Agents\OrchestratorController::class, 'photo'])
+            ->whereNumber(['event', 'product']);
 
         // Relances de paiement : contrôle des encaissements par l'agent Recouvrement, brouillons validés par un humain.
         Route::middleware(['role:admin,manager', 'throttle:30,1,relances'])->prefix('ventes/relances')->group(function () {
