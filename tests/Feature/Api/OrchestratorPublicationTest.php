@@ -129,6 +129,15 @@ class OrchestratorPublicationTest extends TestCase
         $this->assertSame(0, AgentEvent::where('type', 'catalogue_mise_en_ligne')->count());
     }
 
+    public function test_commandes_possibles_lists_every_agent_command_including_go_online(): void
+    {
+        $reply = $this->say('toutes les commandes possibles');
+
+        $this->assertStringContainsString("mets les produits sur l'ecommerce", $reply['body']);
+        $this->assertStringContainsString('publie les produits sur le website', $reply['body']);
+        $this->assertStringContainsString('active les fiches produits', $reply['body']);
+    }
+
     public function test_ignoring_changes_nothing_and_the_task_is_in_the_marketing_catalogue(): void
     {
         $p = $this->product('Perceuse 18V', 'PRC18');
