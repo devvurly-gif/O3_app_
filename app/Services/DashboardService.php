@@ -170,6 +170,7 @@ class DashboardService
                 'prev'     => round($purchasesPrev, 2),
                 'trend'    => $this->trend($purchasesCurrent, $purchasesPrev),
                 'currency' => true,
+                'meta'     => $this->purchasesBreakdown($startMonth),
             ],
             [
                 'key'      => 'payments_month',
@@ -556,6 +557,24 @@ class DashboardService
             });
 
         return (float) $q->sum('total_ttc');
+    }
+
+    /**
+     * Split of the month's purchases (same rules as scopePurchases): purchase
+     * invoices vs confirmed receipt notes not yet invoiced. Sum = purchasesTotal.
+     *
+     * @return array{invoices: float, receipts: float}
+     */
+    private function purchasesBreakdown(Carbon $from): array
+    {
+        $sum = fn (string $type) => (float) DocumentFooter::query()
+            ->whereHas('header', function ($q) use ($from, $type) {
+                $this->scopePurchases($q);
+                $q->where('document_type', $type)->where('issued_at', '>=', $from);
+            })
+            ->sum('total_ttc');
+
+        return ['invoices' => round($sum('InvoicePurchase'), 2), 'receipts' => round($sum('ReceiptNotePurchase'), 2)];
     }
 
     private function purchasesTotal(Carbon $from, ?Carbon $to = null): float

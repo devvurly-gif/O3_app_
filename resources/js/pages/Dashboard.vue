@@ -450,6 +450,9 @@ const paymentColors: Record<string, string> = {
             <p v-if="card.trend != null" class="text-xs mt-0.5" :class="trendClass(card.trend)">
               {{ trendLabel(card.trend) }} vs mois précédent
             </p>
+            <p v-if="card.meta?.invoices != null" class="text-[11px] text-gray-400 dark:text-gray-500 truncate">
+              Factures {{ fmtCurrency(card.meta.invoices) }} · BL confirmés {{ fmtCurrency(card.meta.receipts) }}
+            </p>
           </div>
         </div>
       </div>
