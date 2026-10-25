@@ -1020,8 +1020,6 @@ class Orchestrator
         return match (true) {
             // « cherche les photos Jadever » : le serveur va les chercher sur le site autorisé (aperçu, puis clic).
             (bool) preg_match('/\b(photos?|images?)\b/', $n) && (bool) preg_match('/\b(cherch|trouv|recuper|telecharg)\w*/', $n) && !preg_match('/\b(quels?|quelles?|liste|combien|montre)\b/', $n) => 'photos_fetch',
-            // « mets les produits sur l'ecommerce » : active et publie en un lot les fiches prêtes, actives ou non.
-            (bool) preg_match('/\b(mets?|mett\w*|ajout\w*|place\w*|envoi\w*|pouss\w*)\b/', $n) && !preg_match('/publi|mise? en ligne|mett\w* en ligne|mett\w* a jour|en service/', $n) && (bool) preg_match('/produits?|fiches?|articles?|catalogue/', $n) && (bool) preg_match('/website|web site|site web|\bsite\b|boutique|e-?commerce|internet/', $n) => 'go_online',
             // « publier les produits dans le website » : l'agent Marketing propose la mise en boutique en ligne.
             (bool) preg_match('/\b(publi\w*|mise? en ligne|mett\w* en ligne)/', $n) && (bool) preg_match('/produits?|fiches?|articles?|catalogue/', $n) && (bool) preg_match('/website|web site|site web|\bsite\b|boutique|e-?commerce|en ligne|internet/', $n) => 'publication',
             // « mets tous les produits à la marque Jadever » : proposition pour les fiches sans marque (la marque est lue dans la phrase).
@@ -1057,7 +1055,6 @@ class Orchestrator
             'photos'   => $this->catalog->photos(),
             'photos_fetch' => $this->catalog->fetchPhotos($admin),
             'publication' => $this->catalog->publication($admin),
-            'go_online' => $this->catalog->goOnline($admin, $n),
             'activation' => $this->catalog->activation($admin),
             'barcodes' => $this->catalog->barcodes($admin),
             'prepare'  => $this->catalog->prepare($admin),

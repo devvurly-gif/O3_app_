@@ -63,7 +63,7 @@ class AgentActivityTest extends TestCase
         $r = $this->actingAs(User::factory()->admin()->create(), 'sanctum')->getJson('/api/agents/activite')->assertOk();
 
         $marketing = collect($r->json('agents'))->firstWhere('domain', 'marketing');
-        $this->assertStringContainsString("mets les produits sur l'ecommerce", collect($marketing['tasks'])->pluck('how')->implode(' '));
+        $this->assertStringContainsString('publie les produits sur le website', collect($marketing['tasks'])->pluck('how')->implode(' '));
         $this->assertNotEmpty($marketing['missing']);
 
         $expedition = collect($r->json('agents'))->firstWhere('domain', 'expedition');
