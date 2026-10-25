@@ -239,6 +239,8 @@ const routes: RouteRecordRaw[] = [
   },
 
   // Settings (admin only)
+  // « Settings » du fil d'Ariane et un lien direct pointent sur /settings, qui n'avait aucune page : écran vide.
+  { path: '/settings', redirect: '/settings/app' },
   {
     path: '/settings/users',
     component: () => import('../pages/settings/Users.vue'),
