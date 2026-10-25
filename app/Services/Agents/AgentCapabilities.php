@@ -67,6 +67,7 @@ class AgentCapabilities
         'marketing' => [
             'tasks' => [
                 ['Publier sur la boutique en ligne (website) les fiches actives, complètes et avec photo', '« publie les produits sur le website »'],
+                ['Activer et mettre en ligne en un seul lot les fiches complètes et avec photo, actives ou non', '« mets les produits sur l\'ecommerce »'],
             ],
             'missing' => ['promotions et bannières', 'messages et publicités à partir des produits', 'relance de clients par e-mail ou WhatsApp'],
         ],

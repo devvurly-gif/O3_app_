@@ -96,6 +96,39 @@ class OrchestratorPublicationTest extends TestCase
         $this->assertSame(0, AgentEvent::where('type', 'catalogue_publication')->count());
     }
 
+    public function test_go_online_activates_and_publishes_ready_products_in_one_lot(): void
+    {
+        $inactive = $this->product('Aspirateur', 'ASP01', active: false);
+        $active = $this->product('Perceuse 18V', 'PRC18');
+        $this->product('Sans prix', 'NOPRICE', active: false, over: ['p_salePrice' => 0]);
+
+        $reply = $this->say("mets les produits sur l'ecommerce");
+
+        $this->assertStringContainsString('2 prête(s)', $reply['body']);
+        $event = AgentEvent::where('type', 'catalogue_mise_en_ligne')->firstOrFail();
+        $this->assertEqualsCanonicalizing([$inactive->id, $active->id], $event->payload['product_ids']);
+        $this->assertFalse($inactive->fresh()->p_status);   // rien n'a changé avant le clic
+
+        $done = $this->say("applique la mise en ligne du lot #{$event->id}");
+
+        $this->assertStringContainsString('2 fiche(s) activée(s) et mise(s) en ligne', $done['body']);
+        $this->assertTrue($inactive->fresh()->p_status);
+        $this->assertTrue($inactive->fresh()->is_ecom);
+        $this->assertNotNull($inactive->fresh()->p_slug);
+        $this->assertSame('done', $event->fresh()->status);
+    }
+
+    public function test_go_online_points_to_prices_when_everything_is_at_zero(): void
+    {
+        $this->product('Aspirateur', 'ASP01', active: false, over: ['p_salePrice' => 0]);
+
+        $reply = $this->say("mets les produits sur l'ecommerce");
+
+        $this->assertStringContainsString("aucune n'est prête", $reply['body']);
+        $this->assertStringContainsString('révise les prix', $reply['suggestions'][0]['text']);
+        $this->assertSame(0, AgentEvent::where('type', 'catalogue_mise_en_ligne')->count());
+    }
+
     public function test_ignoring_changes_nothing_and_the_task_is_in_the_marketing_catalogue(): void
     {
         $p = $this->product('Perceuse 18V', 'PRC18');
