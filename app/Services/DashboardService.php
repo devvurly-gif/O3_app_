@@ -162,6 +162,7 @@ class DashboardService
                 'prev'     => round($caPrev, 2),
                 'trend'    => $this->trend($caCurrent, $caPrev),
                 'currency' => true,
+                'meta'     => $this->salesBreakdown($startMonth),
             ],
             [
                 'key'      => 'purchases_month',
@@ -543,20 +544,56 @@ class DashboardService
             ->whereHas('document', fn ($q) => $q->whereIn('document_type', self::SALE_TYPES));
     }
 
+    /**
+     * What counts as selling in the period: invoices and POS tickets, plus
+     * customer delivery notes that are confirmed but not yet invoiced (a credit
+     * sale at the POS is stored as one). A delivery note already turned into an
+     * invoice is skipped: its amount comes back through that invoice.
+     */
     private function salesTotal(Carbon $from, ?Carbon $to = null): float
     {
-        $q = DocumentFooter::query()
-            ->whereHas('header', function ($q) use ($from, $to) {
-                $q->whereIn('document_type', ['InvoiceSale', 'TicketSale'])
-                  ->whereNotIn('status', ['cancelled']);
+        return $this->salesSum($from, $to, ['InvoiceSale', 'TicketSale', 'DeliveryNote']);
+    }
+
+    /**
+     * Split of the month's sales (same rules as salesTotal): invoices and
+     * tickets vs confirmed delivery notes not yet invoiced.
+     *
+     * @return array{invoices: float, receipts: float}
+     */
+    private function salesBreakdown(Carbon $from): array
+    {
+        return [
+            'invoices' => round($this->salesSum($from, null, ['InvoiceSale', 'TicketSale']), 2),
+            'receipts' => round($this->salesSum($from, null, ['DeliveryNote']), 2),
+        ];
+    }
+
+    /** @param array<int, string> $types */
+    private function salesSum(Carbon $from, ?Carbon $to, array $types): float
+    {
+        return (float) DocumentFooter::query()
+            ->whereHas('header', function ($q) use ($from, $to, $types) {
+                $q->where(function ($q2) use ($types) {
+                    if (array_intersect(['InvoiceSale', 'TicketSale'], $types)) {
+                        $q2->orWhere(fn ($q3) => $q3
+                            ->whereIn('document_type', array_intersect(['InvoiceSale', 'TicketSale'], $types))
+                            ->whereNotIn('status', ['cancelled']));
+                    }
+                    if (in_array('DeliveryNote', $types, true)) {
+                        $q2->orWhere(fn ($q3) => $q3
+                            ->where('document_type', 'DeliveryNote')
+                            ->whereNotIn('status', self::NON_COUNTING_STATUSES)
+                            ->whereDoesntHave('children', fn ($c) => $c->where('document_type', 'InvoiceSale')));
+                    }
+                });
                 if ($to) {
                     $q->whereBetween('issued_at', [$from, $to]);
                 } else {
                     $q->where('issued_at', '>=', $from);
                 }
-            });
-
-        return (float) $q->sum('total_ttc');
+            })
+            ->sum('total_ttc');
     }
 
     /**
