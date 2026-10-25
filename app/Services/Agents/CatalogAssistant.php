@@ -36,6 +36,7 @@ class CatalogAssistant
 {
     private const SHOWN = 10;
     private const ACTIVATION_BATCH = 100;
+    private const SEQUENCE_MAX = 500;
     private const BARCODE_BATCH = 200;
     private const PHOTO_BATCH = 12;
 
@@ -453,11 +454,27 @@ class CatalogAssistant
      * vente, description) avec photo qui ne sont pas encore en boutique, qu'elles soient actives ou non. Rien ne change
      * avant le clic ; pour retirer un produit, décochez-le dans l'écran Produits.
      */
-    public function goOnline(User $admin): array
+    public function goOnline(User $admin, string $n = ''): array
     {
-        $candidates = Product::where('is_ecom', false)->get();
+        ['brand' => $brandName, 'size' => $size] = $this->onlineCriteria($n);
+
+        // La marque citée est cherchée dans la table des marques (comparaison sans accent ni casse).
+        $brand = null;
+        if ($brandName !== null) {
+            $key = $this->enricher->fold($brandName);
+            $brand = Brand::all(['id', 'br_title'])->first(fn (Brand $b) => $this->enricher->fold($b->br_title) === $key);
+            if (!$brand) {
+                $known = Brand::orderBy('br_title')->limit(10)->pluck('br_title')->implode(', ');
+
+                return $this->reply("Je ne trouve pas la marque « " . Str::title($brandName) . " »." . ($known !== '' ? " Marques connues : {$known}." : ''), error: true, links: [['label' => 'Marques', 'to' => '/brands']]);
+            }
+        }
+        $of = $brand ? " de la marque « {$brand->br_title} »" : '';
+
+        // La colonne « boutique en ligne » du modèle Product est is_ecom : on lit les fiches qui ne sont pas encore publiées.
+        $candidates = Product::where('is_ecom', false)->when($brand, fn ($q) => $q->where('brand_id', $brand->id))->orderBy('id')->get();
         if ($candidates->isEmpty()) {
-            return $this->reply(Product::where('is_ecom', true)->exists() ? 'Toutes les fiches sont déjà sur la boutique en ligne.' : 'Aucune fiche produit à mettre en ligne.');
+            return $this->reply(Product::where('is_ecom', true)->when($brand, fn ($q) => $q->where('brand_id', $brand->id))->exists() ? "Toutes les fiches{$of} sont déjà sur la boutique en ligne." : "Aucune fiche produit{$of} à mettre en ligne.");
         }
 
         $withPhoto = Product::whereIn('id', $candidates->pluck('id'))->whereHas('images')->pluck('id')->all();
@@ -468,7 +485,7 @@ class CatalogAssistant
             $hasJadever = $candidates->contains(fn (Product $p) => JadeverPhotoSource::isJadeverSku($p->p_sku) && !in_array($p->id, $withPhoto, true));
 
             return $this->reply(
-                "{$candidates->count()} fiche(s) hors boutique, mais aucune n'est prête : il faut une photo ({$noPhoto} sans photo), une vraie catégorie, un prix de vente ({$noPrice} à 0) et une description.",
+                "{$candidates->count()} fiche(s){$of} hors boutique, mais aucune n'est prête : il faut une photo ({$noPhoto} sans photo), une vraie catégorie, un prix de vente ({$noPrice} à 0) et une description.",
                 links: [['label' => 'Produits', 'to' => '/products']],
                 suggestions: $noPrice > 0
                     ? [['label' => 'Réviser les prix (marge 25 %)', 'text' => 'révise les prix des fiches produits avec une marge de 25 %'], ['label' => 'Préparer les fiches', 'text' => "prépare les fiches pour l'utilisation"]]
@@ -476,54 +493,113 @@ class CatalogAssistant
             );
         }
 
-        $batch = $ready->take(self::ACTIVATION_BATCH);
-        $ids = $batch->pluck('id')->all();
-        $inactive = $batch->where('p_status', false)->count();
-        $event = $this->record('catalogue_mise_en_ligne', AgentEvent::STATUS_ROUTED, 'Proposition de mise en ligne de ' . count($ids) . ' fiche(s) (activation + boutique)', [
-            'product_ids' => $ids, 'requested_by' => $admin->name,
+        // Avec une taille de lot (« 10 par 10 »), toutes les fiches prêtes sont traitées à la suite, lot après lot ;
+        // sans, on propose un seul lot (les ACTIVATION_BATCH premières) et on redemande pour la suite.
+        $take = $size !== null ? self::SEQUENCE_MAX : self::ACTIVATION_BATCH;
+        $selection = $ready->take($take);
+        $ids = $selection->pluck('id')->all();
+        $batchSize = $size ?? count($ids);
+        $batches = (int) ceil(count($ids) / $batchSize);
+        $inactive = $selection->where('p_status', false)->count();
+        $blocked = $candidates->count() - $ready->count();
+        $event = $this->record('catalogue_mise_en_ligne', AgentEvent::STATUS_ROUTED, 'Proposition de mise en ligne de ' . count($ids) . " fiche(s){$of} (activation + boutique)", [
+            'product_ids' => $ids, 'batch_size' => $batchSize, 'brand_id' => $brand?->id, 'requested_by' => $admin->name,
         ], 'marketing');
         $names = $ready->take(8)->map(fn (Product $p) => "• {$p->p_title} ({$p->p_sku})")->implode("\n");
 
+        $noPhoto = $candidates->filter(fn (Product $p) => !in_array($p->id, $withPhoto, true))->count();
+        $noPrice = $candidates->filter(fn (Product $p) => ((float) $p->p_salePrice) <= 0)->count();
+        $suggestions = [
+            ['label' => count($ids) . ' fiche(s)' . ($size !== null ? " en {$batches} lot(s) de {$batchSize}" : ''), 'text' => "applique la mise en ligne du lot #{$event->id}"],
+            ['label' => 'Ignorer', 'text' => "ignore le lot #{$event->id}"],
+        ];
+        $suggestions[0]['label'] = ($size !== null ? 'Lancer la séquence : ' : 'Mettre en ligne ces ') . $suggestions[0]['label'];
+        $blockedNote = '';
+        if ($blocked > 0) {
+            $blockedNote = "\n\n{$blocked} fiche(s) bloquée(s), laissées hors boutique : {$noPrice} à 0 DH, {$noPhoto} sans photo (ou catégorie/description manquante).";
+            $noPrice > 0 && $suggestions[] = ['label' => 'Réviser les prix (marge 25 %)', 'text' => 'révise les prix des fiches produits avec une marge de 25 %'];
+        }
+
         return $this->reply(
-            "{$candidates->count()} fiche(s) hors boutique : {$ready->count()} prête(s) (photo, vraie catégorie, prix de vente, description).\n\n"
-            . 'Lot #' . $event->id . ' : mettre en ligne ' . count($ids) . ' fiche(s)' . ($inactive > 0 ? " (dont {$inactive} à activer)" : '') . ".\n{$names}" . ($ready->count() > 8 ? "\n… et " . ($ready->count() - 8) . ' autre(s).' : '')
-            . ($ready->count() > count($ids) ? "\n(Les " . self::ACTIVATION_BATCH . ' premières ; redemandez pour la suite.)' : '')
+            "{$candidates->count()} fiche(s){$of} hors boutique : {$ready->count()} prête(s) (photo, vraie catégorie, prix de vente, description).\n\n"
+            . 'Lot #' . $event->id . ' : mettre en ligne ' . count($ids) . ' fiche(s)' . ($inactive > 0 ? " (dont {$inactive} à activer)" : '')
+            . ($size !== null ? ", en séquence de {$batches} lot(s) de {$batchSize} traités l'un après l'autre" : '') . ".\n{$names}" . ($ready->count() > 8 ? "\n… et " . ($ready->count() - 8) . ' autre(s).' : '')
+            . ($size === null && $ready->count() > count($ids) ? "\n(Les " . self::ACTIVATION_BATCH . ' premières ; redemandez pour la suite.)' : '')
+            . $blockedNote
             . "\n\nChaque fiche est activée puis marquée « boutique en ligne » (inscrit à la piste d'audit) : pour retirer un produit, décochez-le dans l'écran Produits.",
             links: [['label' => 'Produits', 'to' => '/products']],
-            suggestions: [
-                ['label' => 'Mettre en ligne ces ' . count($ids) . ' fiches', 'text' => "applique la mise en ligne du lot #{$event->id}"],
-                ['label' => 'Ignorer', 'text' => "ignore le lot #{$event->id}"],
-            ],
+            suggestions: $suggestions,
             eventId: $event->id,
         );
+    }
+
+    /**
+     * Lit dans la phrase la marque (« de la marque Jadever ») et la taille de lot (« 10 par 10 », « par lots de 10 »).
+     *
+     * @param string $n phrase normalisée (sans accent, minuscules)
+     * @return array{brand: ?string, size: ?int}
+     */
+    private function onlineCriteria(string $n): array
+    {
+        $brand = null;
+        if (preg_match('/\bmarques?\s+(?:de\s+|d\W)?(?:la\s+|le\s+|l\W)?([a-z0-9][a-z0-9&.\-]*(?:\s+[a-z0-9&.\-]+)*?)(?=\s+(?:sur|vers|dans|en|au|aux|pour|par|a)\b|\s*,|\s*$)/', $n, $m)) {
+            $brand = trim($m[1]);
+        }
+        $size = null;
+        if (preg_match('/\b(\d+)\s*par\s*\d+\b|\blots?\s*de\s*(\d+)\b/', $n, $m)) {
+            $value = (int) ($m[1] !== '' ? $m[1] : $m[2]);
+            $size = $value > 0 ? min($value, self::ACTIVATION_BATCH) : null;
+        }
+
+        return ['brand' => $brand, 'size' => $size];
     }
 
     private function applyGoOnline(AgentEvent $event): array
     {
         $online = $skipped = 0;
-        DB::transaction(function () use ($event, &$online, &$skipped) {
-            foreach (Product::whereIn('id', $event->payload['product_ids'] ?? [])->get() as $product) {
-                if ($product->is_ecom || $this->notReadyBecause($product) !== [] || !$product->images()->exists()) {
-                    $skipped++;
-                    continue;
-                }
-                $slug = Str::slug($product->p_title) ?: Str::slug((string) $product->p_sku);
-                if (Product::where('p_slug', $slug)->where('id', '!=', $product->id)->exists()) {
-                    $slug .= '-' . Str::slug((string) $product->p_sku);   // l'adresse de la boutique doit être unique
-                }
-                $product->p_status = true;
-                $product->is_ecom = true;
-                $product->p_slug = $product->p_slug ?: $slug;
-                $product->save();
-                $online++;
-            }
-        });
+        $perBatch = [];
+        $ids = array_values($event->payload['product_ids'] ?? []);
+        $size = max(1, (int) ($event->payload['batch_size'] ?? count($ids) ?: 1));
 
-        $result = ['online' => $online, 'skipped' => $skipped];
+        // Traitement séquentiel : un lot après l'autre, chacun dans sa transaction. Si un lot échoue, les précédents restent
+        // appliqués et on s'arrête : redemander la séquence reprend là où elle s'est arrêtée (les fiches déjà en ligne sont ignorées).
+        foreach (array_chunk($ids, $size) as $number => $chunk) {
+            try {
+                $done = 0;
+                DB::transaction(function () use ($chunk, &$done, &$skipped) {
+                    foreach (Product::whereIn('id', $chunk)->orderBy('id')->get() as $product) {
+                        if ($product->is_ecom || $this->notReadyBecause($product) !== [] || !$product->images()->exists()) {
+                            $skipped++;
+                            continue;
+                        }
+                        $slug = Str::slug($product->p_title) ?: Str::slug((string) $product->p_sku);
+                        if (Product::where('p_slug', $slug)->where('id', '!=', $product->id)->exists()) {
+                            $slug .= '-' . Str::slug((string) $product->p_sku);   // l'adresse de la boutique doit être unique
+                        }
+                        $product->p_status = true;
+                        $product->is_ecom = true;
+                        $product->p_slug = $product->p_slug ?: $slug;
+                        $product->save();
+                        $done++;
+                    }
+                });
+                $perBatch[] = $done;
+                $online += $done;
+            } catch (\Throwable $e) {
+                report($e);
+                $this->log($event, 'catalog_go_online_failed', ['online' => $online, 'failed_batch' => $number + 1]);
+
+                return $this->reply("La séquence s'est arrêtée au lot " . ($number + 1) . " : {$online} fiche(s) déjà mise(s) en ligne. Rien n'est perdu, redemandez la mise en ligne pour reprendre.", error: true, eventId: $event->id);
+            }
+        }
+
+        $result = ['online' => $online, 'skipped' => $skipped, 'batches' => $perBatch];
         $event->update(['status' => AgentEvent::STATUS_DONE, 'payload' => array_merge($event->payload ?? [], ['result' => $result])]);
         $this->log($event, 'catalog_go_online_applied', $result);
 
-        return $this->reply("Lot #{$event->id} appliqué : {$online} fiche(s) activée(s) et mise(s) en ligne sur la boutique" . ($skipped > 0 ? ", {$skipped} laissée(s) telles quelles (devenues incomplètes, ou déjà en ligne)" : '') . '.', links: [['label' => 'Produits', 'to' => '/products']], eventId: $event->id);
+        return $this->reply("Lot #{$event->id} appliqué : {$online} fiche(s) activée(s) et mise(s) en ligne sur la boutique"
+            . (count($perBatch) > 1 ? ', en ' . count($perBatch) . ' lots (' . implode(', ', $perBatch) . ')' : '')
+            . ($skipped > 0 ? ", {$skipped} laissée(s) telles quelles (devenues incomplètes, ou déjà en ligne)" : '') . '.', links: [['label' => 'Produits', 'to' => '/products']], eventId: $event->id);
     }
 
     private function applyPublication(AgentEvent $event): array

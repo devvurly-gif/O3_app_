@@ -1057,7 +1057,7 @@ class Orchestrator
             'photos'   => $this->catalog->photos(),
             'photos_fetch' => $this->catalog->fetchPhotos($admin),
             'publication' => $this->catalog->publication($admin),
-            'go_online' => $this->catalog->goOnline($admin),
+            'go_online' => $this->catalog->goOnline($admin, $n),
             'activation' => $this->catalog->activation($admin),
             'barcodes' => $this->catalog->barcodes($admin),
             'prepare'  => $this->catalog->prepare($admin),

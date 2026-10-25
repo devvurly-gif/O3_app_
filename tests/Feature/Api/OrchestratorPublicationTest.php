@@ -4,6 +4,7 @@ namespace Tests\Feature\Api;
 
 use App\Models\Agent;
 use App\Models\AgentEvent;
+use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductImage;
@@ -94,6 +95,49 @@ class OrchestratorPublicationTest extends TestCase
         $this->assertStringContainsString("aucune n'est publiable", $reply['body']);
         $this->assertSame('cherche les photos Jadever', $reply['suggestions'][0]['text']);
         $this->assertSame(0, AgentEvent::where('type', 'catalogue_publication')->count());
+    }
+
+    public function test_go_online_by_brand_runs_a_sequence_in_batches_of_ten(): void
+    {
+        $jadever = Brand::create(['br_title' => 'Jadever', 'br_status' => true]);
+        $other = Brand::create(['br_title' => 'Autre', 'br_status' => true]);
+        $mine = [];
+        foreach (range(1, 23) as $i) {
+            $mine[] = $this->product("Jadever {$i}", sprintf('JD%02d', $i), active: $i % 2 === 0, over: ['brand_id' => $jadever->id]);
+        }
+        $foreign = $this->product('Autre marque', 'AUT01', over: ['brand_id' => $other->id]);
+        $blocked = $this->product('Jadever sans prix', 'JDNOPRICE', over: ['brand_id' => $jadever->id, 'p_salePrice' => 0]);
+
+        $reply = $this->say('mets les produits de la marque Jadever sur l’ecommerce, 10 par 10');
+
+        $this->assertStringContainsString('3 lot(s) de 10', $reply['body']);
+        $this->assertStringContainsString('1 fiche(s) bloquée(s)', $reply['body']);
+        $event = AgentEvent::where('type', 'catalogue_mise_en_ligne')->firstOrFail();
+        $this->assertCount(23, $event->payload['product_ids']);
+        $this->assertSame(10, $event->payload['batch_size']);
+        $this->assertFalse($mine[0]->fresh()->is_ecom);   // rien avant le clic
+
+        $done = $this->say("applique la mise en ligne du lot #{$event->id}");
+
+        $this->assertStringContainsString('23 fiche(s) activée(s) et mise(s) en ligne', $done['body']);
+        $this->assertStringContainsString('3 lots (10, 10, 3)', $done['body']);
+        foreach ($mine as $p) {
+            $this->assertTrue($p->fresh()->is_ecom);
+            $this->assertTrue($p->fresh()->p_status);
+        }
+        $this->assertFalse($foreign->fresh()->is_ecom);   // une autre marque n'est pas touchée
+        $this->assertFalse($blocked->fresh()->is_ecom);   // incomplète : laissée hors boutique
+    }
+
+    public function test_go_online_with_an_unknown_brand_changes_nothing(): void
+    {
+        $p = $this->product('Perceuse', 'PRC01');
+
+        $reply = $this->say("mets les produits de la marque Inconnue sur l'ecommerce");
+
+        $this->assertStringContainsString('Je ne trouve pas la marque', $reply['body']);
+        $this->assertSame(0, AgentEvent::where('type', 'catalogue_mise_en_ligne')->count());
+        $this->assertFalse($p->fresh()->is_ecom);
     }
 
     public function test_go_online_activates_and_publishes_ready_products_in_one_lot(): void
