@@ -344,7 +344,12 @@ class AgentStudio
     /** Rédige, enregistre et affiche une demande de développement : un texte complet à transmettre au développeur. */
     public function devRequest(User $admin, string $text): array
     {
-        $about = trim(preg_replace('/^\s*(demande de d[eé]veloppement|nouvelle (t[aâ]che|fonction|capacit[eé])|il faudrait que tu saches)\s*(pour|:|-)?\s*/iu', '', $text) ?? '');
+        // Le préfixe peut être répété (formulaire « + » et texte déjà préfixé) : on le retire autant de fois qu'il apparaît.
+        $about = trim($text);
+        do {
+            $before = $about;
+            $about = trim(preg_replace('/^\s*(demande de d[eé]veloppement|nouvelle (t[aâ]che|fonction|capacit[eé])|il faudrait que tu saches)\s*(pour|:|-)?\s*/iu', '', $about) ?? '');
+        } while ($about !== $before);
         $about = mb_substr($about, 0, 600);
         if (mb_strlen($about) < 6) {
             return $this->reply("Décrivez la tâche en une ou deux phrases, par exemple « demande de développement : préparer les livraisons du jour à partir des bons de livraison confirmés ».", error: true);

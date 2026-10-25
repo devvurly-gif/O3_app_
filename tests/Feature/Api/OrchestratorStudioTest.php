@@ -589,6 +589,16 @@ class OrchestratorStudioTest extends TestCase
         $this->assertStringContainsString('Décrivez la tâche', $this->say('demande de développement')->json('reply.body'));
     }
 
+    public function test_a_development_request_containing_the_word_liste_is_still_a_creation(): void
+    {
+        $r = $this->say('demande de développement : demande de développement : proposer une liste de 10 produits par marque');
+
+        $event = AgentEvent::where('type', 'demande_developpement')->firstOrFail();
+        $this->assertStringContainsString('« proposer une liste de 10 produits par marque »', $event->payload['brief']);   // préfixe répété retiré
+        $this->assertStringContainsString("#{$event->id}", $r->json('reply.body'));
+        $this->assertSame(0, AgentEvent::where('type', 'demande_developpement')->where('status', 'done')->count());
+    }
+
     // ── L'atelier ne détourne pas les demandes existantes ────────────
 
     public function test_existing_requests_are_not_hijacked_by_the_studio(): void

@@ -458,7 +458,8 @@ class Orchestrator
         return match (true) {
             (bool) preg_match('/^(retiens|souviens|consigne|regle de la maison|desormais|note que|n oublie pas)\b/', $n) => ['directive_new', null],
             (bool) preg_match('/\bconsignes\b/', $n) && (bool) preg_match('/\b(mes|quelles|liste|les|affiche)\b|^consignes/', $n) => ['directive_list', null],
-            (bool) preg_match('/demandes? de developpement/', $n) && (bool) preg_match('/\b(mes|quelles|liste|ouvertes|affiche)\b/', $n) => ['dev_list', null],
+            // « demande de développement : … » est une création, même si le texte contient « liste » ou « mes » ; seule la formule seule se lit comme une consultation.
+            (bool) preg_match('/demandes? de developpement/', $n) && !preg_match('/demandes? de developpement\s*(pour|:|-)/', $n) && (bool) preg_match('/\b(mes|quelles|liste|ouvertes|affiche)\b/', $n) => ['dev_list', null],
             (bool) preg_match('/demande de developpement|nouvelle (tache|fonction|capacite)|il faudrait que tu saches/', $n) => ['dev_new', null],
             (bool) preg_match('/catalogue des taches|taches connues|que (sait|savent|peut|peuvent)\b.*\bagents?|ce que (sait|savent).*agents?|commandes? (possibles?|disponibles?)|liste (de|des) commandes (de l.?orchestrateur|des agents)/', $n) => ['catalogue', null],
             // Comptes utilisateurs des agents (avant le recrutement : « crée les comptes des agents » n'est pas un recrutement).

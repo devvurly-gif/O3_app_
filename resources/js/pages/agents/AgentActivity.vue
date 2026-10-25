@@ -649,7 +649,11 @@ async function copyPrompt(text: string) {
 }
 
 async function submitNewTask() {
-  const body = newText.value.trim()
+  // Le préfixe est ajouté par le formulaire : on retire celui que l'utilisateur a pu écrire lui-même.
+  const body = newText.value
+    .trim()
+    .replace(/^(demande de d[eé]veloppement|retiens)\s*(pour l'agent[^:]*)?\s*:?\s*/i, '')
+    .trim()
   if (!body || !selectedAgent.value) return
   const kind = KINDS[newKind.value]
   const text =
