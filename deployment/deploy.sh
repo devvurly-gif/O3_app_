@@ -7,6 +7,9 @@ BRANCH="main"
 echo "=== O3 App Deployment ==="
 cd "$APP_DIR"
 
+# PHP 8.3 si présent (le VPS garde la 8.2 pour d'autres applications), sinon le php par défaut.
+PHP_BIN="${PHP_BIN:-$(command -v php8.3 || command -v php)}"
+
 # ── Pre-flight: refuse to deploy with dev-mode env (H4) ─────────────
 # APP_DEBUG=true renders Ignition stack traces (DB creds, env dump)
 # on any unhandled exception. APP_ENV=local disables prod-only
@@ -35,19 +38,19 @@ git pull origin "$BRANCH"
 
 # Install PHP dependencies
 echo "[2/7] Installing composer dependencies..."
-composer install --no-dev --optimize-autoloader --no-interaction
+"$PHP_BIN" "$(command -v composer)" install --no-dev --optimize-autoloader --no-interaction
 
 # Run migrations (central + tenant DBs)
 echo "[3/7] Running migrations..."
-php artisan migrate --force
-php artisan tenants:migrate --force
+"$PHP_BIN" artisan migrate --force
+"$PHP_BIN" artisan tenants:migrate --force
 
 # Permissions are rows, not schema: a permission added to
 # RolePermissionSeeder's catalogue has to be created in each tenant DB.
 # This only inserts what is missing and grants it to the admin role —
 # it never sync()s, so custom role grants survive. Any other role gets
 # the new permission from the Roles screen (or a one-off --grant=...).
-php artisan tenants:sync-permissions
+"$PHP_BIN" artisan tenants:sync-permissions
 
 # Flush application cache so stale Eloquent rows (categories, brands,
 # settings, etc.) don't survive a schema change from this very deploy.
@@ -59,13 +62,13 @@ php artisan tenants:sync-permissions
 # 2026-05-03 with mail config) or creates files root-owned that
 # php-fpm later refuses to read. The migrations above stay as the
 # invoking user (typically root) since they only need DB access.
-sudo -u www-data php artisan cache:clear
+sudo -u www-data "$PHP_BIN" artisan cache:clear
 
 # Cache config, routes, views
 echo "[4/7] Caching configuration..."
-sudo -u www-data php artisan config:cache
-sudo -u www-data php artisan route:cache
-sudo -u www-data php artisan view:cache
+sudo -u www-data "$PHP_BIN" artisan config:cache
+sudo -u www-data "$PHP_BIN" artisan route:cache
+sudo -u www-data "$PHP_BIN" artisan view:cache
 
 # Build frontend
 echo "[5/7] Building frontend assets..."
@@ -90,7 +93,7 @@ rm -rf public/build-prev
 
 # Restart queue workers (graceful)
 echo "[6/7] Restarting queue workers..."
-php artisan queue:restart
+"$PHP_BIN" artisan queue:restart
 
 # Setup Nginx (first deploy only)
 if [ ! -f /etc/nginx/sites-enabled/o3app.conf ]; then
