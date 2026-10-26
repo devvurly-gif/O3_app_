@@ -644,7 +644,7 @@ class CatalogAssistant
     /** @return array{body: string, meta: array<string, mixed>} */
     private function actOnce(User $admin, int $eventId, string $n): array
     {
-        $event = AgentEvent::whereIn('type', ['catalogue_completion', 'catalogue_prix', 'catalogue_activation', 'catalogue_codes_barres', 'catalogue_photos', 'catalogue_publication', 'catalogue_marque', 'catalogue_site', 'relance_devis', 'reappro_commande', 'transfert_entrepots', 'rapprochement_paiement', 'echeancier_paiement', 'relance_versement', 'releve_import'])->find($eventId);
+        $event = AgentEvent::whereIn('type', ['catalogue_completion', 'catalogue_prix', 'catalogue_activation', 'catalogue_codes_barres', 'catalogue_photos', 'catalogue_publication', 'promotion_proposition', 'catalogue_marque', 'catalogue_site', 'relance_devis', 'reappro_commande', 'transfert_entrepots', 'rapprochement_paiement', 'echeancier_paiement', 'relance_versement', 'releve_import'])->find($eventId);
         if (!$event) {
             return $this->reply("Je ne trouve pas le lot #{$eventId}.", error: true);
         }
@@ -670,6 +670,7 @@ class CatalogAssistant
                     'catalogue_codes_barres' => $this->applyBarcodes($event),
                     'catalogue_photos'       => $this->applyPhotos($admin, $event),
                     'catalogue_publication'  => $this->applyPublication($event),
+                    'promotion_proposition'  => app(PromotionAssistant::class)->apply($admin, $event),
                     'catalogue_marque'       => $this->applyBrandAssign($event),
                     'catalogue_site'         => $this->siteChat->apply($admin, $event),
                     'relance_devis'          => $this->quoteChat->apply($admin, $event),

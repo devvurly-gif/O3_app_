@@ -162,6 +162,56 @@ class AgentStudio
 
     // ── Routines ─────────────────────────────────────────────────────
 
+    /**
+     * « Chaque jeudi à 8 h, prépare une promotion de 15 % sur la marque Jadever » : une routine dont l'étape prépare la
+     * proposition de promotion à chaque passage. Sans IA : le jour, l'heure, la remise et la sélection sont lus dans la
+     * phrase. La promotion elle-même n'est créée qu'au clic de l'administrateur, dans le compte rendu de la routine.
+     *
+     * @param string $n phrase normalisée
+     */
+    public function routinePromo(User $admin, string $n): array
+    {
+        $assistant = app(PromotionAssistant::class);
+        $p = $assistant->parse($n);
+        if ($p['value'] === null || $p['value'] <= 0 || $p['value'] >= 90 || $p['kind'] === null || $p['name'] === null) {
+            return $this->reply('Pour planifier des promotions, dites la remise et la sélection, par exemple « chaque jeudi à 8 h, prépare une promotion de 15 % sur la marque Jadever » ou « … sur la catégorie Outillage manuel ».', error: true);
+        }
+        $target = $assistant->resolveTarget($p['kind'], $p['name']);
+        if ($target === null || str_contains($target['title'], ':')) {
+            return $this->reply('Je ne trouve pas la ' . $p['kind'] . ' « ' . Str::title($p['name']) . ' ».', error: true);
+        }
+
+        $weekdays = ['lundi' => 1, 'mardi' => 2, 'mercredi' => 3, 'jeudi' => 4, 'vendredi' => 5, 'samedi' => 6, 'dimanche' => 7];
+        $weekday = preg_match('/\b(' . implode('|', array_keys($weekdays)) . ')s?\b/', $n, $m) ? $weekdays[$m[1]] : null;
+        $daily = (bool) preg_match('/tous les jours|chaque jour|quotidien/', $n);
+        if ($weekday === null && !$daily) {
+            return $this->reply('Quel jour ? Par exemple « chaque jeudi à 8 h, prépare une promotion de ' . (int) $p['value'] . ' % sur la ' . $p['kind'] . ' ' . $target['title'] . ' ».', error: true);
+        }
+        [$hour, $minute] = preg_match('/\b(\d{1,2})\s*(?:h|:)\s*(\d{2})?/', $n, $t) ? [min(23, (int) $t[1]), (int) ($t[2] ?? 0)] : [8, 0];
+        $schedule = RoutineSchedule::sanitize(array_filter([
+            'frequency' => $daily ? 'daily' : 'weekly', 'weekday' => $daily ? null : $weekday, 'time' => sprintf('%02d:%02d', $hour, min(59, $minute)),
+        ], fn ($v) => $v !== null));
+
+        $value = rtrim(rtrim(number_format($p['value'], 2, '.', ''), '0'), '.');
+        $step = "promo:{$p['kind']}:{$target['title']}:{$value}" . ($p['days'] > 1 ? ":{$p['days']}" : '');
+        $spec = ['name' => 'Promotion ' . $target['title'] . ($daily ? ' chaque jour' : ' chaque ' . array_search($weekday, $weekdays, true)), 'steps' => [$step], 'schedule' => $schedule, 'feasible' => true];
+        if ($schedule === null || RoutineSteps::promoPhrase($step) === null) {
+            return $this->reply("Je n'ai pas pu lire l'horaire ou la remise de cette routine : redemandez-la.", error: true);
+        }
+
+        $event = $this->record('routine_proposition', 'Proposition de routine : ' . $spec['name'], ['spec' => $spec, 'request' => mb_substr($n, 0, 800), 'requested_by' => $admin->name]);
+
+        return $this->reply(
+            "Routine proposée : « {$spec['name']} » (proposition #{$event->id}).\n\nQuand : " . RoutineSchedule::describe($schedule) . ".\n\nÉtape :\n1. " . RoutineSteps::label($step)
+            . "\n\nÀ chaque passage, l'agent Marketing prépare la proposition de promotion (produits visibles sur la boutique, prix remisés) dans le compte rendu : la promotion n'est créée qu'à votre clic, rien n'est publié seul.",
+            suggestions: [
+                ['label' => 'Planifier cette routine', 'text' => "applique la proposition #{$event->id}"],
+                ['label' => 'Ignorer', 'text' => "ignore la proposition #{$event->id}"],
+            ],
+            eventId: $event->id,
+        );
+    }
+
     public function routineNew(User $admin, string $text): array
     {
         if (!$this->designer->enabled()) {

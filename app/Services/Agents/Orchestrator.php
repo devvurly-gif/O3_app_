@@ -431,6 +431,10 @@ class Orchestrator
                 default                                            => null,
             };
         }
+        // « chaque jeudi à 8 h, prépare une promotion de 15 % sur la marque Jadever » : routine qui prépare la proposition (sans IA).
+        if ($this->hasScheduleWords($n) && $this->wantsPromotion($n)) {
+            return ['routine_promo', null];
+        }
         // « tous les jours à 8 h, lance l'agent #8 » est une routine à planifier, pas un lancement immédiat.
         if ($this->hasScheduleWords($n) && preg_match('/\bagent\s*#\s*\d+/', $n) && preg_match('/\b(lance|execut|control|prepar|surveill|verifi|fais|demande)\w*/', $n)) {
             return ['routine_new', null];
@@ -504,6 +508,7 @@ class Orchestrator
             'accounts_list'    => $this->studio->accountsList(),
             'recruit'          => $this->studio->recruit($admin, $text),
             'routines'         => $this->studio->routines(),
+            'routine_promo'    => $this->studio->routinePromo($admin, $n),
             default            => $this->studio->routineNew($admin, $text),
         };
     }
@@ -1010,6 +1015,14 @@ class Orchestrator
     // ── Fiches produits ──────────────────────────────────────────────
 
     /** Quelle demande sur les fiches produits la phrase exprime-t-elle ? null si aucune. */
+    /** Une demande de préparer une promotion : un verbe d'action, « promotion » et une remise en pourcentage. @param string $n phrase normalisée */
+    private function wantsPromotion(string $n): bool
+    {
+        return (bool) preg_match('/\bpromotions?\b/', $n)
+            && (bool) preg_match('/\b(prepar|cree|creer|propos|genere|lance|organis|planifi|mets?|met|fais|monte)\w*/', $n)
+            && (bool) preg_match('/\d\s*%/', $n);
+    }
+
     private function catalogIntent(string $n): ?string
     {
         if (preg_match('/\blot\s*#\s*\d+/', $n)) {
@@ -1018,6 +1031,8 @@ class Orchestrator
         $about = (bool) preg_match('/fiches?|produits?|prouits?|catalogue|articles?/', $n);
 
         return match (true) {
+            // « prépare une promotion de 15 % sur la marque Jadever pour jeudi » : l'agent Marketing propose, un clic crée.
+            $this->wantsPromotion($n) => 'promotion_new',
             // « cherche les photos Jadever » : le serveur va les chercher sur le site autorisé (aperçu, puis clic).
             (bool) preg_match('/\b(photos?|images?)\b/', $n) && (bool) preg_match('/\b(cherch|trouv|recuper|telecharg)\w*/', $n) && !preg_match('/\b(quels?|quelles?|liste|combien|montre)\b/', $n) => 'photos_fetch',
             // « publier les produits dans le website » : l'agent Marketing propose la mise en boutique en ligne.
@@ -1049,6 +1064,7 @@ class Orchestrator
     private function catalogAnswer(User $admin, string $intent, string $n): array
     {
         return match ($intent) {
+            'promotion_new' => app(PromotionAssistant::class)->propose($admin, $n),
             'brand_assign' => $this->catalog->assignBrand($admin, (string) $this->brandNameIn($n)),
             'act'      => preg_match('/\blot\s*#\s*(\d+)/', $n, $m) ? $this->catalog->act($admin, (int) $m[1], $n) : $this->catalog->audit($admin),
             'pricing'  => $this->catalog->pricing($admin, $n),

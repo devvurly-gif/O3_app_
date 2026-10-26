@@ -95,7 +95,7 @@ class RoutineSchedule
         return $local->isoFormat('dddd DD/MM [à] HH:mm');
     }
 
-    private static function timezone(): string
+    public static function timezone(): string
     {
         $tz = Setting::get('locale', 'timezone') ?: config('app.timezone');
         try {

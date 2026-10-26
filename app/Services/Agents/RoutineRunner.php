@@ -119,8 +119,9 @@ class RoutineRunner
         foreach ($routine->steps as $step) {
             $label = RoutineSteps::label($step);
             try {
-                if (isset(RoutineSteps::KNOWN[$step])) {
-                    $answer = $orchestrator->runCommand($creator, RoutineSteps::KNOWN[$step]['phrase']);
+                $phrase = RoutineSteps::KNOWN[$step]['phrase'] ?? RoutineSteps::promoPhrase($step);
+                if ($phrase !== null) {
+                    $answer = $orchestrator->runCommand($creator, $phrase);
                     $body = $answer['body'];
                     $error = (bool) ($answer['meta']['error'] ?? false);
                     $suggestions = array_merge($suggestions, $answer['meta']['suggestions'] ?? []);

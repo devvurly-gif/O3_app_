@@ -67,8 +67,10 @@ class AgentCapabilities
         'marketing' => [
             'tasks' => [
                 ['Publier sur la boutique en ligne (website) les fiches actives, complètes et avec photo', '« publie les produits sur le website »'],
+                ['Préparer une promotion en pourcentage sur une marque ou une catégorie (jour, durée ou fin au choix), créée à votre clic', '« prépare une promotion de 15 % sur la marque Jadever pour jeudi » ; « crée une promotion de 10 % sur la catégorie Outillage manuel pendant 3 jours »'],
+                ['Préparer chaque semaine la proposition de promotion (routine : la promotion n\'est créée qu\'à votre clic)', '« chaque jeudi à 8 h, prépare une promotion de 15 % sur la marque Jadever »'],
             ],
-            'missing' => ['promotions et bannières', 'messages et publicités à partir des produits', 'relance de clients par e-mail ou WhatsApp'],
+            'missing' => ['bannières de la boutique', 'messages et publicités à partir des produits', 'relance de clients par e-mail ou WhatsApp'],
         ],
     ];
 

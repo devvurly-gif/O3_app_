@@ -47,7 +47,7 @@ class RoutineSteps
                 continue;
             }
             $step = trim($step);
-            if (isset(self::KNOWN[$step]) || (preg_match('/^agent:(\d+)$/', $step, $m) && Agent::where('kind', 'custom')->whereKey((int) $m[1])->exists())) {
+            if (isset(self::KNOWN[$step]) || self::promoPhrase($step) !== null || (preg_match('/^agent:(\d+)$/', $step, $m) && Agent::where('kind', 'custom')->whereKey((int) $m[1])->exists())) {
                 $out[$step] = $step;
             }
         }
@@ -55,9 +55,26 @@ class RoutineSteps
         return array_values($out);
     }
 
+    /**
+     * Une étape « promo:marque:Jadever:15 » (ou « promo:categorie:Outillage manuel:10:3 » : 10 %, pendant 3 jours) prépare la
+     * proposition d'une promotion, comme « prépare une promotion de 15 % sur la marque Jadever ». Elle ne crée rien :
+     * la promotion n'existe qu'après le clic de l'administrateur. Null si ce n'est pas une étape de promotion valide.
+     */
+    public static function promoPhrase(string $step): ?string
+    {
+        if (!preg_match('/^promo:(marque|categorie):([^:]{1,60}):(\d{1,2}(?:\.\d{1,2})?)(?::(\d{1,2}))?$/u', $step, $m)) {
+            return null;
+        }
+
+        return "prépare une promotion de {$m[3]} % sur la {$m[1]} {$m[2]}" . (isset($m[4]) && (int) $m[4] > 1 ? " pendant {$m[4]} jours" : '');
+    }
+
     /** « Contrôler les encaissements », « Agent Veille stock ». */
     public static function label(string $step): string
     {
+        if (($phrase = self::promoPhrase($step)) !== null) {
+            return ucfirst(str_replace('prépare', 'préparer', $phrase));
+        }
         if (isset(self::KNOWN[$step])) {
             return self::KNOWN[$step]['label'];
         }
