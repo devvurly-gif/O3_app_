@@ -7,7 +7,9 @@ use App\Models\AgentRoutine;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductImage;
 use App\Models\Promotion;
+use App\Models\Slide;
 use App\Models\User;
 use App\Services\Agents\RoutineRunner;
 use App\Services\Agents\RoutineSchedule;
@@ -88,6 +90,7 @@ class OrchestratorPromotionTest extends TestCase
     {
         $a = $this->product('Perceuse', 'JD1');
         $b = $this->product('Scie', 'JD2');
+        ProductImage::create(['product_id' => $a->id, 'url' => '/storage/products/jd1.jpg', 'title' => 'jd1', 'isPrimary' => true]);
         $this->say('prépare une promotion de 15 % sur la marque Jadever pour jeudi');
         $event = AgentEvent::where('type', 'promotion_proposition')->firstOrFail();
         $b->update(['is_ecom' => false]);   // retiré de la boutique entre-temps
@@ -95,17 +98,40 @@ class OrchestratorPromotionTest extends TestCase
         $done = $this->say("applique la promotion du lot #{$event->id}");
 
         $this->assertStringContainsString('créée', $done['body']);
+        $this->assertStringContainsString("Bannière d'accueil créée", $done['body']);
         $promotion = Promotion::firstOrFail();
         $this->assertSame('percentage', $promotion->type);
         $this->assertEquals(15, $promotion->value);
         $this->assertTrue($promotion->is_active);
         $this->assertSame([$a->id], $promotion->products()->pluck('products.id')->all());   // seulement ce qui est encore en ligne
+
+        // Visuel : la photo d'un produit de la sélection, le texte de bannière et un slide d'accueil lié à la promotion.
+        $this->assertSame('/storage/products/jd1.jpg', $promotion->banner_image);
+        $this->assertSame('-15 % sur Jadever', $promotion->banner_text);
+        $this->assertStringContainsString('Remise de 15 %', $promotion->description);
+        $slide = Slide::firstOrFail();
+        $this->assertSame(['hero', 'promotion', $promotion->id, '/storage/products/jd1.jpg'], [$slide->position, $slide->link_type, $slide->link_id, $slide->image]);
+        $this->assertTrue($slide->is_active);
+        $this->assertEquals($promotion->ends_at, $slide->ends_at);
         $this->assertSame('done', $event->fresh()->status);
         $this->assertSame(1, \App\Models\AgentAction::where('action', 'promotion_created')->count());
 
         // Un lot ne s'applique qu'une fois.
         $this->say("applique la promotion du lot #{$event->id}");
         $this->assertSame(1, Promotion::count());
+    }
+
+    public function test_without_any_product_photo_the_promotion_is_created_without_a_banner_and_says_so(): void
+    {
+        $this->product('Perceuse', 'JD1');
+        $this->say('prépare une promotion de 15 % sur la marque Jadever');
+        $event = AgentEvent::where('type', 'promotion_proposition')->firstOrFail();
+
+        $done = $this->say("applique la promotion du lot #{$event->id}");
+
+        $this->assertStringContainsString('Aucune bannière', $done['body']);
+        $this->assertNull(Promotion::firstOrFail()->banner_image);
+        $this->assertSame(0, Slide::count());
     }
 
     public function test_it_selects_by_category_and_lasts_several_days(): void

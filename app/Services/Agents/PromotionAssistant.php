@@ -8,7 +8,9 @@ use App\Models\AgentEvent;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductImage;
 use App\Models\Promotion;
+use App\Models\Slide;
 use App\Models\User;
 use App\Services\PromotionService;
 use Carbon\Carbon;
@@ -165,24 +167,38 @@ class PromotionAssistant
             return $this->reply("Le lot #{$event->id} n'a pas été appliqué : plus aucun des produits proposés n'est visible sur la boutique.", error: true, eventId: $event->id);
         }
 
-        $promotion = DB::transaction(function () use ($payload, $ids, $target) {
+        // Le visuel de la promotion : la photo principale d'un produit de la sélection (la boutique a besoin d'une image de bannière).
+        $photo = ProductImage::whereIn('product_id', $ids)->orderByDesc('isPrimary')->orderBy('id')->value('url');
+        $text = '-' . $this->percent((float) $payload['value']) . ' % sur ' . ($target['title'] ?? '');
+        $starts = Carbon::parse($payload['starts_at']);
+        $ends = Carbon::parse($payload['ends_at']);
+
+        [$promotion, $slide] = DB::transaction(function () use ($payload, $ids, $target, $photo, $text, $starts, $ends) {
             $slug = Str::slug($payload['name']) ?: 'promo';
             if (Promotion::where('slug', $slug)->exists()) {
                 $slug .= '-' . Str::lower(Str::random(4));
             }
             $promotion = Promotion::create([
                 'name' => $payload['name'], 'slug' => $slug, 'type' => 'percentage', 'value' => $payload['value'],
-                'banner_text' => '-' . $this->percent((float) $payload['value']) . ' % sur ' . ($target['title'] ?? ''),
-                'starts_at' => Carbon::parse($payload['starts_at']), 'ends_at' => Carbon::parse($payload['ends_at']),
-                'is_active' => true, 'priority' => 0,
+                'description' => 'Remise de ' . $this->percent((float) $payload['value']) . ' % sur ' . count($ids) . ' produit(s) ' . ($target['title'] ?? '')
+                    . ', du ' . $starts->format('d/m/Y') . ' au ' . $ends->format('d/m/Y') . '.',
+                'banner_image' => $photo, 'banner_text' => $text,
+                'starts_at' => $starts, 'ends_at' => $ends, 'is_active' => true, 'priority' => 0,
             ]);
             $promotion->products()->attach($ids);
 
-            return $promotion;
+            // Comme l'écran « Promotions & bannières » : une image de bannière donne un slide d'accueil lié à la promotion.
+            $slide = $photo === null ? null : Slide::create([
+                'title' => $promotion->name, 'subtitle' => $text, 'image' => $photo, 'button_text' => 'Voir la promo',
+                'link_type' => 'promotion', 'link_id' => $promotion->id, 'position' => 'hero',
+                'starts_at' => $starts, 'ends_at' => $ends, 'is_active' => true,
+            ]);
+
+            return [$promotion, $slide];
         });
         app(PromotionService::class)->clearCache();
 
-        $result = ['promotion_id' => $promotion->id, 'products' => count($ids), 'skipped' => count($payload['product_ids'] ?? []) - count($ids)];
+        $result = ['promotion_id' => $promotion->id, 'products' => count($ids), 'skipped' => count($payload['product_ids'] ?? []) - count($ids), 'slide_id' => $slide?->id];
         $event->update(['status' => AgentEvent::STATUS_DONE, 'payload' => array_merge($payload, ['result' => $result])]);
         AgentAction::create([
             'agent_id' => $event->agent_id ?? Agent::where('domain', 'marketing')->value('id'), 'event_id' => $event->id,
@@ -191,7 +207,8 @@ class PromotionAssistant
 
         return $this->reply(
             "Promotion « {$promotion->name} » créée : -" . $this->percent((float) $promotion->value) . ' % sur ' . count($ids) . ' produit(s), du '
-            . $promotion->starts_at->format('d/m H:i') . ' au ' . $promotion->ends_at->format('d/m H:i') . '.',
+            . $promotion->starts_at->format('d/m H:i') . ' au ' . $promotion->ends_at->format('d/m H:i') . '.'
+            . ($slide ? "\nBannière d'accueil créée avec la photo d'un produit de la sélection." : "\nAucune bannière : aucun produit de la sélection n'a de photo. Ajoutez une image dans « Promotions & bannières »."),
             links: [['label' => 'Promotions & bannières', 'to' => '/marketing/promotions']],
             eventId: $event->id,
         );
