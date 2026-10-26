@@ -109,6 +109,7 @@ class AgentActivityController extends Controller
         $users = User::whereIn('id', Agent::whereNotNull('user_id')->pluck('user_id'))->get(['id', 'name', 'email'])->keyBy('id');
 
         return Agent::orderBy('id')->get()->map(fn (Agent $a) => [
+            'id'           => $a->id,
             'domain'       => $a->domain,
             'name'         => $a->name,
             'is_active'    => $a->is_active,

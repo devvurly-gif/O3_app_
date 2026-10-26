@@ -411,6 +411,13 @@ Route::middleware(['auth:sanctum', 'tenant.active'])->group(function () {
         Route::middleware(['agents', 'permission:settings.manage', 'throttle:60,1'])
             ->get('agents/activite', [\App\Http\Controllers\Api\Agents\AgentActivityController::class, 'index']);
 
+        // Gestion directe d'un agent depuis sa carte (activer / désactiver, créer son compte), sans l'orchestrateur.
+        Route::middleware(['agents', 'permission:settings.manage', 'throttle:30,1,agent-management'])->group(function () {
+            $c = \App\Http\Controllers\Api\Agents\AgentManagementController::class;
+            Route::put('agents/{agent}/etat', [$c, 'toggle'])->whereNumber('agent');
+            Route::post('agents/{agent}/compte', [$c, 'createAccount'])->whereNumber('agent');
+        });
+
         // Ordres donnés aux agents (ex. préparer un inventaire) : brouillon produit, rien n'est modifié.
         Route::middleware(['agents', 'permission:settings.manage', 'throttle:20,1,agent-orders'])->group(function () {
             Route::post('agents/ordres', [\App\Http\Controllers\Api\Agents\AgentOrderController::class, 'store']);

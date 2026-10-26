@@ -48,38 +48,61 @@
     <div>
       <h3 class="text-sm font-bold text-gray-700 dark:text-gray-200 mb-2">Agents</h3>
       <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-        <button
+        <div
           v-for="a in agents"
           :key="a.domain"
-          class="text-left bg-white dark:bg-gray-800 border rounded-2xl px-4 py-3 transition hover:border-[#7C5CFC]"
+          class="bg-white dark:bg-gray-800 border rounded-2xl transition hover:border-[#7C5CFC]"
           :class="
             agentFilter === a.domain
               ? 'border-[#7C5CFC] ring-1 ring-[#7C5CFC]'
               : 'border-[#ECEEF2] dark:border-gray-700'
           "
-          @click="openAgent(a)"
         >
-          <div class="flex items-center justify-between gap-2">
-            <span class="font-semibold text-sm text-gray-800 dark:text-gray-100 truncate">{{ a.name }}</span>
-            <span
-              class="text-[10px] font-bold px-1.5 py-0.5 rounded-md shrink-0"
-              :class="
-                a.is_active
-                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
-                  : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
-              "
-            >
-              {{ a.is_active ? 'Actif' : 'Inactif' }}
+          <button type="button" class="block w-full text-left px-4 pt-3 pb-2" @click="openAgent(a)">
+            <span class="block font-semibold text-sm text-gray-800 dark:text-gray-100 truncate">{{ a.name }}</span>
+            <span class="block text-xs text-gray-500 dark:text-gray-400 mt-1 truncate">
+              {{ a.account ? `Compte : ${a.account}` : 'Aucun compte rattaché' }}
             </span>
+            <span class="block text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              {{ a.events_count }} événement{{ a.events_count > 1 ? 's' : '' }}
+              <span v-if="a.last_event_at">· dernier {{ timeAgo(a.last_event_at) }}</span>
+            </span>
+          </button>
+          <div class="flex items-center justify-between gap-2 px-4 py-2 border-t border-[#ECEEF2] dark:border-gray-700">
+            <label class="flex items-center gap-2 cursor-pointer select-none">
+              <button
+                type="button"
+                role="switch"
+                :aria-checked="a.is_active"
+                :aria-label="`${a.is_active ? 'Désactiver' : 'Activer'} l'agent ${a.name}`"
+                :disabled="busyAgent === a.id"
+                class="relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition disabled:opacity-50"
+                :class="a.is_active ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-600'"
+                @click="toggleAgentState(a)"
+              >
+                <span
+                  class="inline-block h-4 w-4 rounded-full bg-white shadow transition-transform"
+                  :class="a.is_active ? 'translate-x-4' : 'translate-x-0.5'"
+                ></span>
+              </button>
+              <span
+                class="text-xs font-semibold"
+                :class="a.is_active ? 'text-emerald-700 dark:text-emerald-300' : 'text-gray-500 dark:text-gray-400'"
+              >
+                {{ a.is_active ? 'Actif' : 'Inactif' }}
+              </span>
+            </label>
+            <button
+              v-if="!a.account"
+              type="button"
+              :disabled="busyAgent === a.id"
+              class="text-xs font-semibold text-[#7C5CFC] hover:underline disabled:opacity-50"
+              @click="createAgentAccount(a)"
+            >
+              + Compte
+            </button>
           </div>
-          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate">
-            {{ a.account ? `Compte : ${a.account}` : 'Aucun compte rattaché' }}
-          </p>
-          <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-            {{ a.events_count }} événement{{ a.events_count > 1 ? 's' : '' }}
-            <span v-if="a.last_event_at">· dernier {{ timeAgo(a.last_event_at) }}</span>
-          </p>
-        </button>
+        </div>
       </div>
     </div>
 
@@ -456,6 +479,7 @@ interface Summary {
 }
 
 interface AgentRow {
+  id: number
   domain: string
   name: string
   is_active: boolean
@@ -681,12 +705,44 @@ async function load(page = meta.current_page) {
     })
     summary.value = data.summary
     agents.value = data.agents
+    if (selectedAgent.value) {
+      selectedAgent.value = data.agents.find((x: AgentRow) => x.id === selectedAgent.value?.id) ?? null
+    }
     events.value = data.events
     Object.assign(meta, data.meta)
   } catch {
     /* Erreur déjà affichée par l'intercepteur http. */
   } finally {
     loading.value = false
+  }
+}
+
+/** Agent dont une action directe (activation, compte) est en cours : bloque ses boutons le temps de l'appel. */
+const busyAgent = ref<number | null>(null)
+
+async function toggleAgentState(a: AgentRow) {
+  if (busyAgent.value !== null) return
+  busyAgent.value = a.id
+  try {
+    await http.put(`/agents/${a.id}/etat`, { is_active: !a.is_active })
+    await load()
+  } catch {
+    /* Erreur déjà affichée par l'intercepteur http. */
+  } finally {
+    busyAgent.value = null
+  }
+}
+
+async function createAgentAccount(a: AgentRow) {
+  if (busyAgent.value !== null) return
+  busyAgent.value = a.id
+  try {
+    await http.post(`/agents/${a.id}/compte`)
+    await load()
+  } catch {
+    /* Erreur déjà affichée par l'intercepteur http. */
+  } finally {
+    busyAgent.value = null
   }
 }
 
