@@ -39,7 +39,7 @@ class LowStockAlert extends Notification implements ShouldQueue
         }
 
         return $message
-            ->action('Voir le stock', url('/stock/mouvements'))
+            ->action('Voir le stock', tenant()?->appUrl('/stock/mouvements') ?? url('/stock/mouvements'))
             ->line('Pensez à réapprovisionner ces produits.');
     }
 
