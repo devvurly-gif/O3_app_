@@ -528,7 +528,7 @@
         </div>
 
         <!-- Tab: Tarifs (Pricing) -->
-        <div v-if="currentTab === 1" class="space-y-2.5 py-1" :style="{ minHeight: tabMinHeight }">
+        <div v-if="currentTab === 1" class="space-y-2.5 py-1" :style="tabBodyStyle">
           <ProductPricingTab
             v-model:tier-adding="tierAdding"
             :has-product="!!editTarget"
@@ -546,7 +546,7 @@
         </div>
 
         <!-- Tab: Stock -->
-        <div v-if="currentTab === 2" class="space-y-2.5 py-1" :style="{ minHeight: tabMinHeight }">
+        <div v-if="currentTab === 2" class="space-y-2.5 py-1" :style="tabBodyStyle">
           <ProductStockTab
             :product="editTarget"
             :warehouse-stocks="warehouseStocksList"
@@ -558,12 +558,12 @@
         </div>
 
         <!-- Tab: Statistics -->
-        <div v-if="currentTab === 3" class="space-y-2.5 py-1" :style="{ minHeight: tabMinHeight }">
+        <div v-if="currentTab === 3" class="space-y-2.5 py-1" :style="tabBodyStyle">
           <ProductStatsTab :statistics="statistics" :has-product="!!editTarget" />
         </div>
 
         <!-- Tab: Gallery -->
-        <div v-if="currentTab === 4" class="space-y-2.5 py-1" :style="{ minHeight: tabMinHeight }">
+        <div v-if="currentTab === 4" class="space-y-2.5 py-1" :style="tabBodyStyle">
           <ProductMediaTab
             v-model:new-video-title="newVideoTitle"
             v-model:new-video-url="newVideoUrl"
@@ -584,7 +584,7 @@
           />
         </div>
         <!-- Tab: Fournisseurs -->
-        <div v-if="currentTab === 5" class="space-y-2.5 py-1" :style="{ minHeight: tabMinHeight }">
+        <div v-if="currentTab === 5" class="space-y-2.5 py-1" :style="tabBodyStyle">
           <ProductSuppliersTab
             v-model:link-adding="linkAdding"
             :has-product="!!editTarget"
@@ -599,7 +599,7 @@
           />
         </div>
         <!-- Tab: Variantes -->
-        <div v-if="currentTab === 6 && variantsEnabled" class="space-y-3 py-2">
+        <div v-if="currentTab === 6 && variantsEnabled" class="space-y-3 py-1" :style="tabBodyStyle">
           <ProductVariantsTab
             :variants="productVariants"
             @generate="applyGenerated"
@@ -742,6 +742,11 @@ const currentTab = ref(0)
 // for every other tab so the modal doesn't resize when switching tabs.
 const infoTabRef = ref<HTMLElement | null>(null)
 const tabMinHeight = ref<string>('')
+// Fixed height (not min-height) so a long tab such as Variantes scrolls
+// inside the modal instead of stretching it.
+const tabBodyStyle = computed(() =>
+  tabMinHeight.value ? { height: tabMinHeight.value, overflowY: 'auto' as const } : {},
+)
 
 async function measureInfoTab() {
   await nextTick()
