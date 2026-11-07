@@ -69,8 +69,24 @@ async function printHtml(printerName: string, html: string): Promise<boolean> {
   if (!isConnected.value || !qz) return false
   try {
     const printer = await qz.printers.find(printerName)
-    const config = qz.configs.create(printer, { copies: 1 })
-    const data = [{ type: 'pixel', format: 'html', flavor: 'plain', data: html }]
+    // Papier thermique 80 mm : zone imprimable ~72 mm, sans marges, contenu
+    // mis à l'échelle de la largeur (sinon QZ rend le HTML à 72 dpi → texte minuscule).
+    const config = qz.configs.create(printer, {
+      copies: 1,
+      units: 'mm',
+      size: { width: 72 },
+      margins: 0,
+      scaleContent: true,
+      rasterize: true,
+      density: 203,
+    })
+    // Envoi en base64 UTF-8 : le flavor « plain » est décodé avec l'encodage
+    // par défaut de Windows et corrompt les accents / symboles (é, —, °…).
+    const utf8 = btoa(unescape(encodeURIComponent(html)))
+    const data = [{
+      type: 'pixel', format: 'html', flavor: 'base64', data: utf8,
+      options: { pageWidth: 72 / 25.4 },
+    }]
     await qz.print(config, data)
     return true
   } catch (e) {

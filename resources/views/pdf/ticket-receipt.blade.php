@@ -14,55 +14,55 @@
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Courier New', DejaVu Sans, monospace;
-            font-size: 9px;
+            font-family: Arial, 'DejaVu Sans', sans-serif;
+            font-size: 13px;
             color: #000;
             width: 80mm;
             margin: 0 auto;
             background: #fff;
         }
-        .receipt { padding: 5mm; }
+        .receipt { padding: 2mm; }
 
         /* Header */
         .header { text-align: center; margin-bottom: 8px; border-bottom: 1px dashed #000; padding-bottom: 8px; }
-        .company-name { font-size: 14px; font-weight: bold; margin-bottom: 2px; }
-        .company-info { font-size: 8px; color: #333; line-height: 1.4; }
+        .company-name { font-size: 20px; font-weight: bold; margin-bottom: 2px; }
+        .company-info { font-size: 12px; color: #333; line-height: 1.4; }
 
         /* Ticket info */
-        .ticket-info { margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px dashed #000; font-size: 9px; }
+        .ticket-info { margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px dashed #000; font-size: 13px; }
         .ticket-info .row { display: table; width: 100%; }
         .ticket-info .label { display: table-cell; width: 35%; color: #555; }
         .ticket-info .value { display: table-cell; width: 65%; text-align: right; font-weight: 600; }
 
         /* Client */
         .client-info { margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px dashed #000; }
-        .client-info .name { font-weight: bold; font-size: 10px; }
-        .client-info .detail { font-size: 8px; color: #555; }
+        .client-info .name { font-weight: bold; font-size: 14px; }
+        .client-info .detail { font-size: 12px; color: #555; }
 
         /* Lines */
         .lines-table { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
-        .lines-table th { font-size: 8px; text-align: left; padding: 3px 2px; border-bottom: 1px solid #000; }
+        .lines-table th { font-size: 12px; text-align: left; padding: 3px 2px; border-bottom: 1px solid #000; }
         .lines-table th.right { text-align: right; }
-        .lines-table td { font-size: 9px; padding: 3px 2px; border-bottom: 1px dotted #ccc; }
+        .lines-table td { font-size: 13px; padding: 3px 2px; border-bottom: 1px dotted #ccc; }
         .lines-table td.right { text-align: right; font-variant-numeric: tabular-nums; }
 
         /* Totals */
         .totals { border-top: 1px dashed #000; padding-top: 6px; margin-bottom: 8px; }
         .totals .row { display: table; width: 100%; margin-bottom: 2px; }
-        .totals .label { display: table-cell; width: 50%; font-size: 9px; }
-        .totals .value { display: table-cell; width: 50%; text-align: right; font-size: 9px; font-weight: 600; }
-        .totals .grand { font-size: 12px; font-weight: bold; border-top: 1px solid #000; padding-top: 4px; margin-top: 4px; }
+        .totals .label { display: table-cell; width: 50%; font-size: 13px; }
+        .totals .value { display: table-cell; width: 50%; text-align: right; font-size: 13px; font-weight: 600; }
+        .totals .grand { font-size: 17px; font-weight: bold; border-top: 1px solid #000; padding-top: 4px; margin-top: 4px; }
 
         /* Payments */
         .payments { border-top: 1px dashed #000; padding-top: 6px; margin-bottom: 8px; }
-        .payments-title { font-size: 9px; font-weight: bold; margin-bottom: 4px; }
+        .payments-title { font-size: 13px; font-weight: bold; margin-bottom: 4px; }
         .payments .row { display: table; width: 100%; margin-bottom: 1px; }
-        .payments .label { display: table-cell; width: 50%; font-size: 8px; }
-        .payments .value { display: table-cell; width: 50%; text-align: right; font-size: 8px; }
+        .payments .label { display: table-cell; width: 50%; font-size: 12px; }
+        .payments .value { display: table-cell; width: 50%; text-align: right; font-size: 12px; }
 
         /* Footer */
-        .footer { text-align: center; border-top: 1px dashed #000; padding-top: 8px; font-size: 8px; color: #555; }
-        .footer .thanks { font-size: 10px; font-weight: bold; color: #000; margin-bottom: 4px; }
+        .footer { text-align: center; border-top: 1px dashed #000; padding-top: 8px; font-size: 12px; color: #555; }
+        .footer .thanks { font-size: 14px; font-weight: bold; color: #000; margin-bottom: 4px; }
     </style>
 </head>
 <body>
@@ -142,7 +142,7 @@
             </tr>
             @if($ligne->discount_percent > 0)
             <tr>
-                <td colspan="4" style="font-size:7px; color:#888; padding-left:8px;">Remise: {{ number_format($ligne->discount_percent, 0) }}%</td>
+                <td colspan="4" style="font-size:11px; color:#888; padding-left:8px;">Remise: {{ number_format($ligne->discount_percent, 0) }}%</td>
             </tr>
             @endif
             @endforeach
@@ -220,7 +220,7 @@
         <div class="thanks">Merci pour votre achat !</div>
         <div>{{ $company['name'] }}</div>
         @if($company['phone'])<div>Tél: {{ $company['phone'] }}</div>@endif
-        <div style="margin-top: 4px; font-size: 7px;">{{ now()->format('d/m/Y H:i:s') }}</div>
+        <div style="margin-top: 4px; font-size: 11px;">{{ now()->format('d/m/Y H:i:s') }}</div>
     </div>
 
 </div>
